@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## 0.7.1 — 2026-09-24
+
+- Fontes do auditor para working tree e índice Git extraídas para
+  `audit-docs.sources.js`, com contrato JSDoc comum e seleção em um ponto.
+- Instalador passa a copiar o novo módulo com o auditor opcional.
+
 ## 0.7.0 — 2026-09-24
 
 - `ds-committer` prepara linhas, hunks e commits semânticos dentro dos caminhos

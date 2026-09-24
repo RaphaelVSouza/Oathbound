@@ -4,6 +4,12 @@
 Node.js 22 ou superior; Git é necessário para `--staged`. A configuração deste
 repositório fica em `audit-docs.config.js`.
 
+O executável `audit-docs.js` carrega `audit-docs.core.js`, que usa
+`audit-docs.sources.js` para ler o working tree ou o índice Git pelo mesmo
+contrato (`preload`, `exists`, `isDir`, `isFile`, `exactCase`, `list`, `size` e
+`read`). Ao copiar o auditor para outro projeto, mantenha os três arquivos
+juntos e forneça uma configuração `audit-docs.config.js`.
+
 ```sh
 node tools/audit-docs.js
 node tools/audit-docs.js --staged

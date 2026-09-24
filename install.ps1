@@ -29,7 +29,7 @@ $agentFiles = @(Get-ChildItem -LiteralPath $agentsSource -File -Filter '*.md')
 $collisions = @()
 if (Test-Path -LiteralPath $skillTarget) { $collisions += $skillTarget }
 if ($AuditDocs) {
-    foreach ($name in @('audit-docs.js', 'audit-docs.core.js', 'audit-docs.config.js')) {
+    foreach ($name in @('audit-docs.js', 'audit-docs.core.js', 'audit-docs.sources.js', 'audit-docs.config.js')) {
         $target = Join-Path $auditTarget $name
         if (Test-Path -LiteralPath $target) { $collisions += $target }
     }
@@ -55,7 +55,7 @@ foreach ($agentFile in $agentFiles) {
 }
 if ($AuditDocs) {
     New-Item -ItemType Directory -Path $auditTarget -Force | Out-Null
-    foreach ($name in @('audit-docs.js', 'audit-docs.core.js')) {
+    foreach ($name in @('audit-docs.js', 'audit-docs.core.js', 'audit-docs.sources.js')) {
         Copy-Item -LiteralPath (Join-Path $PSScriptRoot "tools/$name") -Destination (Join-Path $auditTarget $name)
     }
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'templates/audit-docs/audit-docs.config.js') -Destination (Join-Path $auditTarget 'audit-docs.config.js')
