@@ -13,12 +13,12 @@ skill fornece os papéis e wrappers.
 
 | Trabalho | Agente | Invocação |
 | --- | --- | --- |
-| Pergunta fechada sobre código | `ds-explorer` | `ds-run.sh -R -a ds-explorer` |
-| Pesquisa em fontes externas | `ds-researcher` | `ds-run.sh -R -a ds-researcher` |
-| Implementação com comandos | `ds-runner` | `ds-run.sh -s <glob>` |
-| Revisão fria | `ds-reviewer` | `ds-run.sh -R -a ds-reviewer` |
-| Registro documental | `ds-governance` | `ds-run.sh -a ds-governance -s <glob>` |
-| Auditoria por mutação | `ds-mutant` | `ds-run.sh -a ds-mutant -s <glob>`, em série |
+| Pergunta fechada sobre código | `ds-explorer` | `node ds-run.js -R -a ds-explorer` |
+| Pesquisa em fontes externas | `ds-researcher` | `node ds-run.js -R -a ds-researcher` |
+| Implementação com comandos | `ds-runner` | `node ds-run.js -s <glob>` |
+| Revisão fria | `ds-reviewer` | `node ds-run.js -R -a ds-reviewer` |
+| Registro documental | `ds-governance` | `node ds-run.js -a ds-governance -s <glob>` |
+| Auditoria por mutação | `ds-mutant` | `node ds-run.js -a ds-mutant -s <glob>`, em série |
 
 Use um agente nomeado; o agente padrão do OpenCode não recebe as permissões
 destes papéis. Passe ao agente uma tarefa fechada, os caminhos permitidos,
@@ -31,18 +31,19 @@ o orquestrador decide o próximo passo.
 ## Execução
 
 1. Identifique o repositório Git e leia o aceite já definido pelo projeto.
-2. Escolha o menor papel capaz de executar a tarefa. Chame `scripts/ds-run.sh`
+2. Escolha o menor papel capaz de executar a tarefa. A partir da raiz do projeto,
+   chame `node .claude/skills/agent-governance/scripts/ds-run.js`
    com `-d`; use `-R` para os agentes sem edição e `-s` para os que editam.
 3. Rode chamadas longas em background. Leia o recibo e apenas os trechos de
    log necessários para conferir os pontos decisivos.
 4. Confira o diff e o estado Git. Um exit `3` indica mudança fora do escopo
    ou durante leitura; confira a autoria antes de agir. O wrapper não reverte
    arquivos.
-5. Para várias issues, use `scripts/ds-queue.sh` conforme
+5. Para várias issues, use `node .claude/skills/agent-governance/scripts/ds-queue.js` conforme
    [queue.md](references/queue.md). O script não corrige achados, commita nem
    marca tickets como concluídos.
 
-Saídas longas de teste/build/lint passam por `scripts/quiet.sh`. Números e
+Saídas longas de teste/build/lint passam por `node .claude/skills/agent-governance/scripts/quiet.js`. Números e
 status de aceite são válidos apenas com comando executado ou fonte indicada.
 Para mutação, consulte [mutation.md](references/mutation.md) antes do disparo.
 

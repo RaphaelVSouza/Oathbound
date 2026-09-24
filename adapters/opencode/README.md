@@ -8,7 +8,7 @@ esses arquivos no projeto e descobre a skill instalada em
 na instalação OpenCode. Ele responde diretamente ao orquestrador e não edita
 arquivos do projeto.
 
-Invoque todos os agentes pelo `ds-run.sh`: `-R` para `ds-explorer`,
+Invoque todos os agentes pelo `node .claude/skills/agent-governance/scripts/ds-run.js`: `-R` para `ds-explorer`,
 `ds-researcher` e `ds-reviewer`; `-s <glob>` para `ds-runner`, `ds-governance`
 e `ds-mutant`. O modo de leitura exige `edit: deny` no agente e acusa qualquer
 mudança observada no worktree durante a chamada. Se outro processo editar ao
@@ -16,7 +16,7 @@ mesmo tempo, o recibo não atribui automaticamente a autoria.
 
 Configure o modelo no projeto ou defina `GOVKIT_MODEL` ao chamar os scripts.
 Os agentes do pacote não incluem provedor nem modelo fixo. O wrapper
-`ds-run.sh` procura agentes em `.opencode/agents/`; `GOVKIT_AGENT_DIR` só deve
+`ds-run.js` procura agentes em `.opencode/agents/`; `GOVKIT_AGENT_DIR` só deve
 ser usado quando esse diretório alternativo também for descoberto pelo
 OpenCode.
 

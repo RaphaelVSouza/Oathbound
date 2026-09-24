@@ -18,14 +18,18 @@ sem execução de fila ou agentes neste pacote.
 | [`adapters/`](adapters/) | Instruções de integração para OpenCode, Claude e Codex. |
 | [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Ponteiro curto a adaptar no repositório consumidor. |
 | [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Variantes opcionais de três agentes com triagem, spec, tickets, implementação e revisão incorporadas. |
+| [`tools/audit-docs.js`](tools/README.md) | Auditor de links e contratos documentais, configurado para este repositório e instalável de forma opcional. |
 | [`install.ps1`](install.ps1) | Instalação em um repositório Git sem substituir arquivos existentes. |
 
 ## Instalação em um projeto
 
-Requisitos para a instalação: PowerShell 7 e Git. Para executar os scripts:
-OpenCode, Bash, Git e utilitários Unix usuais. A limpeza de processos no
-Windows usa `taskkill` quando disponível; em outros sistemas, a limpeza de
-órfãos ainda precisa de adaptação específica.
+Requisitos para a instalação: PowerShell 7 e Git. Para executar os wrappers:
+Node.js 22 ou superior, OpenCode e Git. Os wrappers usam apenas módulos nativos
+do Node, sem `npm install`. O auditor de documentação usa o mesmo Node.
+No Windows, o encerramento da árvore usa `taskkill /T /F`; em Linux/macOS,
+usa o grupo de processos criado para cada comando.
+Um descendente já separado do processo pai no Windows pode exigir limpeza
+manual; o registro de PID do wrapper não é uma garantia de isolamento.
 
 ```powershell
 pwsh -NoProfile -File D:\agent-governance-kit\install.ps1 -Project D:\caminho\do\projeto
@@ -36,6 +40,14 @@ Para incluir o fluxo opcional:
 ```powershell
 pwsh -NoProfile -File D:\agent-governance-kit\install.ps1 -Project D:\caminho\do\projeto -MattPocock
 ```
+
+Para incluir também o auditor de documentação, acrescente `-AuditDocs` ao
+comando de instalação. Ele copia motor e configuração modelo para `tools/` do
+projeto consumidor; adapte a configuração antes de usá-la. Apenas esse módulo
+usa o Node já exigido pelos wrappers. O pacote não instala hooks automaticamente.
+
+Neste repositório, a configuração está em `tools/audit-docs.config.js` e os
+comandos estão no [guia do auditor](tools/README.md).
 
 O instalador copia a skill para `.claude/skills/agent-governance/` e os agentes
 para `.opencode/agents/`. OpenCode reconhece a skill nesse caminho; Claude
@@ -55,18 +67,21 @@ antes de tentar instalar outra variante.
 No projeto consumidor, defina o modelo no OpenCode ou passe `GOVKIT_MODEL` ao
 chamar os scripts. Registre no `AGENTS.md` os comandos de validação, áreas de
 edição, exigências de ambiente e a política de produção desse projeto. A
-aceitação de uma fila é um arquivo do projeto, passado por `ds-queue.sh -A`;
+aceitação de uma fila é um arquivo do projeto, passado por `node ds-queue.js -A`;
 o pacote não inventa valores esperados.
 
 ## Contrato de execução
 
-- `ds-run.sh` exige `-d` (repositório) e uma mensagem. Para agentes de leitura,
+- `node skill/scripts/ds-run.js` exige `-d` (repositório) e uma mensagem. Para agentes de leitura,
   use `-R` sem `-s`; para agentes que editam, use ao menos um `-s` (glob).
   Registra a sessão e detecta mudanças durante a chamada. Exit `3` informa
   mudança incompatível com o modo e não reverte arquivos.
-- `ds-queue.sh` executa runner, checagens `-C` opcionais e reviewer por issue.
+- `node skill/scripts/ds-queue.js` executa runner, checagens `-C` opcionais e reviewer por issue.
   Correção de achados, mutação, commits e atualização documental dependem do
   orquestrador. Consulte a [referência da fila](skill/references/queue.md).
+- `node skill/scripts/quiet.js -t 600 -- <comando>` guarda a saída completa em
+  log e imprime um recibo curto. `node skill/scripts/ds-kill.js -d <repo> -l`
+  lista PIDs registrados; `--orphans` e `--all` encerram as árvores registradas.
 - `ds-mutant` altera o fonte temporariamente. Rode sozinho e confira hashes e
   worktree após a chamada. O wrapper do pacote não restaura backups de
   mutação automaticamente.
@@ -80,6 +95,6 @@ incremente `VERSION` e instale a nova versão em cada projeto após revisar o
 diff local. O instalador inicial não faz upgrade para preservar modificações
 do projeto consumidor.
 
-Os scripts foram adaptados do fluxo local original. Ainda precisam de
-validação em projetos consumidores, especialmente retenção de processos em
-Linux/macOS, permissões OpenCode e recuperação após timeout de mutação.
+Os wrappers em Node substituem os scripts Bash do fluxo original. Ainda precisam
+de validação em projetos consumidores, especialmente recuperação após
+interrupção abrupta, permissões OpenCode e timeout de mutação.

@@ -1,5 +1,20 @@
 # Histórico de versões
 
+## 0.6.0 — 2026-09-24
+
+- Wrappers de sessão, fila, saída compacta, timeout e encerramento de processos
+  migrados de Bash para Node.js 22 sem dependências npm.
+- Execução assíncrona por subprocessos, limite de tempo e encerramento da árvore
+  por `taskkill /T /F` no Windows ou grupo de processos em Linux/macOS.
+
+## 0.5.0 — 2026-09-24
+
+- Auditor de documentação adaptado do projeto Nike para a raiz e a configuração
+  deste pacote, com parâmetros `--project` e `--config`.
+- Instalação opcional do auditor em projetos consumidores via `-AuditDocs`,
+  usando uma configuração modelo sem regras específicas do Jersey.
+- Guia de uso e configuração; hooks continuam sob controle de cada projeto.
+
 ## 0.4.0 — 2026-09-24
 
 - Substituição de `ds-worker` por `ds-researcher`, com pesquisa em fontes

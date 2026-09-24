@@ -106,7 +106,7 @@ Validação:
 - Rode o aceite literalmente; com valor esperado, reporte obtido vs esperado.
 - Falha: corrija na causa, com timeouts, testes e asserções intactos.
 - Saída longa (teste, build, lint, typecheck) sempre via
-  `bash "$(git rev-parse --show-toplevel)/.claude/skills/agent-governance/scripts/quiet.sh" [-l <log>] -- <cmd>`;
+  `node .claude/skills/agent-governance/scripts/quiet.js [-l <log>] -- <cmd>` a partir da raiz do repositório;
   aprofunde no log com `grep -n -A<N>` ou faixa de linhas.
 - Iteração: só o teste que falha, com `--max-failures=3`/`--bail=3` quando o
   runner aceitar. Veredito: suíte completa sem limite, no fim.

@@ -1,13 +1,15 @@
 # Fila de issues
 
-`scripts/ds-queue.sh` recebe `-d <repo>`, `-A <arquivo-de-aceite>`, um ou mais
+`node .claude/skills/agent-governance/scripts/ds-queue.js` recebe `-d <repo>`, `-A <arquivo-de-aceite>`, um ou mais
 `-s <glob>` e caminhos de issues após `--`. Cada issue deve existir no projeto.
 O script usa uma sessão de runner e uma de reviewer por fila; `-P` cria
 sessões por issue. `GOVKIT_MODEL` seleciona modelo opcionalmente.
+Cada `-C` executa no shell do sistema (`PowerShell` no Windows, `sh` em
+Linux/macOS). O log completo da checagem fica no diretório impresso pela fila.
 
-Por issue, o script chama `ds-runner` via `ds-run.sh`, imprime o resumo do Git,
-executa cada `-C` opcional via `quiet.sh` e chama `ds-reviewer` pelo modo
-somente leitura de `ds-run.sh`. Exit não zero
+Por issue, o script chama `ds-runner` via `ds-run.js`, imprime o resumo do Git,
+executa cada `-C` opcional com subprocesso e log próprio e chama `ds-reviewer` pelo modo
+somente leitura de `ds-run.js`. Exit não zero
 do runner interrompe a fila, exceto `3`: mudança fora do escopo é reportada
 e a fila prossegue para revisão. Falha de `-C` interrompe com exit `5`.
 
@@ -24,7 +26,7 @@ qualidade: achados precisam ser julgados pelo orquestrador.
 
 O procedimento completo pode incluir correção na sessão do runner, auditoria
 por mutação, commit e atualização de issue. Essas ações não são executadas
-por `ds-queue.sh`. O projeto decide quando cada uma ocorre. A fila não
+por `ds-queue.js`. O projeto decide quando cada uma ocorre. A fila não
 reverte alterações preexistentes.
 
 Execução de mutação deve ocorrer em série, com worktree quieto. Consulte

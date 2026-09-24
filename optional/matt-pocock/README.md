@@ -16,7 +16,7 @@ do papel, o escopo da chamada, a conferência do resultado e o avanço da fila.
 `research` de Matt Pocock e devolve as fontes ao orquestrador sem carregar
 essa skill. O trabalho de `implement-spec` sobre vários tickets continua com
 o orquestrador e a fila
-`ds-queue.sh`; o `ds-runner` recebe apenas uma tarefa delimitada por chamada.
+`ds-queue.js`; o `ds-runner` recebe apenas uma tarefa delimitada por chamada.
 `grilling` é uma conversa para decisões do usuário, fora do papel desses
 agentes de execução.
 
