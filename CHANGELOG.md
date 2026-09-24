@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## 0.3.0 — 2026-09-24
+
+- Regras opcionais de triagem, spec, tickets e escrita incorporadas a
+  `ds-governance`; implementação a `ds-runner`; revisão a `ds-reviewer`.
+- Remoção das skills opcionais e de seu carregamento pelo agente de governança.
+- Instalador passa a selecionar as três variantes quando `-MattPocock` é usado.
+
 ## 0.2.0 — 2026-09-24
 
 - Módulo opcional inspirado no fluxo de Matt Pocock, com triagem, spec, tickets

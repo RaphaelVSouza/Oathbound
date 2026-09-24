@@ -22,17 +22,10 @@ $skillSource = Join-Path $PSScriptRoot 'skill'
 $agentsSource = Join-Path $PSScriptRoot 'adapters/opencode/agents'
 $mattSource = Join-Path $PSScriptRoot 'optional/matt-pocock'
 $skillTarget = Join-Path $projectPath '.claude/skills/agent-governance'
-$skillsTarget = Join-Path $projectPath '.claude/skills'
 $agentsTarget = Join-Path $projectPath '.opencode/agents'
 $agentFiles = @(Get-ChildItem -LiteralPath $agentsSource -File -Filter '*.md')
 $collisions = @()
 if (Test-Path -LiteralPath $skillTarget) { $collisions += $skillTarget }
-if ($MattPocock) {
-    foreach ($name in @('matt-governance', 'writing-for-agents')) {
-        $target = Join-Path $skillsTarget $name
-        if (Test-Path -LiteralPath $target) { $collisions += $target }
-    }
-}
 foreach ($agentFile in $agentFiles) {
     $target = Join-Path $agentsTarget $agentFile.Name
     if (Test-Path -LiteralPath $target) { $collisions += $target }
@@ -46,15 +39,11 @@ Copy-Item -LiteralPath $skillSource -Destination $skillTarget -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Destination (Join-Path $skillTarget 'VERSION')
 foreach ($agentFile in $agentFiles) {
     $source = $agentFile.FullName
-    if ($MattPocock -and $agentFile.Name -eq 'ds-governance.md') {
-        $source = Join-Path $mattSource 'agents/ds-governance.md'
+    if ($MattPocock) {
+        $candidate = Join-Path $mattSource "agents/$($agentFile.Name)"
+        if (Test-Path -LiteralPath $candidate) { $source = $candidate }
     }
     Copy-Item -LiteralPath $source -Destination (Join-Path $agentsTarget $agentFile.Name)
-}
-if ($MattPocock) {
-    foreach ($name in @('matt-governance', 'writing-for-agents')) {
-        Copy-Item -LiteralPath (Join-Path $mattSource "skills/$name") -Destination (Join-Path $skillsTarget $name) -Recurse
-    }
 }
 
 $version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Raw).Trim()

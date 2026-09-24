@@ -1,22 +1,27 @@
 # Fluxo opcional inspirado em Matt Pocock
 
-Este módulo acrescenta ao pacote uma sequência de triagem, especificação,
-tickets e execução por dependências, além de instruções para escrever documentos
-consumidos por agentes. É uma adaptação para este kit, não uma cópia das skills
-originais. A instalação exige `-MattPocock`.
+`-MattPocock` instala variantes de três agentes. As regras relevantes das
+skills originais foram adaptadas para as instruções desses agentes. Nenhuma
+skill adicional é instalada ou carregada. O orquestrador conserva a escolha
+do papel, o escopo da chamada, a conferência do resultado e o avanço da fila.
 
-O agente `ds-governance` instalado com esse parâmetro pode carregar somente
-`matt-governance` e `writing-for-agents`. A primeira orienta a escolha da etapa;
-a segunda orienta a edição de `AGENTS.md`, `CLAUDE.md` e documentos de agentes.
-O agente base, instalado sem o parâmetro, continua sem acesso a skills.
+| Etapa | Agente | Regras incorporadas |
+| --- | --- | --- |
+| Triagem, spec, tickets e instruções de agentes | [`ds-governance`](agents/ds-governance.md) | `triage`, `to-spec`, `to-tickets`, `writing-for-agents`. |
+| Implementação de um ticket ou recorte de spec | [`ds-runner`](agents/ds-runner.md) | `implement`; ciclos de TDD somente quando testes fizerem parte da tarefa. |
+| Revisão de uma entrega | [`ds-reviewer`](agents/ds-reviewer.md) | Dois eixos de `code-review`: padrões e spec. |
 
-O fluxo usa o tracker já definido pelo projeto. `.scratch/` é uma opção local
-para trabalhos temporários, não um destino obrigatório. Antes de registrar
-issues, o projeto deve definir onde ficam, seus estados, dependências e critérios
-de conclusão. Veja [tracker.md](skills/matt-governance/references/tracker.md).
+`ds-explorer`, `ds-worker` e `ds-mutant` mantêm as instruções base. O trabalho
+de `implement-spec` sobre vários tickets continua com o orquestrador e a fila
+`ds-queue.sh`; o `ds-runner` recebe apenas uma tarefa delimitada por chamada.
+`grilling` é uma conversa para decisões do usuário, fora do papel desses
+agentes de execução.
 
-Use o [fragmento opcional](templates/AGENTS.fragment.md) como ponto de partida
-para essa configuração. A instalação não adiciona o fragmento automaticamente.
+O projeto define seu tracker: local das specs e tickets, estados, bloqueios,
+quem aprova e como registrar aceite. `.scratch/` pode ser escolhido para
+rascunhos ou tracker local; sua existência não o torna obrigatório. Use o
+[fragmento opcional](templates/AGENTS.fragment.md) para apontar essa
+configuração. O instalador não altera `AGENTS.md`.
 
-O fluxo de tickets pode alimentar a fila `ds-queue.sh`; a execução por worktrees
-e PRs das skills originais exige integração própria e não é presumida aqui.
+Este módulo é uma adaptação, não uma cópia integral das skills originais.
+Worktrees e PRs do fluxo original exigem integração própria.

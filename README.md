@@ -17,7 +17,7 @@ sem execução de fila ou agentes neste pacote.
 | [`adapters/opencode/agents/`](adapters/opencode/agents/) | Seis agentes com permissões por papel; o modelo vem da configuração do projeto. |
 | [`adapters/`](adapters/) | Instruções de integração para OpenCode, Claude e Codex. |
 | [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Ponteiro curto a adaptar no repositório consumidor. |
-| [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Fluxo opcional de triagem, spec e tickets; inclui escrita para agentes e agente de governança com acesso seletivo às skills. |
+| [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Variantes opcionais de três agentes com triagem, spec, tickets, implementação e revisão incorporadas. |
 | [`install.ps1`](install.ps1) | Instalação em um repositório Git sem substituir arquivos existentes. |
 
 ## Instalação em um projeto
@@ -45,9 +45,9 @@ O instalador não modifica `AGENTS.md`, não escolhe modelo, não cria commits e
 recusa caminhos de destino já existentes. Revise os arquivos copiados antes de
 ativar a delegação no projeto.
 
-Com `-MattPocock`, instala também `matt-governance` e `writing-for-agents` em
-`.claude/skills/` e usa a variante de `ds-governance` que pode carregar apenas
-essas duas skills. Configure o tracker no projeto e adapte o
+Com `-MattPocock`, instala as variantes de `ds-governance`, `ds-runner` e
+`ds-reviewer` com regras de etapa nos próprios agentes. Nenhuma skill adicional
+é instalada ou carregada por eles. Configure o tracker no projeto e adapte o
 [fragmento opcional](optional/matt-pocock/templates/AGENTS.fragment.md). O
 instalador não atualiza uma instalação prévia; compare e migre seus arquivos
 antes de tentar instalar outra variante.
