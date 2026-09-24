@@ -5,3 +5,4 @@
 - Ao mudar comportamento, atualize `VERSION`, `CHANGELOG.md` e a referência correspondente na mesma entrega.
 - Não sobrescreva instalações existentes automaticamente. Preserve alterações locais e apresente o diff de atualização.
 - Descreva somente validações realmente executadas. A fila, os agentes e os scripts de mutação podem alterar projetos consumidores; execute-os apenas em uma tarefa que peça isso.
+- Para auditoria de links e documentos do próprio pacote, consulte `tools/README.md` e a configuração em `tools/audit-docs.config.js`.
