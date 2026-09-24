@@ -1,6 +1,6 @@
 ---
 name: agent-governance
-description: Orquestrar exploração, edição, validação, revisão e filas de issues com agentes OpenCode em um projeto que instalou o Agent Governance Kit. Use quando o usuário pedir delegação, auditoria de mudanças, execução de fila ou investigação com recibos compactos.
+description: Orquestrar exploração, edição, validação, revisão, commits e filas de issues com agentes OpenCode em um projeto que instalou o Agent Governance Kit. Use quando o usuário pedir delegação, auditoria de mudanças, commits, execução de fila ou investigação com recibos compactos.
 ---
 
 # Governança de agentes
@@ -17,6 +17,7 @@ skill fornece os papéis e wrappers.
 | Pesquisa em fontes externas | `ds-researcher` | `node ds-run.js -R -a ds-researcher` |
 | Implementação com comandos | `ds-runner` | `node ds-run.js -s <glob>` |
 | Revisão fria | `ds-reviewer` | `node ds-run.js -R -a ds-reviewer` |
+| Preparação de hunks e commits | `ds-committer` | `node ds-run.js -a ds-committer -s <arquivo>` |
 | Registro documental | `ds-governance` | `node ds-run.js -a ds-governance -s <glob>` |
 | Auditoria por mutação | `ds-mutant` | `node ds-run.js -a ds-mutant -s <glob>`, em série |
 
@@ -42,10 +43,14 @@ o orquestrador decide o próximo passo.
 5. Para várias issues, use `node .claude/skills/agent-governance/scripts/ds-queue.js` conforme
    [queue.md](references/queue.md). O script não corrige achados, commita nem
    marca tickets como concluídos.
+6. Quando houver pedido de commit, delegue a seleção de hunks e mensagens ao
+   `ds-committer` conforme [commits.md](references/commits.md).
 
 Saídas longas de teste/build/lint passam por `node .claude/skills/agent-governance/scripts/quiet.js`. Números e
 status de aceite são válidos apenas com comando executado ou fonte indicada.
 Para mutação, consulte [mutation.md](references/mutation.md) antes do disparo.
+Para perguntar andamento, bloqueios, evidências ou entrega à sessão já iniciada,
+use os comandos de [feedback.md](references/feedback.md).
 
 ## Limites
 

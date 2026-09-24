@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## 0.7.0 — 2026-09-24
+
+- `ds-committer` prepara linhas, hunks e commits semânticos dentro dos caminhos
+  autorizados, com posse exclusiva do Git e sem publicar ou reescrever histórico.
+- `ds-run.js` passa a auditar índice e caminhos de commits além do worktree.
+- Consultas prontas `-Q` reutilizam a sessão com edição e shell bloqueados.
+
 ## 0.6.0 — 2026-09-24
 
 - Wrappers de sessão, fila, saída compacta, timeout e encerramento de processos

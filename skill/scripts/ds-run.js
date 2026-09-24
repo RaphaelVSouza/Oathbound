@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const fs = require('node:fs');
 const path = require('node:path');
-const { options, one, sleep, run, alive, globMatch, snapshot, repoPaths } = require('./lib');
+const { options, one, sleep, run, alive, globMatch, snapshot, head, committedPaths, repoPaths } = require('./lib');
 const { killRegistered } = require('./ds-kill');
 
 function overlap(a, b) {
@@ -38,22 +38,48 @@ function temporaryAgent(file, name, others) {
   fs.writeFileSync(target, result.join('\n'));
   return target;
 }
+function feedbackAgent(file, name) {
+  const lines = fs.readFileSync(file, 'utf8').split('\n'), result = [];
+  let skip = false, foundEdit = false, foundBash = false;
+  for (const line of lines) {
+    if (skip && /^    /.test(line)) continue;
+    skip = false;
+    if (/^  (edit|bash):/.test(line)) {
+      if (line.startsWith('  edit:')) foundEdit = true; else foundBash = true;
+      result.push(line.startsWith('  edit:') ? '  edit: deny' : '  bash: deny');
+      skip = true;
+    } else result.push(line);
+  }
+  if (!foundEdit || !foundBash) throw Error(`permissões edit/bash ausentes: ${file}`);
+  const target = path.join(path.dirname(file), `${name}-fb${process.pid}.md`);
+  fs.writeFileSync(target, result.join('\n'));
+  return target;
+}
+
+const feedbackPrompts = {
+  status: 'Responda somente com: etapa atual, progresso observável, próximo passo e estimativa apenas se tiver base factual. Não execute ações.',
+  bloqueios: 'Responda somente com: bloqueios atuais, evidência de cada um e decisão necessária do orquestrador. Se não houver, diga nenhum. Não execute ações.',
+  evidencias: 'Responda somente com: comandos ou fontes já consultados nesta sessão, resultados observados e lacunas. Não execute ações.',
+  entrega: 'Resuma o trabalho feito nesta sessão, arquivos afetados, evidências de aceite e pendências. Não execute ações.'
+};
 
 async function dsRun(args, output = true, logFile = '') {
-  const o = options(args, ['-d', '-a', '-m', '-t', '-s', '-f', '-S', '-L'], ['-R']);
+  const o = options(args, ['-d', '-a', '-m', '-t', '-s', '-f', '-S', '-L', '-Q'], ['-R']);
   const dir = one(o, '-d'), agent = one(o, '-a', 'ds-runner');
   const model = one(o, '-m', process.env.GOVKIT_MODEL || '');
   const timeout = Number(one(o, '-t', '1800'));
-  const scopes = o['-s'] || [], readonly = !!o['-R'];
+  const feedback = one(o, '-Q');
+  const scopes = o['-s'] || [], readonly = !!o['-R'] || !!feedback, commitMode = agent === 'ds-committer' && !feedback;
   const sessionInput = one(o, '-S'), label = one(o, '-L', agent);
+  if (feedback && (!feedbackPrompts[feedback] || !sessionInput || scopes.length || o['-f'])) throw Error('uso de -Q: -S <sessão> -Q status|bloqueios|evidencias|entrega, sem -s ou -f');
   if (!dir || !Number.isInteger(timeout) || timeout <= 0 || (readonly ? scopes.length : !scopes.length)) throw Error('uso: node ds-run.js -d repo (-R | -s glob) [-a agente] [-t segundos] -- mensagem');
-  let message = one(o, '-f') ? fs.readFileSync(one(o, '-f'), 'utf8') : o._.join(' ');
+  let message = feedback ? `${feedbackPrompts[feedback]}${o._.length ? `\nPergunta adicional: ${o._.join(' ')}` : ''}` : one(o, '-f') ? fs.readFileSync(one(o, '-f'), 'utf8') : o._.join(' ');
   if (!message.trim()) throw Error('falta mensagem');
   const { root, gitDir } = await repoPaths(dir);
   const agentDir = process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents');
   const agentFile = path.join(agentDir, `${agent}.md`);
   if (!fs.existsSync(agentFile)) throw Error(`agente ausente: ${agentFile}`);
-  if (readonly && !/^  edit: deny$/m.test(fs.readFileSync(agentFile, 'utf8'))) throw Error(`-R exige edit: deny no agente: ${agent}`);
+  if (readonly && !feedback && !/^  edit: deny$/m.test(fs.readFileSync(agentFile, 'utf8'))) throw Error(`-R exige edit: deny no agente: ${agent}`);
   const queueDir = path.join(gitDir, 'ds-queue'), claimDir = path.join(queueDir, 'claims');
   fs.mkdirSync(claimDir, { recursive: true });
   const others = [], claim = path.join(claimDir, `${process.pid}.claim`);
@@ -66,18 +92,19 @@ async function dsRun(args, output = true, logFile = '') {
         const lines = fs.readFileSync(target, 'utf8').split(/\r?\n/);
         const otherLabel = lines.find(x => x.startsWith('label='))?.slice(6) || file;
         for (const glob of lines.filter(x => x.startsWith('glob=')).map(x => x.slice(5))) {
-          for (const mine of scopes) if (overlap(mine, glob)) { const e = Error(`conflito de posse — '${mine}' sobrepõe '${glob}' de ${otherLabel} (pid ${pid})`); e.code = 4; throw e; }
+          for (const mine of scopes) if (commitMode || overlap(mine, glob)) { const e = Error(`conflito de posse — '${mine}' sobrepõe '${glob}' de ${otherLabel} (pid ${pid})`); e.code = 4; throw e; }
           others.push({ glob, label: otherLabel });
         }
       }
-      fs.writeFileSync(claim, [`label=${label}`, `agent=${agent}`, `start=${Date.now()}`, ...scopes.map(g => `glob=${g}`)].join('\n'));
+      fs.writeFileSync(claim, [`label=${label}`, `agent=${agent}`, `start=${Date.now()}`, ...(commitMode ? ['glob=*'] : scopes.map(g => `glob=${g}`))].join('\n'));
       claimed = true;
     });
+    if (feedback) tempAgent = feedbackAgent(agentFile, agent);
     if (others.length) {
       tempAgent = temporaryAgent(agentFile, agent, others);
       message += `\nEm uso por outros agentes — só leitura, não edite: ${others.map(x => `${x.glob} (${x.label})`).join('; ')}`;
     }
-    const before = await snapshot(root);
+    const before = await snapshot(root), beforeHead = await head(root);
     tag = `dsrun-${label.replace(/[^\w-]/g, '_')}-${process.pid}-${Date.now()}`;
     const procDir = path.join(queueDir, 'procs', tag);
     fs.mkdirSync(procDir, { recursive: true });
@@ -87,7 +114,7 @@ async function dsRun(args, output = true, logFile = '') {
     const started = Date.now();
     const logStream = logFile ? fs.createWriteStream(logFile) : null;
     const r = await run('opencode', command, { cwd: root, timeout,
-      env: { ...process.env, DSRUN_TAG: tag, DSRUN_PROCS: path.join(queueDir, 'procs') },
+      env: { ...process.env, DSRUN_TAG: tag, DSRUN_PROCS: path.join(queueDir, 'procs'), GOVKIT_AGENT: agent, GOVKIT_SCOPES: JSON.stringify(scopes) },
       output: output ? 'inherit' : undefined,
       capture: !output, onData: chunk => logStream?.write(chunk),
     });
@@ -97,13 +124,16 @@ async function dsRun(args, output = true, logFile = '') {
       const list = await run('opencode', ['session', 'list', '-n', '50'], { cwd: root });
       session = list.stdout.split(/\r?\n/).find(x => x.split('\t')[1] === tag)?.split('\t')[0] || '';
     }
-    const after = await snapshot(root);
-    const changed = [...new Set([...before.keys(), ...after.keys()])].filter(p => before.get(p) !== after.get(p)).sort();
+    const after = await snapshot(root), afterHead = await head(root);
+    const committed = await committedPaths(root, beforeHead, afterHead);
+    const changed = [...new Set([...before.keys(), ...after.keys(), ...committed])].filter(p => committed.includes(p) || before.get(p) !== after.get(p)).sort();
     const foreign = changed.filter(p => others.some(x => globMatch(p, x.glob)));
     const outside = changed.filter(p => !scopes.some(g => globMatch(p, g)) && !foreign.includes(p));
     const elapsed = Math.floor((Date.now() - started) / 1000);
-    let receipt = `\n── ds-run: agente=${agent} modo=${readonly ? 'leitura' : 'edicao'} modelo=${model || 'configuração do projeto'} opencode_exit=${r.code} tempo=${elapsed}s sessao=${session}\n`;
+    const mode = feedback ? 'consulta' : commitMode ? 'git' : readonly ? 'leitura' : 'edicao';
+    let receipt = `\n── ds-run: agente=${agent} modo=${mode} modelo=${model || 'configuração do projeto'} opencode_exit=${r.code} tempo=${elapsed}s sessao=${session}\n`;
     receipt += `── alterados na chamada (${changed.length}):\n${changed.map(p => `   ${p}`).join('\n')}\n`;
+    if (beforeHead !== afterHead) receipt += `── HEAD: ${beforeHead || '(sem commit)'} → ${afterHead || '(sem commit)'}; arquivos commitados=${committed.length}\n`;
     if (foreign.length) receipt += `── de outro agente (${foreign.length}) — informativo:\n${foreign.map(p => `   · ${p}`).join('\n')}\n`;
     if (outside.length) receipt += `── ${readonly ? 'ALTERAÇÃO DURANTE LEITURA' : 'FORA DO ESCOPO'} (${outside.length}) — confira autoria:\n${outside.map(p => `   ! ${p}`).join('\n')}\n`;
     if (output) process.stdout.write(receipt);

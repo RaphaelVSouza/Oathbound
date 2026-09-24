@@ -1,7 +1,7 @@
 # Agent Governance Kit
 
 Pacote reutilizável de delegação, auditoria e orquestração de agentes. Esta
-versão reúne uma skill, seis papéis OpenCode e os wrappers de execução
+versão reúne uma skill, sete papéis OpenCode e os wrappers de execução
 usados pela fila. Regras de domínio, endpoints, hosts, comandos de validação e
 decisões de produção pertencem ao repositório que adota o pacote.
 
@@ -14,7 +14,7 @@ sem execução de fila ou agentes neste pacote.
 | --- | --- |
 | [`skill/SKILL.md`](skill/SKILL.md) | Escolha de papéis e disciplina do orquestrador. |
 | [`skill/scripts/`](skill/scripts/) | Runner com auditoria de escopo, fila, saída curta e controle de processos. |
-| [`adapters/opencode/agents/`](adapters/opencode/agents/) | Seis agentes com permissões por papel, incluindo pesquisa externa; o modelo vem da configuração do projeto. |
+| [`adapters/opencode/agents/`](adapters/opencode/agents/) | Sete agentes com permissões por papel, incluindo pesquisa externa e commits; o modelo vem da configuração do projeto. |
 | [`adapters/`](adapters/) | Instruções de integração para OpenCode, Claude e Codex. |
 | [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Ponteiro curto a adaptar no repositório consumidor. |
 | [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Variantes opcionais de três agentes com triagem, spec, tickets, implementação e revisão incorporadas. |
@@ -43,8 +43,8 @@ pwsh -NoProfile -File D:\agent-governance-kit\install.ps1 -Project D:\caminho\do
 
 Para incluir também o auditor de documentação, acrescente `-AuditDocs` ao
 comando de instalação. Ele copia motor e configuração modelo para `tools/` do
-projeto consumidor; adapte a configuração antes de usá-la. Apenas esse módulo
-usa o Node já exigido pelos wrappers. O pacote não instala hooks automaticamente.
+projeto consumidor; adapte a configuração antes de usá-la. Ele usa o Node já
+exigido pelos wrappers. O pacote não instala hooks automaticamente.
 
 Neste repositório, a configuração está em `tools/audit-docs.config.js` e os
 comandos estão no [guia do auditor](tools/README.md).
@@ -79,6 +79,12 @@ o pacote não inventa valores esperados.
 - `node skill/scripts/ds-queue.js` executa runner, checagens `-C` opcionais e reviewer por issue.
   Correção de achados, mutação, commits e atualização documental dependem do
   orquestrador. Consulte a [referência da fila](skill/references/queue.md).
+- `ds-committer` escolhe hunks e grupos, prepara o índice e cria commits apenas
+  para arquivos autorizados. Consulte [commits.md](skill/references/commits.md).
+  O wrapper também detecta mudanças no índice e arquivos incluídos em commits.
+- `ds-run.js -S <id> -Q status|bloqueios|evidencias|entrega` consulta uma sessão
+  entre etapas com escrita e shell bloqueados. Veja os
+  [comandos prontos](skill/references/feedback.md).
 - `node skill/scripts/quiet.js -t 600 -- <comando>` guarda a saída completa em
   log e imprime um recibo curto. `node skill/scripts/ds-kill.js -d <repo> -l`
   lista PIDs registrados; `--orphans` e `--all` encerram as árvores registradas.

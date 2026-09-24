@@ -32,8 +32,12 @@ function run(command, args = [], opts = {}) {
     const child = spawn(executable(command), args, {
       cwd: opts.cwd, env, shell: !!opts.shell,
       detached: process.platform !== 'win32',
-      stdio: ['ignore', opts.output === 'inherit' ? 'inherit' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe']
+      stdio: [opts.input === undefined ? 'ignore' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe']
     });
+    if (opts.input !== undefined) {
+      child.stdin.on('error', () => {});
+      child.stdin.end(opts.input);
+    }
     let registration = '';
     if (child.pid && env.DSRUN_TAG && env.DSRUN_PROCS) {
       const dir = path.join(env.DSRUN_PROCS, env.DSRUN_TAG);
@@ -95,7 +99,7 @@ function globMatch(name, pattern) {
 }
 
 async function snapshot(root) {
-  const r = await run('git', ['-C', root, 'status', '--porcelain=v1', '-z', '-uall']);
+  const r = await run('git', ['-C', root, 'status', '--porcelain=v1', '-z', '-uall'], { maxCapture: 67108864 });
   if (r.code) throw Error(r.stderr);
   const parts = r.stdout.split('\0'), result = new Map();
   for (let i = 0; i < parts.length; i++) {
@@ -109,8 +113,26 @@ async function snapshot(root) {
       const h = await run('git', ['-C', root, 'hash-object', '--', name]);
       result.set(name, h.stdout.trim());
     } else result.set(name, 'DELETED');
+    const staged = await run('git', ['-C', root, 'ls-files', '--stage', '-z', '--', name]);
+    if (staged.code) throw Error(staged.stderr.trim() || `git ls-files falhou: ${name}`);
+    result.set(name, `${result.get(name)}\t${staged.stdout}`);
   }
   return result;
+}
+
+async function head(root) {
+  const r = await run('git', ['-C', root, 'rev-parse', '--verify', 'HEAD']);
+  return r.code ? '' : r.stdout.trim();
+}
+
+async function committedPaths(root, before, after) {
+  if (!after || before === after) return [];
+  const args = before
+    ? ['log', '--format=', '--name-only', '-z', `${before}..${after}`]
+    : ['diff-tree', '--root', '--no-commit-id', '--name-only', '-r', '-z', after];
+  const r = await run('git', ['-C', root, ...args], { maxCapture: 67108864 });
+  if (r.code) throw Error(r.stderr.trim() || 'falha ao consultar caminhos dos commits');
+  return [...new Set(r.stdout.split('\0').map(x => x.trim()).filter(Boolean))];
 }
 
 async function repoPaths(dir) {
@@ -123,4 +145,4 @@ function tempLog(prefix) {
   return { dir, file: path.join(dir, 'output.log') };
 }
 
-module.exports = { options, one, sleep, run, killTree, alive, git, globMatch, snapshot, repoPaths, tempLog };
+module.exports = { options, one, sleep, run, killTree, alive, git, globMatch, snapshot, head, committedPaths, repoPaths, tempLog };
