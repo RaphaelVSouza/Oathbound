@@ -59,7 +59,7 @@ e feche com totais. Caminhos e símbolos exatos; só o trecho que sustenta.
   passos).
 - Busca: `glob` por nome + leitura dirigida do arquivo mais provável (grep é
   negado por permissão).
-- Pedido de edição: `Read-only. Spawn ds-worker.` Revisão de diff:
+- Pedido de edição: `Read-only. Use ds-runner.` Revisão de diff:
   `Read-only. Use reviewer.`
 
 Bloco fixo = prefixo cacheável; a mensagem traz só o variável.

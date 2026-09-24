@@ -6,9 +6,14 @@ O script usa uma sessão de runner e uma de reviewer por fila; `-P` cria
 sessões por issue. `GOVKIT_MODEL` seleciona modelo opcionalmente.
 
 Por issue, o script chama `ds-runner` via `ds-run.sh`, imprime o resumo do Git,
-executa cada `-C` opcional via `quiet.sh` e chama `ds-reviewer`. Exit não zero
+executa cada `-C` opcional via `quiet.sh` e chama `ds-reviewer` pelo modo
+somente leitura de `ds-run.sh`. Exit não zero
 do runner interrompe a fila, exceto `3`: mudança fora do escopo é reportada
 e a fila prossegue para revisão. Falha de `-C` interrompe com exit `5`.
+
+Mudanças no worktree durante a revisão geram exit `3` no modo leitura; a fila
+preserva `implementada` para que o orquestrador confira a autoria e repita a
+revisão quando o estado estiver estável.
 
 O checkpoint fica em `<git-dir>/ds-queue/state/`. `implementada` significa
 que runner e checagens opcionais terminaram; `revisada` exige exit `0` do

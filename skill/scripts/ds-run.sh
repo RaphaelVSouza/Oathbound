@@ -1,20 +1,22 @@
 #!/usr/bin/env bash
-# Wrapper de `opencode run` com auditoria de escopo do worktree.
+# Wrapper de `opencode run` com registro de sessão e auditoria do worktree.
 #
 # Tira um snapshot (caminho + hash de conteúdo) de todo arquivo sujo/não
 # rastreado antes e depois da chamada e lista o que mudou. Arquivos que mudaram
-# e não casam com nenhum --scope são reportados como FORA DO ESCOPO (exit 3).
+# e não casam com nenhum -s são reportados como FORA DO ESCOPO (exit 3).
+# Em modo -R, qualquer mudança é reportada como alteração durante leitura.
 # Nada é revertido automaticamente: a revisão fica com a CLI orquestradora.
 #
 # Uso:
 #   ds-run.sh -d <dir> [-a ds-runner] [-m provider/model] [-t 1800]
-#             -s 'src/*' [-s ...]
+#             (-R | -s 'src/*' [-s ...])
 #             [-S <session-id>] (-f mensagem.txt | -- "mensagem")
 #
 # -S continua uma sessão existente (reaproveita o prefixo em cache); o id da
 # sessão usada sai na linha "── ds-run: ... sessao=<id>".
 #
 # -s usa glob do bash relativo à raiz do repositório (`*` casa `/`).
+# -R exige agente com `edit: deny`; dispensa -s e não reserva arquivos.
 # -L <rótulo> identifica a chamada (ex.: issue) no registro de posse.
 #
 # Posse: cada chamada registra seus -s em <git-dir>/ds-queue/claims/. Posse
@@ -29,10 +31,10 @@
 set -uo pipefail
 tt="$(cd "$(dirname "$0")" && pwd)/tree-timeout.sh"
 
-dir="" agent="ds-runner" model="${GOVKIT_MODEL:-}" timeout_s=1800 msg_file="" session="" label=""
+dir="" agent="ds-runner" model="${GOVKIT_MODEL:-}" timeout_s=1800 msg_file="" session="" label="" readonly_mode=0
 scopes=()
 
-while getopts "d:a:m:t:s:f:S:L:" opt; do
+while getopts "d:a:m:t:s:f:S:L:R" opt; do
   case "$opt" in
     d) dir="$OPTARG" ;;
     a) agent="$OPTARG" ;;
@@ -42,6 +44,7 @@ while getopts "d:a:m:t:s:f:S:L:" opt; do
     f) msg_file="$OPTARG" ;;
     S) session="$OPTARG" ;;
     L) label="$OPTARG" ;;
+    R) readonly_mode=1 ;;
     *) echo "opção inválida" >&2; exit 2 ;;
   esac
 done
@@ -49,7 +52,11 @@ shift $((OPTIND - 1))
 [ "${1:-}" = "--" ] && shift
 
 [ -n "$dir" ] || { echo "falta -d <dir>" >&2; exit 2; }
-[ ${#scopes[@]} -gt 0 ] || { echo "falta ao menos um -s <glob>" >&2; exit 2; }
+if [ "$readonly_mode" -eq 1 ]; then
+  [ ${#scopes[@]} -eq 0 ] || { echo "-R não aceita -s" >&2; exit 2; }
+else
+  [ ${#scopes[@]} -gt 0 ] || { echo "falta ao menos um -s <glob>" >&2; exit 2; }
+fi
 if [ -n "$msg_file" ]; then msg="$(cat "$msg_file")"; else msg="$*"; fi
 [ -n "$msg" ] || { echo "falta a mensagem (-f arquivo ou -- \"texto\")" >&2; exit 2; }
 
@@ -57,6 +64,9 @@ cd "$dir" || exit 2
 root="$(git rev-parse --show-toplevel)" || { echo "$dir não é repositório git" >&2; exit 2; }
 agent_dir="${GOVKIT_AGENT_DIR:-$root/.opencode/agents}"
 [ -f "$agent_dir/$agent.md" ] || { echo "agente ausente: $agent_dir/$agent.md" >&2; exit 2; }
+if [ "$readonly_mode" -eq 1 ] && ! grep -q '^  edit: deny$' "$agent_dir/$agent.md"; then
+  echo "-R exige edit: deny no agente: $agent" >&2; exit 2
+fi
 
 snapshot() {
   # Caminhos relativos à raiz; hash do conteúdo atual (ou DELETED).
@@ -75,7 +85,7 @@ snapshot() {
 
 # ── posse ───────────────────────────────────────────────────────────────
 qdir="$(git -C "$root" rev-parse --absolute-git-dir)/ds-queue"
-cdir="$qdir/claims"; mkdir -p "$cdir"
+cdir="$qdir/claims"; mkdir -p "$qdir"
 prefix_of() { local g="$1"; printf '%s' "${g%%[*?[]*}"; }
 overlap() { # conservador: um prefixo literal contém o outro
   local a b; a="$(prefix_of "$1")"; b="$(prefix_of "$2")"
@@ -93,33 +103,36 @@ acquire_mutex() { # mutex com dono: pid morto = mutex órfão, liberado
 }
 release_mutex() { rm -rf "$qdir/mutex"; }
 
-others=() others_label=()
-acquire_mutex
-for f in "$agent_dir"/*-lk*.md; do # agente temporário órfão
-  [ -e "$f" ] || continue
-  lp="${f##*-lk}"; lp="${lp%.md}"
-  alive "$lp" || rm -f "$f"
-done
-for c in "$cdir"/*.claim; do
-  [ -e "$c" ] || continue
-  cpid="$(basename "$c" .claim)"
-  alive "$cpid" || { rm -f "$c"; continue; }
-  clabel="$(sed -n 's/^label=//p' "$c")"
-  while IFS= read -r g; do
-    for mine in "${scopes[@]}"; do
-      if overlap "$mine" "$g"; then
-        release_mutex
-        echo "── ds-run: conflito de posse — '$mine' sobrepõe '$g' de $clabel (pid $cpid)" >&2
-        exit 4
-      fi
-    done
-    others+=("$g"); others_label+=("$clabel")
-  done < <(sed -n 's/^glob=//p' "$c")
-done
-myclaim="$cdir/$$.claim"
-{ echo "label=${label:-$agent}"; echo "agent=$agent"; echo "start=$(date +%s)"
-  for g in "${scopes[@]}"; do echo "glob=$g"; done; } > "$myclaim"
-release_mutex
+others=() others_label=() myclaim=""
+if [ "$readonly_mode" -eq 0 ]; then
+  mkdir -p "$cdir"
+  acquire_mutex
+  for f in "$agent_dir"/*-lk*.md; do # agente temporário órfão
+    [ -e "$f" ] || continue
+    lp="${f##*-lk}"; lp="${lp%.md}"
+    alive "$lp" || rm -f "$f"
+  done
+  for c in "$cdir"/*.claim; do
+    [ -e "$c" ] || continue
+    cpid="$(basename "$c" .claim)"
+    alive "$cpid" || { rm -f "$c"; continue; }
+    clabel="$(sed -n 's/^label=//p' "$c")"
+    while IFS= read -r g; do
+      for mine in "${scopes[@]}"; do
+        if overlap "$mine" "$g"; then
+          release_mutex
+          echo "── ds-run: conflito de posse — '$mine' sobrepõe '$g' de $clabel (pid $cpid)" >&2
+          exit 4
+        fi
+      done
+      others+=("$g"); others_label+=("$clabel")
+    done < <(sed -n 's/^glob=//p' "$c")
+  done
+  myclaim="$cdir/$$.claim"
+  { echo "label=${label:-$agent}"; echo "agent=$agent"; echo "start=$(date +%s)"
+    for g in "${scopes[@]}"; do echo "glob=$g"; done; } > "$myclaim"
+  release_mutex
+fi
 
 run_agent="$agent" tmp_agent=""
 if [ ${#others[@]} -gt 0 ]; then
@@ -139,7 +152,7 @@ if [ ${#others[@]} -gt 0 ]; then
   msg="$msg
 Em uso por outros agentes — só leitura, não edite: $ro"
 fi
-cleanup_claim() { rm -f "$myclaim" "$tmp_agent"; }
+cleanup_claim() { [ -z "$myclaim" ] || rm -f "$myclaim"; [ -z "$tmp_agent" ] || rm -f "$tmp_agent"; }
 
 before="$(mktemp)"; after="$(mktemp)"
 # Sessão nova ganha título único; o id é achado pelo título, não por "a mais
@@ -183,7 +196,7 @@ for p in "${changed[@]}"; do
 done
 
 echo
-echo "── ds-run: agente=$agent modelo=${model:-configuração do projeto} opencode_exit=$rc tempo=${elapsed}s sessao=${session}"
+echo "── ds-run: agente=$agent modo=$([ "$readonly_mode" -eq 1 ] && echo leitura || echo edicao) modelo=${model:-configuração do projeto} opencode_exit=$rc tempo=${elapsed}s sessao=${session}"
 echo "── alterados na chamada (${#changed[@]}):"
 for p in "${changed[@]}"; do echo "   $p"; done
 if [ ${#foreign[@]} -gt 0 ]; then
@@ -191,7 +204,11 @@ if [ ${#foreign[@]} -gt 0 ]; then
   for p in "${foreign[@]}"; do echo "   · $p"; done
 fi
 if [ ${#out[@]} -gt 0 ]; then
-  echo "── FORA DO ESCOPO (${#out[@]}) — revisar antes de remover/reverter:"
+  if [ "$readonly_mode" -eq 1 ]; then
+    echo "── ALTERAÇÃO DURANTE LEITURA (${#out[@]}) — confira autoria antes de agir:"
+  else
+    echo "── FORA DO ESCOPO (${#out[@]}) — revisar antes de remover/reverter:"
+  fi
   for p in "${out[@]}"; do echo "   ! $p"; done
   [ $rc -eq 0 ] && rc=3
 fi

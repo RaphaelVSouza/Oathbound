@@ -14,7 +14,7 @@ sem execução de fila ou agentes neste pacote.
 | --- | --- |
 | [`skill/SKILL.md`](skill/SKILL.md) | Escolha de papéis e disciplina do orquestrador. |
 | [`skill/scripts/`](skill/scripts/) | Runner com auditoria de escopo, fila, saída curta e controle de processos. |
-| [`adapters/opencode/agents/`](adapters/opencode/agents/) | Seis agentes com permissões por papel; o modelo vem da configuração do projeto. |
+| [`adapters/opencode/agents/`](adapters/opencode/agents/) | Seis agentes com permissões por papel, incluindo pesquisa externa; o modelo vem da configuração do projeto. |
 | [`adapters/`](adapters/) | Instruções de integração para OpenCode, Claude e Codex. |
 | [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Ponteiro curto a adaptar no repositório consumidor. |
 | [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Variantes opcionais de três agentes com triagem, spec, tickets, implementação e revisão incorporadas. |
@@ -60,9 +60,10 @@ o pacote não inventa valores esperados.
 
 ## Contrato de execução
 
-- `ds-run.sh` exige `-d` (repositório), ao menos um `-s` (glob de arquivos) e
-  uma mensagem. Detecta mudanças fora do escopo após a chamada; exit `3`
-  informa a ocorrência e não reverte arquivos.
+- `ds-run.sh` exige `-d` (repositório) e uma mensagem. Para agentes de leitura,
+  use `-R` sem `-s`; para agentes que editam, use ao menos um `-s` (glob).
+  Registra a sessão e detecta mudanças durante a chamada. Exit `3` informa
+  mudança incompatível com o modo e não reverte arquivos.
 - `ds-queue.sh` executa runner, checagens `-C` opcionais e reviewer por issue.
   Correção de achados, mutação, commits e atualização documental dependem do
   orquestrador. Consulte a [referência da fila](skill/references/queue.md).

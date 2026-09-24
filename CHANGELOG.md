@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 0.4.0 — 2026-09-24
+
+- Substituição de `ds-worker` por `ds-researcher`, com pesquisa em fontes
+  primárias e resposta citada diretamente ao orquestrador, sem editar arquivos.
+- Edições mecânicas passam a `ds-runner`; roteamento e documentação atualizados.
+- `ds-run.sh -R` registra sessões de agentes sem edição e acusa mudanças no
+  worktree; a fila também passa a chamar o reviewer pelo wrapper.
+
 ## 0.3.0 — 2026-09-24
 
 - Regras opcionais de triagem, spec, tickets e escrita incorporadas a

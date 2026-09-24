@@ -13,27 +13,31 @@ skill fornece os papéis e wrappers.
 
 | Trabalho | Agente | Invocação |
 | --- | --- | --- |
-| Pergunta fechada sobre código | `ds-explorer` | `opencode run --agent ds-explorer` |
-| Edição mecânica | `ds-worker` | `ds-run.sh -a ds-worker` quando concorrer com outros editores |
-| Implementação com comandos | `ds-runner` | `ds-run.sh` |
-| Revisão fria | `ds-reviewer` | `opencode run --agent ds-reviewer` |
-| Registro documental | `ds-governance` | `ds-run.sh -a ds-governance` se houver edições concorrentes |
-| Auditoria por mutação | `ds-mutant` | `ds-run.sh -a ds-mutant`, em série |
+| Pergunta fechada sobre código | `ds-explorer` | `ds-run.sh -R -a ds-explorer` |
+| Pesquisa em fontes externas | `ds-researcher` | `ds-run.sh -R -a ds-researcher` |
+| Implementação com comandos | `ds-runner` | `ds-run.sh -s <glob>` |
+| Revisão fria | `ds-reviewer` | `ds-run.sh -R -a ds-reviewer` |
+| Registro documental | `ds-governance` | `ds-run.sh -a ds-governance -s <glob>` |
+| Auditoria por mutação | `ds-mutant` | `ds-run.sh -a ds-mutant -s <glob>`, em série |
 
 Use um agente nomeado; o agente padrão do OpenCode não recebe as permissões
 destes papéis. Passe ao agente uma tarefa fechada, os caminhos permitidos,
 aceite com valor esperado e estado inicial do worktree. O modelo é configurado
 no projeto; `GOVKIT_MODEL` é uma substituição opcional para os wrappers.
+Edições mecânicas também vão para `ds-runner`. Para `ds-researcher`, delimite
+a pergunta; o agente devolve fontes primárias e lacunas na resposta, enquanto
+o orquestrador decide o próximo passo.
 
 ## Execução
 
 1. Identifique o repositório Git e leia o aceite já definido pelo projeto.
-2. Escolha o menor papel capaz de executar a tarefa. Para edição ou teste com
-   escopo vigiado, chame `scripts/ds-run.sh` com `-d` e `-s`.
+2. Escolha o menor papel capaz de executar a tarefa. Chame `scripts/ds-run.sh`
+   com `-d`; use `-R` para os agentes sem edição e `-s` para os que editam.
 3. Rode chamadas longas em background. Leia o recibo e apenas os trechos de
    log necessários para conferir os pontos decisivos.
-4. Confira o diff e o estado Git. Um exit `3` do wrapper indica mudança fora
-   do escopo que exige revisão; ele não reverte arquivos.
+4. Confira o diff e o estado Git. Um exit `3` indica mudança fora do escopo
+   ou durante leitura; confira a autoria antes de agir. O wrapper não reverte
+   arquivos.
 5. Para várias issues, use `scripts/ds-queue.sh` conforme
    [queue.md](references/queue.md). O script não corrige achados, commita nem
    marca tickets como concluídos.

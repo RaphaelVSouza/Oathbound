@@ -75,10 +75,9 @@ for issue in "$@"; do
   echo implementada > "$state/$id"
   fi
 
-  vtitle="dsqueue-rev-$id-$$"
-  vargs=(--title "$vtitle"); [ -n "$vs" ] && vargs=(--session "$vs")
+  vargs=(); [ -n "$vs" ] && vargs=(-S "$vs")
   model_args=(); [ -n "$model" ] && model_args=(-m "$model")
-  bash "$here/tree-timeout.sh" 900 -- opencode run --standalone "${vargs[@]}" --agent ds-reviewer "${model_args[@]}" "$win
+  "$here/ds-run.sh" -R -d "$PWD" -a ds-reviewer -t 900 -L "rev-$id" "${vargs[@]}" "${model_args[@]}" -- "$win
 Revise o git diff do escopo (inclua não rastreados) contra $issue. Só bug real ou risco com severidade, e teste que passa sem a mudança." < /dev/null > "$work/$id.rev" 2>&1
   vrc=$?
   if [ "$vrc" -ne 0 ]; then
@@ -91,7 +90,7 @@ Revise o git diff do escopo (inclua não rastreados) contra $issue. Só bug real
     tail -30 "$work/$id.rev" >&2
     exit 6
   fi
-  [ -n "$vs" ] || vs="$(opencode session list -n 50 2>/dev/null | awk -F'	' -v t="$vtitle" '$2==t{print $1; exit}')"
+  [ -n "$vs" ] || vs="$(grep -o 'sessao=[^ ]*' "$work/$id.rev" | tail -1 | cut -d= -f2)"
   echo "##### $id reviewer sessao=$vs"
   grep -E "🔴|🟡|❓|totals|No issues\." "$work/$id.rev" | cut -c1-240 | tail -12
   echo revisada > "$state/$id"
