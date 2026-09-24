@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Prepara um arquivo inteiro ou hunks numerados do diff worktree -> índice.
 const path = require('node:path');
-const { options, one, run, repoPaths, globMatch } = require('./lib');
+const { options, one } = require('./cli-options');
+const { run } = require('./process-runner');
+const { repoPaths, globMatch } = require('./git-state');
 
 async function main(argv) {
   const o = options(argv, ['-d', '-f', '--hunks', '--lines'], ['--list', '--all']);

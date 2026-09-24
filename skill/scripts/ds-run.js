@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 const fs = require('node:fs');
 const path = require('node:path');
-const { options, one, sleep, run, alive, globMatch, snapshot, head, committedPaths, repoPaths } = require('./lib');
+const { options, one } = require('./cli-options');
+const { run, alive } = require('./process-runner');
+const { globMatch, snapshot, changedPaths, head, committedPaths, repoPaths } = require('./git-state');
 const { killRegistered } = require('./ds-kill');
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function overlap(a, b) {
   const prefix = x => x.split(/[*?[]/, 1)[0];
@@ -126,7 +129,7 @@ async function dsRun(args, output = true, logFile = '') {
     }
     const after = await snapshot(root), afterHead = await head(root);
     const committed = await committedPaths(root, beforeHead, afterHead);
-    const changed = [...new Set([...before.keys(), ...after.keys(), ...committed])].filter(p => committed.includes(p) || before.get(p) !== after.get(p)).sort();
+    const changed = changedPaths(before, after, committed);
     const foreign = changed.filter(p => others.some(x => globMatch(p, x.glob)));
     const outside = changed.filter(p => !scopes.some(g => globMatch(p, g)) && !foreign.includes(p));
     const elapsed = Math.floor((Date.now() - started) / 1000);

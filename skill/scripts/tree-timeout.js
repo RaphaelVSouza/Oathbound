@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const { run } = require('./lib');
+const { run } = require('./process-runner');
 (async () => {
   const [seconds, ...rest] = process.argv.slice(2);
   const args = rest[0] === '--' ? rest.slice(1) : rest;

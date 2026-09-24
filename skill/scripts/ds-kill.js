@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 const fs = require('node:fs');
 const path = require('node:path');
-const { repoPaths, alive, killTree } = require('./lib');
+const { repoPaths } = require('./git-state');
+const { alive, killTree } = require('./process-runner');
 async function killRegistered(root, mode = '-l', quiet = false) {
   const { gitDir } = await repoPaths(root);
   const base = path.join(gitDir, 'ds-queue', 'procs');

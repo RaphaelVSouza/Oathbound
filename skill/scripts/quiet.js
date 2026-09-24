@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 const fs = require('node:fs');
 const path = require('node:path');
-const { options, one, run, tempLog } = require('./lib');
+const os = require('node:os');
+const { options, one } = require('./cli-options');
+const { run } = require('./process-runner');
 (async () => {
   const o = options(process.argv.slice(2), ['-l', '-n', '-p', '-t']);
   if (!o._.length) throw Error('uso: node quiet.js [-l log] [-n linhas] [-p regex] [-t segundos] -- comando args...');
-  const log = one(o, '-l', tempLog('govkit-quiet-').file);
+  const log = one(o, '-l') || path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-quiet-')), 'output.log');
   const max = Number(one(o, '-n', '60')), timeout = Number(one(o, '-t', '600'));
   if (!Number.isInteger(max) || max < 1 || !Number.isInteger(timeout) || timeout < 1) throw Error('limites inválidos');
   fs.mkdirSync(path.dirname(log), { recursive: true });

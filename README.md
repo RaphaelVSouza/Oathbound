@@ -96,6 +96,12 @@ o pacote não inventa valores esperados.
 
 ## Evolução e limites
 
+Os comandos em `skill/scripts/` usam três módulos internos: `cli-options.js`
+interpreta argumentos, `process-runner.js` executa e encerra subprocessos, e
+`git-state.js` consulta e compara estados do Git. As interfaces exportadas têm
+contratos JSDoc; entradas externas críticas também são validadas durante a
+execução. A instalação copia esses módulos junto com os comandos.
+
 Altere o pacote aqui, registre a mudança no [`CHANGELOG.md`](CHANGELOG.md),
 incremente `VERSION` e instale a nova versão em cada projeto após revisar o
 diff local. O instalador inicial não faz upgrade para preservar modificações

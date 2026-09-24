@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Cria commit somente com caminhos staged autorizados pelo ds-run.
-const { options, one, run, repoPaths, globMatch } = require('./lib');
+const { options, one } = require('./cli-options');
+const { run } = require('./process-runner');
+const { repoPaths, globMatch } = require('./git-state');
 
 async function main(argv) {
   const o = options(argv, ['-d', '-m']);
