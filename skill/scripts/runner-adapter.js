@@ -78,10 +78,69 @@ function extractInstructions(agentFile) {
   return raw.trim();
 }
 
+/**
+ * Resolves the path to an agent markdown file based on runner conventions and candidate directories.
+ * @param {{
+ *   root?: string,
+ *   agent: string,
+ *   agentDir?: string,
+ *   runner?: string
+ * }} opts
+ * @returns {string}
+ */
+function resolveAgentPath({ root = process.cwd(), agent, agentDir = '', runner = '' }) {
+  if (!agent) return '';
+  const home = process.env.USERPROFILE || process.env.HOME || '';
+  const runnerKey = (runner || '').toLowerCase();
+
+  const candidateDirs = [
+    agentDir,
+    process.env.GOVKIT_AGENT_DIR
+  ];
+
+  if (runnerKey === 'claude') {
+    if (root) candidateDirs.push(path.join(root, '.claude', 'agents'));
+    if (home) candidateDirs.push(path.join(home, '.claude', 'agents'));
+  } else if (runnerKey === 'agy') {
+    if (root) candidateDirs.push(path.join(root, '.agents', 'agents'));
+    if (home) candidateDirs.push(path.join(home, '.gemini', 'antigravity-cli', 'agents'));
+  } else if (runnerKey === 'opencode') {
+    if (root) candidateDirs.push(path.join(root, '.opencode', 'agents'));
+    if (home) candidateDirs.push(path.join(home, '.config', 'opencode', 'agents'));
+  } else if (runnerKey === 'codex') {
+    if (root) candidateDirs.push(path.join(root, '.codex', 'agents'));
+    if (home) candidateDirs.push(path.join(home, '.codex', 'agents'));
+  }
+
+  if (root) {
+    candidateDirs.push(
+      path.join(root, '.opencode', 'agents'),
+      path.join(root, '.claude', 'agents'),
+      path.join(root, '.agents', 'agents'),
+      path.join(root, 'adapters', 'opencode', 'agents')
+    );
+  }
+  if (home) {
+    candidateDirs.push(
+      path.join(home, '.config', 'opencode', 'agents'),
+      path.join(home, '.claude', 'agents'),
+      path.join(home, '.gemini', 'antigravity-cli', 'agents')
+    );
+  }
+
+  for (const dir of candidateDirs.filter(Boolean)) {
+    const file = path.join(dir, `${agent}.md`);
+    if (fs.existsSync(file)) return file;
+  }
+
+  return '';
+}
+
 module.exports = {
   getRunnerAdapter,
   validateAdapter,
   feedbackPrompts,
   extractInstructions,
+  resolveAgentPath,
   BUILTIN_RUNNERS
 };

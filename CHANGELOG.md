@@ -2,15 +2,20 @@
 
 ## 0.20.1 — 2026-09-25
 
-- **Correção de descoberta de agentes nos runners:** adapters (`claude`, `agy`, `codex`, `generic`, `opencode`) agora inspecionam diretórios nativos (`.claude/agents/`, `.agents/agents/`, `.opencode/agents/` e pastas globais de usuário) em vez de fixar exclusivamente `.opencode/agents/`.
-- **Identificadores reais de sessão:**
-  - `claude`: geração e rastreamento de UUID via `node:crypto` (`--session-id <uuid>` no primeiro disparo, `--resume <uuid>` nas continuações e em `-Q`), eliminando falhas de retorno de sessão.
-  - `codex`: invocação de `codex exec resume <id>` para continuidade e extração factual de ID via `~/.codex/session_index.jsonl`.
-  - `agy`: resolução de ID de conversa a partir do diretório de runtime (`~/.gemini/antigravity-cli/brain`).
-- **Isolamento de sandbox no runner Codex:** modo somente leitura (`-R`) aplica estritamente `-s read-only -a never` sem ativar `--dangerously-bypass-approvals-and-sandbox`, garantindo o sandbox anunciado.
+- **Descoberta unificada de agentes (`resolveAgentPath`):** extração de função canônica em `runner-adapter.js` compartilhada por todos os 5 runners, inspecionando diretórios nativos (`.claude/agents/`, `.agents/agents/`, `.opencode/agents/` e pastas globais de usuário).
+- **Identificadores factuais de sessão via saída estruturada:**
+  - `claude`: geração e rastreamento de UUID via `node:crypto` (`--session-id <uuid>` no primeiro disparo, `--resume <uuid>` nas continuações e em `-Q`), repassando também `--agent <papel>`.
+  - `codex`: captura de `thread_id` a partir de eventos JSONL (`--json`); se ausente, retorna string vazia em vez de adivinhar arquivos locais.
+  - `agy`: captura determinística de `conversation_id` a partir da saída estruturada (`--output-format json`); se ausente, retorna string vazia.
+- **Isolamento de sandbox e flags no runner Codex:**
+  - Remoção da flag inválida `-a never` no `codex exec`.
+  - Posicionamento correto de flags globais (`-s read-only`, `-C`, `--json`) antes do comando `resume`.
 - **Robustez no runner Generic:** introdução de `parseCommandLine` com suporte a aspas simples e duplas para que caminhos com espaços em `GOVKIT_GENERIC_CMD` não sejam corrompidos.
 - **Instalador (`install.ps1`):** criação automática de `AGENTS.md` a partir de `templates/AGENTS.fragment.md` quando ausente no projeto de destino, e atualização da mensagem de conclusão (removida menção obsoleta a variantes de agentes).
 - **Higiene de repositório:** remoção do arquivo de configuração pessoal `.agents/rules/antigravity-rtk-rules.md` e adição de `.agents/` ao `.gitignore`.
+- **Pipeline de Integração Contínua (CI):** adição de `.github/workflows/ci.yml` executando a suíte de testes e o auditor documental em Ubuntu e Windows no Node 22 LTS.
+- **Suíte de testes ampliada:** adição de `test/ds-queue.test.js` e restauração de testes de `--effort` (totalizando 61 testes passando).
+- **Alinhamento do README:** esclarecimento honesto de que a governança opera por auditoria e validação determinística de diff Git antes/depois da chamada (código de saída 3), sem prometer virtualização de kernel/filesystem nas CLIs externas.
 
 ## 0.20.0 — 2026-09-25
 

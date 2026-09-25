@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { run } = require('../process-runner');
+const { resolveAgentPath } = require('../runner-adapter');
 
 function temporaryAgent(file, name, others) {
   const src = fs.readFileSync(file, 'utf8');
@@ -42,19 +43,7 @@ const opencodeAdapter = {
   name: 'opencode',
 
   resolveAgentFile({ root, agent, agentDir }) {
-    const home = process.env.USERPROFILE || process.env.HOME || '';
-    const candidateDirs = [
-      agentDir,
-      process.env.GOVKIT_AGENT_DIR,
-      root ? path.join(root, '.opencode', 'agents') : '',
-      home ? path.join(home, '.config', 'opencode', 'agents') : '',
-      root ? path.join(root, 'adapters', 'opencode', 'agents') : ''
-    ].filter(Boolean);
-    for (const dir of candidateDirs) {
-      const file = path.join(dir, `${agent}.md`);
-      if (fs.existsSync(file)) return file;
-    }
-    return path.join(agentDir || process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents'), `${agent}.md`);
+    return resolveAgentPath({ root, agent, agentDir, runner: 'opencode' }) || path.join(agentDir || process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents'), `${agent}.md`);
   },
 
   prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {

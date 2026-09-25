@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { extractInstructions } = require('../runner-adapter');
+const { extractInstructions, resolveAgentPath } = require('../runner-adapter');
 
 /**
  * Tokenize a command line string respecting single and double quotes.
@@ -44,19 +44,7 @@ const genericAdapter = {
   name: 'generic',
 
   resolveAgentFile({ root, agent, agentDir }) {
-    const candidateDirs = [
-      agentDir,
-      process.env.GOVKIT_AGENT_DIR,
-      root ? path.join(root, '.opencode', 'agents') : '',
-      root ? path.join(root, '.claude', 'agents') : '',
-      root ? path.join(root, '.agents', 'agents') : '',
-      root ? path.join(root, 'adapters', 'opencode', 'agents') : ''
-    ].filter(Boolean);
-    for (const dir of candidateDirs) {
-      const file = path.join(dir, `${agent}.md`);
-      if (fs.existsSync(file)) return file;
-    }
-    return '';
+    return resolveAgentPath({ root, agent, agentDir, runner: 'generic' });
   },
 
   prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {

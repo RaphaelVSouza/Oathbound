@@ -174,10 +174,36 @@ test('runner generic: buildCommand respeita GOVKIT_GENERIC_CMD com aspas e espac
   }
 });
 
+test('runner claude: buildCommand repassa --effort quando fornecido', () => {
+  const adapter = getRunnerAdapter('claude');
+  const cmd = adapter.buildCommand({
+    root: '.',
+    agent: 'ds-runner',
+    effort: 'high',
+    message: 'test'
+  });
+  assert.ok(cmd.args.includes('--effort'));
+  assert.ok(cmd.args.includes('high'));
+});
+
+test('runner agy: buildCommand repassa --effort quando fornecido', () => {
+  const adapter = getRunnerAdapter('agy');
+  const cmd = adapter.buildCommand({
+    root: '.',
+    agent: 'ds-reviewer',
+    effort: 'medium',
+    message: 'test'
+  });
+  assert.ok(cmd.args.includes('--effort'));
+  assert.ok(cmd.args.includes('medium'));
+});
+
 test('runner claude: buildCommand gera session-id ou repassa --resume', async () => {
   const adapter = getRunnerAdapter('claude');
   const newCmd = adapter.buildCommand({ root: '.', agent: 'ds-runner', message: 'nova sessao', tag: 'tag-new-1' });
   assert.ok(newCmd.args.includes('--session-id'));
+  assert.ok(newCmd.args.includes('--agent'));
+  assert.ok(newCmd.args.includes('ds-runner'));
   const sid = await adapter.resolveSession({ root: '.', tag: 'tag-new-1', sessionInput: '' });
   assert.match(sid, /^[0-9a-fA-F-]{36}$/);
 
@@ -186,19 +212,42 @@ test('runner claude: buildCommand gera session-id ou repassa --resume', async ()
   assert.ok(resCmd.args.includes('my-session-uuid'));
 });
 
-test('runner codex: buildCommand isola sandbox em readonly e suporta resume', () => {
+test('runner codex: buildCommand isola sandbox em readonly e suporta resume na ordem correta', () => {
   const adapter = getRunnerAdapter('codex');
-  const readonlyCmd = adapter.buildCommand({ root: '.', agent: 'ds-reviewer', message: 'leitura', readonly: true });
+  const readonlyCmd = adapter.buildCommand({ root: 'D:/repo', agent: 'ds-reviewer', message: 'leitura', readonly: true });
   assert.ok(readonlyCmd.args.includes('-s'));
   assert.ok(readonlyCmd.args.includes('read-only'));
-  assert.ok(readonlyCmd.args.includes('-a'));
-  assert.ok(readonlyCmd.args.includes('never'));
+  assert.ok(!readonlyCmd.args.includes('-a'));
+  assert.ok(!readonlyCmd.args.includes('never'));
   assert.ok(!readonlyCmd.args.includes('--dangerously-bypass-approvals-and-sandbox'));
 
-  const resumeCmd = adapter.buildCommand({ root: '.', agent: 'ds-runner', message: 'retomada', session: 'sess-abc-123' });
+  const resumeCmd = adapter.buildCommand({ root: 'D:/repo', agent: 'ds-runner', message: 'retomada', session: 'sess-abc-123', readonly: true });
   assert.equal(resumeCmd.args[0], 'exec');
-  assert.equal(resumeCmd.args[1], 'resume');
-  assert.equal(resumeCmd.args[2], 'sess-abc-123');
+  const sIdx = resumeCmd.args.indexOf('-s');
+  const resumeIdx = resumeCmd.args.indexOf('resume');
+  assert.ok(sIdx !== -1 && sIdx < resumeIdx, '-s deve vir antes de resume');
+  assert.equal(resumeCmd.args[resumeIdx + 1], 'sess-abc-123');
+  assert.ok(!resumeCmd.args.includes('-a'));
+});
+
+test('runner codex: resolveSession extrai thread_id de JSON e retorna vazio na ausencia', async () => {
+  const adapter = getRunnerAdapter('codex');
+  const stdout = '{"type":"thread.started","thread_id":"th-real-001"}\n{"type":"msg"}';
+  const sid = await adapter.resolveSession({ root: '.', tag: 't1', sessionInput: '', runResult: { stdout } });
+  assert.equal(sid, 'th-real-001');
+
+  const empty = await adapter.resolveSession({ root: '.', tag: 't2', sessionInput: '', runResult: { stdout: 'erro de conexao' } });
+  assert.equal(empty, '');
+});
+
+test('runner agy: resolveSession extrai conversation_id de JSON e retorna vazio na ausencia', async () => {
+  const adapter = getRunnerAdapter('agy');
+  const stdout = '{"conversation_id":"conv-xyz-789","status":"SUCCESS"}';
+  const sid = await adapter.resolveSession({ root: '.', tag: 't1', sessionInput: '', runResult: { stdout } });
+  assert.equal(sid, 'conv-xyz-789');
+
+  const empty = await adapter.resolveSession({ root: '.', tag: 't2', sessionInput: '', runResult: { stdout: 'falha' } });
+  assert.equal(empty, '');
 });
 
 test('runners: resolveAgentFile localiza agentes em suas pastas nativas', (t) => {

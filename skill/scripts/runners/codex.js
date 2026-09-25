@@ -1,28 +1,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { extractInstructions } = require('../runner-adapter');
+const { extractInstructions, resolveAgentPath } = require('../runner-adapter');
 
 const codexAdapter = {
   name: 'codex',
 
   resolveAgentFile({ root, agent, agentDir }) {
-    const home = process.env.USERPROFILE || process.env.HOME || '';
-    const candidateDirs = [
-      agentDir,
-      process.env.GOVKIT_AGENT_DIR,
-      root ? path.join(root, '.codex', 'agents') : '',
-      home ? path.join(home, '.codex', 'agents') : '',
-      root ? path.join(root, '.opencode', 'agents') : '',
-      root ? path.join(root, '.claude', 'agents') : '',
-      root ? path.join(root, '.agents', 'agents') : '',
-      root ? path.join(root, 'adapters', 'opencode', 'agents') : ''
-    ].filter(Boolean);
-    for (const dir of candidateDirs) {
-      const file = path.join(dir, `${agent}.md`);
-      if (fs.existsSync(file)) return file;
-    }
-    return '';
+    return resolveAgentPath({ root, agent, agentDir, runner: 'codex' });
   },
 
   prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {
@@ -50,39 +35,41 @@ const codexAdapter = {
 
     const fullMessage = [instructions, promptPrefix, message].filter(Boolean).join('\n\n');
 
-    let args;
-    if (session) {
-      args = ['exec', 'resume', session, fullMessage];
-    } else {
-      args = ['exec', fullMessage];
-    }
-
+    const args = ['exec'];
     if (readonly) {
-      args.push('-s', 'read-only', '-a', 'never');
+      args.push('-s', 'read-only');
     } else {
       args.push('--dangerously-bypass-approvals-and-sandbox');
     }
 
-    if (root && !session) args.push('-C', root);
+    if (root) args.push('-C', root);
     if (model) args.push('-m', model);
+    args.push('--json');
+
+    if (session) {
+      args.push('resume', session, fullMessage);
+    } else {
+      args.push(fullMessage);
+    }
 
     return { command, args };
   },
 
   async resolveSession({ root, tag, sessionInput, runResult }) {
     if (sessionInput) return sessionInput;
-    try {
-      const home = process.env.USERPROFILE || process.env.HOME || '';
-      const indexPath = path.join(home, '.codex', 'session_index.jsonl');
-      if (fs.existsSync(indexPath)) {
-        const lines = fs.readFileSync(indexPath, 'utf8').trim().split(/\r?\n/).filter(Boolean);
-        if (lines.length) {
-          const last = JSON.parse(lines[lines.length - 1]);
-          if (last?.id) return last.id;
-        }
-      }
-    } catch {}
-    return sessionInput || tag;
+    if (!runResult || !runResult.stdout) return '';
+    const lines = runResult.stdout.split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('{')) continue;
+      try {
+        const ev = JSON.parse(trimmed);
+        if (ev.type === 'thread.started' && (ev.thread_id || ev.id)) return ev.thread_id || ev.id;
+        if (ev.thread_id) return ev.thread_id;
+        if (ev.conversation_id) return ev.conversation_id;
+      } catch {}
+    }
+    return '';
   }
 };
 

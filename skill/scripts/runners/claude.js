@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const crypto = require('node:crypto');
-const { extractInstructions } = require('../runner-adapter');
+const { extractInstructions, resolveAgentPath } = require('../runner-adapter');
 
 const sessionMap = new Map();
 
@@ -10,20 +10,7 @@ const claudeAdapter = {
   name: 'claude',
 
   resolveAgentFile({ root, agent, agentDir }) {
-    const home = process.env.USERPROFILE || process.env.HOME || '';
-    const candidateDirs = [
-      agentDir,
-      process.env.GOVKIT_AGENT_DIR,
-      root ? path.join(root, '.claude', 'agents') : '',
-      home ? path.join(home, '.claude', 'agents') : '',
-      root ? path.join(root, '.opencode', 'agents') : '',
-      root ? path.join(root, 'adapters', 'opencode', 'agents') : ''
-    ].filter(Boolean);
-    for (const dir of candidateDirs) {
-      const file = path.join(dir, `${agent}.md`);
-      if (fs.existsSync(file)) return file;
-    }
-    return '';
+    return resolveAgentPath({ root, agent, agentDir, runner: 'claude' });
   },
 
   prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {
@@ -61,6 +48,7 @@ const claudeAdapter = {
       args.push('--session-id', activeSession);
     }
 
+    if (agent) args.push('--agent', agent);
     if (model) args.push('--model', model);
     if (effort) args.push('--effort', effort);
     if (readonly) args.push('--tools', 'Read,Grep,Glob');
@@ -75,7 +63,7 @@ const claudeAdapter = {
       sessionMap.delete(tag);
       return sid;
     }
-    return tag;
+    return '';
   }
 };
 

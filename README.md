@@ -2,16 +2,16 @@
 
 > Framework reutilizável e agnóstico de governança determinística, auditoria e orquestração multi-agente para desenvolvimento de software com LLMs.
 
-[![Versão](https://img.shields.io/badge/versão-0.20.0-blue.svg)](VERSION)
+[![Versão](https://img.shields.io/badge/versão-0.20.1-blue.svg)](VERSION)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-green.svg)](https://nodejs.org/)
 [![Dependências](https://img.shields.io/badge/dependências-zero-brightgreen.svg)](README.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
 
-O **Agent Governance Kit** estabelece uma camada de engenharia e controle rigoroso sobre agentes de codificação autônomos. Ele desacopla o orquestrador das CLIs de execução, impede mutações fora do escopo delimitado, gerencia filas de tarefas com transações ACID em SQLite e garante prefixos estáveis para maximizar o reaproveitamento de **prompt caching (KV cache)**.
+O **Agent Governance Kit** estabelece uma camada de auditoria e controle factual sobre agentes de codificação autônomos. Ele desacopla o orquestrador das CLIs de execução, audita mutações contra o escopo delimitado via Git snapshots, gerencia filas de tarefas com transações ACID em SQLite e organiza prefixos de prompts para maximizar o reaproveitamento de **prompt caching (KV cache)**.
 
 ---
 
-## 🚀 Por que o kit existe?
+## Por que o kit existe?
 
 Agentes de código com LLMs frequentemente:
 - Alteram arquivos além da tarefa designada, gerando quebras e drift acidental.
@@ -22,7 +22,7 @@ Agentes de código com LLMs frequentemente:
 O **Agent Governance Kit** resolve esses problemas através de:
 
 1. **Executores Agnósticos (Runners):** Suporte nativo e intercambiável para **OpenCode**, **Claude Code**, **OpenAI Codex**, **Antigravity CLI (AGY)** e comandos customizados via contrato `RunnerAdapter`.
-2. **Guardrails Determinísticos de Escopo:** Auditoria de git tree antes e depois de cada execução; qualquer mutação fora dos globs autorizados (`-s`) é detectada no diff e encerra com código de saída `3` (sem reverter arquivos automaticamente, preservando evidências).
+2. **Auditoria Determinística de Escopo:** O kit não cria virtualização de filesystem nem isolamento de kernel; a governança apoia-se em restrições de ferramentas e prompt guards, combinados com auditoria factual de snapshot Git antes e depois de cada chamada. Qualquer mutação fora dos globs autorizados (`-s`) é detectada no diff e encerra com código de saída `3` (sem descartar alterações automaticamente, preservando evidências para conferência).
 3. **Fila Sequencial com Checkpoints Persistentes (`ds-queue`):** Execução sequencial de tarefas com persistência de estágio em `node:sqlite` (`queue_state`) e arquivos de estado, permitindo retomar de onde parou sem reprocessar tickets concluídos.
 4. **Alinhamento para Prompt Caching KV:** Prompt engineering ordenado estritamente do estático para o volátil (instruções do papel → regras do repositório → guardrails de escopo → dados voláteis da tarefa), garantindo prefixos byte-exact estáveis.
 5. **Transpilação Nativa de Agentes:** Conversor automático que traduz permissões granulares canônicas em whitelists de ferramentas (`tools`) para Claude Code e definições para AGY CLI.
@@ -30,7 +30,7 @@ O **Agent Governance Kit** resolve esses problemas através de:
 
 ---
 
-## 👥 Agentes Canônicos
+## Agentes Canônicos
 
 O kit disponibiliza oito papéis especializados com permissões estritas em [`adapters/opencode/agents/`](adapters/opencode/agents/):
 
@@ -38,7 +38,7 @@ O kit disponibiliza oito papéis especializados com permissões estritas em [`ad
 | :--- | :--- | :--- |
 | [`ds-governance`](adapters/opencode/agents/ds-governance.md) | Triagem de issues, elaboração de especificações e decomposição em tickets técnicos. | Edição em `docs/`, `AGENTS.md` e rascunhos; shell somente leitura (`git`). |
 | [`ds-runner`](adapters/opencode/agents/ds-runner.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); execução de comandos de teste/build. |
-| [`ds-reviewer`](adapters/opencode/agents/ds-reviewer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura de código; shell restrito a `git diff` e `git status`. |
+| [`ds-reviewer`](adapters/opencode/agents/ds-reviewer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura de código; shell restrito a `git diff`, `git status`, `git show` e `git log -p`. |
 | [`ds-explorer`](adapters/opencode/agents/ds-explorer.md) | Leitura rápida e orientação de código com evidências compactas (`caminho:linha`). | Somente leitura (`glob`, `read`); escrita e shell terminantemente proibidos. |
 | [`ds-researcher`](adapters/opencode/agents/ds-researcher.md) | Pesquisa técnica em fontes primárias externas com citação de links verificáveis. | Somente leitura; navegação web permitida; escrita local bloqueada. |
 | [`ds-mutant`](adapters/opencode/agents/ds-mutant.md) | Testes por mutação no código-fonte para avaliar eficácia das asserções de teste. | Edição temporária em fontes (exceto testes); restauração manual/pelo agente (wrapper não reverte automaticamente). |
@@ -47,13 +47,13 @@ O kit disponibiliza oito papéis especializados com permissões estritas em [`ad
 
 ---
 
-## 📦 Instalação
+## Instalação
 
 Requisitos: **PowerShell 7+**, **Git** e **Node.js 22 LTS+**.
 
 ### Instalação em um Projeto Específico
 
-Instala a skill de governança, o ponteiro `AGENTS.md` e compila os agentes para o diretório nativo das CLIs escolhidas:
+Instala a skill de governança, cria `AGENTS.md` (caso não exista no projeto de destino) e compila os agentes para o diretório nativo das CLIs escolhidas:
 
 ```powershell
 # Instala para todos os runners (OpenCode, Claude Code e AGY)
@@ -63,7 +63,8 @@ pwsh -File .\install.ps1 -Project D:\caminho\do\projeto -Runner all
 pwsh -File .\install.ps1 -Project D:\caminho\do\projeto -Runner claude
 ```
 
-> **Dica:** Para incluir o auditor documental de links e contratos no projeto consumidor, acrescente a flag `-AuditDocs`.
+> **Nota de segurança:** O modo `-Project` nunca sobrescreve arquivos automaticamente; aborta a execução se detectar colisões locais pré-existentes, preservando alterações do desenvolvedor.
+> Para incluir o auditor documental de links e contratos no projeto consumidor, acrescente a flag `-AuditDocs`.
 
 ### Instalação Global (Agnóstica de CLI)
 
@@ -79,7 +80,7 @@ pwsh -File .\install.ps1 -Global -Runner all -Upgrade
 
 ---
 
-## 🛠️ Modos de Uso
+## Modos de Uso
 
 ### 1. Execução de Tarefa Isolada (`ds-run.js`)
 
@@ -114,7 +115,7 @@ node adapters/agent-transpiler.js --target . --runner all
 
 ---
 
-## 🧭 Estrutura do Pacote
+## Estrutura do Pacote
 
 | Diretório / Arquivo | Responsabilidade |
 | :--- | :--- |
@@ -126,16 +127,17 @@ node adapters/agent-transpiler.js --target . --runner all
 | [`skill/references/models.md`](skill/references/models.md) | Guia prático de reasoning effort e estratégias perenes de prompt caching KV. |
 | [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Fragmentos de configuração de `AGENTS.md` para novos repositórios. |
 | [`tools/README.md`](tools/README.md) | Motor de auditoria estática de integridade documental, links e contratos. |
-| [`install.ps1`](install.ps1) | Script PowerShell idempotente de instalação e distribuição por projeto ou global. |
+| [`install.ps1`](install.ps1) | Script PowerShell de instalação e distribuição segura por projeto ou global. |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Diretrizes de contribuição, padrões de commit e validações. |
 
 ---
 
-## 🧪 Qualidade e Testes
+## Qualidade e Testes
 
 O projeto adota a suíte nativa `node:test` e validação estática de integridade sem dependências externas:
 
 ```bash
-# Executa todos os testes unitários (52 testes nativos)
+# Executa todos os testes unitários (61 testes nativos)
 node --test test/*.test.js
 
 # Executa testes com relatório de cobertura nativo
@@ -147,7 +149,7 @@ node tools/audit-docs.js
 
 ---
 
-## 📖 Créditos e Referências
+## Créditos e Referências
 
 O Agent Governance Kit sintetiza e adapta conceitos das seguintes referências:
 
@@ -157,6 +159,6 @@ O Agent Governance Kit sintetiza e adapta conceitos das seguintes referências:
 
 ---
 
-## 📄 Licença
+## Licença
 
 Distribuído sob a licença MIT. Consulte [`LICENSE`](LICENSE) para mais detalhes.

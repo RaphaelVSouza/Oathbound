@@ -1,26 +1,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { extractInstructions } = require('../runner-adapter');
+const { extractInstructions, resolveAgentPath } = require('../runner-adapter');
 
 const agyAdapter = {
   name: 'agy',
 
   resolveAgentFile({ root, agent, agentDir }) {
-    const home = process.env.USERPROFILE || process.env.HOME || '';
-    const candidateDirs = [
-      agentDir,
-      process.env.GOVKIT_AGENT_DIR,
-      root ? path.join(root, '.agents', 'agents') : '',
-      home ? path.join(home, '.gemini', 'antigravity-cli', 'agents') : '',
-      root ? path.join(root, '.opencode', 'agents') : '',
-      root ? path.join(root, 'adapters', 'opencode', 'agents') : ''
-    ].filter(Boolean);
-    for (const dir of candidateDirs) {
-      const file = path.join(dir, `${agent}.md`);
-      if (fs.existsSync(file)) return file;
-    }
-    return '';
+    return resolveAgentPath({ root, agent, agentDir, runner: 'agy' });
   },
 
   prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {
@@ -47,7 +34,7 @@ const agyAdapter = {
       : `[PAPEL DO AGENTE: ${agent}]\n`;
 
     const fullMessage = [instructions, promptPrefix, message].filter(Boolean).join('\n\n');
-    const args = ['-p', fullMessage, '--dangerously-skip-permissions'];
+    const args = ['-p', fullMessage, '--dangerously-skip-permissions', '--output-format', 'json'];
 
     if (model) args.push('--model', model);
     if (effort) args.push('--effort', effort);
@@ -60,20 +47,15 @@ const agyAdapter = {
 
   async resolveSession({ root, tag, sessionInput, runResult }) {
     if (sessionInput) return sessionInput;
+    if (!runResult || !runResult.stdout) return '';
     try {
-      const home = process.env.USERPROFILE || process.env.HOME || '';
-      const brainDir = path.join(home, '.gemini', 'antigravity-cli', 'brain');
-      if (fs.existsSync(brainDir)) {
-        const entries = fs.readdirSync(brainDir, { withFileTypes: true })
-          .filter(e => e.isDirectory() && /^[0-9a-fA-F-]{36}$/.test(e.name))
-          .map(e => ({ name: e.name, time: fs.statSync(path.join(brainDir, e.name)).mtimeMs }))
-          .sort((a, b) => b.time - a.time);
-        if (entries.length && (Date.now() - entries[0].time) < 600000) {
-          return entries[0].name;
-        }
-      }
-    } catch {}
-    return sessionInput || tag;
+      const data = JSON.parse(runResult.stdout.trim());
+      if (data.conversation_id) return data.conversation_id;
+    } catch {
+      const match = runResult.stdout.match(/"conversation_id"\s*:\s*"([0-9a-fA-F-]+)"/);
+      if (match) return match[1];
+    }
+    return '';
   }
 };
 

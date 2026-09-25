@@ -118,4 +118,10 @@ async function queue(argv) {
   console.log(`── ds-queue: fim; sessoes runner=${rs} reviewer=${vs}`);
   return 0;
 }
-queue(process.argv.slice(2)).then(code => { process.exitCode = code; }).catch(e => { console.error(e.message); process.exitCode = 2; });
+if (require.main === module) {
+  queue(process.argv.slice(2)).then(code => { process.exitCode = code; }).catch(e => { console.error(e.message); process.exitCode = 2; });
+}
+
+module.exports = {
+  queue
+};
