@@ -2,7 +2,7 @@
 
 Quando a tarefa autorizada envolver delegação de agentes (OpenCode, Claude, Codex, AGY, Generic),
 commits delegados, fila de issues ou auditoria por mutação, consulte
-`.claude/skills/agent-governance/SKILL.md`.
+`.claude/skills/oathbound/SKILL.md`.
 As regras deste projeto para ambiente, comandos de aceite, dados e produção
 prevalecem sobre exemplos genéricos da skill.
 

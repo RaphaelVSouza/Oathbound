@@ -3,7 +3,7 @@
 O runner genérico permite conectar qualquer executável, ferramenta CLI ou script
 ao fluxo de governança, auditoria e travas de escopo do kit.
 
-Neste runner, as regras do orquestrador (`oathkeeper`) valem apenas pelo
+Neste runner, as regras do oathkeeper (`oathkeeper`) valem apenas pelo
 `AGENTS.md` e pela skill, sem imposição por permissão de agente.
 `oathkeeper` não é delegável; `node .../run.js -a oathkeeper` é recusado com
 exit code 2.
@@ -15,7 +15,7 @@ Ative o runner genérico informando `-u generic` ou definindo `OATHBOUND_RUNNER=
 ```bash
 # Executando script ou comando personalizado
 export OATHBOUND_GENERIC_CMD="python -m my_agent"
-node .claude/skills/agent-governance/scripts/run.js -d . -u generic -s "lib/*" -- "Refatorar módulo"
+node .claude/skills/oathbound/scripts/run.js -d . -u generic -s "lib/*" -- "Refatorar módulo"
 ```
 
 ### Características de execução

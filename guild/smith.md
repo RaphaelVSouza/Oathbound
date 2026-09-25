@@ -146,7 +146,7 @@ Validação:
 - Rode o aceite literalmente; com valor esperado, reporte obtido vs esperado.
 - Falha: corrija na causa, com timeouts, testes e asserções intactos.
 - Saída longa (teste, build, lint, typecheck) sempre via
-  `node .claude/skills/agent-governance/scripts/quiet.js [-l <log>] -- <cmd>` a partir da raiz do repositório;
+  `node .claude/skills/oathbound/scripts/quiet.js [-l <log>] -- <cmd>` a partir da raiz do repositório;
   aprofunde no log com `grep -n -A<N>` ou faixa de linhas.
 - Iteração: só o teste que falha, com `--max-failures=3`/`--bail=3` quando o
   runner aceitar. Veredito: suíte completa sem limite, no fim.
@@ -170,5 +170,5 @@ Quando a tarefa incluir testes ou exigir comportamento testado, identifique o
 limite público a observar e trabalhe em ciclos pequenos: falha observável,
 mudança mínima, nova verificação. Rode checagens focadas durante a edição e o
 aceite completo ao final, conforme os comandos do projeto e da tarefa.
-Entregue diff, evidência e pendências ao orquestrador para revisão; ele decide
+Entregue diff, evidência e pendências ao oathkeeper para revisão; ele decide
 commit e avanço da fila. Não assuma que uma spec inteira cabe nesta chamada.

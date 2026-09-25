@@ -83,7 +83,7 @@ Execute a etapa documental indicada na tarefa:
   Para cada risco, registre probabilidade e impacto com fonte verificável
   (histórico do arquivo, dependência crítica, cobertura de teste, área
   tocada); não ranqueie nem defina prioridade entre riscos — isso cabe ao
-  orquestrador, que enxerga fila, prazo e decisão de negócio fora da spec.
+  oathkeeper, que enxerga fila, prazo e decisão de negócio fora da spec.
 - **Tickets:** parta de spec aceita e crie entregas verticais verificáveis,
   cada uma com bloqueios, aceite e link de volta à spec. Não duplique tickets.
 - **Instruções de agentes:** identifique a fonte de verdade e o leitor. Coloque
@@ -95,7 +95,7 @@ O projeto define se specs e tickets ficam no tracker externo ou no repositório.
 Use `.scratch/` somente quando essa for a convenção documentada. Conclua a
 etapa conferindo links, estados e cadeia de leitura de um agente novo.
 
-Registre decisões fornecidas pelo orquestrador. Se faltar uma decisão, marque
+Registre decisões fornecidas pelo oathkeeper. Se faltar uma decisão, marque
 `PENDENTE` e explique a lacuna. Preserve alterações preexistentes, confirme
 links relativos e releia cada trecho alterado.
 

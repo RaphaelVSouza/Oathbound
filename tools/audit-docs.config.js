@@ -1,6 +1,6 @@
 'use strict';
 
-// Configuração do próprio Agent Governance Kit. Projetos consumidores recebem
+// Configuração do próprio Oathbound. Projetos consumidores recebem
 // um modelo separado e definem suas próprias pastas e contratos canônicos.
 module.exports = {
   limits: { maxBytes: 1048576 },

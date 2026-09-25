@@ -2,7 +2,7 @@
 
 Esta referência documenta as diretrizes perenes para seleção de modelos, controle de
 esforço de raciocínio (*reasoning effort*) e otimização de *prompt caching* no
-Agent Governance Kit.
+Oathbound.
 
 ## 1. Princípio do ambiente como fonte da verdade
 

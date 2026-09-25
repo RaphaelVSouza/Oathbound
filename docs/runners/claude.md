@@ -1,16 +1,16 @@
 # Claude Code
 
-O Claude Code opera no Agent Governance Kit em dois papéis: como **host orquestrador**
+O Claude Code opera no Oathbound em dois papéis: como **host orquestrador**
 interativo e como **runner de execução** subordinado.
 
 ## 1. Claude Code como host (orquestrador)
 
-A skill fica disponível em `.claude/skills/agent-governance/`. Para que o Claude
+A skill fica disponível em `.claude/skills/oathbound/`. Para que o Claude
 leia as regras do projeto, mantenha um `CLAUDE.md` curto na raiz importando
 o `AGENTS.md` (`@AGENTS.md`).
 
 O orquestrador Claude consulta o `AGENTS.md` do projeto e invoca as ferramentas do
-kit pelo terminal (`node .claude/skills/agent-governance/scripts/run.js` e
+kit pelo terminal (`node .claude/skills/oathbound/scripts/run.js` e
 `queue.js`).
 
 ### Início com o orquestrador `oathkeeper`
@@ -34,10 +34,10 @@ adicionando `-u claude` à chamada:
 
 ```bash
 # Execução com edição delimitada por escopo
-node .claude/skills/agent-governance/scripts/run.js -d . -u claude -s "src/api/*" -a smith -- "Implementar endpoint"
+node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/api/*" -a smith -- "Implementar endpoint"
 
 # Consulta somente leitura
-node .claude/skills/agent-governance/scripts/run.js -d . -u claude -R -a cartographer -- "Localizar handlers de autenticação"
+node .claude/skills/oathbound/scripts/run.js -d . -u claude -R -a cartographer -- "Localizar handlers de autenticação"
 ```
 
 ### Características de execução

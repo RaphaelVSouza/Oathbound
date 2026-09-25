@@ -1,6 +1,6 @@
 ---
-name: agent-governance
-description: Orquestrar exploração, edição, validação, revisão, commits e filas de issues com agentes (OpenCode, Claude, Codex, AGY, Generic) em um projeto que instalou o Agent Governance Kit. Use quando o usuário pedir delegação, auditoria de mudanças, commits, execução de fila ou investigação com recibos compactos.
+name: oathbound
+description: Orquestrar exploração, edição, validação, revisão, commits e filas de issues com agentes (OpenCode, Claude, Codex, AGY, Generic) em um projeto que instalou o Oathbound. Use quando o usuário pedir delegação, auditoria de mudanças, commits, execução de fila ou investigação com recibos compactos.
 ---
 
 # Governança de agentes
@@ -24,7 +24,7 @@ skill fornece os papéis e wrappers.
 | Auditoria por mutação | `gremlin` | `node run.js -a gremlin -s <glob>`, em série |
 | Auditoria de segurança de aplicação | `warden` | `node run.js -R -a warden` |
 
-A disciplina do orquestrador (escolha do papel, tarefa fechada, conferência de
+A disciplina do oathkeeper (escolha do papel, tarefa fechada, conferência de
 diff/status/recibo e decisão) vive em [`guild/oathkeeper.md`](../guild/oathkeeper.md);
 este documento resume os papéis e aponta para lá.
 
@@ -35,13 +35,13 @@ no projeto; `OATHBOUND_MODEL` e `-m` substituem opcionalmente nos wrappers; `-e`
 `OATHBOUND_EFFORT` definem o esforço de raciocínio conforme [models.md](references/models.md).
 Edições mecânicas também vão para `smith`. Para `sage`, delimite
 a pergunta; o agente devolve fontes primárias e lacunas na resposta, enquanto
-o orquestrador decide o próximo passo.
+o oathkeeper decide o próximo passo.
 
 ## Execução
 
 1. Identifique o repositório Git e leia o aceite já definido pelo projeto.
 2. Escolha o menor papel capaz de executar a tarefa. A partir da raiz do projeto,
-   chame `node .claude/skills/agent-governance/scripts/run.js`
+   chame `node .claude/skills/oathbound/scripts/run.js`
    com `-d`; use `-u <runner>` para selecionar o runner desejado (`opencode`, `claude`,
    `codex`, `agy`, `generic`; padrão: `opencode`); use `-e <low|medium|high>`
    para definir o esforço de raciocínio; use `-R` para os agentes sem edição e
@@ -51,13 +51,13 @@ o orquestrador decide o próximo passo.
 4. Confira o diff e o estado Git. Um exit `3` indica mudança fora do escopo
    ou durante leitura; confira a autoria antes de agir. O wrapper não reverte
    arquivos.
-5. Para várias issues, use `node .claude/skills/agent-governance/scripts/queue.js` conforme
+5. Para várias issues, use `node .claude/skills/oathbound/scripts/queue.js` conforme
    [queue.md](references/queue.md). O script não corrige achados, commita nem
    marca tickets como concluídos.
 6. Quando houver pedido de commit, delegue a seleção de hunks e mensagens ao
    `archivist` conforme [commits.md](references/commits.md).
 
-Saídas longas de teste/build/lint passam por `node .claude/skills/agent-governance/scripts/quiet.js`. Números e
+Saídas longas de teste/build/lint passam por `node .claude/skills/oathbound/scripts/quiet.js`. Números e
 status de aceite são válidos apenas com comando executado ou fonte indicada.
 Para mutação, consulte [mutation.md](references/mutation.md) antes do disparo.
 Para perguntar andamento, bloqueios, evidências ou entrega à sessão já iniciada,
@@ -71,7 +71,7 @@ aceite do projeto e revisão humana para decisões irreversíveis ou com dados.
 Não use este pacote como fonte de regras de negócio de outro repositório.
 
 `scribe` levanta probabilidade e impacto de um risco com fonte, mas não
-prioriza. Definir prioridade entre riscos ou issues é do orquestrador: só ele
+prioriza. Definir prioridade entre riscos ou issues é do oathkeeper: só ele
 enxerga a fila inteira, prazos e decisões de negócio fora do escopo de uma
 única spec. O `scribe` escreve antes do trabalho (spec, tickets, decisões,
 instruções de agentes); o `bard` documenta depois (README, CHANGELOG, guias),

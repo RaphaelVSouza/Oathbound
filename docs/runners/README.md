@@ -1,6 +1,6 @@
 # Adapters de Runners
 
-O Agent Governance Kit separa o motor de governança (auditoria Git, travas de escopo,
+O Oathbound separa o motor de governança (auditoria Git, travas de escopo,
 banco transacional SQLite e fila) do executor de modelos (o **runner**).
 
 Esta pasta reúne a documentação e os adaptadores de execução para os runners suportados.
@@ -38,7 +38,7 @@ Para usar um executor proprietário ou ferramenta interna sem alterar o kit, apo
 o caminho do arquivo JavaScript com `--runner`:
 
 ```bash
-node .claude/skills/agent-governance/scripts/run.js -d . -s "src/*" --runner ./meu-adapter.js -- "tarefa"
+node .claude/skills/oathbound/scripts/run.js -d . -s "src/*" --runner ./meu-adapter.js -- "tarefa"
 ```
 
 O arquivo exportado deve implementar o contrato canônico de [`skill/scripts/runner-adapter.js`](../../skill/scripts/runner-adapter.js):

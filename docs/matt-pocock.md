@@ -2,7 +2,7 @@
 
 As regras relevantes das skills originais de Matt Pocock foram consolidadas
 diretamente nos agentes em `guild/`, sem duplicatas de arquivos.
-Nenhuma skill adicional é instalada ou carregada. O orquestrador conserva a
+Nenhuma skill adicional é instalada ou carregada. O oathkeeper conserva a
 escolha do papel, o escopo da chamada, a conferência do resultado e o avanço da
 fila.
 
@@ -14,9 +14,9 @@ fila.
 
 `cartographer`, `sage`, `gremlin`, `archivist` e `warden` mantêm instruções específicas de seus papéis.
 `sage` incorpora o contrato de pesquisa em fontes primárias da skill
-`research` de Matt Pocock e devolve as fontes ao orquestrador sem carregar
+`research` de Matt Pocock e devolve as fontes ao oathkeeper sem carregar
 essa skill. O trabalho de `implement-spec` sobre vários tickets continua com
-o orquestrador e a fila
+o oathkeeper e a fila
 `queue.js`; o `smith` recebe apenas uma tarefa delimitada por chamada.
 `grilling` é uma conversa para decisões do usuário, fora do papel desses
 agentes de execução.

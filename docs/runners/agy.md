@@ -2,7 +2,7 @@
 
 O AGY opera como **runner de execução** subordinado ao kit através do executável `agy`.
 
-Neste runner, as regras do orquestrador (`oathkeeper`) valem apenas pelo
+Neste runner, as regras do oathkeeper (`oathkeeper`) valem apenas pelo
 `AGENTS.md` e pela skill: o AGY não tem agente primário com imposição por
 permissão. `oathkeeper` não é delegável em nenhum runner;
 `node .../run.js -a oathkeeper` é recusado com exit code 2.
@@ -13,10 +13,10 @@ Ative o runner AGY informando `-u agy` ou exportando `OATHBOUND_RUNNER=agy`:
 
 ```bash
 # Execução com edição delimitada por escopo
-node .claude/skills/agent-governance/scripts/run.js -d . -u agy -s "src/services/*" -a smith -- "Implementar lógica de fila"
+node .claude/skills/oathbound/scripts/run.js -d . -u agy -s "src/services/*" -a smith -- "Implementar lógica de fila"
 
 # Consulta somente leitura
-node .claude/skills/agent-governance/scripts/run.js -d . -u agy -R -a cartographer -- "Verificar endpoints do gateway"
+node .claude/skills/oathbound/scripts/run.js -d . -u agy -R -a cartographer -- "Verificar endpoints do gateway"
 ```
 
 ### Características de execução

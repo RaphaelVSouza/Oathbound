@@ -6,10 +6,10 @@ do agente sem permissão de edição nem shell para esta pergunta. A próxima
 chamada de trabalho volta a usar o agente original.
 
 ```sh
-node .claude/skills/agent-governance/scripts/run.js -d . -a smith -S <id> -Q status
-node .claude/skills/agent-governance/scripts/run.js -d . -a smith -S <id> -Q bloqueios
-node .claude/skills/agent-governance/scripts/run.js -d . -a smith -S <id> -Q evidencias
-node .claude/skills/agent-governance/scripts/run.js -d . -a smith -S <id> -Q entrega
+node .claude/skills/oathbound/scripts/run.js -d . -a smith -S <id> -Q status
+node .claude/skills/oathbound/scripts/run.js -d . -a smith -S <id> -Q bloqueios
+node .claude/skills/oathbound/scripts/run.js -d . -a smith -S <id> -Q evidencias
+node .claude/skills/oathbound/scripts/run.js -d . -a smith -S <id> -Q entrega
 ```
 
 Troque `smith` pelo agente da sessão, inclusive `archivist`. Acrescente

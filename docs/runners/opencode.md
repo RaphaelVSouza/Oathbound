@@ -2,11 +2,11 @@
 
 O instalador copia os dez agentes para `.opencode/agents/`. O OpenCode usa
 esses arquivos no projeto e descobre a skill instalada em
-`.claude/skills/agent-governance/`.
+`.claude/skills/oathbound/`.
 
-## Início com o orquestrador
+## Início com o oathkeeper
 
-Inicie a sessão com o `oathkeeper` como agente primário: ele é o orquestrador
+Inicie a sessão com o `oathkeeper` como agente primário: ele é o oathkeeper
 da guilda, não edita nem commita e delega por
 `node oathbound/scripts/run.js` e `queue.js`. Selecione-o no menu de agentes do
 OpenCode ou passe-o diretamente. Os demais agentes têm `mode: subagent` e são
@@ -14,10 +14,10 @@ invocados pelo `run.js`; `oathkeeper` é o único `mode: primary` e não é
 delegável.
 
 `sage` precisa das ferramentas `websearch` e `webfetch` disponíveis
-na instalação OpenCode. Ele responde diretamente ao orquestrador e não edita
+na instalação OpenCode. Ele responde diretamente ao oathkeeper e não edita
 arquivos do projeto.
 
-Invoque os agentes pelo `node .claude/skills/agent-governance/scripts/run.js` (OpenCode
+Invoque os agentes pelo `node .claude/skills/oathbound/scripts/run.js` (OpenCode
 é o runner padrão, equivalente a `-u opencode`): `-R` para `cartographer`,
 `sage`, `assayer` e `warden`; `-s <glob>` para `smith`, `scribe`, `bard`,
 `gremlin` e `archivist`. O modo de leitura exige `edit: deny` no agente e acusa qualquer

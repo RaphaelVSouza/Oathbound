@@ -1,6 +1,6 @@
 # Fila de issues
 
-`node .claude/skills/agent-governance/scripts/queue.js` recebe `-d <repo>`, `-A <arquivo-de-aceite>`, um ou mais
+`node .claude/skills/oathbound/scripts/queue.js` recebe `-d <repo>`, `-A <arquivo-de-aceite>`, um ou mais
 `-s <glob>` e caminhos de issues após `--`. Cada issue deve existir no projeto.
 `-u <runner>` ou `--runner` define o executor de implementação e revisão (padrão `opencode`,
 ou via `OATHBOUND_RUNNER`). O script usa uma sessão de runner e uma de reviewer por fila; `-P` cria
@@ -15,7 +15,7 @@ do runner interrompe a fila, exceto `3`: mudança fora do escopo é reportada
 e a fila prossegue para revisão. Falha de `-C` interrompe com exit `5`.
 
 Mudanças no worktree durante a revisão geram exit `3` no modo leitura; a fila
-preserva `implementada` para que o orquestrador confira a autoria e repita a
+preserva `implementada` para que o oathkeeper confira a autoria e repita a
 revisão quando o estado estiver estável.
 
 O checkpoint fica em `<git-dir>/oathbound/state/`. `implementada` significa
@@ -23,7 +23,7 @@ que runner e checagens opcionais terminaram; `revisada` exige exit `0` do
 reviewer e um marcador de resposta (`No issues.`, `totals:` ou achado com
 `caminho:linha` e severidade). Falha, timeout ou recibo ausente preserva
 `implementada` para repetir só a revisão. O marcador prova formato, não
-qualidade: achados precisam ser julgados pelo orquestrador.
+qualidade: achados precisam ser julgados pelo oathkeeper.
 
 O procedimento completo pode incluir correção na sessão do runner, auditoria
 por mutação, commit e atualização de issue. Essas ações não são executadas

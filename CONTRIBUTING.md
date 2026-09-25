@@ -1,6 +1,6 @@
 # Como Contribuir
 
-Agradecemos o interesse em contribuir com o **Agent Governance Kit**! Este documento orienta o processo de colaboração, diretrizes de arquitetura e padrões de qualidade do repositório.
+Agradecemos o interesse em contribuir com o **Oathbound**! Este documento orienta o processo de colaboração, diretrizes de arquitetura e padrões de qualidade do repositório.
 
 ## Princípios de Design
 

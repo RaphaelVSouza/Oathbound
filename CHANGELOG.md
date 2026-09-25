@@ -1,6 +1,28 @@
 # Histórico de versões
 
-## 0.21.0 — não publicada
+## 0.21.0 — 2026-09-25
+
+### Breaking
+
+O projeto passa a se chamar **Oathbound**. A migração renomeia agentes, scripts, variáveis,
+caminhos de instalação e o estado em `.git/`. Nenhum nome antigo permanece como alias, exceto
+`GOVKIT_*`, aceito por uma versão com aviso em `stderr`.
+
+- **Agentes:** `ds-explorer` → `cartographer`, `ds-researcher` → `sage`, `ds-governance` → `scribe`,
+  `ds-runner` → `smith`, `ds-reviewer` → `assayer`, `ds-security` → `warden`, `ds-mutant` → `gremlin`,
+  `ds-committer` → `archivist`. Novos: `oathkeeper` (orquestrador) e `bard` (documentador).
+- **Scripts de runtime:** `ds-run.js` → `run.js`, `ds-queue.js` → `queue.js`, `ds-kill.js` → `kill.js`;
+  `GovernanceStore`/`openGovernanceStore` → `OathboundStore`/`openStore`.
+- **Variáveis de ambiente:** `GOVKIT_RUNNER`, `GOVKIT_MODEL`, `GOVKIT_EFFORT`, `GOVKIT_AGENT_DIR` e
+  `GOVKIT_GENERIC_CMD` → `OATHBOUND_*`. `GOVKIT_*` segue aceito por uma versão, com aviso.
+- **Caminhos e estado:** `.claude/skills/agent-governance/` → `.claude/skills/oathbound/`;
+  `~/.agent-governance-kit/` → `~/.oathbound/`; symlinks `agent-governance` → `oathbound`;
+  `.git/ds-queue/` → `.git/oathbound/`; `governance.db` → `oathbound.db`; tag de sessão
+  `ds-queue-…` → `oathbound-…`. O instalador detecta instalações antigas e interrompe sem apagar nada.
+- **Módulos internos:** `Governance Store` → `Oathbound Store` (CONTEXT.md); prefixos internos de
+  agente, escopos, tag de sessão e temporários migram para `oathbound-*`.
+
+### Adicionado e alterado
 
 - **Orquestrador e documentador da guilda (sessão 5 de 6 — "Oathbound"):** novos agentes
   `oathkeeper` (`mode: primary`, `temperature: 0`) e `bard` (`mode: subagent`, `temperature: 0`).

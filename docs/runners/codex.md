@@ -1,18 +1,18 @@
 # Codex
 
-O Codex opera no Agent Governance Kit como **host orquestrador** ou como
+O Codex opera no Oathbound como **host orquestrador** ou como
 **runner de execução** subordinado.
 
 ## 1. Codex como host (orquestrador)
 
 Use o `AGENTS.md` do projeto como ponto de entrada. Acrescente um ponteiro para
-`.claude/skills/agent-governance/SKILL.md` quando o trabalho exigir delegação de papéis,
+`.claude/skills/oathbound/SKILL.md` quando o trabalho exigir delegação de papéis,
 commits auditados ou execução de fila.
 
 O Codex segue a skill como especificação operacional do repositório e dispara as
 chamadas CLI a partir da raiz do projeto.
 
-Neste runner, as regras do orquestrador (`oathkeeper`) valem apenas pelo
+Neste runner, as regras do oathkeeper (`oathkeeper`) valem apenas pelo
 `AGENTS.md` e pela skill: não há agente primário nem imposição por permissão.
 Trate `oathkeeper` como papel lógico descrito no `AGENTS.md`; a recusa de
 `run.js -a oathkeeper` continua valendo porque o script é comum a todos os
@@ -24,10 +24,10 @@ Invoque o Codex como executor subordinado de uma tarefa adicionando `-u codex`:
 
 ```bash
 # Execução com edição delimitada por escopo
-node .claude/skills/agent-governance/scripts/run.js -d . -u codex -s "src/db/*" -a smith -- "Criar migração"
+node .claude/skills/oathbound/scripts/run.js -d . -u codex -s "src/db/*" -a smith -- "Criar migração"
 
 # Inspeção somente leitura
-node .claude/skills/agent-governance/scripts/run.js -d . -u codex -R -a cartographer -- "Mapear esquemas de tabela"
+node .claude/skills/oathbound/scripts/run.js -d . -u codex -R -a cartographer -- "Mapear esquemas de tabela"
 ```
 
 ### Características de execução

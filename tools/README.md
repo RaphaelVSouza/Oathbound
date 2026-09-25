@@ -26,7 +26,7 @@ const { errors, warnings, stats } = auditDocs({ repoRoot: '.', staged: false });
 Para usar o motor via terminal sem copiá-lo, informe a raiz e a configuração do projeto:
 
 ```sh
-node /caminho/agent-governance-kit/tools/audit-docs.js --project /caminho/projeto --config /caminho/projeto/tools/audit-docs.config.js
+node /caminho/oathbound/tools/audit-docs.js --project /caminho/projeto --config /caminho/projeto/tools/audit-docs.config.js
 ```
 
 `--project` e `--config` aceitam caminhos absolutos ou relativos ao diretório

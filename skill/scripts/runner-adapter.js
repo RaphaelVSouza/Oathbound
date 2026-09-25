@@ -32,7 +32,7 @@ const BUILTIN_RUNNERS = ['opencode', 'claude', 'codex', 'agy', 'generic'];
 
 const feedbackPrompts = {
   status: 'Responda somente com: etapa atual, progresso observável, próximo passo e estimativa apenas se tiver base factual. Não execute ações.',
-  bloqueios: 'Responda somente com: bloqueios atuais, evidência de cada um e decisão necessária do orquestrador. Se não houver, diga nenhum. Não execute ações.',
+  bloqueios: 'Responda somente com: bloqueios atuais, evidência de cada um e decisão necessária do oathkeeper. Se não houver, diga nenhum. Não execute ações.',
   evidencias: 'Responda somente com: comandos ou fontes já consultados nesta sessão, resultados observados e lacunas. Não execute ações.',
   entrega: 'Resuma o trabalho feito nesta sessão, arquivos afetados, evidências de aceite e pendências. Não execute ações.'
 };

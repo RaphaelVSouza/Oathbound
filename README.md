@@ -1,13 +1,13 @@
-# Agent Governance Kit
+# Oathbound
 
-> Framework reutilizável e agnóstico de governança determinística, auditoria e orquestração multi-agente para desenvolvimento de software com LLMs.
+> Camada de governança determinística, auditoria e orquestração multi-agente para CLIs de código com LLMs.
 
-[![Versão](https://img.shields.io/badge/versão-0.20.3-blue.svg)](VERSION)
+[![Versão](https://img.shields.io/badge/versão-0.21.0-blue.svg)](VERSION)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-green.svg)](https://nodejs.org/)
 [![Dependências](https://img.shields.io/badge/dependências-zero-brightgreen.svg)](README.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
 
-O **Agent Governance Kit** estabelece uma camada de auditoria e controle factual sobre agentes de codificação autônomos. Ele desacopla o orquestrador das CLIs de execução, audita mutações contra o escopo delimitado via Git snapshots, gerencia filas de tarefas com transações ACID em SQLite e organiza prefixos de prompts para maximizar o reaproveitamento de **prompt caching (KV cache)**.
+O **Oathbound** governa CLIs de código já existentes — **OpenCode**, **Claude Code**, **Codex** e **AGY (Antigravity CLI)** — com papéis juramentados e auditoria de escopo pelo Git. Ele não chama modelos diretamente: delega a execução às CLIs, audita mutações contra o escopo delimitado via snapshots do Git, gerencia filas de tarefas com transações ACID em SQLite e organiza prefixos de prompts para maximizar o reaproveitamento de **prompt caching (KV cache)**.
 
 ---
 
@@ -19,7 +19,7 @@ Agentes de código com LLMs frequentemente:
 - Re-injetam todo o contexto a cada turno, descartando o reaproveitamento de cache KV de prefixo.
 - Criam commits genéricos ou desordenados sem rastreabilidade.
 
-O **Agent Governance Kit** resolve esses problemas através de:
+O **Oathbound** resolve esses problemas através de:
 
 1. **Executores Agnósticos (Runners):** Suporte nativo e intercambiável para **OpenCode**, **Claude Code**, **OpenAI Codex**, **Antigravity CLI (AGY)** e comandos customizados via contrato `RunnerAdapter`.
 2. **Auditoria Determinística de Escopo:** O kit não cria virtualização de filesystem nem isolamento de kernel; a governança apoia-se em restrições de ferramentas e prompt guards, combinados com auditoria factual de snapshot Git antes e depois de cada chamada. Qualquer mutação fora dos globs autorizados (`-s`) é detectada no diff e encerra com código de saída `3` (sem descartar alterações automaticamente, preservando evidências para conferência).
@@ -30,19 +30,21 @@ O **Agent Governance Kit** resolve esses problemas através de:
 
 ---
 
-## Agentes Canônicos
+## A guilda
 
-O kit disponibiliza oito papéis especializados com permissões estritas em [`guild/`](guild/):
+O Oathbound distribui o trabalho entre dez papéis juramentados em [`guild/`](guild/) — um orquestrador, oito especialistas e um documentador:
 
-| Papel | Responsabilidade | Permissões Padrão |
+| Ofício | Função | Permissões principais |
 | :--- | :--- | :--- |
-| [`scribe`](guild/scribe.md) | Triagem de issues, elaboração de especificações e decomposição em tickets técnicos. | Edição em `docs/`, `AGENTS.md` e rascunhos; shell somente leitura (`git`). |
-| [`smith`](guild/smith.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); execução de comandos de teste/build. |
-| [`assayer`](guild/assayer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura de código; shell restrito a `git diff`, `git status`, `git show` e `git log -p`. |
-| [`cartographer`](guild/cartographer.md) | Leitura rápida e orientação de código com evidências compactas (`caminho:linha`). | Somente leitura (`glob`, `read`); escrita e shell terminantemente proibidos. |
+| [`oathkeeper`](guild/oathkeeper.md) | Orquestra a guilda: escolhe o papel, entrega a tarefa fechada, confere diff/recibo e decide o avanço. Não edita nem commita. | Somente leitura; shell restrito a `git status/diff/log/show` e aos scripts de `run.js`, `queue.js`, `kill.js`, `quiet.js`; não é delegável. |
+| [`cartographer`](guild/cartographer.md) | Leitura rápida e orientação de código com evidências compactas (`caminho:linha`). | Somente leitura (`glob`, `read`); escrita e shell proibidos. |
 | [`sage`](guild/sage.md) | Pesquisa técnica em fontes primárias externas com citação de links verificáveis. | Somente leitura; navegação web permitida; escrita local bloqueada. |
-| [`gremlin`](guild/gremlin.md) | Testes por mutação no código-fonte para avaliar eficácia das asserções de teste. | Edição temporária em fontes (exceto testes); restauração manual/pelo agente (wrapper não reverte automaticamente). |
-| [`archivist`](guild/archivist.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; operação de Git restrita aos arquivos autorizados. |
+| [`scribe`](guild/scribe.md) | Specs, tickets, decisões e instruções de agentes, antes da implementação. | Edição em `docs/`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` e `.scratch/`; shell somente leitura (`git`). |
+| [`smith`](guild/smith.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); comandos de teste/build; Git que altera histórico bloqueado. |
+| [`assayer`](guild/assayer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura; shell restrito a `git diff`, `git status`, `git show` e `git log -p`. |
+| [`bard`](guild/bard.md) | Documenta depois do trabalho, sempre com base no Git: README, CHANGELOG, guias e descrição do PR. | Edição só em `README.md`, `CHANGELOG.md` e `docs/`; shell somente leitura (`git`). |
+| [`archivist`](guild/archivist.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; Git restrito aos arquivos autorizados (`git-stage.js`, `git-commit.js`). |
+| [`gremlin`](guild/gremlin.md) | Testes por mutação no código-fonte para avaliar a eficácia das asserções. | Edição temporária em fontes (exceto testes); restauração conferida por hash; Git destrutivo bloqueado. |
 | [`warden`](guild/warden.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
 
 ---
@@ -68,7 +70,7 @@ pwsh -File .\install.ps1 -Project D:\caminho\do\projeto -Runner claude
 
 ### Instalação Global (Agnóstica de CLI)
 
-Configura uma fonte única em `~/.agent-governance-kit/` com symlinks automáticos para as pastas de skills do usuário (`~/.claude/skills/`, `~/.codex/skills/`, `~/.gemini/config/skills/`) e compila os agentes nativos em cada CLI:
+Configura uma fonte única em `~/.oathbound/` com symlinks automáticos para as pastas de skills do usuário (`~/.claude/skills/`, `~/.codex/skills/`, `~/.gemini/config/skills/`) e compila os agentes nativos em cada CLI:
 
 ```powershell
 # Instalação global inicial
@@ -88,10 +90,10 @@ Executa um agente sob um escopo explícito e com auditoria de diff antes e após
 
 ```bash
 # Implementação delimitada via Claude Code com escopo definido
-node .claude/skills/agent-governance/scripts/run.js -d . -u claude -s "src/services/*" -a smith -- "Implementar cálculo de desconto"
+node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/services/*" -a smith -- "Implementar cálculo de desconto"
 
 # Exploração somente leitura via OpenCode com reasoning effort alto
-node .claude/skills/agent-governance/scripts/run.js -d . -u opencode -R -e high -a cartographer -- "Mapear fluxo de autenticação"
+node .claude/skills/oathbound/scripts/run.js -d . -u opencode -R -e high -a cartographer -- "Mapear fluxo de autenticação"
 ```
 
 ### 2. Fila Orquestrada de Tarefas (`queue.js`)
@@ -100,7 +102,7 @@ Orquestra sequencialmente as etapas de implementação, validação e revisão p
 
 ```bash
 # Executa fila de tickets com arquivo de critérios de aceite (-A) e escopo delimitado (-s)
-node .claude/skills/agent-governance/scripts/queue.js -d . -u agy -A docs/aceite.txt -s "src/*" -- docs/tickets/001.md docs/tickets/002.md
+node .claude/skills/oathbound/scripts/queue.js -d . -u agy -A docs/aceite.txt -s "src/*" -- docs/tickets/001.md docs/tickets/002.md
 ```
 
 Consulte a [referência da fila](skill/references/queue.md) para detalhes de critérios de aceite, checagens e checkpoints.
@@ -115,14 +117,91 @@ node tools/guild-transpiler.js --target . --runner all
 
 ---
 
+## Variáveis de Ambiente
+
+Os wrappers leem variáveis `OATHBOUND_*` para substituir opcionalmente `-u`, `-m`, `-e`, `-a` e os guardrails de escopo:
+
+| Variável | Efeito |
+| :--- | :--- |
+| `OATHBOUND_RUNNER` | Runner padrão (`opencode`, `claude`, `codex`, `agy`, `generic`). |
+| `OATHBOUND_MODEL` | Modelo repassado ao runner (`-m`). |
+| `OATHBOUND_EFFORT` | Esforço de raciocínio (`low`, `medium`, `high`). |
+| `OATHBOUND_AGENT_DIR` | Diretório alternativo de arquivos de agente. |
+| `OATHBOUND_GENERIC_CMD` | Comando usado pelo runner `generic`. |
+
+> **Compatibilidade de uma versão:** o prefixo legado `GOVKIT_*` continua aceito por uma versão. Quando a variável nova está ausente e a antiga existe, o valor antigo é usado e um único aviso é escrito em `stderr` (`GOVKIT_RUNNER está obsoleta; use OATHBOUND_RUNNER`). Migre para `OATHBOUND_*` antes da próxima versão.
+
+---
+
+## Como o Oathbound se compara
+
+Frameworks como **CrewAI**, **AutoGen** e **LangGraph** orquestram chamadas a modelos: montam agentes, conectam ferramentas e governam o fluxo de inferência dentro da aplicação.
+
+O Oathbound parte de outro ponto: governa CLIs de código já existentes (OpenCode, Claude Code, Codex, AGY), que continuam a conversar com seus próprios provedores e modelos. O que o Oathbound acrescenta é a moldura de escopo auditada no Git — papéis juramentados, globs autorizados, auditoria de diff antes e depois de cada chamada e uma fila transacional com checkpoints.
+
+As duas abordagens resolvem problemas diferentes e podem coexistir. Este documento apenas descreve o recorte do Oathbound; não emite juízo de valor sobre os outros projetos.
+
+---
+
+## Migração a partir do agent-governance-kit
+
+A partir da versão 0.21.0 o projeto passa a se chamar **Oathbound**. A migração renomeia agentes, scripts, variáveis, caminhos de instalação e o estado em `.git/`. Nenhum destes nomes permanece como alias (só `GOVKIT_*` funciona por uma versão, com aviso).
+
+### Agentes
+
+| Antes | Depois |
+| :--- | :--- |
+| `ds-explorer` | `cartographer` |
+| `ds-researcher` | `sage` |
+| `ds-governance` | `scribe` |
+| `ds-runner` | `smith` |
+| `ds-reviewer` | `assayer` |
+| `ds-security` | `warden` |
+| `ds-mutant` | `gremlin` |
+| `ds-committer` | `archivist` |
+| — (novos) | `oathkeeper` (orquestrador) e `bard` (documentador) |
+
+### Scripts de runtime
+
+| Antes | Depois |
+| :--- | :--- |
+| `ds-run.js` | `run.js` |
+| `ds-queue.js` | `queue.js` |
+| `ds-kill.js` | `kill.js` |
+| `GovernanceStore` / `openGovernanceStore` | `OathboundStore` / `openStore` |
+
+### Variáveis de ambiente
+
+| Antes | Depois |
+| :--- | :--- |
+| `GOVKIT_RUNNER` | `OATHBOUND_RUNNER` |
+| `GOVKIT_MODEL` | `OATHBOUND_MODEL` |
+| `GOVKIT_EFFORT` | `OATHBOUND_EFFORT` |
+| `GOVKIT_AGENT_DIR` | `OATHBOUND_AGENT_DIR` |
+| `GOVKIT_GENERIC_CMD` | `OATHBOUND_GENERIC_CMD` |
+
+### Caminhos e estado
+
+| Antes | Depois |
+| :--- | :--- |
+| `.claude/skills/agent-governance/` | `.claude/skills/oathbound/` |
+| `~/.agent-governance-kit/` | `~/.oathbound/` |
+| `.git/ds-queue/` | `.git/oathbound/` |
+| `governance.db` | `oathbound.db` |
+| tag de sessão `ds-queue-…` | tag `oathbound-…` |
+
+O estado em `.git/oathbound/` é migrado automaticamente na primeira execução: `stateDir()` renomeia `.git/ds-queue` para `.git/oathbound` e `governance.db` para `oathbound.db`, preservando o legado quando ambos existirem.
+
+---
+
 ## Estrutura do Pacote
 
 | Diretório / Arquivo | Responsabilidade |
 | :--- | :--- |
 | [`docs/runners/`](docs/runners/README.md) | Documentação de integração e adaptadores para OpenCode, Claude Code, Codex, AGY e Generic. |
 | [`tools/guild-transpiler.js`](tools/guild-transpiler.js) | Compilador que converte definições canônicas de agentes nos formatos específicos de cada CLI. |
-| [`guild/`](guild/) | Definições canônicas em Markdown dos 8 agentes de governança. |
-| [`skill/SKILL.md`](skill/SKILL.md) | Skill do orquestrador com instruções operacionais e escolha de papéis. |
+| [`guild/`](guild/) | Definições canônicas em Markdown dos dez agentes da guilda. |
+| [`skill/SKILL.md`](skill/SKILL.md) | Skill do oathkeeper com instruções operacionais e escolha de papéis. |
 | [`skill/scripts/`](skill/scripts/) | Scripts de runtime: runner com auditoria de escopo, fila transacional e controle de processos. |
 | [`skill/references/models.md`](skill/references/models.md) | Guia prático de reasoning effort e estratégias perenes de prompt caching KV. |
 | [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Fragmentos de configuração de `AGENTS.md` para novos repositórios. |
@@ -151,7 +230,7 @@ node tools/audit-docs.js
 
 ## Créditos e Referências
 
-O Agent Governance Kit sintetiza e adapta conceitos das seguintes referências:
+O Oathbound sintetiza e adapta conceitos das seguintes referências:
 
 - **[Matt Pocock — Skills for Real Engineers](https://github.com/mattpocock/skills):** Padrões de desenvolvimento orientado a especificações (triagem, spec, tickets, TDD e revisão em dois eixos) incorporados nativamente aos agentes canônicos `scribe`, `smith` e `assayer`.
 - **[RTK — Rust Token Killer](https://github.com/rtk-ai/rtk):** Estratégias de compressão de saída de terminal para mitigação de consumo de contexto em LLMs.
