@@ -1,5 +1,19 @@
 # Histórico de versões
 
+## 0.12.0 — 2026-09-25
+
+- `install.ps1`: novo switch `-Upgrade`, aceito só com `-Global`. Libera
+  substituir a fonte da skill (`~/.agent-governance-kit/`) e o auditor de
+  documentação já instalados pela versão atual do repositório, sem exigir
+  remoção manual. `-Upgrade` com `-Project` é rejeitado explicitamente — o
+  modo por-projeto continua sem upgrade automático, por design.
+- Modo `-Global` cria um terceiro symlink em
+  `~/.gemini/config/skills/agent-governance`, cobrindo AGY CLI e o Gemini
+  nativo do Antigravity IDE (compartilham a mesma raiz de configuração), além
+  de Claude Code e Codex.
+- Mesmo ponto de entrada serve instalação e atualização; nenhum script novo
+  foi criado, para não duplicar a lógica de colisão e symlink.
+
 ## 0.11.0 — 2026-09-25
 
 - `install.ps1`: novo parâmetro `-Global`, mutuamente exclusivo com `-Project`.

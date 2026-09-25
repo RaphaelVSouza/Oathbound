@@ -95,6 +95,24 @@ para `~/.agent-governance-kit/SKILL.md` no lugar que essa CLI usa.
 
 `-MattPocock` e `-AuditDocs` funcionam igual ao modo por-projeto.
 
+Terceiro symlink em `~/.gemini/config/skills/agent-governance` cobre o AGY CLI e o
+Gemini nativo do Antigravity IDE, que compartilham essa mesma raiz de configuração.
+
+## Atualizar uma instalação global
+
+```powershell
+pwsh -NoProfile -File D:\agent-governance-kit\install.ps1 -Global -Upgrade
+```
+
+`-Upgrade` só é aceito com `-Global` — o modo `-Project` nunca sobrescreve
+automaticamente (preserva mudanças locais do consumidor, ver seção acima).
+Substitui a fonte da skill (`~/.agent-governance-kit/`) e o auditor de
+documentação, se instalado, pela versão atual do repositório. Os agentes
+`ds-*` e os symlinks já são sincronizados a cada execução do modo `-Global`,
+com ou sem `-Upgrade`. Não existe script de atualização separado: o mesmo
+`install.ps1` instala e atualiza, para não duplicar a lógica de colisão e
+symlink em dois lugares.
+
 ## Contrato de execução
 
 - `node skill/scripts/ds-run.js` exige `-d` (repositório) e uma mensagem. Para agentes de leitura,

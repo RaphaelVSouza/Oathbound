@@ -1,6 +1,9 @@
 # Copia a versão atual para um repositório Git, ou globalmente para o perfil
 # do usuário, sem sobrescrever arquivos de projeto (o modo -Global sobrescreve
-# agentes ds-* por design — ver README).
+# agentes ds-* por design — ver README). -Upgrade libera substituir uma
+# instalação -Global já existente (fonte da skill e auditor) para sincronizar
+# com a versão atual do repositório; mesmo ponto de entrada serve instalação
+# e atualização.
 [CmdletBinding(DefaultParameterSetName = 'Project')]
 param(
     [Parameter(Mandatory = $true, ParameterSetName = 'Project')]
@@ -8,7 +11,8 @@ param(
     [Parameter(Mandatory = $true, ParameterSetName = 'Global')]
     [switch]$Global,
     [switch]$MattPocock,
-    [switch]$AuditDocs
+    [switch]$AuditDocs,
+    [switch]$Upgrade
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,9 +47,15 @@ $skillSource = Join-Path $PSScriptRoot 'skill'
 $agentsSource = Join-Path $PSScriptRoot 'adapters/opencode/agents'
 $mattSource = Join-Path $PSScriptRoot 'optional/matt-pocock'
 $agentFiles = @(Get-ChildItem -LiteralPath $agentsSource -File -Filter '*.md')
+if ($Upgrade -and -not $Global) {
+    throw '-Upgrade só se aplica a -Global; o modo -Project nunca sobrescreve automaticamente (ver README).'
+}
+
 $collisions = @()
-if (Test-Path -LiteralPath $skillTarget) { $collisions += $skillTarget }
-if ($AuditDocs) {
+# -Upgrade libera só a fonte da skill para substituição; agentes ds-* (Global)
+# já são Force por design, e o auditor segue exigindo -Upgrade também.
+if ((Test-Path -LiteralPath $skillTarget) -and -not $Upgrade) { $collisions += $skillTarget }
+if ($AuditDocs -and -not $Upgrade) {
     foreach ($name in @('audit-docs.js', 'audit-docs.core.js', 'audit-docs.sources.js', 'audit-docs.config.js')) {
         $target = Join-Path $auditTarget $name
         if (Test-Path -LiteralPath $target) { $collisions += $target }
@@ -63,6 +73,9 @@ if ($collisions.Count -gt 0) {
     throw "Instalação interrompida; existem destinos a revisar:`n$($collisions -join "`n")"
 }
 
+if ($Upgrade -and (Test-Path -LiteralPath $skillTarget)) {
+    Remove-Item -LiteralPath $skillTarget -Recurse -Force
+}
 New-Item -ItemType Directory -Path (Split-Path -Parent $skillTarget), $agentsTarget -Force | Out-Null
 Copy-Item -LiteralPath $skillSource -Destination $skillTarget -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Destination (Join-Path $skillTarget 'VERSION')
@@ -77,9 +90,9 @@ foreach ($agentFile in $agentFiles) {
 if ($AuditDocs) {
     New-Item -ItemType Directory -Path $auditTarget -Force | Out-Null
     foreach ($name in @('audit-docs.js', 'audit-docs.core.js', 'audit-docs.sources.js')) {
-        Copy-Item -LiteralPath (Join-Path $PSScriptRoot "tools/$name") -Destination (Join-Path $auditTarget $name)
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot "tools/$name") -Destination (Join-Path $auditTarget $name) -Force:$Upgrade
     }
-    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'templates/audit-docs/audit-docs.config.js') -Destination (Join-Path $auditTarget 'audit-docs.config.js')
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'templates/audit-docs/audit-docs.config.js') -Destination (Join-Path $auditTarget 'audit-docs.config.js') -Force:$Upgrade
 }
 
 $symlinkFailures = @()
@@ -90,7 +103,8 @@ if ($Global) {
     # aborta a instalação — a skill segue utilizável via referência manual.
     $links = @(
         (Join-Path $HOME '.claude/skills/agent-governance'),
-        (Join-Path $HOME '.codex/skills/agent-governance')
+        (Join-Path $HOME '.codex/skills/agent-governance'),
+        (Join-Path $HOME '.gemini/config/skills/agent-governance')
     )
     foreach ($link in $links) {
         if (Test-Path -LiteralPath $link) { continue }
@@ -107,12 +121,12 @@ $version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Raw).T
 if ($Global) {
     Write-Output "Agent Governance Kit $version instalado globalmente em $skillTarget"
     Write-Output "Agentes ds-* sobrescritos em $agentsTarget (versão do repositório)."
-    Write-Output "Symlinks criados em ~/.claude/skills/agent-governance e ~/.codex/skills/agent-governance."
+    Write-Output "Symlinks criados em ~/.claude/skills/, ~/.codex/skills/ e ~/.gemini/config/skills/ (AGY e Antigravity Gemini nativo)."
     if ($symlinkFailures.Count -gt 0) {
         Write-Output "Falha ao criar symlink (ative o Modo de desenvolvedor do Windows ou rode como administrador):"
         foreach ($f in $symlinkFailures) { Write-Output "  $f" }
     }
-    Write-Output "AGY e outras CLIs sem convenção documentada: aponte manualmente para $skillTarget/SKILL.md."
+    Write-Output "Outras CLIs sem convenção documentada: aponte manualmente para $skillTarget/SKILL.md."
 } else {
     Write-Output "Agent Governance Kit $version instalado em $projectPath"
 }
