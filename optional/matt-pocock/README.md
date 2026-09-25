@@ -12,7 +12,7 @@ conferência do resultado e o avanço da fila.
 | Implementação de um ticket ou recorte de spec | [`ds-runner`](agents/ds-runner.md) | `implement`; ciclos de TDD somente quando testes fizerem parte da tarefa. |
 | Revisão de uma entrega | [`ds-reviewer`](agents/ds-reviewer.md) | Dois eixos de `code-review`: padrões e spec. |
 
-`ds-explorer`, `ds-researcher`, `ds-mutant` e `ds-committer` mantêm as instruções base.
+`ds-explorer`, `ds-researcher`, `ds-mutant`, `ds-committer` e `ds-security` mantêm as instruções base.
 `ds-researcher` incorpora o contrato de pesquisa em fontes primárias da skill
 `research` de Matt Pocock e devolve as fontes ao orquestrador sem carregar
 essa skill. O trabalho de `implement-spec` sobre vários tickets continua com

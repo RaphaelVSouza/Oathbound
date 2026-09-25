@@ -1,7 +1,7 @@
 # Agent Governance Kit
 
 Pacote reutilizável de delegação, auditoria e orquestração de agentes. Esta
-versão reúne uma skill, sete papéis OpenCode e os wrappers de execução
+versão reúne uma skill, oito papéis OpenCode e os wrappers de execução
 usados pela fila. Regras de domínio, endpoints, hosts, comandos de validação e
 decisões de produção pertencem ao repositório que adota o pacote.
 
@@ -14,7 +14,7 @@ sem execução de fila ou agentes neste pacote.
 | --- | --- |
 | [`skill/SKILL.md`](skill/SKILL.md) | Escolha de papéis e disciplina do orquestrador. |
 | [`skill/scripts/`](skill/scripts/) | Runner com auditoria de escopo, fila, saída curta e controle de processos. |
-| [`adapters/opencode/agents/`](adapters/opencode/agents/) | Sete agentes com permissões por papel, incluindo pesquisa externa e commits; o modelo vem da configuração do projeto. |
+| [`adapters/opencode/agents/`](adapters/opencode/agents/) | Oito agentes com permissões por papel, incluindo pesquisa externa e commits; o modelo vem da configuração do projeto. |
 | [`adapters/`](adapters/) | Instruções de integração para OpenCode, Claude e Codex. |
 | [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Ponteiro curto a adaptar no repositório consumidor. |
 | [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Variantes obrigatórias de três agentes com triagem, spec, tickets, implementação e revisão incorporadas — o instalador sempre as usa. |

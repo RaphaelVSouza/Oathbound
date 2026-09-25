@@ -20,6 +20,7 @@ skill fornece os papéis e wrappers.
 | Preparação de hunks e commits | `ds-committer` | `node ds-run.js -a ds-committer -s <arquivo>` |
 | Registro documental | `ds-governance` | `node ds-run.js -a ds-governance -s <glob>` |
 | Auditoria por mutação | `ds-mutant` | `node ds-run.js -a ds-mutant -s <glob>`, em série |
+| Auditoria de segurança de aplicação | `ds-security` | `node ds-run.js -R -a ds-security` |
 
 Use um agente nomeado; o agente padrão do OpenCode não recebe as permissões
 destes papéis. Passe ao agente uma tarefa fechada, os caminhos permitidos,

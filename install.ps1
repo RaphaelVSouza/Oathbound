@@ -81,7 +81,7 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Destination (Join-Pa
 foreach ($agentFile in $agentFiles) {
     # Fluxo Matt Pocock (triagem, spec, tickets) é obrigatório: todo agente com
     # variante disponível usa essa versão; agentes sem variante (ex.: ds-committer,
-    # ds-explorer, ds-mutant, ds-researcher, ds-worker) seguem com a base.
+    # ds-explorer, ds-mutant, ds-researcher, ds-security, ds-worker) seguem com a base.
     $source = $agentFile.FullName
     $candidate = Join-Path $mattSource "agents/$($agentFile.Name)"
     if (Test-Path -LiteralPath $candidate) { $source = $candidate }

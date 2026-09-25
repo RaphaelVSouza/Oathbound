@@ -1,5 +1,18 @@
 # Histórico de versões
 
+## 0.16.0 — 2026-09-25
+
+- Novo agente `ds-security` (`adapters/opencode/agents/ds-security.md`): auditor
+  de segurança de aplicação (AppSec) read-only com `reasoningEffort: high`.
+  Conta com diretrizes de exploração econômica de contexto (inside-out a partir
+  do diff, leitura fatiada sem carregar arquivos inteiros, rastreamento de
+  mancha limitado a 2 saltos e early exit sem primitivas sensíveis). Checklist
+  cobre OWASP Top 10 e CWE Top 25; matriz de risco calcula Probabilidade x
+  Impacto; saída compacta uma linha por achado, compatível com `ds-run.js -R`.
+- Documentação e contagem de agentes atualizadas para oito papéis em `README.md`,
+  `adapters/opencode/README.md`, `skill/SKILL.md`,
+  `optional/matt-pocock/README.md` e `install.ps1`.
+
 ## 0.15.0 — 2026-09-25
 
 - `ds-governance` (base e Matt Pocock) ganha responsabilidade explícita de
