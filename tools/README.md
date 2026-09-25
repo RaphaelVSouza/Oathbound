@@ -16,7 +16,14 @@ node tools/audit-docs.js --staged
 node tools/audit-docs.js --verbose
 ```
 
-Para usar o motor sem copiá-lo, informe a raiz e a configuração do projeto:
+O motor também pode ser invocado programaticamente em Node.js ou testes sem dependências:
+
+```js
+const { auditDocs } = require('./tools/audit-docs.core.js');
+const { errors, warnings, stats } = auditDocs({ repoRoot: '.', staged: false });
+```
+
+Para usar o motor via terminal sem copiá-lo, informe a raiz e a configuração do projeto:
 
 ```sh
 node /caminho/agent-governance-kit/tools/audit-docs.js --project /caminho/projeto --config /caminho/projeto/tools/audit-docs.config.js

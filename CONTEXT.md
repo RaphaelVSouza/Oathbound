@@ -23,3 +23,11 @@ _Avoid_: Thread, Prompt isolado
 **Git Module**:
 Módulo profundo que encapsula a inspeção de estado do repositório, fatiamento seletivo de hunks e criação de commits com checagem de escopo.
 _Avoid_: Git wrapper, Script de Git
+
+**Audit Engine**:
+Motor estático in-process de validação de integridade documental, links, tabelas e tokens contratuais.
+_Avoid_: Linter de docs, Validador markdown
+
+**Audit Source**:
+Abstração de leitura sobre o sistema de arquivos ou o índice do Git para inspeção estática sem acoplamento a SO.
+_Avoid_: File provider, Git reader

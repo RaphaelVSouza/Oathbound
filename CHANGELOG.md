@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 0.8.1 — 2026-09-24
+
+- `audit-docs.core.js` transformado em motor profundo in-process que exporta `auditDocs()`,
+  retornando diagnósticos estruturados sem invocar `process.exit()`.
+- `audit-docs.js` atua como adaptador fino de CLI para argumentos de terminal e saídas formatadas.
+- Adição de testes unitários isolados em `test/audit-docs.test.js` para as regras de validação.
+- Registro dos termos *Audit Engine* e *Audit Source* no `CONTEXT.md`.
+
 ## 0.8.0 — 2026-09-24
 
 - Unificação das operações Git em um módulo profundo `skill/scripts/git.js` (consultas,
