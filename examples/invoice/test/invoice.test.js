@@ -9,9 +9,9 @@ test('total sem desconto soma itens e frete padrão', () => {
   assert.equal(total(items), 35);
 });
 
-test('total com desconto e um único item', () => {
+test('total com desconto e um único item', { todo: 'bug proposital, issue 001' }, () => {
   const items = [{ price: 100, qty: 1 }];
-  assert.equal(total(items, 0.1), 103.5);
+  assert.equal(total(items, 0.1), 105);
 });
 
 test('total com múltiplos itens sem desconto', () => {

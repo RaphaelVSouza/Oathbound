@@ -1,14 +1,15 @@
-PS> Set-Location (Join-Path $Tmp 'invoice-queue')
-  node .claude/skills/oathbound/scripts/queue.js -d . -A aceite.txt -s "src/*" -s "test/*" -u claude -- docs/issues/001-desconto.md
-── oathbound queue: logs em <home>\AppData\Local\Temp\oathbound-queue-bVvHnr
-##### docs-001-desconto runner exit=0 sessao=1d3a1a00-6442-4cfe-a6dd-214ba88b9b56
-ACEITE: node --test → exit 0, fail 0 (esperado: passa); total([{price:100,qty:1}],0.1) → 105 (esperado: 105)
-FONTES: FRETE_PADRAO = 15 → src/invoice.js:3; fórmula e valor 105 → docs/issues/001-desconto.md:8,18
-NOTA: .claude/ e AGENTS.md já sujos ao início, fora do escopo (src/*, test/*), preservados sem alteração
+PS> node .claude/skills/oathbound/scripts/queue.js -d . -A aceite.txt -s "src/*" -s "test/*" -u claude -- docs/issues/001-desconto.md
+── oathbound queue: logs em <tmp>\oathbound-queue-4yQLJz
+##### docs-001-desconto runner exit=0 sessao=9c17252c-317d-441b-a355-1c82e53aad70
+ACEITE: node --test → obtido: 3 pass, 0 fail | esperado: passa, total([{price:100,qty:1}],0.1)=105 → obtido 105
+FONTES: FRETE_PADRAO=15 → src/invoice.js:3; fórmula esperada → docs/issues/001-desconto.md:8
+NOTA: nenhuma
 ##### docs-001-desconto diff (git, não o agente):
 src/invoice.js       | 6 +++---
  test/invoice.test.js | 2 +-
  2 files changed, 4 insertions(+), 4 deletions(-)
 
-── fila parada em docs-001-desconto: reviewer sem recibo conclusivo; log <home>\AppData\Local\Temp\oathbound-queue-bVvHnr\docs-001-desconto.rev
--- exit_processo=6 duracao=64s
+##### docs-001-desconto reviewer sessao=c5b3f75e-0822-4ada-8c6c-43eebc1044d0
+No issues.
+── oathbound queue: fim; sessoes runner=9c17252c-317d-441b-a355-1c82e53aad70 reviewer=c5b3f75e-0822-4ada-8c6c-43eebc1044d0
+── exit_processo=0 duracao=59s

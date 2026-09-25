@@ -1,20 +1,16 @@
-PS> Set-Location (Join-Path $Tmp 'invoice')
-  node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/*" -s "test/*" -a archivist -- "Crie um commit com a correcao do bug de docs/issues/001-desconto.md em src/invoice.js e test/invoice.test.js, seguindo Conventional Commits."
-  Write-Output '-- git log --'
-  git log --oneline -3
+PS> node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/*" -s "test/*" -a archivist -- "Crie um commit com src/invoice.js e test/invoice.test.js: fix do bug de calculo do desconto (issue 001), removendo o todo do teste."
+Recibo:
+
 ```text
-COMMITS: 960026a — fix(invoice): aplicar desconto somente sobre subtotal — src/invoice.js (arquivo inteiro), test/invoice.test.js (arquivo inteiro)
+COMMITS: 7e41511 — fix(invoice): corrige calculo do desconto no total — src/invoice.js (arquivo inteiro), test/invoice.test.js (arquivo inteiro)
 PENDÊNCIAS: nenhuma dentro do escopo autorizado (src/*, test/*)
 ÍNDICE: vazio
-WORKTREE: ?? .claude/ | ?? AGENTS.md (fora escopo, não tocados)
+WORKTREE: ?? .claude/ ; ?? AGENTS.md (não rastreados, fora do escopo autorizado — não tocados)
 ```
 
-── oathbound run: agente=archivist runner=claude modo=git modelo=configuração do projeto exit=0 tempo=33s sessao=f6d1c00e-c32a-4e2d-8eb5-9b73e6f8d5e6
+── oathbound run: agente=archivist runner=claude modo=git modelo=configuração do projeto exit=0 tempo=66s sessao=fa27da3a-5a66-4cf2-b39f-bd49f47d6799
 ── alterados na chamada (2):
    src/invoice.js
    test/invoice.test.js
-── HEAD: 86b72556f5fb965a277909f04aad0553d6196476 → 960026a3288c0339aba51e9294c98434c987c86b; arquivos commitados=2
--- git log --
-960026a fix(invoice): aplicar desconto somente sobre subtotal
-86b7255 chore: commit inicial do exemplo invoice
--- exit_processo=0 duracao=39s
+── HEAD: 469f7dff8f42cc6d4e4970174a4af7b89c04780d → 7e415115744fb2f3b74c5d4cb4cd9baa432a83ef; arquivos commitados=2
+── exit_processo=0 duracao=72s

@@ -1,9 +1,11 @@
-Sem tool de diff/bash nesse contexto — avalio arquivos direto (equivalente ao diff, já que são não rastreados/staged novos).
+Só um commit, nenhum arquivo modificado ou não rastreado depois dele (índice bate working tree — invoice.js e test já commitados assim). Diff contra HEAD vazio. Nada pra revisar como mudança.
 
-Verifico teste que falha sem mudança: implementação atual já usa fórmula correta (linha 14-15 `invoice.js`). Não há versão "antes" para comparar aqui, mas conteúdo bate 100% com spec e aceite.
+```text
+No issues.
+```
 
-`No issues.`
+Nota: working tree igual HEAD, sem diff e sem arquivo não rastreado fora dos já commitados. Código em `src/invoice.js` já corresponde ao aceite de `docs/issues/001-desconto.md` (fórmula linha 14-15, teste linha 12-15 passa).
 
-── oathbound run: agente=assayer runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=17s sessao=67af82ea-7823-46ed-a5b5-e1c7ac26f25d
+── oathbound run: agente=assayer runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=21s sessao=c5b3f75e-0822-4ada-8c6c-43eebc1044d0
 ── alterados na chamada (0):
 

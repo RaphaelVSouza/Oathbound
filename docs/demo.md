@@ -63,49 +63,77 @@ alterados).
 
 Comando: `node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/*" -s "test/*" -- "Corrija o bug..."`
 
+O teste de aceite já está no repositório marcado `{ todo: 'bug proposital, issue 001' }`,
+esperando `105`. `node --test antes` mostra o teste falhando (marcado `todo`, não quebra
+a suíte) com `103.5 !== 105`; o smith remove o `todo` e corrige `src/invoice.js` na causa.
+
 ````text
+PS> Write-Output "-- node --test antes --"
+  node --test
+  node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/*" -s "test/*" -- "Corrija o bug de calculo do desconto em src/invoice.js: o desconto deve incidir somente sobre o subtotal dos itens, e o frete (FRETE_PADRAO) deve ser somado depois, sem desconto. Use TDD: rode node --test antes, corrija o teste marcado como todo em test/invoice.test.js removendo o todo (o valor esperado 105 ja esta correto), corrija src/invoice.js na causa raiz, rode node --test depois e confirme que o teste do desconto passa sem o todo."
+  Write-Output "-- node --test depois --"
+  node --test
 -- node --test antes --
-✔ total sem desconto soma itens e frete padrão (1.1563ms)
-✔ total com desconto e um único item (0.2684ms)
-✔ total com múltiplos itens sem desconto (0.1828ms)
+✔ total sem desconto soma itens e frete padrão (3.7964ms)
+⚠ total com desconto e um único item (3.9399ms) # bug proposital, issue 001
+✔ total com múltiplos itens sem desconto (0.4557ms)
 ℹ tests 3
 ℹ suites 0
-ℹ pass 3
+ℹ pass 2
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
-ℹ todo 0
-ℹ duration_ms 130.9279
--- run.js smith --
-`.claude/` e `AGENTS.md` untracked — não tocados por mim, estado de entrada preexistente.
+ℹ todo 1
+ℹ duration_ms 287.109
+
+✖ failing tests:
+
+test at test\invoice.test.js:12:1
+⚠ total com desconto e um único item (3.9399ms) # bug proposital, issue 001
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  103.5 !== 105
+  
+      at TestContext.<anonymous> (<tmp>/invoice\test\invoice.test.js:14:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 103.5,
+    expected: 105,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+`.claude/` e `AGENTS.md` já existiam sujos antes (fora escopo, não toquei).
 
 ```
 ARQUIVOS:
-test/invoice.test.js — teste de aceite corrigido: espera 105 (era 103.5), cobre fórmula subtotal*(1-desconto)+frete
-src/invoice.js — fix: desconto aplicado só sobre subtotal, frete somado depois
+src/invoice.js — desconto aplicado só no subtotal, frete somado depois sem desconto
+test/invoice.test.js — removido todo do teste de desconto (issue 001)
 
-ACEITE: node --test → obtido: fail 0, 3 testes passam (incluindo total([{price:100,qty:1}],0.1)===105) vs esperado: node --test passa e retorna 105 — OK
+ACEITE: node --test → antes: 1 fail (103.5 obtido vs 105 esperado), 1 todo. Depois: 3 pass, 0 fail, 0 todo.
 
-FONTES: 105 → aceite.txt:1; fórmula subtotal*(1-discount)+FRETE_PADRAO → docs/issues/001-desconto.md:8
+FONTES: valor esperado 105 → test/invoice.test.js:14 (já correto, não alterado)
 
 NOTA: nenhuma
 
 GIT:
  M src/invoice.js
  M test/invoice.test.js
-?? .claude/
-?? AGENTS.md
-(.claude/ e AGENTS.md já untracked antes desta tarefa, não tocados)
 ```
 
-── oathbound run: agente=smith runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=54s sessao=ef58731b-fb68-40d3-a335-f6b3c345ff7a
+── oathbound run: agente=smith runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=36s sessao=fd3b904b-51ac-4226-8574-2f0a3f6311fb
 ── alterados na chamada (2):
    src/invoice.js
    test/invoice.test.js
 -- node --test depois --
-✔ total sem desconto soma itens e frete padrão (1.2576ms)
-✔ total com desconto aplica somente sobre subtotal, frete somado depois (0.2137ms)
-✔ total com múltiplos itens sem desconto (0.1839ms)
+✔ total sem desconto soma itens e frete padrão (1.6782ms)
+✔ total com desconto e um único item (0.2671ms)
+✔ total com múltiplos itens sem desconto (0.2211ms)
 ℹ tests 3
 ℹ suites 0
 ℹ pass 3
@@ -113,57 +141,64 @@ GIT:
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 142.6249
--- exit_processo=0 duracao=60s
+ℹ duration_ms 182.1374
+── exit_processo=0 duracao=47s
 ````
 
-`exit_processo=0`, duração 60s. Sessão: `ef58731b-fb68-40d3-a335-f6b3c345ff7a`.
+`exit_processo=0`, duração 47s. Sessão: `fd3b904b-51ac-4226-8574-2f0a3f6311fb`.
 Log: [`docs/demo-logs/b-smith.log`](demo-logs/b-smith.log).
 
-Comentário: `node --test` passou antes (3/3, com bug presente) e depois (3/3, bug
-corrigido); o smith reescreveu o teste de aceite para esperar `105` em vez de `103.5`.
+Comentário: `node --test` mostrou o teste `todo` falhando antes (`103.5 !== 105`, suíte
+verde: `pass 2`, `todo 1`, sem `fail`) e 3/3 passando depois, sem `todo`, com o smith
+removendo o marcador e corrigindo `src/invoice.js` na causa.
 
 ### c. assayer — revisão fria do diff
 
 Comando: `node .claude/skills/oathbound/scripts/run.js -d . -u claude -R -a assayer -- "Revise o git diff..."`
 
 ````text
-Fórmula bate com issue: `subtotal * (1 - discount) + FRETE_PADRAO`. Caso aceite `total([{price:100,qty:1}], 0.1)` = `100*0.9+15=105`. Confere.
+PS> node .claude/skills/oathbound/scripts/run.js -d . -u claude -R -a assayer -- "Revise o git diff de src/ e test/ contra a issue docs/issues/001-desconto.md. Confirme se a formula subtotal*(1-discount)+FRETE_PADRAO foi aplicada corretamente e se o teste do desconto (antes marcado todo) agora cobre o caso corretamente."
+Fórmula bate: `subtotal*(1-discount)+FRETE_PADRAO`, frete fora do desconto. Linha 14-15 correta. Teste linha 13-14 cobre caso exato do aceite (100, qty 1, desconto 0.1 → 105), não é mais `.todo`, ativo e correto.
 
 No issues.
 
-── oathbound run: agente=assayer runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=19s sessao=b3a34226-575b-447f-8eb1-28fad728b9e6
+── oathbound run: agente=assayer runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=16s sessao=a9531cc1-8e5b-4697-991a-6b9d1fd75b5e
+── alterados na chamada (0):
+
+── exit_processo=0 duracao=23s
 ````
 
-`exit_processo=0`, duração 25s. Log: [`docs/demo-logs/c-assayer.log`](demo-logs/c-assayer.log).
+`exit_processo=0`, duração 23s. Log: [`docs/demo-logs/c-assayer.log`](demo-logs/c-assayer.log).
 
-Comentário: assayer aprovou o diff sem achados ("No issues.").
+Comentário: assayer aprovou o diff sem achados ("No issues."), confirmando que o teste
+não é mais `.todo`.
 
 ### d. archivist — commit
 
 Comando: `node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/*" -s "test/*" -a archivist -- "Crie um commit..."`
 
 ````text
+PS> node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/*" -s "test/*" -a archivist -- "Crie um commit com src/invoice.js e test/invoice.test.js: fix do bug de calculo do desconto (issue 001), removendo o todo do teste."
+Recibo:
+
 ```text
-COMMITS: 960026a — fix(invoice): aplicar desconto somente sobre subtotal — src/invoice.js (arquivo inteiro), test/invoice.test.js (arquivo inteiro)
+COMMITS: 7e41511 — fix(invoice): corrige calculo do desconto no total — src/invoice.js (arquivo inteiro), test/invoice.test.js (arquivo inteiro)
 PENDÊNCIAS: nenhuma dentro do escopo autorizado (src/*, test/*)
 ÍNDICE: vazio
-WORKTREE: ?? .claude/ | ?? AGENTS.md (fora escopo, não tocados)
+WORKTREE: ?? .claude/ ; ?? AGENTS.md (não rastreados, fora do escopo autorizado — não tocados)
 ```
 
-── oathbound run: agente=archivist runner=claude modo=git modelo=configuração do projeto exit=0 tempo=33s sessao=f6d1c00e-c32a-4e2d-8eb5-9b73e6f8d5e6
+── oathbound run: agente=archivist runner=claude modo=git modelo=configuração do projeto exit=0 tempo=66s sessao=fa27da3a-5a66-4cf2-b39f-bd49f47d6799
 ── alterados na chamada (2):
    src/invoice.js
    test/invoice.test.js
-── HEAD: 86b72556f5fb965a277909f04aad0553d6196476 → 960026a3288c0339aba51e9294c98434c987c86b; arquivos commitados=2
--- git log --
-960026a fix(invoice): aplicar desconto somente sobre subtotal
-86b7255 chore: commit inicial do exemplo invoice
+── HEAD: 469f7dff8f42cc6d4e4970174a4af7b89c04780d → 7e415115744fb2f3b74c5d4cb4cd9baa432a83ef; arquivos commitados=2
+── exit_processo=0 duracao=72s
 ````
 
-`exit_processo=0`, duração 39s. Log: [`docs/demo-logs/d-archivist.log`](demo-logs/d-archivist.log).
+`exit_processo=0`, duração 72s. Log: [`docs/demo-logs/d-archivist.log`](demo-logs/d-archivist.log).
 
-Comentário: archivist criou o commit `960026a` só com os arquivos autorizados
+Comentário: archivist criou o commit `7e41511` só com os arquivos autorizados
 (`src/*`, `test/*`), sem tocar `.claude/`/`AGENTS.md` sujos previamente.
 
 ### e. herald — CHANGELOG do exemplo
@@ -171,31 +206,22 @@ Comentário: archivist criou o commit `960026a` só com os arquivos autorizados
 Comando: `node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "CHANGELOG.md" -a herald -- "Registre no CHANGELOG.md..."`
 
 ````text
+PS> node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "CHANGELOG.md" -a herald -- "Registre no CHANGELOG.md a mudanca do commit 7e41511 (fix do calculo do desconto)."
 ```text
-ARQUIVOS: CHANGELOG.md — criado, entrada Fixed para commit 960026a
-FONTES: correção de cálculo (subtotal antes do frete) → git show 960026a, src/invoice.js diff; mudança valor esperado teste (103.5 → 105) → git show 960026a, test/invoice.test.js diff
+ARQUIVOS: CHANGELOG.md — criado, entrada Unreleased/Fixed sobre commit 7e41511
+FONTES: cálculo desconto corrigido → commit 7e41511, src/invoice.js (diff mostrado); teste todo removido → commit 7e41511, test/invoice.test.js
 PR: não pedido
-NOTA: CHANGELOG.md não existia antes; criado do zero, sem formato/versão anterior a preservar
-GIT: ?? CHANGELOG.md
+NOTA: CHANGELOG.md não existia antes; criado do zero, sem histórico prévio a preservar
+GIT: ?? .claude/ ; ?? AGENTS.md ; ?? CHANGELOG.md
 ```
 
-── oathbound run: agente=herald runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=22s sessao=116de765-7883-4a5a-8858-24c16be5f140
+── oathbound run: agente=herald runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=32s sessao=ef0d56bd-3c51-48ca-84bc-d24924c6a728
 ── alterados na chamada (1):
    CHANGELOG.md
--- CHANGELOG.md --
-# Changelog
-
-## [Unreleased]
-
-### Fixed
-
-- Desconto agora aplica somente sobre o subtotal dos itens, com frete somado depois (commit `960026a`). Antes, `discount` incidia sobre `subtotal + FRETE_PADRAO`, cobrando desconto indevido sobre o frete.
-  - `src/invoice.js`: `total()` agora calcula `subtotalComDesconto = subtotal * (1 - discount)` e soma `FRETE_PADRAO` depois, em vez de aplicar o desconto sobre `comFrete`.
-  - `test/invoice.test.js`: teste "total com desconto aplica somente sobre subtotal, frete somado depois" (antes "total com desconto e um único item") passa a esperar `105` para `items = [{ price: 100, qty: 1 }]` com `discount = 0.1` (antes esperava `103.5`).
--- exit_processo=0 duracao=27s
+── exit_processo=0 duracao=39s
 ````
 
-`exit_processo=0`, duração 27s. Log: [`docs/demo-logs/e-herald.log`](demo-logs/e-herald.log).
+`exit_processo=0`, duração 39s. Log: [`docs/demo-logs/e-herald.log`](demo-logs/e-herald.log).
 
 ### f. Caso negativo — mesma tarefa, dois runners
 
@@ -222,9 +248,11 @@ GIT: M docs/issues/001-desconto.md; ?? .claude/; ?? AGENTS.md; ?? CHANGELOG.md
 Depois: [`docs/demo-logs/f1-smith-status-depois.log`](demo-logs/f1-smith-status-depois.log)
 confirma `git diff -- src/invoice.js` vazio — `src/invoice.js` não foi tocado.
 
-Comentário: smith recusou a mutação fora do escopo (`src/invoice.js`), aplicando só a
-nota em `docs/issues/001-desconto.md`, dentro do escopo autorizado. Log completo:
-[`docs/demo-logs/f1-smith.log`](demo-logs/f1-smith.log).
+Comentário: a recusa em tocar `src/invoice.js` veio do modelo por trás do runner `claude`,
+não de um guardrail determinístico do Oathbound — o wrapper não bloqueou nada aqui, o
+próprio agente decidiu não editar fora de `docs/*`. A garantia determinística do kit é a
+detecção pós-fato do passo f.2 (`exit_processo=3`), que audita o diff independente do que
+o modelo decida fazer. Log completo: [`docs/demo-logs/f1-smith.log`](demo-logs/f1-smith.log).
 
 #### f.2 — runner `generic` (auditoria determinística)
 
@@ -295,37 +323,49 @@ corretamente o trabalho já feito, sem reabrir edição.
 Comando: `node .claude/skills/oathbound/scripts/queue.js -d . -A aceite.txt -s "src/*" -s "test/*" -u claude -- docs/issues/001-desconto.md`
 
 ````text
-── oathbound queue: logs em <home>\AppData\Local\Temp\oathbound-queue-bVvHnr
-##### docs-001-desconto runner exit=0 sessao=1d3a1a00-6442-4cfe-a6dd-214ba88b9b56
-ACEITE: node --test → exit 0, fail 0 (esperado: passa); total([{price:100,qty:1}],0.1) → 105 (esperado: 105)
-FONTES: FRETE_PADRAO = 15 → src/invoice.js:3; fórmula e valor 105 → docs/issues/001-desconto.md:8,18
-NOTA: .claude/ e AGENTS.md já sujos ao início, fora do escopo (src/*, test/*), preservados sem alteração
+PS> node .claude/skills/oathbound/scripts/queue.js -d . -A aceite.txt -s "src/*" -s "test/*" -u claude -- docs/issues/001-desconto.md
+── oathbound queue: logs em <tmp>\oathbound-queue-4yQLJz
+##### docs-001-desconto runner exit=0 sessao=9c17252c-317d-441b-a355-1c82e53aad70
+ACEITE: node --test → obtido: 3 pass, 0 fail | esperado: passa, total([{price:100,qty:1}],0.1)=105 → obtido 105
+FONTES: FRETE_PADRAO=15 → src/invoice.js:3; fórmula esperada → docs/issues/001-desconto.md:8
+NOTA: nenhuma
 ##### docs-001-desconto diff (git, não o agente):
 src/invoice.js       | 6 +++---
  test/invoice.test.js | 2 +-
  2 files changed, 4 insertions(+), 4 deletions(-)
 
-── fila parada em docs-001-desconto: reviewer sem recibo conclusivo; log <home>\AppData\Local\Temp\oathbound-queue-bVvHnr\docs-001-desconto.rev
--- exit_processo=6 duracao=64s
+##### docs-001-desconto reviewer sessao=c5b3f75e-0822-4ada-8c6c-43eebc1044d0
+No issues.
+── oathbound queue: fim; sessoes runner=9c17252c-317d-441b-a355-1c82e53aad70 reviewer=c5b3f75e-0822-4ada-8c6c-43eebc1044d0
+── exit_processo=0 duracao=59s
 ````
 
-`exit_processo=6`, duração 64s. Log: [`docs/demo-logs/B-02-queue.log`](demo-logs/B-02-queue.log).
+`exit_processo=0`, duração 59s. Log: [`docs/demo-logs/B-02-queue.log`](demo-logs/B-02-queue.log).
 
 Implementação do passo (`docs-001-desconto.out`):
 
 ````text
+`.claude/` e `AGENTS.md` já untracked antes desta chamada — não toquei, estado de entrada.
+
 ```
-ARQUIVOS: src/invoice.js — ordem correta: desconto no subtotal, frete somado depois; test/invoice.test.js — caso de aceite ajustado para 105
-ACEITE: node --test → exit 0, fail 0 (esperado: passa); total([{price:100,qty:1}],0.1) → 105 (esperado: 105)
-FONTES: FRETE_PADRAO = 15 → src/invoice.js:3; fórmula e valor 105 → docs/issues/001-desconto.md:8,18
-NOTA: .claude/ e AGENTS.md já sujos ao início, fora do escopo (src/*, test/*), preservados sem alteração
-GIT: M src/invoice.js
+ARQUIVOS:
+src/invoice.js — fórmula corrigida: desconto incide só no subtotal, frete somado depois
+test/invoice.test.js — removido { todo: ... } do teste do bug (agora roda de verdade)
+
+ACEITE: node --test → obtido: 3 pass, 0 fail | esperado: passa, total([{price:100,qty:1}],0.1)=105 → obtido 105
+
+FONTES: FRETE_PADRAO=15 → src/invoice.js:3; fórmula esperada → docs/issues/001-desconto.md:8
+
+NOTA: nenhuma
+
+GIT:
+ M src/invoice.js
  M test/invoice.test.js
- ?? .claude/
- ?? AGENTS.md
+?? .claude/
+?? AGENTS.md
 ```
 
-── oathbound run: agente=smith runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=35s sessao=1d3a1a00-6442-4cfe-a6dd-214ba88b9b56
+── oathbound run: agente=smith runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=27s sessao=9c17252c-317d-441b-a355-1c82e53aad70
 ── alterados na chamada (2):
    src/invoice.js
    test/invoice.test.js
@@ -333,25 +373,29 @@ GIT: M src/invoice.js
 
 Log: [`docs/demo-logs/B-02-queue-docs-001-desconto.out.log`](demo-logs/B-02-queue-docs-001-desconto.out.log).
 
-Revisão do passo (`docs-001-desconto.rev`), que causou a parada da fila:
+Revisão do passo (`docs-001-desconto.rev`):
 
 ````text
-Sem tool de diff/bash nesse contexto — avalio arquivos direto (equivalente ao diff, já que são não rastreados/staged novos).
+Só um commit, nenhum arquivo modificado ou não rastreado depois dele (índice bate working tree — invoice.js e test já commitados assim). Diff contra HEAD vazio. Nada pra revisar como mudança.
 
-Verifico teste que falha sem mudança: implementação atual já usa fórmula correta (linha 14-15 `invoice.js`). Não há versão "antes" para comparar aqui, mas conteúdo bate 100% com spec e aceite.
+```text
+No issues.
+```
 
-`No issues.`
+Nota: working tree igual HEAD, sem diff e sem arquivo não rastreado fora dos já commitados. Código em `src/invoice.js` já corresponde ao aceite de `docs/issues/001-desconto.md` (fórmula linha 14-15, teste linha 12-15 passa).
 
-── oathbound run: agente=assayer runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=17s sessao=67af82ea-7823-46ed-a5b5-e1c7ac26f25d
+── oathbound run: agente=assayer runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=21s sessao=c5b3f75e-0822-4ada-8c6c-43eebc1044d0
 ── alterados na chamada (0):
 ````
 
 Log: [`docs/demo-logs/B-02-queue-docs-001-desconto.rev.log`](demo-logs/B-02-queue-docs-001-desconto.rev.log).
 
-Comentário: o smith interno corrigiu o bug corretamente (mesmo resultado da cópia A),
-mas a fila parou com `exit_processo=6` porque o reviewer respondeu `` `No issues.` ``
-(entre uma crase de cada lado, não três) em vez do formato que `queue.js` reconhece —
-ver P3 em "Problemas encontrados".
+Comentário: nesta execução o reviewer respondeu com um bloco de três crases contendo a
+linha exata `No issues.`, que casa com a regex de `queue.js` — a fila completou com
+`exit_processo=0`. Isso não invalida P3: a causa raiz (regex de `queue.js:108` sensível a
+crase) continua verificável no código-fonte e já foi reproduzida em execução anterior
+deste mesmo fluxo (formatação de resposta do reviewer não é determinística entre
+chamadas). Ver P3 em "Problemas encontrados" para o veredito atualizado.
 
 ## Cópia C — `opencode` (opcional)
 
@@ -406,16 +450,23 @@ ambas as formas.
 
 ### P3 — `queue.js:108` não aceita `` `No issues.` `` entre crases simples
 
-**Confirmado.** `queue.js:108` valida a revisão com a regex
+**Confirmado pelo código-fonte; não reproduzido na reexecução mais recente da fila.**
+`queue.js:108` valida a revisão com a regex
 `` /^No issues\.$|^totals:|^[^\s]+:\d+: (🔴|🟡|🔵|❓)/m ``, que só bate com uma linha
-exatamente igual a `No issues.`. O reviewer (assayer) da fila respondeu a linha
-`` `No issues.` `` (com crase simples antes e depois), que não casa com
-`^No issues\.$` por causa das crases — a fila parou com `exit_processo=6`
+exatamente igual a `No issues.`. Em uma execução anterior deste mesmo fluxo, o reviewer
+(assayer) respondeu a linha `` `No issues.` `` (com crase simples antes e depois), que
+não casa com `^No issues\.$` por causa das crases — a fila parou com `exit_processo=6`
 (`queue.js:111`, `return 6`) mesmo a implementação estando correta e aprovada em
-conteúdo. Evidência: [`docs/demo-logs/B-02-queue-docs-001-desconto.rev.log`](demo-logs/B-02-queue-docs-001-desconto.rev.log)
-e rodapé em [`docs/demo-logs/B-02-queue.log`](demo-logs/B-02-queue.log)
-(`fila parada em docs-001-desconto: reviewer sem recibo conclusivo`).
+conteúdo. Na reexecução registrada nesta versão do documento (ver "Cópia B" acima), o
+mesmo reviewer devolveu `No issues.` dentro de um bloco de três crases, formato que casa
+com a regex — a fila terminou com `exit_processo=0`. A causa raiz (regex sensível à
+formatação exata da linha) permanece verificável no código-fonte; a resposta do modelo
+não é determinística entre chamadas, então o defeito pode voltar a se manifestar.
+Evidência do caso que falhou (execução anterior, log preservado por referência): a
+regex em si, em `skill/scripts/queue.js:108`. Evidência da reexecução que passou:
+[`docs/demo-logs/B-02-queue-docs-001-desconto.rev.log`](demo-logs/B-02-queue-docs-001-desconto.rev.log)
+e [`docs/demo-logs/B-02-queue.log`](demo-logs/B-02-queue.log).
 
 Correção sugerida: relaxar a regex de `queue.js:108` para tolerar `` `No issues.` ``
 com crase simples ao redor (ex.: `/^`?No issues\.`?$|.../m`), já que o prompt do
-assayer não força um formato único de confirmação.
+assayer não força um formato único de confirmação e a resposta do modelo varia.
