@@ -8,6 +8,7 @@ const { killRegistered } = require('./ds-kill');
 const { StringDecoder } = require('node:string_decoder');
 const { getRunnerAdapter, validateAdapter, feedbackPrompts } = require('./runner-adapter');
 const { temporaryAgent, feedbackAgent } = require('./runners/opencode');
+const { ROLES, stateDir } = require('./roles');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function overlap(a, b) {
@@ -76,14 +77,14 @@ async function runSession(opts = {}) {
   const dir = opts.repo;
   if (!dir) throw Error('repositório obrigatório');
 
-  const agent = opts.agent || 'ds-runner';
+  const agent = opts.agent || ROLES.implementer;
   const model = opts.model !== undefined ? opts.model : (process.env.GOVKIT_MODEL || '');
   const effort = opts.effort !== undefined ? opts.effort : (process.env.GOVKIT_EFFORT || '');
   const timeout = Number(opts.timeout !== undefined ? opts.timeout : 1800);
   const feedback = opts.feedback || '';
   const scopes = opts.scopes || [];
   const readonly = !!opts.readonly || !!feedback;
-  const commitMode = agent === 'ds-committer' && !feedback;
+  const commitMode = agent === ROLES.committer && !feedback;
   const sessionInput = opts.session || '';
   const label = opts.label || agent;
   const output = opts.output !== false;
@@ -112,7 +113,7 @@ async function runSession(opts = {}) {
 
   const agentFile = runner.resolveAgentFile({ root, agent, agentDir: process.env.GOVKIT_AGENT_DIR });
 
-  const queueDir = path.join(gitDir, 'ds-queue'), claimDir = path.join(queueDir, 'claims');
+  const queueDir = stateDir(gitDir), claimDir = path.join(queueDir, 'claims');
   fs.mkdirSync(claimDir, { recursive: true });
   const others = [], claim = path.join(claimDir, `${process.pid}.claim`);
   let claimed = false, tempAgent = '', tag = '', cleanupHandler = null;
@@ -298,7 +299,7 @@ async function runSession(opts = {}) {
 async function dsRun(args, output = true, logFile = '') {
   const o = options(args, ['-d', '-a', '-m', '-t', '-s', '-f', '-S', '-L', '-Q', '-u', '--runner', '-e', '--effort'], ['-R']);
   const dir = one(o, '-d');
-  const agent = one(o, '-a', 'ds-runner');
+  const agent = one(o, '-a', ROLES.implementer);
   const model = one(o, '-m', process.env.GOVKIT_MODEL || '');
   const effort = one(o, '--effort') || one(o, '-e') || process.env.GOVKIT_EFFORT || '';
   const timeout = Number(one(o, '-t', '1800'));

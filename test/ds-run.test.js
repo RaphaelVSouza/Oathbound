@@ -11,6 +11,7 @@ const {
   temporaryAgent,
   feedbackAgent
 } = require('../skill/scripts/ds-run');
+const { ROLES } = require('../skill/scripts/roles');
 
 /** Helper to create isolated directory */
 function createTempDir(t) {
@@ -208,11 +209,67 @@ test('runSession: reconstroi UTF-8 dividido entre chunks no stdout capturado', a
   assert.equal(res.stdout, 'ação');
 });
 
+test('runSession: agente committer grava claim com glob=* (modo commit)', async (t) => {
+  const dir = createTempDir(t);
+  const { run } = require('../skill/scripts/process-runner');
+  await run('git', ['-C', dir, 'init']);
+  await run('git', ['-C', dir, 'config', 'user.email', 'test@test.com']);
+  await run('git', ['-C', dir, 'config', 'user.name', 'Test']);
+
+  let claimContent = '';
+  const customRunner = {
+    name: 'claim-inspector',
+    resolveAgentFile: () => '',
+    prepareAgent: () => ({ promptPrefix: '' }),
+    buildCommand: ({ root }) => {
+      const claimDir = path.join(root, '.git', 'ds-queue', 'claims');
+      const [file] = fs.readdirSync(claimDir).filter(x => x.endsWith('.claim'));
+      claimContent = fs.readFileSync(path.join(claimDir, file), 'utf8');
+      return { command: 'node', args: ['-e', 'console.log("ok")'] };
+    },
+    resolveSession: async () => ''
+  };
+
+  await runSession({
+    repo: dir,
+    runner: customRunner,
+    readonly: false,
+    scopes: ['src/*'],
+    agent: ROLES.committer,
+    message: 'test prompt',
+    output: false
+  });
+
+  assert.ok(claimContent.includes('glob=*'));
+  assert.ok(claimContent.includes(`agent=${ROLES.committer}`));
+});
+
 test('guarda: ds-run.js nao acopla exibicao a nome de runner codex/agy', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'skill', 'scripts', 'ds-run.js'), 'utf8');
   assert.ok(
     !/runner\.name\s*===\s*'(codex|agy)'/.test(src),
     'exibição deve usar display.push/display.flush do adapter, não runner.name'
   );
+});
+
+test('guarda: skill/scripts nao usa literais de papel/estado fora de roles.js', () => {
+  const scriptsDir = path.join(__dirname, '..', 'skill', 'scripts');
+  const literalRe = /'(ds-runner|ds-reviewer|ds-committer|ds-queue)'/;
+
+  function walk(dir) {
+    let out = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) out = out.concat(walk(full));
+      else if (entry.name.endsWith('.js')) out.push(full);
+    }
+    return out;
+  }
+
+  const offenders = walk(scriptsDir)
+    .filter(file => path.basename(file) !== 'roles.js')
+    .filter(file => literalRe.test(fs.readFileSync(file, 'utf8')));
+
+  assert.deepEqual(offenders, [], 'use ROLES/stateDir de roles.js em vez de literais de papel/estado');
 });
 

@@ -7,6 +7,7 @@ const { run } = require('./process-runner');
 const { git, repoPaths } = require('./git');
 const { runSession } = require('./ds-run');
 const { openGovernanceStore } = require('./governance-db');
+const { ROLES, stateDir } = require('./roles');
 
 const tail = (value, count) => value.split(/\r?\n/).slice(-count).map(x => x.slice(0, 240)).join('\n');
 async function queue(argv) {
@@ -16,11 +17,11 @@ async function queue(argv) {
   const effort = one(o, '--effort') || one(o, '-e') || process.env.GOVKIT_EFFORT || '';
   if (!dir || !fs.existsSync(accept) || !scopes.length || !o._.length) throw Error('uso: node ds-queue.js -d repo -A aceite.txt -s glob -- issue.md ...');
   const { root, gitDir } = await repoPaths(dir);
-  const state = path.join(gitDir, 'ds-queue', 'state');
+  const state = path.join(stateDir(gitDir), 'state');
   fs.mkdirSync(state, { recursive: true });
   let store = null;
   try {
-    store = openGovernanceStore(path.join(gitDir, 'ds-queue', 'governance.db'));
+    store = openGovernanceStore(path.join(stateDir(gitDir), 'governance.db'));
   } catch {}
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-queue-'));
   console.log(`── ds-queue: logs em ${work}`);
@@ -86,7 +87,7 @@ async function queue(argv) {
       repo: root,
       runner,
       effort,
-      agent: 'ds-reviewer',
+      agent: ROLES.reviewer,
       readonly: true,
       timeout: 900,
       label: `rev-${id}`,

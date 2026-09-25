@@ -3,9 +3,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { repoPaths } = require('./git');
 const { alive, killTree } = require('./process-runner');
+const { stateDir } = require('./roles');
 async function killRegistered(root, mode = '-l', quiet = false) {
   const { gitDir } = await repoPaths(root);
-  const base = path.join(gitDir, 'ds-queue', 'procs');
+  const base = path.join(stateDir(gitDir), 'procs');
   if (!fs.existsSync(base)) return;
   for (const tag of fs.readdirSync(base)) {
     const dir = path.join(base, tag);

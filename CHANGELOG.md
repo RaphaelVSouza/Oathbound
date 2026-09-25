@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 0.21.0 — não publicada
+
+- **Papéis e diretório de estado centralizados (`skill/scripts/roles.js`):** novo módulo exporta
+  `ROLES` (`implementer`, `reviewer`, `committer`) e `stateDir(gitDir)`, fonte única para os literais
+  `'ds-runner'`, `'ds-reviewer'`, `'ds-committer'` e `'ds-queue'` antes espalhados por `ds-run.js`,
+  `ds-queue.js`, `ds-kill.js`, `git.js` e `git-commit.js`. Refatoração sem mudança de comportamento;
+  prepara a renomeação futura do projeto para "Oathbound" (sessão 2 de 6).
+
 ## 0.20.3 — 2026-09-25
 
 - **Método `createDisplay()` nos adapters (`RunnerAdapter`):** contrato ganha método opcional
