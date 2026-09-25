@@ -2,7 +2,7 @@
 
 Esta referência documenta as diretrizes perenes para seleção de modelos, controle de
 esforço de raciocínio (*reasoning effort*) e otimização de *prompt caching* no
-Agent Governance Kit.
+Oathbound.
 
 ## 1. Princípio do ambiente como fonte da verdade
 
@@ -18,7 +18,7 @@ a CLI em uso no ambiente:
 - **Codex:** `codex --help`
 
 No projeto, configure o modelo desejado passando `-m <modelo>` aos scripts ou
-definindo a variável de ambiente `GOVKIT_MODEL`.
+definindo a variável de ambiente `OATHBOUND_MODEL`.
 
 ## 2. Invariante do Prompt Caching (KV Cache)
 
@@ -51,13 +51,13 @@ O kit organiza o prompt nas seguintes camadas para maximizar *cache hits* por pr
 
 O parâmetro de esforço de raciocínio controla a profundidade de deliberação interna
 do modelo antes da resposta. Utilize `-e <low|medium|high>` na CLI ou exporte
-`GOVKIT_EFFORT`.
+`OATHBOUND_EFFORT`.
 
 | Nível | Papéis recomendados | Quando usar | Impacto |
 | --- | --- | --- | --- |
-| **`low`** | `ds-explorer`, `ds-committer` | Consultas pontuais de código, citações `arquivo:linha`, agrupamento mecânico de hunks e mensagens de commit. | Menor latência e consumo mínimo de tokens. |
-| **`medium`** | `ds-runner`, `ds-researcher` | Implementação de código com testes, ciclos TDD, busca e cruzamento de fontes externas. | Equilíbrio ideal entre qualidade de código e velocidade. |
-| **`high`** | `ds-reviewer`, `ds-security`, `ds-governance` | Revisão fria de diffs, análise AppSec (OWASP/CWE), mapeamento de riscos e specs de arquitetura. | Máxima profundidade analítica para evitar bugs e vulnerabilidades. |
+| **`low`** | `surveyor`, `archivist` | Consultas pontuais de código, citações `arquivo:linha`, agrupamento mecânico de hunks e mensagens de commit. | Menor latência e consumo mínimo de tokens. |
+| **`medium`** | `smith`, `scholar` | Implementação de código com testes, ciclos TDD, busca e cruzamento de fontes externas. | Equilíbrio ideal entre qualidade de código e velocidade. |
+| **`high`** | `assayer`, `warden`, `scribe` | Revisão fria de diffs, análise AppSec (OWASP/CWE), mapeamento de riscos e specs de arquitetura. | Máxima profundidade analítica para evitar bugs e vulnerabilidades. |
 
 *Nota:* Evite o nível `max` ou orçamentos irrestritos para tarefas rotineiras, pois
 o custo e o tempo de resposta crescem substancialmente sem ganho proporcional.
@@ -69,7 +69,7 @@ No `AGENTS.md` do repositório consumidor, registre a convenção adotada pela e
 ```markdown
 ## Preferências de IA da equipe
 - Runner: claude (ou opencode)
-- Modelo padrão: claude-3-7-sonnet (ou configurado via GOVKIT_MODEL)
+- Modelo padrão: claude-3-7-sonnet (ou configurado via OATHBOUND_MODEL)
 - Effort padrão de implementação: medium
 - Effort de revisão e segurança: high
 ```

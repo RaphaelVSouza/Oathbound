@@ -1,6 +1,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { readEnv } = require('./env');
+
 const BUILTIN_RUNNERS = ['opencode', 'claude', 'codex', 'agy', 'generic'];
 
 /**
@@ -24,13 +26,13 @@ const BUILTIN_RUNNERS = ['opencode', 'claude', 'codex', 'agy', 'generic'];
  * `flush` devolve string vazia (nada extra ao final). Runners com saída
  * estruturada (JSONL, JSON envelope) devem implementar `createDisplay` para
  * decidir o que exibir no terminal a cada chunk (`push`) e ao final
- * (`flush(rawStdout)`), sem que o motor de execução (`ds-run.js`) precise
+ * (`flush(rawStdout)`), sem que o motor de execução (`run.js`) precise
  * conhecer o nome do runner.
  */
 
 const feedbackPrompts = {
   status: 'Responda somente com: etapa atual, progresso observável, próximo passo e estimativa apenas se tiver base factual. Não execute ações.',
-  bloqueios: 'Responda somente com: bloqueios atuais, evidência de cada um e decisão necessária do orquestrador. Se não houver, diga nenhum. Não execute ações.',
+  bloqueios: 'Responda somente com: bloqueios atuais, evidência de cada um e decisão necessária do oathkeeper. Se não houver, diga nenhum. Não execute ações.',
   evidencias: 'Responda somente com: comandos ou fontes já consultados nesta sessão, resultados observados e lacunas. Não execute ações.',
   entrega: 'Resuma o trabalho feito nesta sessão, arquivos afetados, evidências de aceite e pendências. Não execute ações.'
 };
@@ -144,7 +146,7 @@ function resolveAgentPath({ root = process.cwd(), agent, agentDir = '', runner =
 
   const candidateDirs = [
     agentDir,
-    process.env.GOVKIT_AGENT_DIR
+    readEnv('AGENT_DIR')
   ];
 
   if (runnerKey === 'claude') {
@@ -166,7 +168,7 @@ function resolveAgentPath({ root = process.cwd(), agent, agentDir = '', runner =
       path.join(root, '.opencode', 'agents'),
       path.join(root, '.claude', 'agents'),
       path.join(root, '.agents', 'agents'),
-      path.join(root, 'adapters', 'opencode', 'agents')
+      path.join(root, 'guild')
     );
   }
   if (home) {

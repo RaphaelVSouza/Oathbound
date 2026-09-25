@@ -16,10 +16,11 @@ const {
   stage,
   commit
 } = require('../skill/scripts/git');
+const { ROLES } = require('../skill/scripts/roles');
 
 /** Helper to create an isolated git repo in os.tmpdir() */
 async function createIsolatedRepo(t) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-git-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-git-'));
   t.after(() => {
     try {
       fs.rmSync(dir, { recursive: true, force: true });
@@ -69,10 +70,10 @@ test('stage: scope guard rejects files outside scope', async t => {
       await stage(repo, 'secret.txt', {
         mode: 'all',
         scopes: ['public/*'],
-        agent: 'ds-committer'
+        agent: ROLES.committer
       });
     },
-    /fora do escopo do ds-committer/
+    new RegExp(`fora do escopo do ${ROLES.committer}`)
   );
 });
 
@@ -138,7 +139,7 @@ test('commit: creates commit and enforces scopes', async t => {
     async () => {
       await commit(repo, ['feat: should fail'], {
         scopes: ['docs/*'],
-        agent: 'ds-committer'
+        agent: ROLES.committer
       });
     },
     /índice contém arquivos fora do escopo/
@@ -147,7 +148,7 @@ test('commit: creates commit and enforces scopes', async t => {
   // Success when in scope
   const res = await commit(repo, ['feat: add app', 'body text'], {
     scopes: ['src/*'],
-    agent: 'ds-committer'
+    agent: ROLES.committer
   });
 
   assert.ok(res.hash.length > 0);
@@ -155,6 +156,24 @@ test('commit: creates commit and enforces scopes', async t => {
 
   const log = await git(repo, 'log', '-1', '--oneline');
   assert.ok(log.includes('feat: add app'));
+});
+
+test('commit: rejeita quando agente e committer e nao ha escopos', async t => {
+  const repo = await createIsolatedRepo(t);
+  const filePath = path.join(repo, 'src', 'app.js');
+  fs.mkdirSync(path.join(repo, 'src'), { recursive: true });
+  fs.writeFileSync(filePath, 'console.log(1);\n', 'utf8');
+  await stage(repo, 'src/app.js', { mode: 'all' });
+
+  await assert.rejects(
+    async () => {
+      await commit(repo, ['feat: sem escopo'], {
+        scopes: [],
+        agent: ROLES.committer
+      });
+    },
+    /exige sessão .* com escopo/
+  );
 });
 
 test('snapshot, changedPaths, head, committedPaths state tracking', async t => {

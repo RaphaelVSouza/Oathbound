@@ -1,5 +1,99 @@
 # Histórico de versões
 
+## 0.21.0 — 2026-09-25
+
+### Breaking
+
+O projeto passa a se chamar **Oathbound**. A migração renomeia agentes, scripts, variáveis,
+caminhos de instalação e o estado em `.git/`. Nenhum nome antigo permanece como alias, exceto
+`GOVKIT_*`, aceito por uma versão com aviso em `stderr`.
+
+- **Agentes:** `ds-explorer` → `surveyor`, `ds-researcher` → `scholar`, `ds-governance` → `scribe`,
+  `ds-runner` → `smith`, `ds-reviewer` → `assayer`, `ds-security` → `warden`, `ds-mutant` → `breaker`,
+  `ds-committer` → `archivist`. Novos: `oathkeeper` e `herald`.
+- **Scripts de runtime:** `ds-run.js` → `run.js`, `ds-queue.js` → `queue.js`, `ds-kill.js` → `kill.js`;
+  `GovernanceStore`/`openGovernanceStore` → `OathboundStore`/`openStore`.
+- **Variáveis de ambiente:** `GOVKIT_RUNNER`, `GOVKIT_MODEL`, `GOVKIT_EFFORT`, `GOVKIT_AGENT_DIR` e
+  `GOVKIT_GENERIC_CMD` → `OATHBOUND_*`. `GOVKIT_*` segue aceito por uma versão, com aviso.
+- **Caminhos e estado:** `.claude/skills/agent-governance/` → `.claude/skills/oathbound/`;
+  `~/.agent-governance-kit/` → `~/.oathbound/`; symlinks `agent-governance` → `oathbound`;
+  `.git/ds-queue/` → `.git/oathbound/`; `governance.db` → `oathbound.db`; tag de sessão
+  `dsrun-…` → `oathbound-…`. O instalador detecta instalações antigas e interrompe sem apagar nada.
+- **Módulos internos:** `Governance Store` → `Oathbound Store` (CONTEXT.md); prefixos internos de
+  agente, escopos, tag de sessão e temporários migram para `oathbound-*`.
+
+### Adicionado e alterado
+
+- **Disciplina do oathkeeper portátil (`skill/SKILL.md`, `guild/oathkeeper.md`):** a skill volta a
+  conter integralmente a disciplina do orquestrador (escolha do papel, tarefa fechada, conferência
+  de diff/status/recibo e decisão), porque só `skill/` é copiada na instalação — os links para
+  `../guild/` quebravam em `.claude/skills/oathbound/` e Codex/AGY/generic dependem só da skill. O
+  corpo de `guild/oathkeeper.md` fica curto: frontmatter e permissões, papel, ponteiro para a skill
+  e recusa de trabalho de execução.
+- **Guarda de links da skill (`test/skill-links.test.js`):** novo teste resolve cada link Markdown
+  em `skill/**` e falha se o destino sai de `skill/` ou é absoluto.
+- **`Bash` restaurado no Claude (`tools/guild-transpiler.js`):** `determineClaudeTools` volta a
+  conceder `Bash` quando há qualquer comando liberado no mapa `bash`, inclusive com `"*": deny`. O
+  arquivo de subagente do Claude só aceita nomes de ferramenta, sem escopo de comando; a lista vale
+  pelo prompt do agente e pela auditoria de escopo do Git. Sem isso, `oathkeeper` (delegação),
+  `archivist` (commit) e o git de leitura de `assayer`/`warden`/`scribe` ficavam sem `Bash`.
+  `docs/runners/claude.md` documenta a limitação.
+- **`skill: allow` no oathkeeper (`guild/oathkeeper.md`):** o orquestrador volta a poder carregar a
+  skill `oathbound`; o corpo aponta para a skill e, no fallback, para
+  `.claude/skills/oathbound/SKILL.md` ou `~/.oathbound/SKILL.md`.
+
+- **Orquestrador e documentador da guilda (sessão 5 de 6 — "Oathbound"):** novos agentes
+  `oathkeeper` (`mode: primary`, `temperature: 0`) e `herald` (`mode: subagent`, `temperature: 0`).
+  O `oathkeeper` orquestra — escolhe o papel, entrega a tarefa fechada, confere diff/status/recibo
+  e decide — sem editar nem commitar; delega por `oathbound run`/`queue` e não é delegável
+  (`run.js -a oathkeeper` falha com exit code 2). O `herald` documenta **depois** do trabalho
+  (README, CHANGELOG, guias e a descrição do PR na resposta), sempre citando commit, arquivo ou
+  saída de comando.
+- **Divisão scribe/herald:** o `scribe` passa a escrever **antes** da implementação (spec, tickets,
+  decisões e instruções de agentes) e não mantém README nem CHANGELOG; o `herald` cobre a
+  documentação posterior. A tabela de papéis da skill separa as duas linhas.
+- **Papéis e modo dos agentes (`roles.js`, `guild/`):** `ROLES.orchestrator = 'oathkeeper'` e
+  `ROLES.documenter = 'herald'` centralizam os novos nomes. Os demais agentes de `guild/` passam de
+  `mode: all` para `mode: subagent`; só o `oathkeeper` fica `mode: primary`. A guilda passa a ter
+  dez agentes.
+- **Transpilação (`tools/guild-transpiler.js`):** a ferramenta `Write` acompanha `Edit` quando o
+  agente edita; um mapa de `bash` com `"*": deny` (comandos nomeados, sem execução livre) deixa de
+  emitir a ferramenta `Bash` no Claude. `oathkeeper` sai só com leitura; o `herald` sai com
+  `Edit`/`Write` e sem `Bash` livre.
+- **Documentação dos runners (`docs/runners/`):** `opencode.md` e `claude.md` descrevem como
+  iniciar com o `oathkeeper` (OpenCode: agente primário; Claude Code: `claude --agent oathkeeper`);
+  `codex.md`, `agy.md` e `generic.md` registram que aí as regras do oathkeeper valem só pelo
+  `AGENTS.md`/skill, sem imposição por permissão.
+- **Renomeação de agentes, scripts, variáveis e estado (sessão 4 de 6 — "Oathbound"):** os agentes
+  passam a nomes de ofícios da guilda — `ds-explorer` → `surveyor`, `ds-researcher` → `scholar`,
+  `ds-governance` → `scribe`, `ds-runner` → `smith`, `ds-reviewer` → `assayer`, `ds-security` →
+  `warden`, `ds-mutant` → `breaker`, `ds-committer` → `archivist`. Os scripts de runtime passam a
+  `run.js`, `queue.js`, `kill.js` e `store.js` (`GovernanceStore` → `OathboundStore`;
+  `openGovernanceStore` → `openStore`); os testes acompanham (`run.test.js`, `queue.test.js`,
+  `store.test.js`). As variáveis públicas migram para o prefixo `OATHBOUND_` (`OATHBOUND_RUNNER`,
+  `OATHBOUND_MODEL`, `OATHBOUND_EFFORT`, `OATHBOUND_AGENT_DIR`, `OATHBOUND_GENERIC_CMD`) e as
+  internas para `OATHBOUND_AGENT`, `OATHBOUND_SCOPES`, `OATHBOUND_SESSION_TAG` e
+  `OATHBOUND_PROCS_DIR`. O estado fica em `.git/oathbound/oathbound.db`, a tag de sessão vira
+  `oathbound-…`, os temporários viram `oathbound-*` e os recibos passam a `── oathbound run:`,
+  `── oathbound queue:` e `── oathbound kill:`. `roles.js` centraliza `ROLES` e `STATE_DIR_NAME`.
+- **Compatibilidade de uma versão (`skill/scripts/env.js` e migração de estado):** novo
+  `readEnv(name)` lê `OATHBOUND_<name>` e, quando ausente, aceita `GOVKIT_<name>` com um aviso
+  único em stderr; `stateDir(gitDir)` renomeia `.git/ds-queue` para `.git/oathbound` e
+  `governance.db` para `oathbound.db` na primeira execução, preservando o legado quando ambos
+  existirem.
+- **Papéis e diretório de estado centralizados (`skill/scripts/roles.js`):** novo módulo exporta
+  `ROLES` (`implementer`, `reviewer`, `committer`) e `stateDir(gitDir)`, fonte única para os literais
+  `'ds-runner'`, `'ds-reviewer'`, `'ds-committer'` e `'ds-queue'` antes espalhados por `ds-run.js`,
+  `ds-queue.js`, `ds-kill.js`, `git.js` e `git-commit.js`. Refatoração sem mudança de comportamento;
+  prepara a renomeação futura do projeto para "Oathbound" (sessão 2 de 6).
+- **Reorganização de estrutura de pastas (sessão 3 de 6 — "Oathbound"):** `adapters/opencode/agents/`
+  passa a ser `guild/`; `adapters/agent-transpiler.js` passa a ser `tools/guild-transpiler.js`;
+  os READMEs de cada runner (`adapters/*/README.md`) passam a ser `docs/runners/*.md`; a
+  documentação e o fragmento de `AGENTS.md` do pacote opcional Matt Pocock passam a ser
+  `docs/matt-pocock.md` e `templates/AGENTS.matt-pocock.fragment.md`. Removidos os repasses de
+  uma linha `adapters/*/runner.js`, sem uso fora deles. `adapters/` e `optional/` não existem
+  mais. Nomes de agentes (`ds-*.md`) e de scripts (`ds-run.js` etc.) não foram alterados.
+
 ## 0.20.3 — 2026-09-25
 
 - **Método `createDisplay()` nos adapters (`RunnerAdapter`):** contrato ganha método opcional

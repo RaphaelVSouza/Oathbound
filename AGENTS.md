@@ -1,4 +1,4 @@
-# Instruções do pacote
+# Instruções do Oathbound
 
 - Mantenha este repositório independente de regras, hosts, caminhos e segredos de um projeto consumidor.
 - Coloque o fluxo comum na skill e nos scripts; configure exceções no `AGENTS.md` do projeto que instala o pacote.

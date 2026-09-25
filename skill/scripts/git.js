@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { run } = require('./process-runner');
+const { ROLES } = require('./roles');
 
 /** Run Git in root and return trimmed stdout; throw when Git exits unsuccessfully.
  * @param {string} root
@@ -135,12 +136,12 @@ async function stage(dir, requested, opts = {}) {
     throw Error('arquivo fora do repositório');
   }
   const file = relative.replaceAll('\\', '/');
-  const agent = opts.agent !== undefined ? opts.agent : process.env.GOVKIT_AGENT;
+  const agent = opts.agent !== undefined ? opts.agent : process.env.OATHBOUND_AGENT;
   let scopes = opts.scopes;
-  if (!scopes && agent === 'ds-committer') {
-    scopes = JSON.parse(process.env.GOVKIT_SCOPES || '[]');
+  if (!scopes && agent === ROLES.committer) {
+    scopes = JSON.parse(process.env.OATHBOUND_SCOPES || '[]');
   }
-  if (agent === 'ds-committer' || (scopes && scopes.length > 0)) {
+  if (agent === ROLES.committer || (scopes && scopes.length > 0)) {
     if (scopes && !scopes.some(scope => globMatch(file, scope))) {
       throw Error(`fora do escopo${agent ? ` do ${agent}` : ''}: ${file}`);
     }
@@ -249,13 +250,13 @@ async function stage(dir, requested, opts = {}) {
  */
 async function commit(dir, messages, opts = {}) {
   if (!Array.isArray(messages) || !messages.length) throw Error('título do commit obrigatório');
-  const agent = opts.agent !== undefined ? opts.agent : process.env.GOVKIT_AGENT;
+  const agent = opts.agent !== undefined ? opts.agent : process.env.OATHBOUND_AGENT;
   let scopes = opts.scopes;
-  if (!scopes && agent === 'ds-committer') {
-    scopes = JSON.parse(process.env.GOVKIT_SCOPES || '[]');
+  if (!scopes && agent === ROLES.committer) {
+    scopes = JSON.parse(process.env.OATHBOUND_SCOPES || '[]');
   }
-  if (agent === 'ds-committer') {
-    if (!scopes || !scopes.length) throw Error('git-commit.js exige sessão ds-committer com escopo via ds-run.js');
+  if (agent === ROLES.committer) {
+    if (!scopes || !scopes.length) throw Error(`git-commit.js exige sessão ${ROLES.committer} com escopo via run.js`);
   }
 
   const { root } = await repoPaths(dir);

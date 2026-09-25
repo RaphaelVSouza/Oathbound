@@ -7,7 +7,7 @@ const { auditDocs } = require('../tools/audit-docs.core.js');
 
 /** Helper to create an isolated workspace in os.tmpdir() */
 function createTempWorkspace(t) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-audit-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-audit-'));
   t.after(() => {
     try {
       fs.rmSync(dir, { recursive: true, force: true });

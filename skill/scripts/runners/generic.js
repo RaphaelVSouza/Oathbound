@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { extractInstructions, resolveAgentPath } = require('../runner-adapter');
+const { readEnv } = require('../env');
 
 /**
  * Tokenize a command line string respecting single and double quotes.
@@ -64,7 +65,7 @@ const genericAdapter = {
   },
 
   buildCommand({ root, agent, agentFile, model, message, session, tag, promptPrefix, readonly }) {
-    const genericCmd = process.env.GOVKIT_GENERIC_CMD;
+    const genericCmd = readEnv('GENERIC_CMD');
     const pureBody = extractInstructions(agentFile);
     const instructions = pureBody
       ? `[PAPEL DO AGENTE (${agent})]\n${pureBody}\n`

@@ -1,4 +1,4 @@
-# Agent Governance Kit
+# Oathbound
 
 Pacote reutilizável de delegação, auditoria e orquestração de agentes autônomos OpenCode com controle de escopo e mutação Git.
 
@@ -36,7 +36,7 @@ _Avoid_: File provider, Git reader
 Módulo profundo de execução assíncrona de subprocessos com controle de tempo, encerramento de árvores e isolamento de particularidades de SO.
 _Avoid_: Exec, Spawn wrapper
 
-**Governance Store**:
+**Oathbound Store**:
 Módulo transacional baseado em `node:sqlite` para persistência atômica de estados da fila, estágios de issues e reservas concorrentes de escopo (claims).
 _Avoid_: Banco de dados genérico, Estado em arquivo texto
 
