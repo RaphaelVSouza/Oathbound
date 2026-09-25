@@ -1,5 +1,36 @@
 # Histórico de versões
 
+## 0.19.0 — 2026-09-25
+
+- **Arquitetura agnóstica a runners:** desacoplamento da camada de execução em
+  `skill/scripts/ds-run.js` e `skill/scripts/ds-queue.js` através da interface
+  `RunnerAdapter` e do módulo `skill/scripts/runner-adapter.js`.
+- **Seleção flexível de runner:** suporte à flag `-u` / `--runner <nome|caminho>`
+  e variável de ambiente `GOVKIT_RUNNER` (mantendo `opencode` como padrão com
+  total retrocompatibilidade).
+- **Registry híbrido e extensível:** carregamento de adapters embutidos
+  (`opencode`, `claude`, `codex`, `agy`, `generic`) ou resolução dinâmica de
+  arquivos locais arbitrários sem exigir registro prévio no kit.
+- **Adapters dedicados:**
+  - `adapters/opencode/runner.js`: isolamento da invocação standalone, mutação
+    dinâmica de permissões YAML (`temporaryAgent`, `feedbackAgent`) e listagem
+    de sessões.
+  - `adapters/claude/runner.js`: execução headless (`claude -p`), restrição de
+    ferramentas (`--tools`) e guardrails injetados via prompt.
+  - `adapters/codex/runner.js`: execução não-interativa (`codex exec`), sandbox
+    `-s read-only` em leitura e guardrails de escopo.
+  - `adapters/agy/runner.js`: execução com `agy -p`, modo `--mode plan` para
+    leitura e continuidade de conversa com `--conversation`.
+  - `adapters/generic/runner.js`: suporte a comandos arbitrários configuráveis
+    via `GOVKIT_GENERIC_CMD`.
+- `process-runner.js`: ampliação da resolução automática de `.exe` no Windows
+  para cobrir `claude`, `codex` e `agy`.
+- **Reasoning Effort e Prompt Caching:** suporte a flags `-e` / `--effort` e variável
+  `GOVKIT_EFFORT` em `ds-run.js` e `ds-queue.js`; documentação perene de invariantes de
+  cache KV e diretrizes de modelos em `skill/references/models.md`.
+- **Testes unitários:** nova suíte `test/runner-adapter.test.js` com testes cobrindo contratos,
+  resolução, reasoning effort e montagem de comandos dos adapters (44 testes no total).
+
 ## 0.18.0 — 2026-09-25
 
 - **Consolidação:** eliminadas as duplicatas de agentes entre

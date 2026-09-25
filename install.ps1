@@ -126,7 +126,7 @@ if ($Global) {
 Write-Output 'Fluxo Matt Pocock (triagem, spec, tickets) instalado nos agentes com variante disponível.'
 if ($AuditDocs) { Write-Output 'Auditor de documentação instalado; adapte tools/audit-docs.config.js antes de usar.' }
 if (-not $Global) {
-    Write-Output 'Revise os arquivos, configure o modelo OpenCode e adicione o ponteiro ao AGENTS.md do projeto.'
+    Write-Output 'Revise os arquivos, configure o runner/modelo (OpenCode, Claude, Codex, AGY, Generic) e adicione o ponteiro ao AGENTS.md do projeto.'
 } else {
-    Write-Output 'Revise os arquivos e configure o modelo OpenCode.'
+    Write-Output 'Revise os arquivos e configure o runner/modelo desejado.'
 }

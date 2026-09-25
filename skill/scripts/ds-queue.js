@@ -10,8 +10,10 @@ const { openGovernanceStore } = require('./governance-db');
 
 const tail = (value, count) => value.split(/\r?\n/).slice(-count).map(x => x.slice(0, 240)).join('\n');
 async function queue(argv) {
-  const o = options(argv, ['-d', '-A', '-s', '-S', '-V', '-t', '-C', '-T'], ['-P']);
+  const o = options(argv, ['-d', '-A', '-s', '-S', '-V', '-t', '-C', '-T', '-u', '--runner', '-e', '--effort'], ['-P']);
   const dir = one(o, '-d'), accept = one(o, '-A'), scopes = o['-s'] || [];
+  const runner = one(o, '--runner') || one(o, '-u') || process.env.GOVKIT_RUNNER || 'opencode';
+  const effort = one(o, '--effort') || one(o, '-e') || process.env.GOVKIT_EFFORT || '';
   if (!dir || !fs.existsSync(accept) || !scopes.length || !o._.length) throw Error('uso: node ds-queue.js -d repo -A aceite.txt -s glob -- issue.md ...');
   const { root, gitDir } = await repoPaths(dir);
   const state = path.join(gitDir, 'ds-queue', 'state');
@@ -36,6 +38,8 @@ async function queue(argv) {
       const outFile = path.join(work, `${id}.out`);
       const r = await runSession({
         repo: root,
+        runner,
+        effort,
         timeout: Number(one(o, '-t', '2400')),
         label: id,
         session: rs,
@@ -80,6 +84,8 @@ async function queue(argv) {
     const reviewFile = path.join(work, `${id}.rev`);
     const v = await runSession({
       repo: root,
+      runner,
+      effort,
       agent: 'ds-reviewer',
       readonly: true,
       timeout: 900,

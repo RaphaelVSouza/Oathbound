@@ -1,10 +1,32 @@
 # Codex
 
-Use `AGENTS.md` do projeto como ponto de entrada. Acrescente um ponteiro
-condicional para `.claude/skills/agent-governance/SKILL.md` quando o trabalho
-pedir delegação, commits ou auditoria com OpenCode. Codex pode seguir a skill como
-documento do repositório; a instalação do pacote não altera a configuração
-global do Codex.
+O Codex opera no Agent Governance Kit como **host orquestrador** ou como
+**runner de execução** subordinado.
 
-Mantenha no `AGENTS.md` somente regras que precisam aparecer em toda tarefa.
-Comandos, papéis e casos especiais ficam na skill e nas referências.
+## 1. Codex como host (orquestrador)
+
+Use o `AGENTS.md` do projeto como ponto de entrada. Acrescente um ponteiro para
+`.claude/skills/agent-governance/SKILL.md` quando o trabalho exigir delegação de papéis,
+commits auditados ou execução de fila.
+
+O Codex segue a skill como especificação operacional do repositório e dispara as
+chamadas CLI a partir da raiz do projeto.
+
+## 2. Codex como runner delegado
+
+Invoque o Codex como executor subordinado de uma tarefa adicionando `-u codex`:
+
+```bash
+# Execução com edição delimitada por escopo
+node .claude/skills/agent-governance/scripts/ds-run.js -d . -u codex -s "src/db/*" -a ds-runner -- "Criar migração"
+
+# Inspeção somente leitura
+node .claude/skills/agent-governance/scripts/ds-run.js -d . -u codex -R -a ds-explorer -- "Mapear esquemas de tabela"
+```
+
+### Características de execução
+
+- **Invocação:** executa `codex exec "<prompt>" --dangerously-bypass-approvals-and-sandbox -C <repo>`.
+- **Modo somente leitura (`-R`):** força sandbox estrito via `-s read-only` e instrução de leitura no cabeçalho do prompt.
+- **Guardrails de escopo:** os caminhos autorizados em `-s` são injetados no prompt e auditados pelo Git após a conclusão do processo.
+- **Modelo:** selecione com `-m <modelo>` (repassado para `-m` do Codex) ou via `GOVKIT_MODEL`.

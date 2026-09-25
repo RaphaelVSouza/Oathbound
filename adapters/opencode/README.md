@@ -8,7 +8,8 @@ esses arquivos no projeto e descobre a skill instalada em
 na instalação OpenCode. Ele responde diretamente ao orquestrador e não edita
 arquivos do projeto.
 
-Invoque todos os agentes pelo `node .claude/skills/agent-governance/scripts/ds-run.js`: `-R` para `ds-explorer`,
+Invoque os agentes pelo `node .claude/skills/agent-governance/scripts/ds-run.js` (OpenCode
+é o runner padrão, equivalente a `-u opencode`): `-R` para `ds-explorer`,
 `ds-researcher`, `ds-reviewer` e `ds-security`; `-s <glob>` para `ds-runner`, `ds-governance`,
 `ds-mutant` e `ds-committer`. O modo de leitura exige `edit: deny` no agente e acusa qualquer
 mudança observada no worktree durante a chamada. Se outro processo editar ao

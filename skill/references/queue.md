@@ -2,7 +2,8 @@
 
 `node .claude/skills/agent-governance/scripts/ds-queue.js` recebe `-d <repo>`, `-A <arquivo-de-aceite>`, um ou mais
 `-s <glob>` e caminhos de issues após `--`. Cada issue deve existir no projeto.
-O script usa uma sessão de runner e uma de reviewer por fila; `-P` cria
+`-u <runner>` ou `--runner` define o executor de implementação e revisão (padrão `opencode`,
+ou via `GOVKIT_RUNNER`). O script usa uma sessão de runner e uma de reviewer por fila; `-P` cria
 sessões por issue. `GOVKIT_MODEL` seleciona modelo opcionalmente.
 Cada `-C` executa no shell do sistema (`PowerShell` no Windows, `sh` em
 Linux/macOS). O log completo da checagem fica no diretório impresso pela fila.

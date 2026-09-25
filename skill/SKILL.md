@@ -1,6 +1,6 @@
 ---
 name: agent-governance
-description: Orquestrar exploração, edição, validação, revisão, commits e filas de issues com agentes OpenCode em um projeto que instalou o Agent Governance Kit. Use quando o usuário pedir delegação, auditoria de mudanças, commits, execução de fila ou investigação com recibos compactos.
+description: Orquestrar exploração, edição, validação, revisão, commits e filas de issues com agentes (OpenCode, Claude, Codex, AGY, Generic) em um projeto que instalou o Agent Governance Kit. Use quando o usuário pedir delegação, auditoria de mudanças, commits, execução de fila ou investigação com recibos compactos.
 ---
 
 # Governança de agentes
@@ -25,7 +25,8 @@ skill fornece os papéis e wrappers.
 Use um agente nomeado; o agente padrão do OpenCode não recebe as permissões
 destes papéis. Passe ao agente uma tarefa fechada, os caminhos permitidos,
 aceite com valor esperado e estado inicial do worktree. O modelo é configurado
-no projeto; `GOVKIT_MODEL` é uma substituição opcional para os wrappers.
+no projeto; `GOVKIT_MODEL` e `-m` substituem opcionalmente nos wrappers; `-e` e
+`GOVKIT_EFFORT` definem o esforço de raciocínio conforme [models.md](references/models.md).
 Edições mecânicas também vão para `ds-runner`. Para `ds-researcher`, delimite
 a pergunta; o agente devolve fontes primárias e lacunas na resposta, enquanto
 o orquestrador decide o próximo passo.
@@ -35,7 +36,10 @@ o orquestrador decide o próximo passo.
 1. Identifique o repositório Git e leia o aceite já definido pelo projeto.
 2. Escolha o menor papel capaz de executar a tarefa. A partir da raiz do projeto,
    chame `node .claude/skills/agent-governance/scripts/ds-run.js`
-   com `-d`; use `-R` para os agentes sem edição e `-s` para os que editam.
+   com `-d`; use `-u <runner>` para selecionar o runner desejado (`opencode`, `claude`,
+   `codex`, `agy`, `generic`; padrão: `opencode`); use `-e <low|medium|high>`
+   para definir o esforço de raciocínio; use `-R` para os agentes sem edição e
+   `-s` para os que editam.
 3. Rode chamadas longas em background. Leia o recibo e apenas os trechos de
    log necessários para conferir os pontos decisivos.
 4. Confira o diff e o estado Git. Um exit `3` indica mudança fora do escopo

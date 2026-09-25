@@ -1,8 +1,8 @@
 # Agent Governance Kit
 
 Pacote reutilizável de delegação, auditoria e orquestração de agentes. Esta
-versão reúne uma skill, oito papéis OpenCode e os wrappers de execução
-usados pela fila. Regras de domínio, endpoints, hosts, comandos de validação e
+versão reúne uma skill, oito papéis de agentes e wrappers de execução
+agnósticos a runners (`opencode`, `claude`, `codex`, `agy`, `generic`). Regras de domínio, endpoints, hosts, comandos de validação e
 decisões de produção pertencem ao repositório que adota o pacote.
 
 **Versão:** [`VERSION`](VERSION) · **estado:** pacote para revisão,
@@ -15,7 +15,7 @@ sem execução de fila ou agentes neste pacote.
 | [`skill/SKILL.md`](skill/SKILL.md) | Escolha de papéis e disciplina do orquestrador. |
 | [`skill/scripts/`](skill/scripts/) | Runner com auditoria de escopo, fila, saída curta e controle de processos. |
 | [`adapters/opencode/agents/`](adapters/opencode/agents/) | Oito agentes com permissões por papel, incluindo pesquisa externa e commits; o modelo vem da configuração do projeto. |
-| [`adapters/`](adapters/) | Instruções de integração para OpenCode, Claude e Codex. |
+| [`adapters/`](adapters/) | Instruções e adapters de integração para OpenCode, Claude, Codex, AGY e Generic. |
 | [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Ponteiro curto a adaptar no repositório consumidor. |
 | [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Documentação e referências do fluxo Matt Pocock (triagem, spec, tickets, implementação e revisão) incorporado aos agentes canônicos. |
 | [`tools/audit-docs.js`](tools/README.md) | Auditor de links e contratos documentais, configurado para este repositório e instalável de forma opcional. |
@@ -24,7 +24,7 @@ sem execução de fila ou agentes neste pacote.
 ## Instalação em um projeto
 
 Requisitos para a instalação: PowerShell 7 e Git. Para executar os wrappers:
-Node.js 22 LTS ou superior, OpenCode e Git. Os wrappers e ferramentas utilizam
+Node.js 22 LTS ou superior, Git e um runner suportado (OpenCode, Claude Code, Codex, AGY ou executável customizado). Os wrappers e ferramentas utilizam
 apenas recursos e módulos nativos do Node (incluindo `node:test`,
 `node:util.parseArgs`, `path.matchesGlob`, `fs.globSync` e `node:sqlite`), com
 zero dependências externas e sem etapa de `npm install`. O auditor de documentação
@@ -113,11 +113,13 @@ symlink em dois lugares.
 
 ## Contrato de execução
 
-- `node skill/scripts/ds-run.js` exige `-d` (repositório) e uma mensagem. Para agentes de leitura,
+- `node skill/scripts/ds-run.js` exige `-d` (repositório) e uma mensagem. `-u, --runner <nome|caminho>`
+  seleciona o runner (padrão `opencode`, ou via `GOVKIT_RUNNER`). Para agentes de leitura,
   use `-R` sem `-s`; para agentes que editam, use ao menos um `-s` (glob).
   Registra a sessão e detecta mudanças durante a chamada. Exit `3` informa
   mudança incompatível com o modo e não reverte arquivos.
 - `node skill/scripts/ds-queue.js` executa runner, checagens `-C` opcionais e reviewer por issue.
+  Aceita `-u, --runner` para definir o executor da fila.
   Correção de achados, mutação, commits e atualização documental dependem do
   orquestrador. Consulte a [referência da fila](skill/references/queue.md).
 - `ds-committer` escolhe hunks e grupos, prepara o índice e cria commits apenas
@@ -137,12 +139,13 @@ symlink em dois lugares.
 
 ## Evolução e limites
 
-Os comandos em `skill/scripts/` usam quatro módulos internos: `cli-options.js`
+Os comandos em `skill/scripts/` usam cinco módulos internos: `cli-options.js`
 interpreta argumentos via `node:util.parseArgs`, `process-runner.js` executa e
 encerra subprocessos via `Promise.withResolvers`, `governance-db.js` fornece persistência
-transacional ACID com `node:sqlite`, e `git.js` unifica consultas de estado,
+transacional ACID com `node:sqlite`, `git.js` unifica consultas de estado,
 preparação seletiva de hunks e criação de commits protegidos por escopo com
-`path.matchesGlob` e `fs.globSync`. As interfaces exportadas têm contratos JSDoc;
+`path.matchesGlob` e `fs.globSync`, e `runner-adapter.js` desacopla e orquestra
+os executores de agentes (`opencode`, `claude`, `codex`, `agy`, `generic`). As interfaces exportadas têm contratos JSDoc;
 entradas externas críticas também são validadas durante a execução. A instalação
 copia esses módulos junto com os comandos.
 

@@ -128,4 +128,10 @@ test('dsRun: adaptador CLI valida sintaxe e opcoes legadas', async () => {
     async () => { await dsRun(['-d', '.', '-R', '-s', 'src/*']); },
     /uso: node ds-run\.js/
   );
+
+  await assert.rejects(
+    async () => { await dsRun(['-d', '.', '-R', '-e']); },
+    /falta valor para -e/
+  );
 });
+

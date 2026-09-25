@@ -7,7 +7,7 @@ const { spawn } = require('node:child_process');
 
 function executable(command) {
   if (process.platform !== 'win32' || path.extname(command)) return command;
-  if (['git', 'opencode', 'taskkill', 'powershell', 'cmd'].includes(command)) return `${command}.exe`;
+  if (['git', 'opencode', 'claude', 'codex', 'agy', 'taskkill', 'powershell', 'cmd'].includes(command)) return `${command}.exe`;
   return command;
 }
 

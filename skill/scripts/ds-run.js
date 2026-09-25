@@ -5,6 +5,8 @@ const { options, one } = require('./cli-options');
 const { run, alive } = require('./process-runner');
 const { globMatch, snapshot, changedPaths, head, committedPaths, repoPaths } = require('./git');
 const { killRegistered } = require('./ds-kill');
+const { getRunnerAdapter, feedbackPrompts } = require('./runner-adapter');
+const { temporaryAgent, feedbackAgent } = require('./runners/opencode');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function overlap(a, b) {
@@ -36,53 +38,11 @@ async function mutex(dir, action) {
   }
 }
 
-function temporaryAgent(file, name, others) {
-  const src = fs.readFileSync(file, 'utf8');
-  if (!/^  edit:$/m.test(src)) return '';
-  const lines = src.split('\n'), result = [];
-  let inside = false;
-  for (const line of lines) {
-    if (inside && !/^    /.test(line)) {
-      for (const g of others) result.push(`    ${JSON.stringify(g.glob)}: deny`, `    ${JSON.stringify(g.glob + '*')}: deny`);
-      inside = false;
-    }
-    result.push(line);
-    if (line === '  edit:') inside = true;
-  }
-  const target = path.join(path.dirname(file), `${name}-lk${process.pid}.md`);
-  fs.writeFileSync(target, result.join('\n'));
-  return target;
-}
-
-function feedbackAgent(file, name) {
-  const lines = fs.readFileSync(file, 'utf8').split('\n'), result = [];
-  let skip = false, foundEdit = false, foundBash = false;
-  for (const line of lines) {
-    if (skip && /^    /.test(line)) continue;
-    skip = false;
-    if (/^  (edit|bash):/.test(line)) {
-      if (line.startsWith('  edit:')) foundEdit = true; else foundBash = true;
-      result.push(line.startsWith('  edit:') ? '  edit: deny' : '  bash: deny');
-      skip = true;
-    } else result.push(line);
-  }
-  if (!foundEdit || !foundBash) throw Error(`permissões edit/bash ausentes: ${file}`);
-  const target = path.join(path.dirname(file), `${name}-fb${process.pid}.md`);
-  fs.writeFileSync(target, result.join('\n'));
-  return target;
-}
-
-const feedbackPrompts = {
-  status: 'Responda somente com: etapa atual, progresso observável, próximo passo e estimativa apenas se tiver base factual. Não execute ações.',
-  bloqueios: 'Responda somente com: bloqueios atuais, evidência de cada um e decisão necessária do orquestrador. Se não houver, diga nenhum. Não execute ações.',
-  evidencias: 'Responda somente com: comandos ou fontes já consultados nesta sessão, resultados observados e lacunas. Não execute ações.',
-  entrega: 'Resuma o trabalho feito nesta sessão, arquivos afetados, evidências de aceite e pendências. Não execute ações.'
-};
-
 /**
  * @typedef {{
  *   repo: string,
  *   message: string,
+ *   runner?: string | any,
  *   agent?: string,
  *   model?: string,
  *   timeout?: number,
@@ -117,6 +77,7 @@ async function runSession(opts = {}) {
 
   const agent = opts.agent || 'ds-runner';
   const model = opts.model !== undefined ? opts.model : (process.env.GOVKIT_MODEL || '');
+  const effort = opts.effort !== undefined ? opts.effort : (process.env.GOVKIT_EFFORT || '');
   const timeout = Number(opts.timeout !== undefined ? opts.timeout : 1800);
   const feedback = opts.feedback || '';
   const scopes = opts.scopes || [];
@@ -144,17 +105,16 @@ async function runSession(opts = {}) {
   if (!message.trim()) throw Error('falta mensagem');
 
   const { root, gitDir } = await repoPaths(dir);
-  const agentDir = process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents');
-  const agentFile = path.join(agentDir, `${agent}.md`);
-  if (!fs.existsSync(agentFile)) throw Error(`agente ausente: ${agentFile}`);
-  if (readonly && !feedback && !/^  edit: deny$/m.test(fs.readFileSync(agentFile, 'utf8'))) {
-    throw Error(`modo somente leitura exige edit: deny no agente: ${agent}`);
-  }
+  const runner = typeof opts.runner === 'object' && opts.runner
+    ? opts.runner
+    : getRunnerAdapter(opts.runner || process.env.GOVKIT_RUNNER || 'opencode', root);
+
+  const agentFile = runner.resolveAgentFile({ root, agent, agentDir: process.env.GOVKIT_AGENT_DIR });
 
   const queueDir = path.join(gitDir, 'ds-queue'), claimDir = path.join(queueDir, 'claims');
   fs.mkdirSync(claimDir, { recursive: true });
   const others = [], claim = path.join(claimDir, `${process.pid}.claim`);
-  let claimed = false, tempAgent = '', tag = '';
+  let claimed = false, tempAgent = '', tag = '', cleanupHandler = null;
 
   try {
     if (!readonly) {
@@ -183,10 +143,11 @@ async function runSession(opts = {}) {
       });
     }
 
-    if (feedback) tempAgent = feedbackAgent(agentFile, agent);
-    if (others.length) {
-      tempAgent = temporaryAgent(agentFile, agent, others);
-      message += `\nEm uso por outros agentes — só leitura, não edite: ${others.map(x => `${x.glob} (${x.label})`).join('; ')}`;
+    const prepared = runner.prepareAgent({ agentFile, agent, others, feedback, scopes, readonly });
+    tempAgent = prepared.tempAgent || '';
+    cleanupHandler = prepared.cleanup || null;
+    if (prepared.promptPrefix) {
+      message = `${message}\n${prepared.promptPrefix}`;
     }
 
     const before = await snapshot(root), beforeHead = await head(root);
@@ -196,25 +157,34 @@ async function runSession(opts = {}) {
     fs.writeFileSync(path.join(procDir, '.owner'), String(process.pid));
     await killRegistered(root, '--orphans', true);
 
-    const command = [
-      'run', '--standalone',
-      ...(sessionInput ? ['--session', sessionInput] : ['--title', tag]),
-      '--agent', tempAgent ? path.basename(tempAgent, '.md') : agent,
-      ...(model ? ['-m', model] : []),
-      message
-    ];
+    const { command, args: cmdArgs, env: cmdEnv, input: cmdInput } = runner.buildCommand({
+      root,
+      agent,
+      agentFile,
+      tempAgent,
+      model,
+      effort,
+      message,
+      session: sessionInput,
+      tag,
+      promptPrefix: prepared.promptPrefix || '',
+      readonly,
+      scopes
+    });
 
     const started = Date.now();
     const logStream = logFile ? fs.createWriteStream(logFile) : null;
-    const r = await run('opencode', command, {
+    const r = await run(command, cmdArgs, {
       cwd: root, timeout,
       env: {
         ...process.env,
+        ...(cmdEnv || {}),
         DSRUN_TAG: tag,
         DSRUN_PROCS: path.join(queueDir, 'procs'),
         GOVKIT_AGENT: agent,
         GOVKIT_SCOPES: JSON.stringify(scopes)
       },
+      input: cmdInput,
       output: output ? 'inherit' : undefined,
       capture: !output,
       onData: chunk => logStream?.write(chunk),
@@ -222,11 +192,7 @@ async function runSession(opts = {}) {
 
     if (logStream) await new Promise(resolve => logStream.end(resolve));
 
-    let session = sessionInput;
-    if (!session) {
-      const list = await run('opencode', ['session', 'list', '-n', '50'], { cwd: root });
-      session = list.stdout.split(/\r?\n/).find(x => x.split('\t')[1] === tag)?.split('\t')[0] || '';
-    }
+    let session = await runner.resolveSession({ root, tag, sessionInput, runResult: r });
 
     const after = await snapshot(root), afterHead = await head(root);
     const committed = await committedPaths(root, beforeHead, afterHead);
@@ -236,7 +202,7 @@ async function runSession(opts = {}) {
     const elapsed = Math.floor((Date.now() - started) / 1000);
     const mode = feedback ? 'consulta' : commitMode ? 'git' : readonly ? 'leitura' : 'edicao';
 
-    let receipt = `\n── ds-run: agente=${agent} modo=${mode} modelo=${model || 'configuração do projeto'} opencode_exit=${r.code} tempo=${elapsed}s sessao=${session}\n`;
+    let receipt = `\n── ds-run: agente=${agent} runner=${runner.name} modo=${mode} modelo=${model || 'configuração do projeto'}${effort ? ` effort=${effort}` : ''} ${runner.name === 'opencode' ? `opencode_exit=${r.code}` : `exit=${r.code}`} tempo=${elapsed}s sessao=${session}\n`;
     receipt += `── alterados na chamada (${changed.length}):\n${changed.map(p => `   ${p}`).join('\n')}\n`;
     if (beforeHead !== afterHead) receipt += `── HEAD: ${beforeHead || '(sem commit)'} → ${afterHead || '(sem commit)'}; arquivos commitados=${committed.length}\n`;
     if (foreign.length) receipt += `── de outro agente (${foreign.length}) — informativo:\n${foreign.map(p => `   · ${p}`).join('\n')}\n`;
@@ -256,37 +222,44 @@ async function runSession(opts = {}) {
   } finally {
     if (claimed) fs.rmSync(claim, { force: true });
     if (tempAgent) fs.rmSync(tempAgent, { force: true });
+    if (cleanupHandler) {
+      try { await cleanupHandler(); } catch {}
+    }
     if (tag) await killRegistered(root, tag, true);
   }
 }
 
 /** CLI adapter for ds-run invocations. */
 async function dsRun(args, output = true, logFile = '') {
-  const o = options(args, ['-d', '-a', '-m', '-t', '-s', '-f', '-S', '-L', '-Q'], ['-R']);
+  const o = options(args, ['-d', '-a', '-m', '-t', '-s', '-f', '-S', '-L', '-Q', '-u', '--runner', '-e', '--effort'], ['-R']);
   const dir = one(o, '-d');
   const agent = one(o, '-a', 'ds-runner');
   const model = one(o, '-m', process.env.GOVKIT_MODEL || '');
+  const effort = one(o, '--effort') || one(o, '-e') || process.env.GOVKIT_EFFORT || '';
   const timeout = Number(one(o, '-t', '1800'));
   const feedback = one(o, '-Q');
   const scopes = o['-s'] || [];
   const readonly = !!o['-R'] || !!feedback;
   const session = one(o, '-S');
   const label = one(o, '-L', agent);
+  const runner = one(o, '--runner') || one(o, '-u') || process.env.GOVKIT_RUNNER || 'opencode';
 
   if (feedback && (!feedbackPrompts[feedback] || !session || scopes.length || o['-f'])) {
     throw Error('uso de -Q: -S <sessão> -Q status|bloqueios|evidencias|entrega, sem -s ou -f');
   }
   if (!dir || (readonly ? scopes.length : !scopes.length)) {
-    throw Error('uso: node ds-run.js -d repo (-R | -s glob) [-a agente] [-t segundos] -- mensagem');
+    throw Error('uso: node ds-run.js -d repo (-R | -s glob) [-a agente] [-t segundos] [-u runner] [-e effort] -- mensagem');
   }
 
   const message = one(o, '-f') ? fs.readFileSync(one(o, '-f'), 'utf8') : o._.join(' ');
 
   return runSession({
     repo: dir,
+    runner,
     message,
     agent,
     model,
+    effort,
     timeout,
     scopes,
     readonly,
@@ -314,5 +287,6 @@ module.exports = {
   mutex,
   temporaryAgent,
   feedbackAgent,
-  feedbackPrompts
+  feedbackPrompts,
+  getRunnerAdapter
 };
