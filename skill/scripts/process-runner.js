@@ -7,7 +7,7 @@ const { spawn } = require('node:child_process');
 
 function executable(command) {
   if (process.platform !== 'win32' || path.extname(command)) return command;
-  if (['git', 'opencode', 'taskkill'].includes(command)) return `${command}.exe`;
+  if (['git', 'opencode', 'taskkill', 'powershell', 'cmd'].includes(command)) return `${command}.exe`;
   return command;
 }
 
@@ -26,8 +26,10 @@ function run(command, args = [], opts = {}) {
   return new Promise(resolve => {
     let stdout = '', stderr = '', settled = false, timedOut = false, interrupted = 0;
     const env = opts.env || process.env;
+    const autoShell = process.platform === 'win32' && /^(npm|npx|pnpm|yarn)(\.cmd)?$/i.test(command);
+    const shell = opts.shell !== undefined ? !!opts.shell : autoShell;
     const child = spawn(executable(command), args, {
-      cwd: opts.cwd, env, shell: !!opts.shell,
+      cwd: opts.cwd, env, shell,
       detached: process.platform !== 'win32',
       stdio: [opts.input === undefined ? 'ignore' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe']
     });

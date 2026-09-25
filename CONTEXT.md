@@ -31,3 +31,7 @@ _Avoid_: Linter de docs, Validador markdown
 **Audit Source**:
 Abstração de leitura sobre o sistema de arquivos ou o índice do Git para inspeção estática sem acoplamento a SO.
 _Avoid_: File provider, Git reader
+
+**Process Runner**:
+Módulo profundo de execução assíncrona de subprocessos com controle de tempo, encerramento de árvores e isolamento de particularidades de SO.
+_Avoid_: Exec, Spawn wrapper

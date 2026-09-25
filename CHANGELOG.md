@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 0.8.2 — 2026-09-24
+
+- `process-runner.js` absorve detecção de cmd-shims e ativação de shell no Windows automaticamente.
+- Remoção do script raso `tree-timeout.js` conforme o teste da deleção.
+- `quiet.js` simplificado para delegar opções diretamente a `run()`.
+- Criação de suíte de testes isolada em `test/process-runner.test.js`.
+- Registro do termo *Process Runner* no `CONTEXT.md`.
+
 ## 0.8.1 — 2026-09-24
 
 - `audit-docs.core.js` transformado em motor profundo in-process que exporta `auditDocs()`,
