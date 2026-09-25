@@ -176,3 +176,43 @@ test('runSession: captura sessao antecipadamente e extrai parsed.text e telemetr
   assert.ok(res.receipt.includes('telemetria: in=100 out=20'));
 });
 
+test('runSession: reconstroi UTF-8 dividido entre chunks no stdout capturado', async (t) => {
+  const dir = createTempDir(t);
+  const { run } = require('../skill/scripts/process-runner');
+  await run('git', ['-C', dir, 'init']);
+  await run('git', ['-C', dir, 'config', 'user.email', 'test@test.com']);
+  await run('git', ['-C', dir, 'config', 'user.name', 'Test']);
+
+  const script = [
+    "const b = Buffer.from('ação');",
+    'process.stdout.write(b.subarray(0, 2));',
+    "setTimeout(() => process.stdout.write(b.subarray(2)), 50);"
+  ].join('\n');
+
+  const customRunner = {
+    name: 'utf8-runner',
+    resolveAgentFile: () => '',
+    prepareAgent: () => ({ promptPrefix: '' }),
+    buildCommand: () => ({ command: 'node', args: ['-e', script] }),
+    resolveSession: async () => ''
+  };
+
+  const res = await runSession({
+    repo: dir,
+    runner: customRunner,
+    readonly: true,
+    message: 'test prompt',
+    output: false
+  });
+
+  assert.equal(res.stdout, 'ação');
+});
+
+test('guarda: ds-run.js nao acopla exibicao a nome de runner codex/agy', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'skill', 'scripts', 'ds-run.js'), 'utf8');
+  assert.ok(
+    !/runner\.name\s*===\s*'(codex|agy)'/.test(src),
+    'exibição deve usar display.push/display.flush do adapter, não runner.name'
+  );
+});
+

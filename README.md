@@ -2,7 +2,7 @@
 
 > Framework reutilizável e agnóstico de governança determinística, auditoria e orquestração multi-agente para desenvolvimento de software com LLMs.
 
-[![Versão](https://img.shields.io/badge/versão-0.20.2-blue.svg)](VERSION)
+[![Versão](https://img.shields.io/badge/versão-0.20.3-blue.svg)](VERSION)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-green.svg)](https://nodejs.org/)
 [![Dependências](https://img.shields.io/badge/dependências-zero-brightgreen.svg)](README.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)

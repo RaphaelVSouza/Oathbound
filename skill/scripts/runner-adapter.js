@@ -3,6 +3,31 @@ const path = require('node:path');
 
 const BUILTIN_RUNNERS = ['opencode', 'claude', 'codex', 'agy', 'generic'];
 
+/**
+ * @typedef {{
+ *   push(chunk: string): string,
+ *   flush(rawStdout: string): string
+ * }} RunnerDisplay
+ *
+ * @typedef {{
+ *   name: string,
+ *   resolveAgentFile(opts: { root?: string, agent: string, agentDir?: string }): string,
+ *   prepareAgent(opts: { agentFile: string, agent: string, others?: any[], feedback?: string, scopes?: string[], readonly?: boolean }): { tempAgent?: string, promptPrefix?: string, cleanup?: () => any },
+ *   buildCommand(opts: { root?: string, agent: string, agentFile: string, tempAgent?: string, model?: string, effort?: string, message: string, session?: string, tag: string, promptPrefix?: string, readonly?: boolean, scopes?: string[] }): { command: string, args: string[], env?: object, input?: string },
+ *   resolveSession(opts: { root?: string, tag: string, sessionInput?: string, runResult?: any }): Promise<string>,
+ *   parseOutput?: (output: any) => { text: string, session: string, usage: any },
+ *   createDisplay?: () => RunnerDisplay
+ * }} RunnerAdapter
+ *
+ * `createDisplay()` é opcional. Quando ausente, `validateAdapter` injeta o
+ * padrão: `push` devolve o próprio chunk (saída bruta em tempo real) e
+ * `flush` devolve string vazia (nada extra ao final). Runners com saída
+ * estruturada (JSONL, JSON envelope) devem implementar `createDisplay` para
+ * decidir o que exibir no terminal a cada chunk (`push`) e ao final
+ * (`flush(rawStdout)`), sem que o motor de execução (`ds-run.js`) precise
+ * conhecer o nome do runner.
+ */
+
 const feedbackPrompts = {
   status: 'Responda somente com: etapa atual, progresso observável, próximo passo e estimativa apenas se tiver base factual. Não execute ações.',
   bloqueios: 'Responda somente com: bloqueios atuais, evidência de cada um e decisão necessária do orquestrador. Se não houver, diga nenhum. Não execute ações.',
@@ -10,8 +35,22 @@ const feedbackPrompts = {
   entrega: 'Resuma o trabalho feito nesta sessão, arquivos afetados, evidências de aceite e pendências. Não execute ações.'
 };
 
+const defaultParseOutput = (output) => ({
+  text: typeof output === 'object' && output !== null ? output.stdout || '' : String(output || ''),
+  session: '',
+  usage: null
+});
+
+const defaultCreateDisplay = () => ({
+  push: (chunk) => chunk,
+  flush: () => ''
+});
+
 /**
  * Validates that an object satisfies the RunnerAdapter contract.
+ *
+ * Não altera o objeto recebido: devolve um novo objeto com os padrões de
+ * `parseOutput` e `createDisplay` preenchidos quando ausentes.
  * @param {any} adapter
  * @returns {any}
  */
@@ -25,14 +64,14 @@ function validateAdapter(adapter) {
   if (adapter.parseOutput !== undefined && typeof adapter.parseOutput !== 'function') {
     throw Error(`adapter '${adapter.name}' inválido: parseOutput deve ser função`);
   }
-  if (!adapter.parseOutput) {
-    adapter.parseOutput = (output) => ({
-      text: typeof output === 'object' && output !== null ? output.stdout || '' : String(output || ''),
-      session: '',
-      usage: null
-    });
+  if (adapter.createDisplay !== undefined && typeof adapter.createDisplay !== 'function') {
+    throw Error(`adapter '${adapter.name}' inválido: createDisplay deve ser função`);
   }
-  return adapter;
+  return {
+    ...adapter,
+    parseOutput: adapter.parseOutput || defaultParseOutput,
+    createDisplay: adapter.createDisplay || defaultCreateDisplay
+  };
 }
 
 /**

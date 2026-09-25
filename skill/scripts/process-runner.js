@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
+const { StringDecoder } = require('node:string_decoder');
 
 /** @typedef {{ code: number, stdout: string, stderr: string }} ProcessResult */
 /** @typedef {{ cwd?: string, env?: Record<string, string|undefined>, shell?: boolean, input?: string|Buffer, output?: 'inherit', capture?: boolean, maxCapture?: number, timeout?: number, onStart?: (pid?: number) => void, onData?: (chunk: Buffer) => void, onClose?: (pid?: number) => void }} RunOptions */
@@ -25,6 +26,8 @@ function run(command, args = [], opts = {}) {
   if (!opts || typeof opts !== 'object' || Array.isArray(opts)) throw Error('opções do processo devem ser um objeto');
   const { promise, resolve } = Promise.withResolvers();
   let stdout = '', stderr = '', settled = false, timedOut = false, interrupted = 0;
+  const stdoutDecoder = new StringDecoder('utf8');
+  const stderrDecoder = new StringDecoder('utf8');
   const env = opts.env || process.env;
   const autoShell = process.platform === 'win32' && /^(npm|npx|pnpm|yarn)(\.cmd)?$/i.test(command);
   const shell = opts.shell !== undefined ? !!opts.shell : autoShell;
@@ -46,12 +49,12 @@ function run(command, args = [], opts = {}) {
   }
   opts.onStart?.(child.pid);
   child.stdout?.on('data', chunk => {
-    if (opts.capture !== false) stdout = (stdout + chunk).slice(-(opts.maxCapture || 1048576));
+    if (opts.capture !== false) stdout = (stdout + stdoutDecoder.write(chunk)).slice(-(opts.maxCapture || 1048576));
     opts.onData?.(chunk);
     opts.onStdout?.(chunk);
   });
   child.stderr?.on('data', chunk => {
-    if (opts.capture !== false) stderr = (stderr + chunk).slice(-(opts.maxCapture || 1048576));
+    if (opts.capture !== false) stderr = (stderr + stderrDecoder.write(chunk)).slice(-(opts.maxCapture || 1048576));
     opts.onData?.(chunk);
     opts.onStderr?.(chunk);
   });
@@ -73,6 +76,10 @@ function run(command, args = [], opts = {}) {
     process.off('SIGINT', onInt);
     process.off('SIGTERM', onTerm);
     if (registration) fs.rmSync(registration, { force: true });
+    if (opts.capture !== false) {
+      stdout = (stdout + stdoutDecoder.end()).slice(-(opts.maxCapture || 1048576));
+      stderr = (stderr + stderrDecoder.end()).slice(-(opts.maxCapture || 1048576));
+    }
     opts.onClose?.(child.pid);
     resolve({ code: timedOut ? 124 : interrupted || (code ?? 1), stdout, stderr });
   });

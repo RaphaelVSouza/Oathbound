@@ -5,7 +5,8 @@ const { options, one } = require('./cli-options');
 const { run, alive } = require('./process-runner');
 const { globMatch, snapshot, changedPaths, head, committedPaths, repoPaths } = require('./git');
 const { killRegistered } = require('./ds-kill');
-const { getRunnerAdapter, feedbackPrompts } = require('./runner-adapter');
+const { StringDecoder } = require('node:string_decoder');
+const { getRunnerAdapter, validateAdapter, feedbackPrompts } = require('./runner-adapter');
 const { temporaryAgent, feedbackAgent } = require('./runners/opencode');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -106,7 +107,7 @@ async function runSession(opts = {}) {
 
   const { root, gitDir } = await repoPaths(dir);
   const runner = typeof opts.runner === 'object' && opts.runner
-    ? opts.runner
+    ? validateAdapter(opts.runner)
     : getRunnerAdapter(opts.runner || process.env.GOVKIT_RUNNER || 'opencode', root);
 
   const agentFile = runner.resolveAgentFile({ root, agent, agentDir: process.env.GOVKIT_AGENT_DIR });
@@ -177,10 +178,11 @@ async function runSession(opts = {}) {
 
     let capturedSession = '';
     let earlyBuffer = '';
-    let codexLineBuffer = '';
+    const display = runner.createDisplay ? runner.createDisplay() : { push: chunk => chunk, flush: () => '' };
+    const stdoutTextDecoder = new StringDecoder('utf8');
 
     const handleStdoutChunk = (chunk) => {
-      const str = chunk.toString();
+      const str = stdoutTextDecoder.write(chunk);
 
       // Guarda o id de sessão assim que aparece no stream, evitando perda por corte de maxCapture
       if (!capturedSession && !sessionInput) {
@@ -196,35 +198,10 @@ async function runSession(opts = {}) {
         } catch {}
       }
 
-      // Exibição paralela no terminal
+      // Exibição paralela no terminal via contrato createDisplay do adapter
       if (output) {
-        if (runner.name === 'codex') {
-          codexLineBuffer += str;
-          const lines = codexLineBuffer.split(/\r?\n/);
-          codexLineBuffer = lines.pop() || '';
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
-            if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-              try {
-                const ev = JSON.parse(trimmed);
-                if (ev.item && (ev.item.type === 'agent_message' || ev.item.type === 'message') && typeof ev.item.text === 'string') {
-                  process.stdout.write(ev.item.text + '\n');
-                } else if (ev.type === 'agent_message' && typeof ev.text === 'string') {
-                  process.stdout.write(ev.text + '\n');
-                }
-              } catch {
-                process.stdout.write(line + '\n');
-              }
-            } else {
-              process.stdout.write(line + '\n');
-            }
-          }
-        } else if (runner.name === 'agy') {
-          // AGY com --output-format json gera objeto estruturado exibido no fechamento
-        } else {
-          process.stdout.write(chunk);
-        }
+        const text = display.push(str);
+        if (text) process.stdout.write(text);
       }
     };
 
@@ -253,18 +230,17 @@ async function runSession(opts = {}) {
 
     if (logStream) await new Promise(resolve => logStream.end(resolve));
 
-    if (output && runner.name === 'codex' && codexLineBuffer.trim()) {
-      const trimmed = codexLineBuffer.trim();
-      if (!trimmed.startsWith('{')) {
-        process.stdout.write(trimmed + '\n');
+    if (output) {
+      const tail = stdoutTextDecoder.end();
+      if (tail) {
+        const tailText = display.push(tail);
+        if (tailText) process.stdout.write(tailText);
       }
+      const flushed = display.flush(r.stdout);
+      if (flushed) process.stdout.write(flushed);
     }
 
     const parsed = runner.parseOutput ? runner.parseOutput(r.stdout) : { text: r.stdout, session: '', usage: null };
-
-    if (output && runner.name === 'agy' && parsed.text && parsed.text !== r.stdout) {
-      process.stdout.write(parsed.text + '\n');
-    }
 
     let session = sessionInput || capturedSession || parsed.session || await runner.resolveSession({ root, tag, sessionInput, runResult: r });
 

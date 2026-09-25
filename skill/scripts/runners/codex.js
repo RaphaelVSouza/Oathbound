@@ -97,6 +97,47 @@ const codexAdapter = {
     if (sessionInput) return sessionInput;
     if (!runResult || !runResult.stdout) return '';
     return codexAdapter.parseOutput(runResult.stdout).session || '';
+  },
+
+  createDisplay() {
+    let lineBuffer = '';
+
+    return {
+      push(chunk) {
+        lineBuffer += chunk;
+        const lines = lineBuffer.split(/\r?\n/);
+        lineBuffer = lines.pop() || '';
+        const out = [];
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            try {
+              const ev = JSON.parse(trimmed);
+              if (ev.item && (ev.item.type === 'agent_message' || ev.item.type === 'message') && typeof ev.item.text === 'string') {
+                out.push(ev.item.text + '\n');
+              } else if (ev.type === 'agent_message' && typeof ev.text === 'string') {
+                out.push(ev.text + '\n');
+              }
+            } catch {
+              out.push(line + '\n');
+            }
+          } else {
+            out.push(line + '\n');
+          }
+        }
+        return out.join('');
+      },
+
+      flush() {
+        const trimmed = lineBuffer.trim();
+        lineBuffer = '';
+        if (trimmed && !trimmed.startsWith('{')) {
+          return trimmed + '\n';
+        }
+        return '';
+      }
+    };
   }
 };
 

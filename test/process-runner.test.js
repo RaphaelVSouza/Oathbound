@@ -31,6 +31,17 @@ test('run: envia input para o processo via stdin', async () => {
   assert.ok(r.stdout.includes('RECEBIDO:conteudo-de-teste'));
 });
 
+test('run: reconstroi caractere UTF-8 dividido entre dois writes de stdout', async () => {
+  const script = `
+    const b = Buffer.from('ação');
+    process.stdout.write(b.subarray(0, 2));
+    setTimeout(() => process.stdout.write(b.subarray(2)), 50);
+  `;
+  const r = await run('node', ['-e', script]);
+  assert.equal(r.code, 0);
+  assert.equal(r.stdout, 'ação');
+});
+
 test('alive: detecta processos vivos e descarta invalidos', () => {
   assert.equal(alive(process.pid), true);
   assert.equal(alive(-1), false);
