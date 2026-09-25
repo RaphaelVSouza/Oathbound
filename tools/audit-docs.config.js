@@ -14,7 +14,7 @@ module.exports = {
     portability: 'error',
     outsideRepo: 'error'
   },
-  rootDocs: ['AGENTS.md', 'README.md', 'CHANGELOG.md'],
+  rootDocs: ['AGENTS.md', 'README.md', 'CHANGELOG.md', 'CONTRIBUTING.md'],
   docs: [
     { path: 'adapters', recursive: true, lineNumberRefs: 'allow' },
     { path: 'optional', recursive: true, lineNumberRefs: 'allow' },

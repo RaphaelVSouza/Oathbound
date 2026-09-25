@@ -155,7 +155,8 @@ node --test --experimental-test-coverage test/*.test.js
 Altere o pacote aqui, registre a mudança no [`CHANGELOG.md`](CHANGELOG.md),
 incremente `VERSION` e instale a nova versão em cada projeto após revisar o
 diff local. O instalador inicial não faz upgrade para preservar modificações
-do projeto consumidor.
+do projeto consumidor. Para diretrizes de contribuição, padrões de código e
+testes, consulte [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 Os wrappers em Node substituem os scripts Bash do fluxo original. Ainda precisam
 de validação em projetos consumidores, especialmente recuperação após
