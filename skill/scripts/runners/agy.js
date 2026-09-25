@@ -103,6 +103,19 @@ const agyAdapter = {
     if (sessionInput) return sessionInput;
     if (!runResult || !runResult.stdout) return '';
     return agyAdapter.parseOutput(runResult.stdout).session || '';
+  },
+
+  createDisplay() {
+    return {
+      push() {
+        return '';
+      },
+      flush(rawStdout) {
+        if (!rawStdout) return '';
+        const { text } = agyAdapter.parseOutput(rawStdout);
+        return text ? text + '\n' : '';
+      }
+    };
   }
 };
 

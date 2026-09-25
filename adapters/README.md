@@ -5,6 +5,10 @@ banco transacional SQLite e fila) do executor de modelos (o **runner**).
 
 Esta pasta reúne a documentação e os adaptadores de execução para os runners suportados.
 
+O runner é sempre executado com stdout/stderr em pipe, nunca em TTY. CLIs
+invocadas por um adapter podem detectar a ausência de TTY e omitir cores
+ANSI e barras de progresso interativas na saída.
+
 ## Runners disponíveis
 
 | Runner | Invocação | Guardrails de escopo | Descoberta de sessão | Documentação |
@@ -44,6 +48,12 @@ O arquivo exportado deve implementar o contrato canônico de [`skill/scripts/run
 - `prepareAgent({ agentFile, agent, others, feedback, scopes, readonly })`: prepara arquivos temporários ou guardrails de prompt (`promptPrefix`).
 - `buildCommand({ root, agent, agentFile, tempAgent, model, message, session, tag, promptPrefix, readonly, scopes })`: monta `{ command, args, env, input }`.
 - `resolveSession({ root, tag, sessionInput, runResult })`: extrai ou devolve o identificador estável da sessão.
+- `createDisplay()` (opcional): devolve `{ push(chunk), flush(rawStdout) }` para controlar a exibição no
+  terminal sem que o motor de execução (`ds-run.js`) precise conhecer o nome do runner. `push` recebe cada
+  pedaço de stdout e devolve o texto a exibir (pode ser `''`); `flush` recebe o stdout bruto completo e
+  devolve o texto final a exibir (pode ser `''`). Padrão quando ausente: `push` devolve o próprio chunk;
+  `flush` devolve `''`. Runners com saída estruturada (JSONL do `codex`, envelope JSON do `agy`) implementam
+  `createDisplay` para filtrar o que aparece no terminal.
 
 ## Transpilação e instalação de agentes nativos
 

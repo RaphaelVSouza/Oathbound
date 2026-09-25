@@ -1,5 +1,26 @@
 # Histórico de versões
 
+## 0.20.3 — 2026-09-25
+
+- **Método `createDisplay()` nos adapters (`RunnerAdapter`):** contrato ganha método opcional
+  `createDisplay()` que devolve `{ push(chunk), flush(rawStdout) }`, movendo a lógica de exibição
+  em tempo real do motor genérico (`ds-run.js`) para cada adapter. Padrão quando ausente: `push`
+  devolve o próprio chunk; `flush` devolve `''`.
+- **Remoção do acoplamento por nome de runner na exibição (`ds-run.js`):** eliminados os desvios
+  `if (runner.name === 'codex')` / `else if (runner.name === 'agy')` que quebravam a abstração
+  `RunnerAdapter` — um runner customizado com saída JSONL agora reusa `createDisplay` de um builtin
+  (ex.: `codex`) e obtém o mesmo comportamento sem que o motor precise conhecer seu nome.
+- **Correção de exibição ausente no AGY (`agy.js`):** `createDisplay().flush` agora exibe
+  `parseOutput(rawStdout).text` sempre que houver saída, inclusive quando a CLI devolve texto cru
+  não-JSON (erro, flag desconhecida) — antes a comparação `parsed.text !== r.stdout` silenciava
+  esse caso porque os dois valores eram iguais.
+- **`validateAdapter` não muta mais o objeto recebido (`runner-adapter.js`):** devolve um objeto
+  novo com os padrões de `parseOutput` e `createDisplay` preenchidos, preservando o adapter original
+  passado pelo chamador.
+- **Runner escreve em pipe, não em TTY:** stdout/stderr do processo do runner são sempre capturados
+  via pipe; CLIs invocadas podem omitir cores ANSI e barras de progresso interativas ao detectar a
+  ausência de TTY.
+
 ## 0.20.2 — 2026-09-25
 
 - **Método `parseOutput` nos adapters (`RunnerAdapter`):** unificação da extração de `{ text, session, usage }` em todos os runners (`codex`, `agy`, `claude`, `opencode`, `generic`).

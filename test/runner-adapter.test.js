@@ -368,4 +368,100 @@ test('runner claude, opencode e generic: parseOutput repassam texto cru', () => 
   }
 });
 
+test('runner agy: createDisplay().flush devolve texto cru quando saida nao e JSON', () => {
+  const adapter = getRunnerAdapter('agy');
+  const display = adapter.createDisplay();
+  assert.equal(display.push('qualquer coisa'), '');
+  assert.equal(display.flush('Error: unknown flag'), 'Error: unknown flag\n');
+});
+
+test('runner agy: createDisplay().flush devolve so o texto da resposta em JSON valido', () => {
+  const adapter = getRunnerAdapter('agy');
+  const display = adapter.createDisplay();
+  const rawStdout = JSON.stringify({ conversation_id: 'conv-1', response: 'No issues.' });
+  assert.equal(display.flush(rawStdout), 'No issues.\n');
+});
+
+test('runner agy: createDisplay().flush devolve vazio quando nao ha saida', () => {
+  const adapter = getRunnerAdapter('agy');
+  const display = adapter.createDisplay();
+  assert.equal(display.flush(''), '');
+});
+
+test('runner codex: createDisplay().push devolve so o texto de agent_message; linha nao-JSON passa inalterada', () => {
+  const adapter = getRunnerAdapter('codex');
+  const display = adapter.createDisplay();
+  const chunk = [
+    '{"type":"thread.started","thread_id":"th-001"}',
+    'linha crua sem json',
+    '{"item":{"type":"agent_message","text":"Resposta do agente."}}',
+    ''
+  ].join('\n');
+
+  const out = display.push(chunk);
+  assert.ok(!out.includes('thread.started'));
+  assert.ok(out.includes('linha crua sem json'));
+  assert.ok(out.includes('Resposta do agente.'));
+});
+
+test('runner codex: createDisplay trata linha JSON dividida entre dois chunks', () => {
+  const adapter = getRunnerAdapter('codex');
+  const display = adapter.createDisplay();
+  const full = '{"item":{"type":"agent_message","text":"Dividida entre chunks."}}\n';
+  const mid = Math.floor(full.length / 2);
+
+  const out1 = display.push(full.slice(0, mid));
+  assert.equal(out1, '');
+
+  const out2 = display.push(full.slice(mid));
+  assert.equal(out2, 'Dividida entre chunks.\n');
+});
+
+test('runner codex: createDisplay().flush exibe resto do buffer se nao for JSON', () => {
+  const adapter = getRunnerAdapter('codex');
+  const display = adapter.createDisplay();
+  display.push('texto parcial sem quebra de linha');
+  assert.equal(display.flush(), 'texto parcial sem quebra de linha\n');
+
+  const display2 = adapter.createDisplay();
+  display2.push('{"type":"turn.completed"}');
+  assert.equal(display2.flush(), '');
+});
+
+test('runner customizado com nome diferente de codex reusa createDisplay do codex e exibe o mesmo resultado', () => {
+  const codex = getRunnerAdapter('codex');
+  const custom = validateAdapter({
+    name: 'meu-runner-jsonl',
+    resolveAgentFile: () => 'mock.md',
+    prepareAgent: () => ({}),
+    buildCommand: () => ({ command: 'node', args: ['-v'] }),
+    resolveSession: async () => '',
+    createDisplay: codex.createDisplay
+  });
+
+  const chunk = '{"item":{"type":"agent_message","text":"Ola de runner customizado."}}\n';
+  const displayCodex = codex.createDisplay();
+  const displayCustom = custom.createDisplay();
+
+  assert.equal(displayCustom.push(chunk), displayCodex.push(chunk));
+});
+
+test('validateAdapter: nao altera o objeto original ao preencher padroes', () => {
+  const original = {
+    name: 'sem-defaults',
+    resolveAgentFile: () => '',
+    prepareAgent: () => ({}),
+    buildCommand: () => ({ command: 'node', args: [] }),
+    resolveSession: async () => ''
+  };
+
+  const validated = validateAdapter(original);
+
+  assert.equal(original.parseOutput, undefined);
+  assert.equal(original.createDisplay, undefined);
+  assert.equal(typeof validated.parseOutput, 'function');
+  assert.equal(typeof validated.createDisplay, 'function');
+  assert.notEqual(validated, original);
+});
+
 

@@ -176,3 +176,11 @@ test('runSession: captura sessao antecipadamente e extrai parsed.text e telemetr
   assert.ok(res.receipt.includes('telemetria: in=100 out=20'));
 });
 
+test('guarda: ds-run.js nao acopla exibicao a nome de runner codex/agy', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'skill', 'scripts', 'ds-run.js'), 'utf8');
+  assert.ok(
+    !/runner\.name\s*===\s*'(codex|agy)'/.test(src),
+    'exibição deve usar display.push/display.flush do adapter, não runner.name'
+  );
+});
+
