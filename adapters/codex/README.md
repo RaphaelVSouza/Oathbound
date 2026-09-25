@@ -26,8 +26,8 @@ node .claude/skills/agent-governance/scripts/ds-run.js -d . -u codex -R -a ds-ex
 
 ### Características de execução
 
-- **Invocação:** executa `codex exec "<prompt>" --dangerously-bypass-approvals-and-sandbox -C <repo>`.
-- **Modo somente leitura (`-R`):** força sandbox estrito via `-s read-only` e instrução de leitura no cabeçalho do prompt.
+- **Invocação:** executa `codex exec "<prompt>" -C <repo>` (em modo edição, usa `--dangerously-bypass-approvals-and-sandbox`; em retomada, usa `codex exec resume <id>`).
+- **Modo somente leitura (`-R`):** força sandbox nativo estrito via `-s read-only -a never` (sem desligamento de sandbox) e instrução de leitura no prompt.
 - **Guardrails de escopo:** os caminhos autorizados em `-s` são injetados no prompt e auditados pelo Git após a conclusão do processo.
 - **Modelo:** selecione com `-m <modelo>` (repassado para `-m` do Codex) ou via `GOVKIT_MODEL`.
 

@@ -155,27 +155,72 @@ test('runner generic: buildCommand respeita GOVKIT_GENERIC_CMD', () => {
   }
 });
 
-test('runner claude: buildCommand repassa --effort quando fornecido', () => {
-  const adapter = getRunnerAdapter('claude');
-  const cmd = adapter.buildCommand({
-    root: '.',
-    agent: 'ds-runner',
-    effort: 'high',
-    message: 'test'
-  });
-  assert.ok(cmd.args.includes('--effort'));
-  assert.ok(cmd.args.includes('high'));
+test('runner generic: buildCommand respeita GOVKIT_GENERIC_CMD com aspas e espacos', () => {
+  const adapter = getRunnerAdapter('generic');
+  const prev = process.env.GOVKIT_GENERIC_CMD;
+  try {
+    process.env.GOVKIT_GENERIC_CMD = '"C:\\Program Files\\My CLI\\cli.exe" --option "valor com espaco"';
+    const cmd = adapter.buildCommand({
+      root: '.',
+      agent: 'ds-runner',
+      message: 'task test'
+    });
+    assert.equal(cmd.command, 'C:\\Program Files\\My CLI\\cli.exe');
+    assert.ok(cmd.args.includes('--option'));
+    assert.ok(cmd.args.includes('valor com espaco'));
+  } finally {
+    if (prev !== undefined) process.env.GOVKIT_GENERIC_CMD = prev;
+    else delete process.env.GOVKIT_GENERIC_CMD;
+  }
 });
 
-test('runner agy: buildCommand repassa --effort quando fornecido', () => {
-  const adapter = getRunnerAdapter('agy');
-  const cmd = adapter.buildCommand({
-    root: '.',
-    agent: 'ds-reviewer',
-    effort: 'medium',
-    message: 'test'
+test('runner claude: buildCommand gera session-id ou repassa --resume', async () => {
+  const adapter = getRunnerAdapter('claude');
+  const newCmd = adapter.buildCommand({ root: '.', agent: 'ds-runner', message: 'nova sessao', tag: 'tag-new-1' });
+  assert.ok(newCmd.args.includes('--session-id'));
+  const sid = await adapter.resolveSession({ root: '.', tag: 'tag-new-1', sessionInput: '' });
+  assert.match(sid, /^[0-9a-fA-F-]{36}$/);
+
+  const resCmd = adapter.buildCommand({ root: '.', agent: 'ds-runner', message: 'retoma', session: 'my-session-uuid' });
+  assert.ok(resCmd.args.includes('--resume'));
+  assert.ok(resCmd.args.includes('my-session-uuid'));
+});
+
+test('runner codex: buildCommand isola sandbox em readonly e suporta resume', () => {
+  const adapter = getRunnerAdapter('codex');
+  const readonlyCmd = adapter.buildCommand({ root: '.', agent: 'ds-reviewer', message: 'leitura', readonly: true });
+  assert.ok(readonlyCmd.args.includes('-s'));
+  assert.ok(readonlyCmd.args.includes('read-only'));
+  assert.ok(readonlyCmd.args.includes('-a'));
+  assert.ok(readonlyCmd.args.includes('never'));
+  assert.ok(!readonlyCmd.args.includes('--dangerously-bypass-approvals-and-sandbox'));
+
+  const resumeCmd = adapter.buildCommand({ root: '.', agent: 'ds-runner', message: 'retomada', session: 'sess-abc-123' });
+  assert.equal(resumeCmd.args[0], 'exec');
+  assert.equal(resumeCmd.args[1], 'resume');
+  assert.equal(resumeCmd.args[2], 'sess-abc-123');
+});
+
+test('runners: resolveAgentFile localiza agentes em suas pastas nativas', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-agent-dir-'));
+  t.after(() => {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   });
-  assert.ok(cmd.args.includes('--effort'));
-  assert.ok(cmd.args.includes('medium'));
+
+  const claudeAgentDir = path.join(dir, '.claude', 'agents');
+  fs.mkdirSync(claudeAgentDir, { recursive: true });
+  fs.writeFileSync(path.join(claudeAgentDir, 'ds-runner.md'), '---\nname: ds-runner\n---\nCorpo Claude');
+
+  const agyAgentDir = path.join(dir, '.agents', 'agents');
+  fs.mkdirSync(agyAgentDir, { recursive: true });
+  fs.writeFileSync(path.join(agyAgentDir, 'ds-runner.md'), '---\nname: ds-runner\n---\nCorpo AGY');
+
+  const claude = getRunnerAdapter('claude');
+  const resolvedClaude = claude.resolveAgentFile({ root: dir, agent: 'ds-runner' });
+  assert.equal(resolvedClaude, path.join(claudeAgentDir, 'ds-runner.md'));
+
+  const agy = getRunnerAdapter('agy');
+  const resolvedAgy = agy.resolveAgentFile({ root: dir, agent: 'ds-runner' });
+  assert.equal(resolvedAgy, path.join(agyAgentDir, 'ds-runner.md'));
 });
 

@@ -42,8 +42,19 @@ const opencodeAdapter = {
   name: 'opencode',
 
   resolveAgentFile({ root, agent, agentDir }) {
-    const dir = agentDir || process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents');
-    return path.join(dir, `${agent}.md`);
+    const home = process.env.USERPROFILE || process.env.HOME || '';
+    const candidateDirs = [
+      agentDir,
+      process.env.GOVKIT_AGENT_DIR,
+      root ? path.join(root, '.opencode', 'agents') : '',
+      home ? path.join(home, '.config', 'opencode', 'agents') : '',
+      root ? path.join(root, 'adapters', 'opencode', 'agents') : ''
+    ].filter(Boolean);
+    for (const dir of candidateDirs) {
+      const file = path.join(dir, `${agent}.md`);
+      if (fs.existsSync(file)) return file;
+    }
+    return path.join(agentDir || process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents'), `${agent}.md`);
   },
 
   prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {

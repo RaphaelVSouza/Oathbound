@@ -3,13 +3,60 @@ const path = require('node:path');
 
 const { extractInstructions } = require('../runner-adapter');
 
+/**
+ * Tokenize a command line string respecting single and double quotes.
+ * @param {string} cmdLine
+ * @returns {string[]}
+ */
+function parseCommandLine(cmdLine) {
+  const args = [];
+  let current = '';
+  let inQuotes = false;
+  let quoteChar = '';
+
+  for (let i = 0; i < cmdLine.length; i++) {
+    const char = cmdLine[i];
+    if (inQuotes) {
+      if (char === quoteChar) {
+        inQuotes = false;
+      } else {
+        current += char;
+      }
+    } else if (char === '"' || char === "'") {
+      inQuotes = true;
+      quoteChar = char;
+    } else if (/\s/.test(char)) {
+      if (current.length > 0) {
+        args.push(current);
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+  }
+  if (current.length > 0) {
+    args.push(current);
+  }
+  return args;
+}
+
 const genericAdapter = {
   name: 'generic',
 
   resolveAgentFile({ root, agent, agentDir }) {
-    const dir = agentDir || process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents');
-    const file = path.join(dir, `${agent}.md`);
-    return fs.existsSync(file) ? file : '';
+    const candidateDirs = [
+      agentDir,
+      process.env.GOVKIT_AGENT_DIR,
+      root ? path.join(root, '.opencode', 'agents') : '',
+      root ? path.join(root, '.claude', 'agents') : '',
+      root ? path.join(root, '.agents', 'agents') : '',
+      root ? path.join(root, 'adapters', 'opencode', 'agents') : ''
+    ].filter(Boolean);
+    for (const dir of candidateDirs) {
+      const file = path.join(dir, `${agent}.md`);
+      if (fs.existsSync(file)) return file;
+    }
+    return '';
   },
 
   prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {
@@ -38,7 +85,7 @@ const genericAdapter = {
     const fullMessage = [instructions, promptPrefix, message].filter(Boolean).join('\n\n');
 
     if (genericCmd) {
-      const parts = genericCmd.split(/\s+/);
+      const parts = parseCommandLine(genericCmd);
       const command = parts[0];
       const args = [...parts.slice(1), fullMessage];
       return { command, args };

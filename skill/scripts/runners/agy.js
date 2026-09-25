@@ -7,9 +7,20 @@ const agyAdapter = {
   name: 'agy',
 
   resolveAgentFile({ root, agent, agentDir }) {
-    const dir = agentDir || process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents');
-    const file = path.join(dir, `${agent}.md`);
-    return fs.existsSync(file) ? file : '';
+    const home = process.env.USERPROFILE || process.env.HOME || '';
+    const candidateDirs = [
+      agentDir,
+      process.env.GOVKIT_AGENT_DIR,
+      root ? path.join(root, '.agents', 'agents') : '',
+      home ? path.join(home, '.gemini', 'antigravity-cli', 'agents') : '',
+      root ? path.join(root, '.opencode', 'agents') : '',
+      root ? path.join(root, 'adapters', 'opencode', 'agents') : ''
+    ].filter(Boolean);
+    for (const dir of candidateDirs) {
+      const file = path.join(dir, `${agent}.md`);
+      if (fs.existsSync(file)) return file;
+    }
+    return '';
   },
 
   prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {
@@ -48,6 +59,20 @@ const agyAdapter = {
   },
 
   async resolveSession({ root, tag, sessionInput, runResult }) {
+    if (sessionInput) return sessionInput;
+    try {
+      const home = process.env.USERPROFILE || process.env.HOME || '';
+      const brainDir = path.join(home, '.gemini', 'antigravity-cli', 'brain');
+      if (fs.existsSync(brainDir)) {
+        const entries = fs.readdirSync(brainDir, { withFileTypes: true })
+          .filter(e => e.isDirectory() && /^[0-9a-fA-F-]{36}$/.test(e.name))
+          .map(e => ({ name: e.name, time: fs.statSync(path.join(brainDir, e.name)).mtimeMs }))
+          .sort((a, b) => b.time - a.time);
+        if (entries.length && (Date.now() - entries[0].time) < 600000) {
+          return entries[0].name;
+        }
+      }
+    } catch {}
     return sessionInput || tag;
   }
 };

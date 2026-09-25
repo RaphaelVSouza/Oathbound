@@ -144,10 +144,21 @@ if ($Global) {
 } else {
     Write-Output "Agent Governance Kit $version instalado em $projectPath (runner: $Runner)"
 }
-Write-Output 'Fluxo Matt Pocock (triagem, spec, tickets) instalado nos agentes com variante disponível.'
+Write-Output 'Fluxo Matt Pocock (triagem, spec, tickets) incorporado aos agentes canônicos.'
 if ($AuditDocs) { Write-Output 'Auditor de documentação instalado; adapte tools/audit-docs.config.js antes de usar.' }
 if (-not $Global) {
-    Write-Output 'Revise os arquivos, configure o runner/modelo (OpenCode, Claude, Codex, AGY, Generic) e adicione o ponteiro ao AGENTS.md do projeto.'
+    $agentsMdPath = Join-Path $projectPath 'AGENTS.md'
+    $agentsFragmentPath = Join-Path $PSScriptRoot 'templates/AGENTS.fragment.md'
+    if (Test-Path -LiteralPath $agentsFragmentPath) {
+        $fragmentContent = Get-Content -LiteralPath $agentsFragmentPath -Raw
+        if (-not (Test-Path -LiteralPath $agentsMdPath)) {
+            Set-Content -LiteralPath $agentsMdPath -Value $fragmentContent -NoNewline
+            Write-Output "Criado AGENTS.md com o ponteiro da governança."
+        } elseif (-not ((Get-Content -LiteralPath $agentsMdPath -Raw) -match 'agent-governance')) {
+            Write-Output "AGENTS.md já existe. Adicione o ponteiro de templates/AGENTS.fragment.md ao AGENTS.md do projeto."
+        }
+    }
+    Write-Output 'Revise os arquivos e configure o runner/modelo (OpenCode, Claude, Codex, AGY, Generic).'
 } else {
     Write-Output 'Revise os arquivos e configure o runner/modelo desejado.'
 }

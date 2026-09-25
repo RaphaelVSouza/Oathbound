@@ -1,15 +1,29 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const crypto = require('node:crypto');
 const { extractInstructions } = require('../runner-adapter');
+
+const sessionMap = new Map();
 
 const claudeAdapter = {
   name: 'claude',
 
   resolveAgentFile({ root, agent, agentDir }) {
-    const dir = agentDir || process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents');
-    const file = path.join(dir, `${agent}.md`);
-    return fs.existsSync(file) ? file : '';
+    const home = process.env.USERPROFILE || process.env.HOME || '';
+    const candidateDirs = [
+      agentDir,
+      process.env.GOVKIT_AGENT_DIR,
+      root ? path.join(root, '.claude', 'agents') : '',
+      home ? path.join(home, '.claude', 'agents') : '',
+      root ? path.join(root, '.opencode', 'agents') : '',
+      root ? path.join(root, 'adapters', 'opencode', 'agents') : ''
+    ].filter(Boolean);
+    for (const dir of candidateDirs) {
+      const file = path.join(dir, `${agent}.md`);
+      if (fs.existsSync(file)) return file;
+    }
+    return '';
   },
 
   prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {
@@ -38,16 +52,30 @@ const claudeAdapter = {
     const fullMessage = [instructions, promptPrefix, message].filter(Boolean).join('\n\n');
     const args = ['-p', fullMessage, '--dangerously-skip-permissions'];
 
+    const activeSession = session || (tag ? (sessionMap.get(tag) || crypto.randomUUID()) : crypto.randomUUID());
+    if (tag && !session) sessionMap.set(tag, activeSession);
+
+    if (session) {
+      args.push('--resume', session);
+    } else {
+      args.push('--session-id', activeSession);
+    }
+
     if (model) args.push('--model', model);
     if (effort) args.push('--effort', effort);
-    if (session) args.push('--resume', session);
     if (readonly) args.push('--tools', 'Read,Grep,Glob');
 
     return { command, args };
   },
 
   async resolveSession({ root, tag, sessionInput, runResult }) {
-    return sessionInput || tag;
+    if (sessionInput) return sessionInput;
+    if (tag && sessionMap.has(tag)) {
+      const sid = sessionMap.get(tag);
+      sessionMap.delete(tag);
+      return sid;
+    }
+    return tag;
   }
 };
 

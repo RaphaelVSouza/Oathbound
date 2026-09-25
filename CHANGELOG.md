@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## 0.20.1 — 2026-09-25
+
+- **Correção de descoberta de agentes nos runners:** adapters (`claude`, `agy`, `codex`, `generic`, `opencode`) agora inspecionam diretórios nativos (`.claude/agents/`, `.agents/agents/`, `.opencode/agents/` e pastas globais de usuário) em vez de fixar exclusivamente `.opencode/agents/`.
+- **Identificadores reais de sessão:**
+  - `claude`: geração e rastreamento de UUID via `node:crypto` (`--session-id <uuid>` no primeiro disparo, `--resume <uuid>` nas continuações e em `-Q`), eliminando falhas de retorno de sessão.
+  - `codex`: invocação de `codex exec resume <id>` para continuidade e extração factual de ID via `~/.codex/session_index.jsonl`.
+  - `agy`: resolução de ID de conversa a partir do diretório de runtime (`~/.gemini/antigravity-cli/brain`).
+- **Isolamento de sandbox no runner Codex:** modo somente leitura (`-R`) aplica estritamente `-s read-only -a never` sem ativar `--dangerously-bypass-approvals-and-sandbox`, garantindo o sandbox anunciado.
+- **Robustez no runner Generic:** introdução de `parseCommandLine` com suporte a aspas simples e duplas para que caminhos com espaços em `GOVKIT_GENERIC_CMD` não sejam corrompidos.
+- **Instalador (`install.ps1`):** criação automática de `AGENTS.md` a partir de `templates/AGENTS.fragment.md` quando ausente no projeto de destino, e atualização da mensagem de conclusão (removida menção obsoleta a variantes de agentes).
+- **Higiene de repositório:** remoção do arquivo de configuração pessoal `.agents/rules/antigravity-rtk-rules.md` e adição de `.agents/` ao `.gitignore`.
+
 ## 0.20.0 — 2026-09-25
 
 - **Compilador e transpilador de agentes (`adapters/agent-transpiler.js`):** mecanismo agnóstico
