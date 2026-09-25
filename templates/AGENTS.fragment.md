@@ -10,5 +10,6 @@ prevalecem sobre exemplos genéricos da skill.
 - comando de validação por área;
 - arquivos e diretórios sensíveis;
 - fluxo de aprovação/commit;
-- ambiente local e política de acesso a produção.
+- ambiente local e política de acesso a produção;
+- convenções de comentários de código (contrato de interface vs corpo interno).
 -->

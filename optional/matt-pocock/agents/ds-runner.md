@@ -65,19 +65,46 @@ permission:
     "git push*": deny
     "git reset*": deny
     "git checkout*": deny
+    "git switch*": deny
     "git restore*": deny
     "git clean*": deny
     "git stash*": deny
     "git rebase*": deny
     "git merge*": deny
     "git tag*": deny
-    "git branch -D*": deny
+    "git branch*": deny
+    "git worktree*": deny
+    "git clone*": deny
+    "git pull*": deny
     "*--no-verify*": deny
     "rm -rf*": deny
+    "rm -r *": deny
+    "rm -f *": deny
     "Remove-Item*": deny
+    "ri *": deny
+    "rmdir /s*": deny
+    "del /f*": deny
+    "del /s*": deny
     "npm install*": deny
     "npm i *": deny
     "npm uninstall*": deny
+    "pnpm add*": deny
+    "pnpm install*": deny
+    "pnpm i *": deny
+    "pnpm remove*": deny
+    "pnpm rm*": deny
+    "pnpm uninstall*": deny
+    "yarn add*": deny
+    "yarn remove*": deny
+    "yarn install*": deny
+    "bun add*": deny
+    "bun remove*": deny
+    "bun install*": deny
+    "bun i *": deny
+    "pip install*": deny
+    "pip uninstall*": deny
+    "dotnet add*": deny
+    "dotnet remove*": deny
   task: deny
   skill: deny
   webfetch: deny
@@ -100,6 +127,19 @@ Escopo:
 Fonte: todo número, status ou contagem escrito (código, docs, ADR, recibo)
 vem da mensagem ou de comando rodado nesta chamada; sem fonte, `PENDENTE`.
 Docs com valores canônicos: use-os e faça grep por valores antigos.
+
+Comentários e código:
+
+- Interface pública (Ousterhout): documente funções, classes e tipos exportados
+  com seu contrato de abstração (pré-condições, parâmetros, exceções e efeitos
+  colaterais). O leitor não deve precisar ler a implementação para consumir a API.
+- Corpo interno (Fowler/Clean Code): proibido comentários redundantes que apenas
+  repetem a sintaxe, código morto/comentado (zombie code) e comentários como
+  desodorante de código confuso. Se a lógica está opaca, refatore ou extraia
+  método privado descritivo.
+- Decisões não óbvias: comente sempre o porquê (invariantes de domínio, contorno
+  de bugs de terceiros, regex complexa), nunca o que o código faz.
+- Preserve comentários preexistentes não relacionados à alteração.
 
 Validação:
 

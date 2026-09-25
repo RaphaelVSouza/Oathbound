@@ -1,5 +1,23 @@
 # Histórico de versões
 
+## 0.17.0 — 2026-09-25
+
+- `ds-runner` (base e variante Matt Pocock): endurecimento do bloco de
+  permissões `bash`. Bloqueados comandos de manipulação de worktree e histórico
+  Git fora de escopo (`git switch*`, `git branch*`, `git worktree*`,
+  `git clone*`, `git pull*`), gerenciadores de dependência adicionais (`pnpm`,
+  `yarn`, `bun`, `pip`, `dotnet add/remove`) e deleções destrutivas recursivas
+  ou forçadas (`rm -r *`, `rm -f *`, `rmdir /s*`, `del /f*`, `del /s*`, `ri *`).
+- `ds-runner` (base e variante Matt Pocock): diretriz explícita de comentários
+  e documentação de código. Combina Ousterhout na interface pública (contratos
+  de abstração, pré-condições, parâmetros, exceções e efeitos colaterais sem
+  exigir leitura da implementação) com Fowler e Clean Code no corpo interno
+  (proibição de comentários redundantes, código morto/comentado e comentários
+  como desodorante de lógica opaca; foco no porquê de regras de domínio e
+  invariantes).
+- `templates/AGENTS.fragment.md`: atualizado com guia de preenchimento para
+  convenções locais de comentários de código.
+
 ## 0.16.0 — 2026-09-25
 
 - Novo agente `ds-security` (`adapters/opencode/agents/ds-security.md`): auditor
