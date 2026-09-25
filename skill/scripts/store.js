@@ -11,7 +11,7 @@ try {
 /**
  * Encapsulates transactional state and claim tracking via native node:sqlite (Node 22 LTS).
  */
-class GovernanceStore {
+class OathboundStore {
   /** @param {string} dbPath SQLite database file path or ':memory:' */
   constructor(dbPath) {
     if (!DatabaseSync) {
@@ -129,16 +129,16 @@ class GovernanceStore {
 }
 
 /**
- * Open or create a GovernanceStore.
+ * Open or create an OathboundStore.
  * @param {string} dbPath
- * @returns {GovernanceStore}
+ * @returns {OathboundStore}
  */
-function openGovernanceStore(dbPath) {
-  return new GovernanceStore(dbPath);
+function openStore(dbPath) {
+  return new OathboundStore(dbPath);
 }
 
 module.exports = {
-  GovernanceStore,
-  openGovernanceStore,
+  OathboundStore,
+  openStore,
   isSqliteAvailable: () => !!DatabaseSync
 };

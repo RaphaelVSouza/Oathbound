@@ -4,20 +4,20 @@ O AGY opera como **runner de execução** subordinado ao kit através do execut�
 
 ## Invocação como runner
 
-Ative o runner AGY informando `-u agy` ou exportando `GOVKIT_RUNNER=agy`:
+Ative o runner AGY informando `-u agy` ou exportando `OATHBOUND_RUNNER=agy`:
 
 ```bash
 # Execução com edição delimitada por escopo
-node .claude/skills/agent-governance/scripts/ds-run.js -d . -u agy -s "src/services/*" -a ds-runner -- "Implementar lógica de fila"
+node .claude/skills/agent-governance/scripts/run.js -d . -u agy -s "src/services/*" -a smith -- "Implementar lógica de fila"
 
 # Consulta somente leitura
-node .claude/skills/agent-governance/scripts/ds-run.js -d . -u agy -R -a ds-explorer -- "Verificar endpoints do gateway"
+node .claude/skills/agent-governance/scripts/run.js -d . -u agy -R -a cartographer -- "Verificar endpoints do gateway"
 ```
 
 ### Características de execução
 
 - **Invocação:** executa `agy -p "<prompt>" --dangerously-skip-permissions`.
-- **Modelo:** selecione com `-m <modelo>` (repassado para `--model`) ou via `GOVKIT_MODEL`.
+- **Modelo:** selecione com `-m <modelo>` (repassado para `--model`) ou via `OATHBOUND_MODEL`.
 - **Seleção de subagente:** o papel selecionado com `-a` é repassado para `--agent <nome>` do AGY quando aplicável.
 
 ## Instalação de agentes nativos no AGY

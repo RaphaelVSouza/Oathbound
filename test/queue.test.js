@@ -3,26 +3,26 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { queue } = require('../skill/scripts/ds-queue');
+const { queue } = require('../skill/scripts/queue');
 const { run } = require('../skill/scripts/process-runner');
 
-test('ds-queue: valida presenca de argumentos obrigatorios (-d, -A, -s, issues)', async () => {
+test('queue: valida presenca de argumentos obrigatorios (-d, -A, -s, issues)', async () => {
   await assert.rejects(
     () => queue([]),
-    /uso: node ds-queue.js -d repo -A aceite.txt -s glob -- issue.md/
+    /uso: node queue.js -d repo -A aceite.txt -s glob -- issue.md/
   );
   await assert.rejects(
     () => queue(['-d', '.']),
-    /uso: node ds-queue.js -d repo -A aceite.txt -s glob -- issue.md/
+    /uso: node queue.js -d repo -A aceite.txt -s glob -- issue.md/
   );
   await assert.rejects(
     () => queue(['-d', '.', '-A', 'arquivo-inexistente.txt', '-s', 'src/*']),
-    /uso: node ds-queue.js -d repo -A aceite.txt -s glob -- issue.md/
+    /uso: node queue.js -d repo -A aceite.txt -s glob -- issue.md/
   );
 });
 
-test('ds-queue: rejeita issue inexistente', async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-queue-'));
+test('queue: rejeita issue inexistente', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-queue-'));
   t.after(() => {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   });
@@ -40,8 +40,8 @@ test('ds-queue: rejeita issue inexistente', async (t) => {
   );
 });
 
-test('ds-queue: pula issue que ja consta como revisada (checkpoint)', async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-queue-cp-'));
+test('queue: pula issue que ja consta como revisada (checkpoint)', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-queue-cp-'));
   t.after(() => {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   });
@@ -59,7 +59,7 @@ test('ds-queue: pula issue que ja consta como revisada (checkpoint)', async (t) 
   fs.writeFileSync(ticket, '# Ticket 001');
 
   // Set checkpoint as 'revisada' in git state dir
-  const stateDir = path.join(dir, '.git', 'ds-queue', 'state');
+  const stateDir = path.join(dir, '.git', 'oathbound', 'state');
   fs.mkdirSync(stateDir, { recursive: true });
   fs.writeFileSync(path.join(stateDir, 'docs-001'), 'revisada');
 
@@ -67,8 +67,8 @@ test('ds-queue: pula issue que ja consta como revisada (checkpoint)', async (t) 
   assert.equal(code, 0);
 });
 
-test('ds-queue: processa issue com runner emitindo saida estruturada JSONL sem falhar no reviewer (codigo 6)', async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-queue-codex-'));
+test('queue: processa issue com runner emitindo saida estruturada JSONL sem falhar no reviewer (codigo 6)', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-queue-codex-'));
   t.after(() => {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   });
@@ -93,7 +93,7 @@ test('ds-queue: processa issue com runner emitindo saida estruturada JSONL sem f
       resolveAgentFile: () => '',
       prepareAgent: () => ({ promptPrefix: '' }),
       buildCommand({ agent }) {
-        if (agent === 'ds-reviewer') {
+        if (agent === 'assayer') {
           const s = [
             'console.log(JSON.stringify({ type: "thread.started", thread_id: "th-rev-999" }));',
             'console.log(JSON.stringify({ type: "item.completed", item: { type: "agent_message", text: "No issues." } }));'
@@ -126,7 +126,7 @@ test('ds-queue: processa issue com runner emitindo saida estruturada JSONL sem f
 
   assert.equal(code, 0, 'fila deve concluir com sucesso (codigo 0) e casar recibo No issues. do reviewer');
 
-  const stateDir = path.join(dir, '.git', 'ds-queue', 'state');
+  const stateDir = path.join(dir, '.git', 'oathbound', 'state');
   const stage = fs.readFileSync(path.join(stateDir, 'docs-002'), 'utf8').trim();
   assert.equal(stage, 'revisada', 'estagio final deve ser revisada');
 });

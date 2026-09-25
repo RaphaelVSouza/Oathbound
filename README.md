@@ -23,7 +23,7 @@ O **Agent Governance Kit** resolve esses problemas através de:
 
 1. **Executores Agnósticos (Runners):** Suporte nativo e intercambiável para **OpenCode**, **Claude Code**, **OpenAI Codex**, **Antigravity CLI (AGY)** e comandos customizados via contrato `RunnerAdapter`.
 2. **Auditoria Determinística de Escopo:** O kit não cria virtualização de filesystem nem isolamento de kernel; a governança apoia-se em restrições de ferramentas e prompt guards, combinados com auditoria factual de snapshot Git antes e depois de cada chamada. Qualquer mutação fora dos globs autorizados (`-s`) é detectada no diff e encerra com código de saída `3` (sem descartar alterações automaticamente, preservando evidências para conferência).
-3. **Fila Sequencial com Checkpoints Persistentes (`ds-queue`):** Execução sequencial de tarefas com persistência de estágio em `node:sqlite` (`queue_state`) e arquivos de estado, permitindo retomar de onde parou sem reprocessar tickets concluídos.
+3. **Fila Sequencial com Checkpoints Persistentes (`queue`):** Execução sequencial de tarefas com persistência de estágio em `node:sqlite` (`queue_state`) e arquivos de estado, permitindo retomar de onde parou sem reprocessar tickets concluídos.
 4. **Alinhamento para Prompt Caching KV:** Prompt engineering ordenado estritamente do estático para o volátil (instruções do papel → regras do repositório → guardrails de escopo → dados voláteis da tarefa), garantindo prefixos byte-exact estáveis.
 5. **Transpilação Nativa de Agentes:** Conversor automático que traduz permissões granulares canônicas em whitelists de ferramentas (`tools`) para Claude Code e definições para AGY CLI.
 6. **Zero Dependências Externas:** Construído 100% sobre os módulos nativos do **Node.js 22 LTS** (`node:test`, `node:sqlite`, `node:util.parseArgs`, `path.matchesGlob`, `fs.globSync`).
@@ -36,14 +36,14 @@ O kit disponibiliza oito papéis especializados com permissões estritas em [`gu
 
 | Papel | Responsabilidade | Permissões Padrão |
 | :--- | :--- | :--- |
-| [`ds-governance`](guild/ds-governance.md) | Triagem de issues, elaboração de especificações e decomposição em tickets técnicos. | Edição em `docs/`, `AGENTS.md` e rascunhos; shell somente leitura (`git`). |
-| [`ds-runner`](guild/ds-runner.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); execução de comandos de teste/build. |
-| [`ds-reviewer`](guild/ds-reviewer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura de código; shell restrito a `git diff`, `git status`, `git show` e `git log -p`. |
-| [`ds-explorer`](guild/ds-explorer.md) | Leitura rápida e orientação de código com evidências compactas (`caminho:linha`). | Somente leitura (`glob`, `read`); escrita e shell terminantemente proibidos. |
-| [`ds-researcher`](guild/ds-researcher.md) | Pesquisa técnica em fontes primárias externas com citação de links verificáveis. | Somente leitura; navegação web permitida; escrita local bloqueada. |
-| [`ds-mutant`](guild/ds-mutant.md) | Testes por mutação no código-fonte para avaliar eficácia das asserções de teste. | Edição temporária em fontes (exceto testes); restauração manual/pelo agente (wrapper não reverte automaticamente). |
-| [`ds-committer`](guild/ds-committer.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; operação de Git restrita aos arquivos autorizados. |
-| [`ds-security`](guild/ds-security.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
+| [`scribe`](guild/scribe.md) | Triagem de issues, elaboração de especificações e decomposição em tickets técnicos. | Edição em `docs/`, `AGENTS.md` e rascunhos; shell somente leitura (`git`). |
+| [`smith`](guild/smith.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); execução de comandos de teste/build. |
+| [`assayer`](guild/assayer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura de código; shell restrito a `git diff`, `git status`, `git show` e `git log -p`. |
+| [`cartographer`](guild/cartographer.md) | Leitura rápida e orientação de código com evidências compactas (`caminho:linha`). | Somente leitura (`glob`, `read`); escrita e shell terminantemente proibidos. |
+| [`sage`](guild/sage.md) | Pesquisa técnica em fontes primárias externas com citação de links verificáveis. | Somente leitura; navegação web permitida; escrita local bloqueada. |
+| [`gremlin`](guild/gremlin.md) | Testes por mutação no código-fonte para avaliar eficácia das asserções de teste. | Edição temporária em fontes (exceto testes); restauração manual/pelo agente (wrapper não reverte automaticamente). |
+| [`archivist`](guild/archivist.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; operação de Git restrita aos arquivos autorizados. |
+| [`warden`](guild/warden.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
 
 ---
 
@@ -82,25 +82,25 @@ pwsh -File .\install.ps1 -Global -Runner all -Upgrade
 
 ## Modos de Uso
 
-### 1. Execução de Tarefa Isolada (`ds-run.js`)
+### 1. Execução de Tarefa Isolada (`run.js`)
 
 Executa um agente sob um escopo explícito e com auditoria de diff antes e após a chamada:
 
 ```bash
 # Implementação delimitada via Claude Code com escopo definido
-node .claude/skills/agent-governance/scripts/ds-run.js -d . -u claude -s "src/services/*" -a ds-runner -- "Implementar cálculo de desconto"
+node .claude/skills/agent-governance/scripts/run.js -d . -u claude -s "src/services/*" -a smith -- "Implementar cálculo de desconto"
 
 # Exploração somente leitura via OpenCode com reasoning effort alto
-node .claude/skills/agent-governance/scripts/ds-run.js -d . -u opencode -R -e high -a ds-explorer -- "Mapear fluxo de autenticação"
+node .claude/skills/agent-governance/scripts/run.js -d . -u opencode -R -e high -a cartographer -- "Mapear fluxo de autenticação"
 ```
 
-### 2. Fila Orquestrada de Tarefas (`ds-queue.js`)
+### 2. Fila Orquestrada de Tarefas (`queue.js`)
 
 Orquestra sequencialmente as etapas de implementação, validação e revisão para um conjunto de issues/tickets:
 
 ```bash
 # Executa fila de tickets com arquivo de critérios de aceite (-A) e escopo delimitado (-s)
-node .claude/skills/agent-governance/scripts/ds-queue.js -d . -u agy -A docs/aceite.txt -s "src/*" -- docs/tickets/001.md docs/tickets/002.md
+node .claude/skills/agent-governance/scripts/queue.js -d . -u agy -A docs/aceite.txt -s "src/*" -- docs/tickets/001.md docs/tickets/002.md
 ```
 
 Consulte a [referência da fila](skill/references/queue.md) para detalhes de critérios de aceite, checagens e checkpoints.
@@ -153,7 +153,7 @@ node tools/audit-docs.js
 
 O Agent Governance Kit sintetiza e adapta conceitos das seguintes referências:
 
-- **[Matt Pocock — Skills for Real Engineers](https://github.com/mattpocock/skills):** Padrões de desenvolvimento orientado a especificações (triagem, spec, tickets, TDD e revisão em dois eixos) incorporados nativamente aos agentes canônicos `ds-governance`, `ds-runner` e `ds-reviewer`.
+- **[Matt Pocock — Skills for Real Engineers](https://github.com/mattpocock/skills):** Padrões de desenvolvimento orientado a especificações (triagem, spec, tickets, TDD e revisão em dois eixos) incorporados nativamente aos agentes canônicos `scribe`, `smith` e `assayer`.
 - **[RTK — Rust Token Killer](https://github.com/rtk-ai/rtk):** Estratégias de compressão de saída de terminal para mitigação de consumo de contexto em LLMs.
 - **[Caveman](https://github.com/JuliusBrussee/caveman):** Comunicação técnica ultra-concisa para extensão da janela de contexto do modelo.
 

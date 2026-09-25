@@ -8,7 +8,7 @@ const { ROLES } = require('../skill/scripts/roles');
 
 /** Helper to create an isolated git repo in os.tmpdir() */
 async function createIsolatedRepo(t) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-git-commit-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-git-commit-'));
   t.after(() => {
     try {
       fs.rmSync(dir, { recursive: true, force: true });
@@ -21,14 +21,14 @@ async function createIsolatedRepo(t) {
   return dir;
 }
 
-test('git-commit.js: recusa quando GOVKIT_AGENT nao e o committer', async t => {
+test('git-commit.js: recusa quando OATHBOUND_AGENT nao e o committer', async t => {
   const repo = await createIsolatedRepo(t);
   fs.writeFileSync(path.join(repo, 'app.js'), 'console.log(1);\n', 'utf8');
   await run('git', ['-C', repo, 'add', 'app.js']);
 
   const script = path.join(__dirname, '..', 'skill', 'scripts', 'git-commit.js');
   const res = await run('node', [script, '-d', repo, '-m', 'feat: teste'], {
-    env: { ...process.env, GOVKIT_AGENT: 'papel-errado' }
+    env: { ...process.env, OATHBOUND_AGENT: 'papel-errado' }
   });
 
   assert.equal(res.code, 2);

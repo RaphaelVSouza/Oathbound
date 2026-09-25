@@ -20,7 +20,7 @@ const { ROLES } = require('../skill/scripts/roles');
 
 /** Helper to create an isolated git repo in os.tmpdir() */
 async function createIsolatedRepo(t) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-git-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-git-'));
   t.after(() => {
     try {
       fs.rmSync(dir, { recursive: true, force: true });

@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { run } = require('../process-runner');
 const { resolveAgentPath } = require('../runner-adapter');
+const { readEnv } = require('../env');
 
 function temporaryAgent(file, name, others) {
   const src = fs.readFileSync(file, 'utf8');
@@ -43,7 +44,7 @@ const opencodeAdapter = {
   name: 'opencode',
 
   resolveAgentFile({ root, agent, agentDir }) {
-    return resolveAgentPath({ root, agent, agentDir, runner: 'opencode' }) || path.join(agentDir || process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents'), `${agent}.md`);
+    return resolveAgentPath({ root, agent, agentDir, runner: 'opencode' }) || path.join(agentDir || readEnv('AGENT_DIR') || path.join(root, '.opencode', 'agents'), `${agent}.md`);
   },
 
   prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {

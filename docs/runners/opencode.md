@@ -4,25 +4,25 @@ O instalador copia os oito agentes para `.opencode/agents/`. O OpenCode usa
 esses arquivos no projeto e descobre a skill instalada em
 `.claude/skills/agent-governance/`.
 
-`ds-researcher` precisa das ferramentas `websearch` e `webfetch` disponíveis
+`sage` precisa das ferramentas `websearch` e `webfetch` disponíveis
 na instalação OpenCode. Ele responde diretamente ao orquestrador e não edita
 arquivos do projeto.
 
-Invoque os agentes pelo `node .claude/skills/agent-governance/scripts/ds-run.js` (OpenCode
-é o runner padrão, equivalente a `-u opencode`): `-R` para `ds-explorer`,
-`ds-researcher`, `ds-reviewer` e `ds-security`; `-s <glob>` para `ds-runner`, `ds-governance`,
-`ds-mutant` e `ds-committer`. O modo de leitura exige `edit: deny` no agente e acusa qualquer
+Invoque os agentes pelo `node .claude/skills/agent-governance/scripts/run.js` (OpenCode
+é o runner padrão, equivalente a `-u opencode`): `-R` para `cartographer`,
+`sage`, `assayer` e `warden`; `-s <glob>` para `smith`, `scribe`,
+`gremlin` e `archivist`. O modo de leitura exige `edit: deny` no agente e acusa qualquer
 mudança observada no worktree durante a chamada. Se outro processo editar ao
 mesmo tempo, o recibo não atribui automaticamente a autoria.
 
-`ds-committer` seleciona hunks e cria commits usando os auxiliares do kit.
+`archivist` seleciona hunks e cria commits usando os auxiliares do kit.
 Sua chamada tem posse exclusiva do Git. `-Q status|bloqueios|evidencias|entrega`
 com `-S <sessão>` envia uma pergunta pronta a qualquer agente após a chamada
 atual terminar, com escrita e shell bloqueados nessa consulta.
 
-Configure o modelo no projeto ou defina `GOVKIT_MODEL` ao chamar os scripts.
+Configure o modelo no projeto ou defina `OATHBOUND_MODEL` ao chamar os scripts.
 Os agentes do pacote não incluem provedor nem modelo fixo. O wrapper
-`ds-run.js` procura agentes em `.opencode/agents/`; `GOVKIT_AGENT_DIR` só deve
+`run.js` procura agentes em `.opencode/agents/`; `OATHBOUND_AGENT_DIR` só deve
 ser usado quando esse diretório alternativo também for descoberto pelo
 OpenCode.
 

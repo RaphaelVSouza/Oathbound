@@ -4,11 +4,12 @@ const path = require('node:path');
 const { options, one } = require('./cli-options');
 const { run, alive } = require('./process-runner');
 const { globMatch, snapshot, changedPaths, head, committedPaths, repoPaths } = require('./git');
-const { killRegistered } = require('./ds-kill');
+const { killRegistered } = require('./kill');
 const { StringDecoder } = require('node:string_decoder');
 const { getRunnerAdapter, validateAdapter, feedbackPrompts } = require('./runner-adapter');
 const { temporaryAgent, feedbackAgent } = require('./runners/opencode');
 const { ROLES, stateDir } = require('./roles');
+const { readEnv } = require('./env');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function overlap(a, b) {
@@ -78,8 +79,8 @@ async function runSession(opts = {}) {
   if (!dir) throw Error('repositório obrigatório');
 
   const agent = opts.agent || ROLES.implementer;
-  const model = opts.model !== undefined ? opts.model : (process.env.GOVKIT_MODEL || '');
-  const effort = opts.effort !== undefined ? opts.effort : (process.env.GOVKIT_EFFORT || '');
+  const model = opts.model !== undefined ? opts.model : (readEnv('MODEL') || '');
+  const effort = opts.effort !== undefined ? opts.effort : (readEnv('EFFORT') || '');
   const timeout = Number(opts.timeout !== undefined ? opts.timeout : 1800);
   const feedback = opts.feedback || '';
   const scopes = opts.scopes || [];
@@ -109,9 +110,9 @@ async function runSession(opts = {}) {
   const { root, gitDir } = await repoPaths(dir);
   const runner = typeof opts.runner === 'object' && opts.runner
     ? validateAdapter(opts.runner)
-    : getRunnerAdapter(opts.runner || process.env.GOVKIT_RUNNER || 'opencode', root);
+    : getRunnerAdapter(opts.runner || readEnv('RUNNER') || 'opencode', root);
 
-  const agentFile = runner.resolveAgentFile({ root, agent, agentDir: process.env.GOVKIT_AGENT_DIR });
+  const agentFile = runner.resolveAgentFile({ root, agent, agentDir: readEnv('AGENT_DIR') });
 
   const queueDir = stateDir(gitDir), claimDir = path.join(queueDir, 'claims');
   fs.mkdirSync(claimDir, { recursive: true });
@@ -153,7 +154,7 @@ async function runSession(opts = {}) {
     }
 
     const before = await snapshot(root), beforeHead = await head(root);
-    tag = `dsrun-${label.replace(/[^\w-]/g, '_')}-${process.pid}-${Date.now()}`;
+    tag = `oathbound-${label.replace(/[^\w-]/g, '_')}-${process.pid}-${Date.now()}`;
     const procDir = path.join(queueDir, 'procs', tag);
     fs.mkdirSync(procDir, { recursive: true });
     fs.writeFileSync(path.join(procDir, '.owner'), String(process.pid));
@@ -217,10 +218,10 @@ async function runSession(opts = {}) {
       env: {
         ...process.env,
         ...(cmdEnv || {}),
-        DSRUN_TAG: tag,
-        DSRUN_PROCS: path.join(queueDir, 'procs'),
-        GOVKIT_AGENT: agent,
-        GOVKIT_SCOPES: JSON.stringify(scopes)
+        OATHBOUND_SESSION_TAG: tag,
+        OATHBOUND_PROCS_DIR: path.join(queueDir, 'procs'),
+        OATHBOUND_AGENT: agent,
+        OATHBOUND_SCOPES: JSON.stringify(scopes)
       },
       input: cmdInput,
       capture: true,
@@ -253,7 +254,7 @@ async function runSession(opts = {}) {
     const elapsed = Math.floor((Date.now() - started) / 1000);
     const mode = feedback ? 'consulta' : commitMode ? 'git' : readonly ? 'leitura' : 'edicao';
 
-    let receipt = `\n── ds-run: agente=${agent} runner=${runner.name} modo=${mode} modelo=${model || 'configuração do projeto'}${effort ? ` effort=${effort}` : ''} ${runner.name === 'opencode' ? `opencode_exit=${r.code}` : `exit=${r.code}`} tempo=${elapsed}s sessao=${session}\n`;
+    let receipt = `\n── oathbound run: agente=${agent} runner=${runner.name} modo=${mode} modelo=${model || 'configuração do projeto'}${effort ? ` effort=${effort}` : ''} ${runner.name === 'opencode' ? `opencode_exit=${r.code}` : `exit=${r.code}`} tempo=${elapsed}s sessao=${session}\n`;
     if (parsed.usage) {
       const u = parsed.usage;
       const parts = [];
@@ -295,26 +296,26 @@ async function runSession(opts = {}) {
   }
 }
 
-/** CLI adapter for ds-run invocations. */
+/** CLI adapter for oathbound run invocations. */
 async function dsRun(args, output = true, logFile = '') {
   const o = options(args, ['-d', '-a', '-m', '-t', '-s', '-f', '-S', '-L', '-Q', '-u', '--runner', '-e', '--effort'], ['-R']);
   const dir = one(o, '-d');
   const agent = one(o, '-a', ROLES.implementer);
-  const model = one(o, '-m', process.env.GOVKIT_MODEL || '');
-  const effort = one(o, '--effort') || one(o, '-e') || process.env.GOVKIT_EFFORT || '';
+  const model = one(o, '-m', readEnv('MODEL') || '');
+  const effort = one(o, '--effort') || one(o, '-e') || readEnv('EFFORT') || '';
   const timeout = Number(one(o, '-t', '1800'));
   const feedback = one(o, '-Q');
   const scopes = o['-s'] || [];
   const readonly = !!o['-R'] || !!feedback;
   const session = one(o, '-S');
   const label = one(o, '-L', agent);
-  const runner = one(o, '--runner') || one(o, '-u') || process.env.GOVKIT_RUNNER || 'opencode';
+  const runner = one(o, '--runner') || one(o, '-u') || readEnv('RUNNER') || 'opencode';
 
   if (feedback && (!feedbackPrompts[feedback] || !session || scopes.length || o['-f'])) {
     throw Error('uso de -Q: -S <sessão> -Q status|bloqueios|evidencias|entrega, sem -s ou -f');
   }
   if (!dir || (readonly ? scopes.length : !scopes.length)) {
-    throw Error('uso: node ds-run.js -d repo (-R | -s glob) [-a agente] [-t segundos] [-u runner] [-e effort] -- mensagem');
+    throw Error('uso: node run.js -d repo (-R | -s glob) [-a agente] [-t segundos] [-u runner] [-e effort] -- mensagem');
   }
 
   const message = one(o, '-f') ? fs.readFileSync(one(o, '-f'), 'utf8') : o._.join(' ');

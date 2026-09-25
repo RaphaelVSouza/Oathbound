@@ -8,16 +8,16 @@ fila.
 
 | Etapa | Agente | Regras incorporadas |
 | --- | --- | --- |
-| Triagem, spec, tickets e instruções de agentes | [`ds-governance`](../guild/ds-governance.md) | `triage`, `to-spec`, `to-tickets`, `writing-for-agents`. |
-| Implementação de um ticket ou recorte de spec | [`ds-runner`](../guild/ds-runner.md) | `implement`; ciclos de TDD somente quando testes fizerem parte da tarefa. |
-| Revisão de uma entrega | [`ds-reviewer`](../guild/ds-reviewer.md) | Dois eixos de `code-review`: padrões e spec. |
+| Triagem, spec, tickets e instruções de agentes | [`scribe`](../guild/scribe.md) | `triage`, `to-spec`, `to-tickets`, `writing-for-agents`. |
+| Implementação de um ticket ou recorte de spec | [`smith`](../guild/smith.md) | `implement`; ciclos de TDD somente quando testes fizerem parte da tarefa. |
+| Revisão de uma entrega | [`assayer`](../guild/assayer.md) | Dois eixos de `code-review`: padrões e spec. |
 
-`ds-explorer`, `ds-researcher`, `ds-mutant`, `ds-committer` e `ds-security` mantêm instruções específicas de seus papéis.
-`ds-researcher` incorpora o contrato de pesquisa em fontes primárias da skill
+`cartographer`, `sage`, `gremlin`, `archivist` e `warden` mantêm instruções específicas de seus papéis.
+`sage` incorpora o contrato de pesquisa em fontes primárias da skill
 `research` de Matt Pocock e devolve as fontes ao orquestrador sem carregar
 essa skill. O trabalho de `implement-spec` sobre vários tickets continua com
 o orquestrador e a fila
-`ds-queue.js`; o `ds-runner` recebe apenas uma tarefa delimitada por chamada.
+`queue.js`; o `smith` recebe apenas uma tarefa delimitada por chamada.
 `grilling` é uma conversa para decisões do usuário, fora do papel desses
 agentes de execução.
 

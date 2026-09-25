@@ -1,6 +1,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { readEnv } = require('./env');
+
 const BUILTIN_RUNNERS = ['opencode', 'claude', 'codex', 'agy', 'generic'];
 
 /**
@@ -24,7 +26,7 @@ const BUILTIN_RUNNERS = ['opencode', 'claude', 'codex', 'agy', 'generic'];
  * `flush` devolve string vazia (nada extra ao final). Runners com saída
  * estruturada (JSONL, JSON envelope) devem implementar `createDisplay` para
  * decidir o que exibir no terminal a cada chunk (`push`) e ao final
- * (`flush(rawStdout)`), sem que o motor de execução (`ds-run.js`) precise
+ * (`flush(rawStdout)`), sem que o motor de execução (`run.js`) precise
  * conhecer o nome do runner.
  */
 
@@ -144,7 +146,7 @@ function resolveAgentPath({ root = process.cwd(), agent, agentDir = '', runner =
 
   const candidateDirs = [
     agentDir,
-    process.env.GOVKIT_AGENT_DIR
+    readEnv('AGENT_DIR')
   ];
 
   if (runnerKey === 'claude') {

@@ -10,8 +10,8 @@ leia as regras do projeto, mantenha um `CLAUDE.md` curto na raiz importando
 o `AGENTS.md` (`@AGENTS.md`).
 
 O orquestrador Claude consulta o `AGENTS.md` do projeto e invoca as ferramentas do
-kit pelo terminal (`node .claude/skills/agent-governance/scripts/ds-run.js` e
-`ds-queue.js`).
+kit pelo terminal (`node .claude/skills/agent-governance/scripts/run.js` e
+`queue.js`).
 
 ## 2. Claude Code como runner delegado
 
@@ -20,10 +20,10 @@ adicionando `-u claude` à chamada:
 
 ```bash
 # Execução com edição delimitada por escopo
-node .claude/skills/agent-governance/scripts/ds-run.js -d . -u claude -s "src/api/*" -a ds-runner -- "Implementar endpoint"
+node .claude/skills/agent-governance/scripts/run.js -d . -u claude -s "src/api/*" -a smith -- "Implementar endpoint"
 
 # Consulta somente leitura
-node .claude/skills/agent-governance/scripts/ds-run.js -d . -u claude -R -a ds-explorer -- "Localizar handlers de autenticação"
+node .claude/skills/agent-governance/scripts/run.js -d . -u claude -R -a cartographer -- "Localizar handlers de autenticação"
 ```
 
 ### Características de execução

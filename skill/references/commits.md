@@ -1,13 +1,13 @@
 # Commits delegados
 
-Chame `ds-committer` quando a entrega já foi revisada e o usuário pediu commits.
+Chame `archivist` quando a entrega já foi revisada e o usuário pediu commits.
 Passe caminhos ou globs autorizados em `-s` e informe a intenção da entrega na
 mensagem. O agente escolhe os hunks e os grupos; o orquestrador recebe hashes e
 pendências. Dispare em série, após encerrar chamadas de edição. A posse Git do
 committer bloqueia outras chamadas de edição enquanto ele trabalha.
 
 ```sh
-node .claude/skills/agent-governance/scripts/ds-run.js -d . -a ds-committer -s 'src/*' -s 'README.md' -- 'Crie commits para a entrega X; ticket Y se aplicável.'
+node .claude/skills/agent-governance/scripts/run.js -d . -a archivist -s 'src/*' -s 'README.md' -- 'Crie commits para a entrega X; ticket Y se aplicável.'
 ```
 
 O agente usa `git-stage.js --list` para enumerar hunks e linhas alteradas de

@@ -18,10 +18,10 @@ Invoque o Codex como executor subordinado de uma tarefa adicionando `-u codex`:
 
 ```bash
 # Execução com edição delimitada por escopo
-node .claude/skills/agent-governance/scripts/ds-run.js -d . -u codex -s "src/db/*" -a ds-runner -- "Criar migração"
+node .claude/skills/agent-governance/scripts/run.js -d . -u codex -s "src/db/*" -a smith -- "Criar migração"
 
 # Inspeção somente leitura
-node .claude/skills/agent-governance/scripts/ds-run.js -d . -u codex -R -a ds-explorer -- "Mapear esquemas de tabela"
+node .claude/skills/agent-governance/scripts/run.js -d . -u codex -R -a cartographer -- "Mapear esquemas de tabela"
 ```
 
 ### Características de execução
@@ -29,7 +29,7 @@ node .claude/skills/agent-governance/scripts/ds-run.js -d . -u codex -R -a ds-ex
 - **Invocação:** executa `codex exec "<prompt>" -C <repo>` (em modo edição, usa `--dangerously-bypass-approvals-and-sandbox`; em retomada, usa `codex exec resume <id>`).
 - **Modo somente leitura (`-R`):** força sandbox nativo estrito via `-s read-only -a never` (sem desligamento de sandbox) e instrução de leitura no prompt.
 - **Guardrails de escopo:** os caminhos autorizados em `-s` são injetados no prompt e auditados pelo Git após a conclusão do processo.
-- **Modelo:** selecione com `-m <modelo>` (repassado para `-m` do Codex) ou via `GOVKIT_MODEL`.
+- **Modelo:** selecione com `-m <modelo>` (repassado para `-m` do Codex) ou via `OATHBOUND_MODEL`.
 
 ## Modelo de agentes no Codex
 

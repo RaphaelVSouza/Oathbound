@@ -13,21 +13,21 @@ skill fornece os papéis e wrappers.
 
 | Trabalho | Agente | Invocação |
 | --- | --- | --- |
-| Pergunta fechada sobre código | `ds-explorer` | `node ds-run.js -R -a ds-explorer` |
-| Pesquisa em fontes externas | `ds-researcher` | `node ds-run.js -R -a ds-researcher` |
-| Implementação com comandos | `ds-runner` | `node ds-run.js -s <glob>` |
-| Revisão fria | `ds-reviewer` | `node ds-run.js -R -a ds-reviewer` |
-| Preparação de hunks e commits | `ds-committer` | `node ds-run.js -a ds-committer -s <arquivo>` |
-| Registro documental | `ds-governance` | `node ds-run.js -a ds-governance -s <glob>` |
-| Auditoria por mutação | `ds-mutant` | `node ds-run.js -a ds-mutant -s <glob>`, em série |
-| Auditoria de segurança de aplicação | `ds-security` | `node ds-run.js -R -a ds-security` |
+| Pergunta fechada sobre código | `cartographer` | `node run.js -R -a cartographer` |
+| Pesquisa em fontes externas | `sage` | `node run.js -R -a sage` |
+| Implementação com comandos | `smith` | `node run.js -s <glob>` |
+| Revisão fria | `assayer` | `node run.js -R -a assayer` |
+| Preparação de hunks e commits | `archivist` | `node run.js -a archivist -s <arquivo>` |
+| Registro documental | `scribe` | `node run.js -a scribe -s <glob>` |
+| Auditoria por mutação | `gremlin` | `node run.js -a gremlin -s <glob>`, em série |
+| Auditoria de segurança de aplicação | `warden` | `node run.js -R -a warden` |
 
 Use um agente nomeado; o agente padrão do OpenCode não recebe as permissões
 destes papéis. Passe ao agente uma tarefa fechada, os caminhos permitidos,
 aceite com valor esperado e estado inicial do worktree. O modelo é configurado
-no projeto; `GOVKIT_MODEL` e `-m` substituem opcionalmente nos wrappers; `-e` e
-`GOVKIT_EFFORT` definem o esforço de raciocínio conforme [models.md](references/models.md).
-Edições mecânicas também vão para `ds-runner`. Para `ds-researcher`, delimite
+no projeto; `OATHBOUND_MODEL` e `-m` substituem opcionalmente nos wrappers; `-e` e
+`OATHBOUND_EFFORT` definem o esforço de raciocínio conforme [models.md](references/models.md).
+Edições mecânicas também vão para `smith`. Para `sage`, delimite
 a pergunta; o agente devolve fontes primárias e lacunas na resposta, enquanto
 o orquestrador decide o próximo passo.
 
@@ -35,7 +35,7 @@ o orquestrador decide o próximo passo.
 
 1. Identifique o repositório Git e leia o aceite já definido pelo projeto.
 2. Escolha o menor papel capaz de executar a tarefa. A partir da raiz do projeto,
-   chame `node .claude/skills/agent-governance/scripts/ds-run.js`
+   chame `node .claude/skills/agent-governance/scripts/run.js`
    com `-d`; use `-u <runner>` para selecionar o runner desejado (`opencode`, `claude`,
    `codex`, `agy`, `generic`; padrão: `opencode`); use `-e <low|medium|high>`
    para definir o esforço de raciocínio; use `-R` para os agentes sem edição e
@@ -45,11 +45,11 @@ o orquestrador decide o próximo passo.
 4. Confira o diff e o estado Git. Um exit `3` indica mudança fora do escopo
    ou durante leitura; confira a autoria antes de agir. O wrapper não reverte
    arquivos.
-5. Para várias issues, use `node .claude/skills/agent-governance/scripts/ds-queue.js` conforme
+5. Para várias issues, use `node .claude/skills/agent-governance/scripts/queue.js` conforme
    [queue.md](references/queue.md). O script não corrige achados, commita nem
    marca tickets como concluídos.
 6. Quando houver pedido de commit, delegue a seleção de hunks e mensagens ao
-   `ds-committer` conforme [commits.md](references/commits.md).
+   `archivist` conforme [commits.md](references/commits.md).
 
 Saídas longas de teste/build/lint passam por `node .claude/skills/agent-governance/scripts/quiet.js`. Números e
 status de aceite são válidos apenas com comando executado ou fonte indicada.
@@ -64,7 +64,7 @@ shell do OpenCode casam texto e podem ser contornadas por ofuscação. Use o
 aceite do projeto e revisão humana para decisões irreversíveis ou com dados.
 Não use este pacote como fonte de regras de negócio de outro repositório.
 
-`ds-governance` levanta probabilidade e impacto de um risco com fonte, mas não
+`scribe` levanta probabilidade e impacto de um risco com fonte, mas não
 prioriza. Definir prioridade entre riscos ou issues é do orquestrador: só ele
 enxerga a fila inteira, prazos e decisões de negócio fora do escopo de uma
 única spec.

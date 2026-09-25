@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { getRunnerAdapter, validateAdapter, BUILTIN_RUNNERS } = require('../skill/scripts/runner-adapter');
-const { runSession, dsRun } = require('../skill/scripts/ds-run');
+const { runSession, dsRun } = require('../skill/scripts/run');
 
 test('runner-adapter: exporta lista de runners embutidos', () => {
   assert.deepEqual(BUILTIN_RUNNERS, ['opencode', 'claude', 'codex', 'agy', 'generic']);
@@ -46,7 +46,7 @@ test('runner-adapter: erro descritivo ao buscar runner inexistente', () => {
 });
 
 test('runner-adapter: carrega adapter customizado via caminho de arquivo', (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-custom-runner-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-custom-runner-'));
   t.after(() => {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   });
@@ -72,7 +72,7 @@ test('runner opencode: buildCommand monta flags esperadas', () => {
   const adapter = getRunnerAdapter('opencode');
   const cmd = adapter.buildCommand({
     root: '.',
-    agent: 'ds-runner',
+    agent: 'smith',
     model: 'test-model',
     message: 'hello',
     session: 'sess-123',
@@ -96,7 +96,7 @@ test('runner claude: buildCommand inclui -p e restringe tools em readonly', () =
 
   const cmd = adapter.buildCommand({
     root: '.',
-    agent: 'ds-explorer',
+    agent: 'cartographer',
     message: 'pesquise X',
     promptPrefix: prep.promptPrefix,
     readonly: true
@@ -113,7 +113,7 @@ test('runner codex: buildCommand inclui exec e sandbox read-only em readonly', (
   const adapter = getRunnerAdapter('codex');
   const cmd = adapter.buildCommand({
     root: 'D:/repo',
-    agent: 'ds-reviewer',
+    agent: 'assayer',
     message: 'revise Y',
     readonly: true
   });
@@ -130,7 +130,7 @@ test('runner agy: buildCommand inclui -p e mode plan em readonly', () => {
   const adapter = getRunnerAdapter('agy');
   const cmd = adapter.buildCommand({
     root: '.',
-    agent: 'ds-explorer',
+    agent: 'cartographer',
     message: 'analise Z',
     readonly: true
   });
@@ -142,40 +142,40 @@ test('runner agy: buildCommand inclui -p e mode plan em readonly', () => {
   assert.ok(cmd.args.includes('plan'));
 });
 
-test('runner generic: buildCommand respeita GOVKIT_GENERIC_CMD', () => {
+test('runner generic: buildCommand respeita OATHBOUND_GENERIC_CMD', () => {
   const adapter = getRunnerAdapter('generic');
-  const prev = process.env.GOVKIT_GENERIC_CMD;
+  const prev = process.env.OATHBOUND_GENERIC_CMD;
   try {
-    process.env.GOVKIT_GENERIC_CMD = 'my-custom-cli --flag';
+    process.env.OATHBOUND_GENERIC_CMD = 'my-custom-cli --flag';
     const cmd = adapter.buildCommand({
       root: '.',
-      agent: 'ds-runner',
+      agent: 'smith',
       message: 'task test'
     });
     assert.equal(cmd.command, 'my-custom-cli');
     assert.ok(cmd.args.includes('--flag'));
   } finally {
-    if (prev !== undefined) process.env.GOVKIT_GENERIC_CMD = prev;
-    else delete process.env.GOVKIT_GENERIC_CMD;
+    if (prev !== undefined) process.env.OATHBOUND_GENERIC_CMD = prev;
+    else delete process.env.OATHBOUND_GENERIC_CMD;
   }
 });
 
-test('runner generic: buildCommand respeita GOVKIT_GENERIC_CMD com aspas e espacos', () => {
+test('runner generic: buildCommand respeita OATHBOUND_GENERIC_CMD com aspas e espacos', () => {
   const adapter = getRunnerAdapter('generic');
-  const prev = process.env.GOVKIT_GENERIC_CMD;
+  const prev = process.env.OATHBOUND_GENERIC_CMD;
   try {
-    process.env.GOVKIT_GENERIC_CMD = '"C:\\Program Files\\My CLI\\cli.exe" --option "valor com espaco"';
+    process.env.OATHBOUND_GENERIC_CMD = '"C:\\Program Files\\My CLI\\cli.exe" --option "valor com espaco"';
     const cmd = adapter.buildCommand({
       root: '.',
-      agent: 'ds-runner',
+      agent: 'smith',
       message: 'task test'
     });
     assert.equal(cmd.command, 'C:\\Program Files\\My CLI\\cli.exe');
     assert.ok(cmd.args.includes('--option'));
     assert.ok(cmd.args.includes('valor com espaco'));
   } finally {
-    if (prev !== undefined) process.env.GOVKIT_GENERIC_CMD = prev;
-    else delete process.env.GOVKIT_GENERIC_CMD;
+    if (prev !== undefined) process.env.OATHBOUND_GENERIC_CMD = prev;
+    else delete process.env.OATHBOUND_GENERIC_CMD;
   }
 });
 
@@ -183,7 +183,7 @@ test('runner claude: buildCommand repassa --effort quando fornecido', () => {
   const adapter = getRunnerAdapter('claude');
   const cmd = adapter.buildCommand({
     root: '.',
-    agent: 'ds-runner',
+    agent: 'smith',
     effort: 'high',
     message: 'test'
   });
@@ -195,7 +195,7 @@ test('runner agy: buildCommand repassa --effort quando fornecido', () => {
   const adapter = getRunnerAdapter('agy');
   const cmd = adapter.buildCommand({
     root: '.',
-    agent: 'ds-reviewer',
+    agent: 'assayer',
     effort: 'medium',
     message: 'test'
   });
@@ -205,58 +205,58 @@ test('runner agy: buildCommand repassa --effort quando fornecido', () => {
 
 test('runner claude: buildCommand gera session-id ou repassa --resume', async () => {
   const adapter = getRunnerAdapter('claude');
-  const claudeAgentFile = path.resolve('/fake/project/.claude/agents/ds-runner.md');
+  const claudeAgentFile = path.resolve('/fake/project/.claude/agents/smith.md');
   const newCmd = adapter.buildCommand({
     root: '.',
-    agent: 'ds-runner',
+    agent: 'smith',
     agentFile: claudeAgentFile,
     message: 'nova sessao',
     tag: 'tag-new-1'
   });
   assert.ok(newCmd.args.includes('--session-id'));
   assert.ok(newCmd.args.includes('--agent'));
-  assert.ok(newCmd.args.includes('ds-runner'));
+  assert.ok(newCmd.args.includes('smith'));
   const promptArg = newCmd.args[newCmd.args.indexOf('-p') + 1];
   assert.ok(!promptArg.includes('[PAPEL DO AGENTE'), 'não deve duplicar instruções no prompt quando agente está em .claude/agents');
 
   const sid = await adapter.resolveSession({ root: '.', tag: 'tag-new-1', sessionInput: '' });
   assert.match(sid, /^[0-9a-fA-F-]{36}$/);
 
-  const resCmd = adapter.buildCommand({ root: '.', agent: 'ds-runner', message: 'retoma', session: 'my-session-uuid' });
+  const resCmd = adapter.buildCommand({ root: '.', agent: 'smith', message: 'retoma', session: 'my-session-uuid' });
   assert.ok(resCmd.args.includes('--resume'));
   assert.ok(resCmd.args.includes('my-session-uuid'));
 });
 
 test('runner claude: buildCommand não repassa --agent e injeta instruções no prompt quando fora de .claude/agents', (t) => {
   const adapter = getRunnerAdapter('claude');
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-claude-test-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-claude-test-'));
   t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
 
-  const nonClaudeAgentFile = path.join(dir, 'ds-runner.md');
+  const nonClaudeAgentFile = path.join(dir, 'smith.md');
   fs.writeFileSync(nonClaudeAgentFile, 'Corpo das instrucoes do agente');
 
   const cmd = adapter.buildCommand({
     root: '.',
-    agent: 'ds-runner',
+    agent: 'smith',
     agentFile: nonClaudeAgentFile,
     message: 'minha tarefa'
   });
   assert.ok(!cmd.args.includes('--agent'), 'não deve repassar --agent quando arquivo está fora de .claude/agents');
   const promptArg = cmd.args[cmd.args.indexOf('-p') + 1];
-  assert.ok(promptArg.includes('[PAPEL DO AGENTE (ds-runner)]'), 'deve incluir papel do agente no prompt como fallback');
+  assert.ok(promptArg.includes('[PAPEL DO AGENTE (smith)]'), 'deve incluir papel do agente no prompt como fallback');
   assert.ok(promptArg.includes('Corpo das instrucoes do agente'));
 });
 
 test('runner codex: buildCommand isola sandbox em readonly e suporta resume na ordem correta', () => {
   const adapter = getRunnerAdapter('codex');
-  const readonlyCmd = adapter.buildCommand({ root: 'D:/repo', agent: 'ds-reviewer', message: 'leitura', readonly: true });
+  const readonlyCmd = adapter.buildCommand({ root: 'D:/repo', agent: 'assayer', message: 'leitura', readonly: true });
   assert.ok(readonlyCmd.args.includes('-s'));
   assert.ok(readonlyCmd.args.includes('read-only'));
   assert.ok(!readonlyCmd.args.includes('-a'));
   assert.ok(!readonlyCmd.args.includes('never'));
   assert.ok(!readonlyCmd.args.includes('--dangerously-bypass-approvals-and-sandbox'));
 
-  const resumeCmd = adapter.buildCommand({ root: 'D:/repo', agent: 'ds-runner', message: 'retomada', session: 'sess-abc-123', readonly: true });
+  const resumeCmd = adapter.buildCommand({ root: 'D:/repo', agent: 'smith', message: 'retomada', session: 'sess-abc-123', readonly: true });
   assert.equal(resumeCmd.args[0], 'exec');
   const sIdx = resumeCmd.args.indexOf('-s');
   const resumeIdx = resumeCmd.args.indexOf('resume');
@@ -286,26 +286,26 @@ test('runner agy: resolveSession extrai conversation_id de JSON e retorna vazio 
 });
 
 test('runners: resolveAgentFile localiza agentes em suas pastas nativas', (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-agent-dir-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-agent-dir-'));
   t.after(() => {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   });
 
   const claudeAgentDir = path.join(dir, '.claude', 'agents');
   fs.mkdirSync(claudeAgentDir, { recursive: true });
-  fs.writeFileSync(path.join(claudeAgentDir, 'ds-runner.md'), '---\nname: ds-runner\n---\nCorpo Claude');
+  fs.writeFileSync(path.join(claudeAgentDir, 'smith.md'), '---\nname: smith\n---\nCorpo Claude');
 
   const agyAgentDir = path.join(dir, '.agents', 'agents');
   fs.mkdirSync(agyAgentDir, { recursive: true });
-  fs.writeFileSync(path.join(agyAgentDir, 'ds-runner.md'), '---\nname: ds-runner\n---\nCorpo AGY');
+  fs.writeFileSync(path.join(agyAgentDir, 'smith.md'), '---\nname: smith\n---\nCorpo AGY');
 
   const claude = getRunnerAdapter('claude');
-  const resolvedClaude = claude.resolveAgentFile({ root: dir, agent: 'ds-runner' });
-  assert.equal(resolvedClaude, path.join(claudeAgentDir, 'ds-runner.md'));
+  const resolvedClaude = claude.resolveAgentFile({ root: dir, agent: 'smith' });
+  assert.equal(resolvedClaude, path.join(claudeAgentDir, 'smith.md'));
 
   const agy = getRunnerAdapter('agy');
-  const resolvedAgy = agy.resolveAgentFile({ root: dir, agent: 'ds-runner' });
-  assert.equal(resolvedAgy, path.join(agyAgentDir, 'ds-runner.md'));
+  const resolvedAgy = agy.resolveAgentFile({ root: dir, agent: 'smith' });
+  assert.equal(resolvedAgy, path.join(agyAgentDir, 'smith.md'));
 });
 
 test('runner codex: parseOutput extrai text, session e usage de stream JSONL', () => {

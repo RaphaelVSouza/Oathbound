@@ -5,26 +5,27 @@ const os = require('node:os');
 const { options, one } = require('./cli-options');
 const { run } = require('./process-runner');
 const { git, repoPaths } = require('./git');
-const { runSession } = require('./ds-run');
-const { openGovernanceStore } = require('./governance-db');
+const { runSession } = require('./run');
+const { openStore } = require('./store');
 const { ROLES, stateDir } = require('./roles');
+const { readEnv } = require('./env');
 
 const tail = (value, count) => value.split(/\r?\n/).slice(-count).map(x => x.slice(0, 240)).join('\n');
 async function queue(argv) {
   const o = options(argv, ['-d', '-A', '-s', '-S', '-V', '-t', '-C', '-T', '-u', '--runner', '-e', '--effort'], ['-P']);
   const dir = one(o, '-d'), accept = one(o, '-A'), scopes = o['-s'] || [];
-  const runner = one(o, '--runner') || one(o, '-u') || process.env.GOVKIT_RUNNER || 'opencode';
-  const effort = one(o, '--effort') || one(o, '-e') || process.env.GOVKIT_EFFORT || '';
-  if (!dir || !fs.existsSync(accept) || !scopes.length || !o._.length) throw Error('uso: node ds-queue.js -d repo -A aceite.txt -s glob -- issue.md ...');
+  const runner = one(o, '--runner') || one(o, '-u') || readEnv('RUNNER') || 'opencode';
+  const effort = one(o, '--effort') || one(o, '-e') || readEnv('EFFORT') || '';
+  if (!dir || !fs.existsSync(accept) || !scopes.length || !o._.length) throw Error('uso: node queue.js -d repo -A aceite.txt -s glob -- issue.md ...');
   const { root, gitDir } = await repoPaths(dir);
   const state = path.join(stateDir(gitDir), 'state');
   fs.mkdirSync(state, { recursive: true });
   let store = null;
   try {
-    store = openGovernanceStore(path.join(stateDir(gitDir), 'governance.db'));
+    store = openStore(path.join(stateDir(gitDir), 'oathbound.db'));
   } catch {}
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-queue-'));
-  console.log(`── ds-queue: logs em ${work}`);
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-queue-'));
+  console.log(`── oathbound queue: logs em ${work}`);
   let rs = one(o, '-S'), vs = one(o, '-V');
   for (const issue of o._) {
     const issuePath = path.resolve(root, issue);
@@ -116,7 +117,7 @@ async function queue(argv) {
     store?.setStage(id, 'revisada');
   }
   store?.close();
-  console.log(`── ds-queue: fim; sessoes runner=${rs} reviewer=${vs}`);
+  console.log(`── oathbound queue: fim; sessoes runner=${rs} reviewer=${vs}`);
   return 0;
 }
 if (require.main === module) {

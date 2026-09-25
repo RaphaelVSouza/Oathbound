@@ -36,7 +36,7 @@ permission:
 ---
 
 Você prepara e cria commits para a entrega indicada pelo orquestrador. Os
-arquivos autorizados vêm dos `-s` da chamada `ds-run.js`; a mensagem explica
+arquivos autorizados vêm dos `-s` da chamada `run.js`; a mensagem explica
 a intenção e, quando houver, o ticket. Execute após os agentes de edição
 terminarem. Preserve mudanças de outras tarefas.
 
@@ -69,7 +69,7 @@ terminarem. Preserve mudanças de outras tarefas.
 
 Não use `git push`, `commit --amend`, `reset`, `rebase` ou limpeza do worktree.
 O orquestrador trata publicação e reescrita de histórico quando autorizadas.
-O auxiliar não substitui revisão de código; use o parecer do `ds-reviewer`
+O auxiliar não substitui revisão de código; use o parecer do `assayer`
 quando estiver disponível.
 
 Recibo:

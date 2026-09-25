@@ -23,14 +23,14 @@ ANSI e barras de progresso interativas na saída.
 
 Defina o runner ativo por três vias, em ordem de precedência:
 
-1. **Flag CLI:** `-u <nome>` ou `--runner <nome>` em `ds-run.js` e `ds-queue.js`.
-2. **Variável de ambiente:** `GOVKIT_RUNNER=<nome>` (ex.: `export GOVKIT_RUNNER=claude`).
+1. **Flag CLI:** `-u <nome>` ou `--runner <nome>` em `run.js` e `queue.js`.
+2. **Variável de ambiente:** `OATHBOUND_RUNNER=<nome>` (ex.: `export OATHBOUND_RUNNER=claude`).
 3. **Padrão implícito:** `opencode` se nenhuma opção for informada.
 
 ## Modelos e Reasoning Effort
 
-- **Modelo:** passe `-m <modelo>` ou defina `GOVKIT_MODEL`. Descubra modelos disponíveis no ambiente via CLI (`opencode models`, `agy models`, `claude --help`).
-- **Esforço de raciocínio:** passe `-e <low|medium|high>` ou defina `GOVKIT_EFFORT`. Consulte as diretrizes e regras de prompt caching em [`skill/references/models.md`](../../skill/references/models.md).
+- **Modelo:** passe `-m <modelo>` ou defina `OATHBOUND_MODEL`. Descubra modelos disponíveis no ambiente via CLI (`opencode models`, `agy models`, `claude --help`).
+- **Esforço de raciocínio:** passe `-e <low|medium|high>` ou defina `OATHBOUND_EFFORT`. Consulte as diretrizes e regras de prompt caching em [`skill/references/models.md`](../../skill/references/models.md).
 
 ## Adapters customizados
 
@@ -38,7 +38,7 @@ Para usar um executor proprietário ou ferramenta interna sem alterar o kit, apo
 o caminho do arquivo JavaScript com `--runner`:
 
 ```bash
-node .claude/skills/agent-governance/scripts/ds-run.js -d . -s "src/*" --runner ./meu-adapter.js -- "tarefa"
+node .claude/skills/agent-governance/scripts/run.js -d . -s "src/*" --runner ./meu-adapter.js -- "tarefa"
 ```
 
 O arquivo exportado deve implementar o contrato canônico de [`skill/scripts/runner-adapter.js`](../../skill/scripts/runner-adapter.js):
@@ -49,7 +49,7 @@ O arquivo exportado deve implementar o contrato canônico de [`skill/scripts/run
 - `buildCommand({ root, agent, agentFile, tempAgent, model, message, session, tag, promptPrefix, readonly, scopes })`: monta `{ command, args, env, input }`.
 - `resolveSession({ root, tag, sessionInput, runResult })`: extrai ou devolve o identificador estável da sessão.
 - `createDisplay()` (opcional): devolve `{ push(chunk), flush(rawStdout) }` para controlar a exibição no
-  terminal sem que o motor de execução (`ds-run.js`) precise conhecer o nome do runner. `push` recebe cada
+  terminal sem que o motor de execução (`run.js`) precise conhecer o nome do runner. `push` recebe cada
   pedaço de stdout e devolve o texto a exibir (pode ser `''`); `flush` recebe o stdout bruto completo e
   devolve o texto final a exibir (pode ser `''`). Padrão quando ausente: `push` devolve o próprio chunk;
   `flush` devolve `''`. Runners com saída estruturada (JSONL do `codex`, envelope JSON do `agy`) implementam

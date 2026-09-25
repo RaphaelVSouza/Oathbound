@@ -136,10 +136,10 @@ async function stage(dir, requested, opts = {}) {
     throw Error('arquivo fora do repositório');
   }
   const file = relative.replaceAll('\\', '/');
-  const agent = opts.agent !== undefined ? opts.agent : process.env.GOVKIT_AGENT;
+  const agent = opts.agent !== undefined ? opts.agent : process.env.OATHBOUND_AGENT;
   let scopes = opts.scopes;
   if (!scopes && agent === ROLES.committer) {
-    scopes = JSON.parse(process.env.GOVKIT_SCOPES || '[]');
+    scopes = JSON.parse(process.env.OATHBOUND_SCOPES || '[]');
   }
   if (agent === ROLES.committer || (scopes && scopes.length > 0)) {
     if (scopes && !scopes.some(scope => globMatch(file, scope))) {
@@ -250,13 +250,13 @@ async function stage(dir, requested, opts = {}) {
  */
 async function commit(dir, messages, opts = {}) {
   if (!Array.isArray(messages) || !messages.length) throw Error('título do commit obrigatório');
-  const agent = opts.agent !== undefined ? opts.agent : process.env.GOVKIT_AGENT;
+  const agent = opts.agent !== undefined ? opts.agent : process.env.OATHBOUND_AGENT;
   let scopes = opts.scopes;
   if (!scopes && agent === ROLES.committer) {
-    scopes = JSON.parse(process.env.GOVKIT_SCOPES || '[]');
+    scopes = JSON.parse(process.env.OATHBOUND_SCOPES || '[]');
   }
   if (agent === ROLES.committer) {
-    if (!scopes || !scopes.length) throw Error(`git-commit.js exige sessão ${ROLES.committer} com escopo via ds-run.js`);
+    if (!scopes || !scopes.length) throw Error(`git-commit.js exige sessão ${ROLES.committer} com escopo via run.js`);
   }
 
   const { root } = await repoPaths(dir);

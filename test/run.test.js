@@ -10,12 +10,12 @@ const {
   mutex,
   temporaryAgent,
   feedbackAgent
-} = require('../skill/scripts/ds-run');
+} = require('../skill/scripts/run');
 const { ROLES } = require('../skill/scripts/roles');
 
 /** Helper to create isolated directory */
 function createTempDir(t) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-test-dsrun-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-dsrun-'));
   t.after(() => {
     try {
       fs.rmSync(dir, { recursive: true, force: true });
@@ -127,7 +127,7 @@ test('dsRun: adaptador CLI valida sintaxe e opcoes legadas', async () => {
 
   await assert.rejects(
     async () => { await dsRun(['-d', '.', '-R', '-s', 'src/*']); },
-    /uso: node ds-run\.js/
+    /uso: node run\.js/
   );
 
   await assert.rejects(
@@ -222,7 +222,7 @@ test('runSession: agente committer grava claim com glob=* (modo commit)', async 
     resolveAgentFile: () => '',
     prepareAgent: () => ({ promptPrefix: '' }),
     buildCommand: ({ root }) => {
-      const claimDir = path.join(root, '.git', 'ds-queue', 'claims');
+      const claimDir = path.join(root, '.git', 'oathbound', 'claims');
       const [file] = fs.readdirSync(claimDir).filter(x => x.endsWith('.claim'));
       claimContent = fs.readFileSync(path.join(claimDir, file), 'utf8');
       return { command: 'node', args: ['-e', 'console.log("ok")'] };
@@ -244,8 +244,8 @@ test('runSession: agente committer grava claim com glob=* (modo commit)', async 
   assert.ok(claimContent.includes(`agent=${ROLES.committer}`));
 });
 
-test('guarda: ds-run.js nao acopla exibicao a nome de runner codex/agy', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'skill', 'scripts', 'ds-run.js'), 'utf8');
+test('guarda: run.js nao acopla exibicao a nome de runner codex/agy', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'skill', 'scripts', 'run.js'), 'utf8');
   assert.ok(
     !/runner\.name\s*===\s*'(codex|agy)'/.test(src),
     'exibição deve usar display.push/display.flush do adapter, não runner.name'
@@ -254,7 +254,7 @@ test('guarda: ds-run.js nao acopla exibicao a nome de runner codex/agy', () => {
 
 test('guarda: skill/scripts nao usa literais de papel/estado fora de roles.js', () => {
   const scriptsDir = path.join(__dirname, '..', 'skill', 'scripts');
-  const literalRe = /'(ds-runner|ds-reviewer|ds-committer|ds-queue)'/;
+  const literalRe = /'(smith|assayer|archivist|oathbound)'/;
 
   function walk(dir) {
     let out = [];
@@ -272,4 +272,69 @@ test('guarda: skill/scripts nao usa literais de papel/estado fora de roles.js', 
 
   assert.deepEqual(offenders, [], 'use ROLES/stateDir de roles.js em vez de literais de papel/estado');
 });
+
+test('readEnv: OATHBOUND_ tem prioridade sobre GOVKIT_', () => {
+  const { readEnv } = require('../skill/scripts/env');
+  const prevCurrent = process.env.OATHBOUND_RUNNER;
+  const prevLegacy = process.env.GOVKIT_RUNNER;
+  try {
+    process.env.OATHBOUND_RUNNER = 'novo';
+    process.env.GOVKIT_RUNNER = 'antigo';
+    assert.equal(readEnv('RUNNER'), 'novo');
+  } finally {
+    if (prevCurrent !== undefined) process.env.OATHBOUND_RUNNER = prevCurrent; else delete process.env.OATHBOUND_RUNNER;
+    if (prevLegacy !== undefined) process.env.GOVKIT_RUNNER = prevLegacy; else delete process.env.GOVKIT_RUNNER;
+  }
+});
+
+test('readEnv: fallback GOVKIT_ funciona e avisa uma vez em stderr', () => {
+  const { readEnv } = require('../skill/scripts/env');
+  const prevCurrent = process.env.OATHBOUND_SCOPES;
+  const prevLegacy = process.env.GOVKIT_SCOPES;
+  const writes = [];
+  const original = process.stderr.write;
+  try {
+    delete process.env.OATHBOUND_SCOPES;
+    process.env.GOVKIT_SCOPES = 'legado';
+    process.stderr.write = chunk => { writes.push(String(chunk)); return true; };
+
+    assert.equal(readEnv('SCOPES'), 'legado');
+    assert.equal(readEnv('SCOPES'), 'legado');
+
+    assert.equal(writes.length, 1);
+    assert.ok(writes[0].includes('GOVKIT_SCOPES está obsoleta; use OATHBOUND_SCOPES'));
+  } finally {
+    process.stderr.write = original;
+    if (prevCurrent !== undefined) process.env.OATHBOUND_SCOPES = prevCurrent; else delete process.env.OATHBOUND_SCOPES;
+    if (prevLegacy !== undefined) process.env.GOVKIT_SCOPES = prevLegacy; else delete process.env.GOVKIT_SCOPES;
+  }
+});
+
+test('stateDir: migra .git/ds-queue para .git/oathbound com governance.db para oathbound.db', (t) => {
+  const { stateDir } = require('../skill/scripts/roles');
+  const dir = createTempDir(t);
+  const legacy = path.join(dir, 'ds-queue');
+  fs.mkdirSync(legacy, { recursive: true });
+  fs.writeFileSync(path.join(legacy, 'governance.db'), 'conteudo');
+
+  const resolved = stateDir(dir);
+
+  assert.equal(resolved, path.join(dir, 'oathbound'));
+  assert.ok(fs.existsSync(path.join(dir, 'oathbound')));
+  assert.ok(fs.existsSync(path.join(dir, 'oathbound', 'oathbound.db')));
+  assert.ok(!fs.existsSync(legacy));
+});
+
+test('stateDir: com ambos os diretorios, usa oathbound e preserva o legado', (t) => {
+  const { stateDir } = require('../skill/scripts/roles');
+  const dir = createTempDir(t);
+  fs.mkdirSync(path.join(dir, 'ds-queue'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'oathbound'), { recursive: true });
+
+  const resolved = stateDir(dir);
+
+  assert.equal(resolved, path.join(dir, 'oathbound'));
+  assert.ok(fs.existsSync(path.join(dir, 'ds-queue')));
+});
+
 

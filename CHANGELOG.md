@@ -2,6 +2,23 @@
 
 ## 0.21.0 — não publicada
 
+- **Renomeação de agentes, scripts, variáveis e estado (sessão 4 de 6 — "Oathbound"):** os agentes
+  passam a nomes de ofícios da guilda — `ds-explorer` → `cartographer`, `ds-researcher` → `sage`,
+  `ds-governance` → `scribe`, `ds-runner` → `smith`, `ds-reviewer` → `assayer`, `ds-security` →
+  `warden`, `ds-mutant` → `gremlin`, `ds-committer` → `archivist`. Os scripts de runtime passam a
+  `run.js`, `queue.js`, `kill.js` e `store.js` (`GovernanceStore` → `OathboundStore`;
+  `openGovernanceStore` → `openStore`); os testes acompanham (`run.test.js`, `queue.test.js`,
+  `store.test.js`). As variáveis públicas migram para o prefixo `OATHBOUND_` (`OATHBOUND_RUNNER`,
+  `OATHBOUND_MODEL`, `OATHBOUND_EFFORT`, `OATHBOUND_AGENT_DIR`, `OATHBOUND_GENERIC_CMD`) e as
+  internas para `OATHBOUND_AGENT`, `OATHBOUND_SCOPES`, `OATHBOUND_SESSION_TAG` e
+  `OATHBOUND_PROCS_DIR`. O estado fica em `.git/oathbound/oathbound.db`, a tag de sessão vira
+  `oathbound-…`, os temporários viram `oathbound-*` e os recibos passam a `── oathbound run:`,
+  `── oathbound queue:` e `── oathbound kill:`. `roles.js` centraliza `ROLES` e `STATE_DIR_NAME`.
+- **Compatibilidade de uma versão (`skill/scripts/env.js` e migração de estado):** novo
+  `readEnv(name)` lê `OATHBOUND_<name>` e, quando ausente, aceita `GOVKIT_<name>` com um aviso
+  único em stderr; `stateDir(gitDir)` renomeia `.git/ds-queue` para `.git/oathbound` e
+  `governance.db` para `oathbound.db` na primeira execução, preservando o legado quando ambos
+  existirem.
 - **Papéis e diretório de estado centralizados (`skill/scripts/roles.js`):** novo módulo exporta
   `ROLES` (`implementer`, `reviewer`, `committer`) e `stateDir(gitDir)`, fonte única para os literais
   `'ds-runner'`, `'ds-reviewer'`, `'ds-committer'` e `'ds-queue'` antes espalhados por `ds-run.js`,

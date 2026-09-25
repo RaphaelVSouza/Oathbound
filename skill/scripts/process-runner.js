@@ -41,8 +41,8 @@ function run(command, args = [], opts = {}) {
     child.stdin.end(opts.input);
   }
   let registration = '';
-  if (child.pid && env.DSRUN_TAG && env.DSRUN_PROCS) {
-    const dir = path.join(env.DSRUN_PROCS, env.DSRUN_TAG);
+  if (child.pid && env.OATHBOUND_SESSION_TAG && env.OATHBOUND_PROCS_DIR) {
+    const dir = path.join(env.OATHBOUND_PROCS_DIR, env.OATHBOUND_SESSION_TAG);
     fs.mkdirSync(dir, { recursive: true });
     registration = path.join(dir, String(child.pid));
     fs.writeFileSync(registration, [command, ...args.slice(0, 4)].join(' ').slice(0, 160));

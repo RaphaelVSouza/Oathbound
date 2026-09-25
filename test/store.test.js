@@ -1,13 +1,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { GovernanceStore, openGovernanceStore, isSqliteAvailable } = require('../skill/scripts/governance-db');
+const { OathboundStore, openStore, isSqliteAvailable } = require('../skill/scripts/store');
 
-test('governance-db: verifica disponibilidade de node:sqlite no Node 22+', () => {
+test('store: verifica disponibilidade de node:sqlite no Node 22+', () => {
   assert.equal(isSqliteAvailable(), true);
 });
 
-test('governance-db: grava e recupera estagio da fila', () => {
-  const store = openGovernanceStore(':memory:');
+test('store: grava e recupera estagio da fila', () => {
+  const store = openStore(':memory:');
   try {
     assert.equal(store.getStage('task-01'), null);
 
@@ -30,20 +30,20 @@ test('governance-db: grava e recupera estagio da fila', () => {
   }
 });
 
-test('governance-db: registra, recupera e libera claims de agentes', () => {
-  const store = openGovernanceStore(':memory:');
+test('store: registra, recupera e libera claims de agentes', () => {
+  const store = openStore(':memory:');
   try {
     store.registerClaim({
       pid: 12345,
       label: 'feature-auth',
-      agent: 'ds-runner',
+      agent: 'smith',
       scopes: ['src/auth/*', 'test/auth/*']
     });
 
     store.registerClaim({
       pid: 67890,
       label: 'feature-docs',
-      agent: 'ds-governance',
+      agent: 'scribe',
       scopes: ['docs/*']
     });
 
@@ -62,6 +62,15 @@ test('governance-db: registra, recupera e libera claims de agentes', () => {
     store.cleanStaleClaims(pid => pid === 99999); // 67890 is not alive
     claims = store.getActiveClaims();
     assert.equal(claims.length, 0);
+  } finally {
+    store.close();
+  }
+});
+
+test('store: expoe OathboundStore como classe', () => {
+  const store = new OathboundStore(':memory:');
+  try {
+    assert.equal(store.getStage('ausente'), null);
   } finally {
     store.close();
   }

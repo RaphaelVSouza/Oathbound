@@ -92,8 +92,8 @@ permission:
 
 Instruções do agente explorador.`;
 
-  const output = transpileAgent('ds-explorer', sample, 'claude');
-  assert.ok(output.startsWith('---\nname: ds-explorer\ndescription: Explorador read-only\ntools:\n  - Read\n  - Grep\n  - Glob\n---'));
+  const output = transpileAgent('cartographer', sample, 'claude');
+  assert.ok(output.startsWith('---\nname: cartographer\ndescription: Explorador read-only\ntools:\n  - Read\n  - Grep\n  - Glob\n---'));
   assert.ok(output.includes('Instruções do agente explorador.'));
   assert.ok(!output.includes('permission:'));
   assert.ok(!output.includes('mode: all'));
@@ -109,8 +109,8 @@ permission:
 
 Instruções de revisão.`;
 
-  const output = transpileAgent('ds-reviewer', sample, 'agy');
-  assert.ok(output.startsWith('---\nname: ds-reviewer\ndescription: Revisor de código\n---'));
+  const output = transpileAgent('assayer', sample, 'agy');
+  assert.ok(output.startsWith('---\nname: assayer\ndescription: Revisor de código\n---'));
   assert.ok(output.includes('Instruções de revisão.'));
   assert.ok(!output.includes('permission:'));
 });
@@ -170,7 +170,7 @@ test('agent-transpiler: getNativeAgentDir resolve caminhos esperados', () => {
 });
 
 test('agent-transpiler: transpileAll gera arquivos em diretório temporário', () => {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-transpiler-test-'));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-transpiler-test-'));
 
   try {
     const res = transpileAll({
@@ -185,18 +185,18 @@ test('agent-transpiler: transpileAll gera arquivos em diretório temporário', (
     const claudeDir = path.join(tmpDir, '.claude', 'agents');
     assert.ok(fs.existsSync(claudeDir));
     const claudeFiles = fs.readdirSync(claudeDir);
-    assert.ok(claudeFiles.includes('ds-explorer.md'));
-    assert.ok(claudeFiles.includes('ds-committer.md'));
+    assert.ok(claudeFiles.includes('cartographer.md'));
+    assert.ok(claudeFiles.includes('archivist.md'));
 
     const agyDir = path.join(tmpDir, '.agents', 'agents');
     assert.ok(fs.existsSync(agyDir));
     const agyFiles = fs.readdirSync(agyDir);
-    assert.ok(agyFiles.includes('ds-explorer.md'));
+    assert.ok(agyFiles.includes('cartographer.md'));
 
     const opencodeDir = path.join(tmpDir, '.opencode', 'agents');
     assert.ok(fs.existsSync(opencodeDir));
     const opencodeFiles = fs.readdirSync(opencodeDir);
-    assert.ok(opencodeFiles.includes('ds-explorer.md'));
+    assert.ok(opencodeFiles.includes('cartographer.md'));
 
     // Teste de codex (ignorado com flag skipped)
     const codexRes = transpileAll({
