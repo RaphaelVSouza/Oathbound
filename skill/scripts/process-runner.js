@@ -45,8 +45,16 @@ function run(command, args = [], opts = {}) {
     fs.writeFileSync(registration, [command, ...args.slice(0, 4)].join(' ').slice(0, 160));
   }
   opts.onStart?.(child.pid);
-  child.stdout?.on('data', chunk => { if (opts.capture !== false) stdout = (stdout + chunk).slice(-(opts.maxCapture || 1048576)); opts.onData?.(chunk); });
-  child.stderr?.on('data', chunk => { if (opts.capture !== false) stderr = (stderr + chunk).slice(-(opts.maxCapture || 1048576)); opts.onData?.(chunk); });
+  child.stdout?.on('data', chunk => {
+    if (opts.capture !== false) stdout = (stdout + chunk).slice(-(opts.maxCapture || 1048576));
+    opts.onData?.(chunk);
+    opts.onStdout?.(chunk);
+  });
+  child.stderr?.on('data', chunk => {
+    if (opts.capture !== false) stderr = (stderr + chunk).slice(-(opts.maxCapture || 1048576));
+    opts.onData?.(chunk);
+    opts.onStderr?.(chunk);
+  });
   const onInt = () => { interrupted = 130; killTree(child.pid); };
   const onTerm = () => { interrupted = 143; killTree(child.pid); };
   process.on('SIGINT', onInt);

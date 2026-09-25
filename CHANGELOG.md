@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## 0.20.2 — 2026-09-25
+
+- **Método `parseOutput` nos adapters (`RunnerAdapter`):** unificação da extração de `{ text, session, usage }` em todos os runners (`codex`, `agy`, `claude`, `opencode`, `generic`).
+- **Resolução de travamento da fila com saídas JSON/JSONL (`ds-queue.js`):** `runSession` agora expõe `stdout` contendo apenas o texto do agente (`parsed.text`), garantindo que o recibo do reviewer (`No issues.` / checklist) e resumos de aceite casem deterministicamente com o regex de início de linha, eliminando falhas indevidas com código 6.
+- **Captura concorrente e exibição limpa no terminal (`ds-run.js`):** o terminal exibe o texto do agente e progresso em paralelo sem despejar JSONL bruto; o stream é sempre capturado sem depender de herança direta de console (`output: inherit`).
+- **Rastreamento antecipado de sessão contra truncamento (`ds-run.js`):** captura do ID de sessão (`thread_id`, `conversation_id`) assim que surge nos primeiros blocos do stream, impedindo a perda do identificador em execuções longas cuja saída ultrapassa o limite de buffer (`maxCapture` de 1 MB).
+- **Telemetria de uso de tokens e cache KV:** extração de estatísticas de tokens (`input_tokens`, `cached_input_tokens`, `output_tokens`) incorporadas ao recibo `── telemetria:` e retornadas estruturadas em `runSession`.
+- **Prevenção de `--agent` inválido e instruções duplicadas no Claude Code (`claude.js`):** a flag `--agent <papel>` é repassada exclusivamente quando o agente reside em `.claude/agents/` (suprimindo repetição de instruções no prompt); quando resolvido em outros diretórios (fallback), as instruções do papel são injetadas no prompt sem repassar a flag `--agent`.
+- **Suíte de testes expandida:** 68 testes unitários e de integração passing, incluindo teste end-to-end da fila com streams JSONL.
+
 ## 0.20.1 — 2026-09-25
 
 - **Descoberta unificada de agentes (`resolveAgentPath`):** extração de função canônica em `runner-adapter.js` compartilhada por todos os 5 runners, inspecionando diretórios nativos (`.claude/agents/`, `.agents/agents/`, `.opencode/agents/` e pastas globais de usuário).

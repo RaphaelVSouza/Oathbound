@@ -22,6 +22,16 @@ function validateAdapter(adapter) {
   if (typeof adapter.prepareAgent !== 'function') throw Error(`adapter '${adapter.name}' inválido: prepareAgent deve ser função`);
   if (typeof adapter.resolveAgentFile !== 'function') throw Error(`adapter '${adapter.name}' inválido: resolveAgentFile deve ser função`);
   if (typeof adapter.resolveSession !== 'function') throw Error(`adapter '${adapter.name}' inválido: resolveSession deve ser função`);
+  if (adapter.parseOutput !== undefined && typeof adapter.parseOutput !== 'function') {
+    throw Error(`adapter '${adapter.name}' inválido: parseOutput deve ser função`);
+  }
+  if (!adapter.parseOutput) {
+    adapter.parseOutput = (output) => ({
+      text: typeof output === 'object' && output !== null ? output.stdout || '' : String(output || ''),
+      session: '',
+      usage: null
+    });
+  }
   return adapter;
 }
 

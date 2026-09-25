@@ -135,3 +135,44 @@ test('dsRun: adaptador CLI valida sintaxe e opcoes legadas', async () => {
   );
 });
 
+test('runSession: captura sessao antecipadamente e extrai parsed.text e telemetria', async (t) => {
+  const dir = createTempDir(t);
+  const { run } = require('../skill/scripts/process-runner');
+  await run('git', ['-C', dir, 'init']);
+  await run('git', ['-C', dir, 'config', 'user.email', 'test@test.com']);
+  await run('git', ['-C', dir, 'config', 'user.name', 'Test']);
+
+  const script = [
+    'console.log(JSON.stringify({ type: "thread.started", thread_id: "early-th-999" }));',
+    'for (let i = 0; i < 50; i++) console.log("linha repetitiva " + i);',
+    'console.log(JSON.stringify({ type: "item.completed", item: { type: "agent_message", text: "Mensagem final limpa." } }));',
+    'console.log(JSON.stringify({ type: "turn.completed", usage: { input_tokens: 100, output_tokens: 20 } }));'
+  ].join('\n');
+
+  const customRunner = {
+    name: 'codex',
+    resolveAgentFile: () => '',
+    prepareAgent: () => ({ promptPrefix: '' }),
+    buildCommand: () => ({
+      command: 'node',
+      args: ['-e', script]
+    }),
+    parseOutput: require('../skill/scripts/runners/codex').adapter.parseOutput,
+    resolveSession: async () => ''
+  };
+
+  const res = await runSession({
+    repo: dir,
+    runner: customRunner,
+    readonly: true,
+    message: 'test prompt',
+    output: false
+  });
+
+  assert.equal(res.session, 'early-th-999');
+  assert.equal(res.stdout, 'Mensagem final limpa.');
+  assert.deepEqual(res.usage, { input_tokens: 100, output_tokens: 20 });
+  assert.ok(res.receipt.includes('sessao=early-th-999'));
+  assert.ok(res.receipt.includes('telemetria: in=100 out=20'));
+});
+
