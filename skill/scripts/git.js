@@ -14,13 +14,30 @@ async function git(root, ...args) {
 }
 
 /** Match a repository path against a glob supporting * and ?.
+ * Uses path.matchesGlob when available (Node 22 LTS).
  * @param {string} name
  * @param {string} pattern
  * @returns {boolean}
  */
 function globMatch(name, pattern) {
+  const normalized = name.replaceAll('\\', '/');
+  if (typeof path.matchesGlob === 'function') {
+    return path.matchesGlob(normalized, pattern) || (pattern.endsWith('/*') && path.matchesGlob(normalized, pattern + '*'));
+  }
   const re = '^' + pattern.replace(/[.+^${}()|\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$';
-  return new RegExp(re).test(name.replaceAll('\\', '/'));
+  return new RegExp(re).test(normalized);
+}
+
+/** Find files matching a glob pattern relative to a directory using fs.globSync.
+ * @param {string} dir
+ * @param {string} [pattern='**\/*']
+ * @returns {string[]}
+ */
+function findFiles(dir, pattern = '**/*') {
+  if (typeof fs.globSync === 'function') {
+    return fs.globSync(pattern, { cwd: dir }).map(p => p.replaceAll('\\', '/'));
+  }
+  return [];
 }
 
 /** Resolve a directory to its worktree root and absolute Git directory.
@@ -268,6 +285,7 @@ async function commit(dir, messages, opts = {}) {
 module.exports = {
   git,
   globMatch,
+  findFiles,
   repoPaths,
   snapshot,
   changedPaths,

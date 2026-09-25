@@ -159,7 +159,10 @@ async function runSession(opts = {}) {
   try {
     if (!readonly) {
       await mutex(queueDir, () => {
-        for (const file of fs.readdirSync(claimDir).filter(x => x.endsWith('.claim'))) {
+        const claimFiles = typeof fs.globSync === 'function'
+          ? fs.globSync('*.claim', { cwd: claimDir })
+          : fs.readdirSync(claimDir).filter(x => x.endsWith('.claim'));
+        for (const file of claimFiles) {
           const pid = Number(file.slice(0, -6)), target = path.join(claimDir, file);
           if (!alive(pid)) { fs.rmSync(target, { force: true }); continue; }
           const lines = fs.readFileSync(target, 'utf8').split(/\r?\n/);

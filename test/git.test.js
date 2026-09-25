@@ -7,6 +7,7 @@ const { run } = require('../skill/scripts/process-runner');
 const {
   git,
   globMatch,
+  findFiles,
   repoPaths,
   snapshot,
   changedPaths,
@@ -36,6 +37,13 @@ test('globMatch matches patterns correctly', () => {
   assert.equal(globMatch('src/index.js', 'src/*.js'), true);
   assert.equal(globMatch('docs/README.md', 'src/*'), false);
   assert.equal(globMatch('foo/bar.txt', '*/*'), true);
+  assert.equal(globMatch('src/deep/nested/file.js', 'src/**'), true);
+});
+
+test('findFiles finds files matching patterns via fs.globSync', () => {
+  const files = findFiles(path.resolve(__dirname, '..'), 'test/*.test.js');
+  assert.ok(files.length >= 4);
+  assert.ok(files.some(f => f.includes('git.test.js')));
 });
 
 test('stage: mode all stages entire untracked file', async t => {
