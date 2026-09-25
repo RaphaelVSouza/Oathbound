@@ -39,15 +39,16 @@ permission:
     "git log*": allow
     "git show*": allow
   task: deny
-  skill: deny
+  skill: allow
   webfetch: deny
   websearch: deny
   external_directory: deny
 ---
 
-Oathkeeper da guilda. Siga a skill `oathbound` (`skill/SKILL.md`), que contém a
-disciplina integral: escolha do papel, tarefa fechada, conferência de
-diff/status/recibo e decisão.
+Oathkeeper da guilda. Carregue a skill `oathbound`; se não estiver disponível
+como skill, leia `.claude/skills/oathbound/SKILL.md` (instalação por projeto) ou
+`~/.oathbound/SKILL.md` (global). Ela contém a disciplina integral: escolha do
+papel, tarefa fechada, conferência de diff/status/recibo e decisão.
 
 - Não edita código.
 - Não faz commit e não publica.

@@ -69,13 +69,14 @@ test('agent-transpiler: determineClaudeTools aloca ferramentas conforme permiss�
   });
   assert.deepEqual(editBashTools, ['Read', 'Grep', 'Glob', 'Edit', 'Write', 'Bash']);
 
-  // Bash restrito (`"*": deny` + comandos nomeados) não vira ferramenta `Bash`
+  // Bash restrito (`"*": deny` + comandos nomeados) ainda concede `Bash`:
+  // o Claude só aceita nomes de ferramenta e restringe pelo prompt/auditoria.
   const restrictedBashTools = determineClaudeTools({
     read: { '*': 'allow' },
     edit: 'deny',
     bash: { '*': 'deny', 'git status*': 'allow' }
   });
-  assert.deepEqual(restrictedBashTools, ['Read', 'Grep', 'Glob']);
+  assert.deepEqual(restrictedBashTools, ['Read', 'Grep', 'Glob', 'Bash']);
 
   // Com webfetch
   const webTools = determineClaudeTools({
@@ -105,6 +106,31 @@ Instruções do agente explorador.`;
   assert.ok(output.includes('Instruções do agente explorador.'));
   assert.ok(!output.includes('permission:'));
   assert.ok(!output.includes('mode: all'));
+});
+
+test('agent-transpiler: agents reais recebem Bash no Claude conforme comando liberado', () => {
+  const guildDir = path.join(__dirname, '..', 'guild');
+  const loadPermission = (agent) =>
+    parseFrontmatter(fs.readFileSync(path.join(guildDir, `${agent}.md`), 'utf8')).frontmatter.permission;
+
+  for (const agent of ['oathkeeper', 'archivist', 'assayer']) {
+    const tools = determineClaudeTools(loadPermission(agent));
+    assert.ok(tools.includes('Bash'), `${agent} deve receber Bash`);
+  }
+
+  for (const agent of ['oathkeeper', 'assayer']) {
+    const tools = determineClaudeTools(loadPermission(agent));
+    assert.ok(!tools.includes('Edit'), `${agent} não deve receber Edit`);
+    assert.ok(!tools.includes('Write'), `${agent} não deve receber Write`);
+  }
+
+  const surveyorTools = determineClaudeTools(loadPermission('surveyor'));
+  assert.ok(!surveyorTools.includes('Bash'), 'surveyor (bash: deny) não deve receber Bash');
+});
+
+test('agent-transpiler: oathkeeper tem skill: allow para carregar a skill oathbound', () => {
+  const raw = fs.readFileSync(path.join(__dirname, '..', 'guild', 'oathkeeper.md'), 'utf8');
+  assert.equal(parseFrontmatter(raw).frontmatter.permission.skill, 'allow');
 });
 
 test('agent-transpiler: transpileAgent gera formato correto para AGY CLI', () => {

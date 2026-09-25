@@ -110,15 +110,17 @@ function determineClaudeTools(permission = {}) {
     }
   }
 
-  // "Bash livre" = execução sem restrição. Um mapa com `"*": deny` só libera
-  // comandos nomeados; o Claude Code não tem Bash com escopo, então esse caso
-  // não recebe a ferramenta `Bash`.
+  // Qualquer allow no mapa bash concede a ferramenta `Bash` no Claude. O arquivo
+  // de subagente do Claude só aceita nomes de ferramenta, sem escopo de comando:
+  // o `"*": deny` com comandos nomeados restringe no OpenCode, mas no Claude a
+  // lista vale pelo prompt do agente e pela auditoria de escopo do Git. Negar
+  // `Bash` aqui quebrava oathkeeper (delegação), archivist (commit) e o git de
+  // leitura de assayer/warden/scribe.
   let hasBash = false;
   if (permission.bash) {
     if (permission.bash === 'allow') hasBash = true;
     else if (typeof permission.bash === 'object') {
-      const restricted = permission.bash['*'] === 'deny';
-      hasBash = !restricted && Object.values(permission.bash).some(v => v === 'allow');
+      hasBash = Object.values(permission.bash).some(v => v === 'allow');
     }
   }
 

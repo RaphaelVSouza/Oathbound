@@ -57,3 +57,5 @@ O kit pode compilar e instalar os agentes canônicos como subagentes nativos em 
 
 O transpilador converte as regras de permissão do kit na lista de ferramentas permitidas (`tools: [Read, Grep, Glob]`, etc.), permitindo que o Claude Code acione os subagentes automaticamente por descrição ou pelo menu `/agents`.
 
+O arquivo de subagente do Claude **só aceita nomes de ferramenta** — não há escopo de comando no `tools`. Por isso, quando o mapa `bash` do agente canônico tem qualquer comando liberado (mesmo com `"*": deny`), a ferramenta `Bash` é concedida por inteiro. A lista de comandos permitidos vale por permissão no OpenCode; no Claude, vale pelo prompt do agente e pela auditoria de escopo do Git. O transpilador não promete restrição de comando no Claude.
+

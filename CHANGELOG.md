@@ -32,6 +32,15 @@ caminhos de instalação e o estado em `.git/`. Nenhum nome antigo permanece com
   e recusa de trabalho de execução.
 - **Guarda de links da skill (`test/skill-links.test.js`):** novo teste resolve cada link Markdown
   em `skill/**` e falha se o destino sai de `skill/` ou é absoluto.
+- **`Bash` restaurado no Claude (`tools/guild-transpiler.js`):** `determineClaudeTools` volta a
+  conceder `Bash` quando há qualquer comando liberado no mapa `bash`, inclusive com `"*": deny`. O
+  arquivo de subagente do Claude só aceita nomes de ferramenta, sem escopo de comando; a lista vale
+  pelo prompt do agente e pela auditoria de escopo do Git. Sem isso, `oathkeeper` (delegação),
+  `archivist` (commit) e o git de leitura de `assayer`/`warden`/`scribe` ficavam sem `Bash`.
+  `docs/runners/claude.md` documenta a limitação.
+- **`skill: allow` no oathkeeper (`guild/oathkeeper.md`):** o orquestrador volta a poder carregar a
+  skill `oathbound`; o corpo aponta para a skill e, no fallback, para
+  `.claude/skills/oathbound/SKILL.md` ou `~/.oathbound/SKILL.md`.
 
 - **Orquestrador e documentador da guilda (sessão 5 de 6 — "Oathbound"):** novos agentes
   `oathkeeper` (`mode: primary`, `temperature: 0`) e `herald` (`mode: subagent`, `temperature: 0`).
