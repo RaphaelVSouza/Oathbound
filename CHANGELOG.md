@@ -24,6 +24,15 @@ caminhos de instalação e o estado em `.git/`. Nenhum nome antigo permanece com
 
 ### Adicionado e alterado
 
+- **Disciplina do oathkeeper portátil (`skill/SKILL.md`, `guild/oathkeeper.md`):** a skill volta a
+  conter integralmente a disciplina do orquestrador (escolha do papel, tarefa fechada, conferência
+  de diff/status/recibo e decisão), porque só `skill/` é copiada na instalação — os links para
+  `../guild/` quebravam em `.claude/skills/oathbound/` e Codex/AGY/generic dependem só da skill. O
+  corpo de `guild/oathkeeper.md` fica curto: frontmatter e permissões, papel, ponteiro para a skill
+  e recusa de trabalho de execução.
+- **Guarda de links da skill (`test/skill-links.test.js`):** novo teste resolve cada link Markdown
+  em `skill/**` e falha se o destino sai de `skill/` ou é absoluto.
+
 - **Orquestrador e documentador da guilda (sessão 5 de 6 — "Oathbound"):** novos agentes
   `oathkeeper` (`mode: primary`, `temperature: 0`) e `herald` (`mode: subagent`, `temperature: 0`).
   O `oathkeeper` orquestra — escolhe o papel, entrega a tarefa fechada, confere diff/status/recibo
