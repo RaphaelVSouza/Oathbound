@@ -1,0 +1,10 @@
+PS> Set-Location (Join-Path $Tmp 'invoice')
+  git status --porcelain
+  Write-Output '-- diff invoice.js (deve estar vazio) --'
+  git diff -- src/invoice.js
+ M docs/issues/001-desconto.md
+?? .claude/
+?? AGENTS.md
+?? CHANGELOG.md
+-- diff invoice.js (deve estar vazio) --
+-- exit_processo=0 duracao=0s

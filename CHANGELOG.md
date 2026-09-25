@@ -1,5 +1,27 @@
 # Histórico de versões
 
+## 0.21.1 — 2026-09-25
+
+### Adicionado
+
+- **Projeto de exemplo `examples/invoice/`:** módulo Node mínimo (zero dependências,
+  `node:test`) com um bug proposital (desconto aplicado sobre o frete em vez de só
+  sobre o subtotal), issue em `docs/issues/001-desconto.md` e critério de aceite em
+  `aceite.txt`. Usado para provar o fluxo real do Oathbound com recibos verdadeiros.
+- **Demonstração de ponta a ponta (`docs/demo.md`, `docs/demo-logs/`):** execução real,
+  fora do repositório, dos passos `surveyor` → `smith` (TDD) → `assayer` → `archivist`
+  → `herald` contra `examples/invoice/`, com sessão de consulta (`-S`/`-Q status`), um
+  caso negativo com dois runners (`claude` recusando escrita fora do escopo; `generic`
+  determinístico confirmando `exit_processo=3` ao escrever fora do escopo) e uma
+  execução de `queue.js`. Logs sanitizados em `docs/demo-logs/`. Seção "Demonstração"
+  adicionada ao `README.md`.
+- **Problemas confirmados nesta execução:** `guild/surveyor.md` gera bloco `edit:` no
+  agente opencode, mas `runners/opencode.js` exige a linha `edit: deny` para `-R`
+  (`exit_processo=2`); a validação de revisão em `queue.js` não reconhece
+  `` `No issues.` `` com crase simples ao redor, parando a fila com `exit_processo=6`
+  mesmo com implementação aprovada em conteúdo. Detalhes e correções sugeridas em
+  `docs/demo.md`.
+
 ## 0.21.0 — 2026-09-25
 
 ### Breaking

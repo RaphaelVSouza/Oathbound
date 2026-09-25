@@ -2,7 +2,7 @@
 
 > Camada de governança determinística, auditoria e orquestração multi-agente para CLIs de código com LLMs.
 
-[![Versão](https://img.shields.io/badge/versão-0.21.0-blue.svg)](VERSION)
+[![Versão](https://img.shields.io/badge/versão-0.21.1-blue.svg)](VERSION)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-green.svg)](https://nodejs.org/)
 [![Dependências](https://img.shields.io/badge/dependências-zero-brightgreen.svg)](README.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
@@ -46,6 +46,92 @@ O Oathbound distribui o trabalho entre dez papéis juramentados em [`guild/`](gu
 | [`archivist`](guild/archivist.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; Git restrito aos arquivos autorizados (`git-stage.js`, `git-commit.js`). |
 | [`breaker`](guild/breaker.md) | Testes de mutação: quebra o código de propósito para medir se os testes percebem. | Edição temporária em fontes (exceto testes); restauração conferida por hash; Git destrutivo bloqueado. |
 | [`warden`](guild/warden.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
+
+---
+
+## Demonstração
+
+Execução real do fluxo, fora deste repositório, contra o projeto de exemplo
+[`examples/invoice/`](examples/invoice/) (bug proposital: desconto aplicado sobre o
+frete). Recibos completos e sanitizados em [`docs/demo.md`](docs/demo.md).
+
+Passo b) — `smith` corrige o bug com TDD (`node --test` antes e depois):
+
+````text
+-- node --test antes --
+✔ total sem desconto soma itens e frete padrão (1.1563ms)
+✔ total com desconto e um único item (0.2684ms)
+✔ total com múltiplos itens sem desconto (0.1828ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 130.9279
+-- run.js smith --
+`.claude/` e `AGENTS.md` untracked — não tocados por mim, estado de entrada preexistente.
+
+```
+ARQUIVOS:
+test/invoice.test.js — teste de aceite corrigido: espera 105 (era 103.5), cobre fórmula subtotal*(1-desconto)+frete
+src/invoice.js — fix: desconto aplicado só sobre subtotal, frete somado depois
+
+ACEITE: node --test → obtido: fail 0, 3 testes passam (incluindo total([{price:100,qty:1}],0.1)===105) vs esperado: node --test passa e retorna 105 — OK
+
+FONTES: 105 → aceite.txt:1; fórmula subtotal*(1-discount)+FRETE_PADRAO → docs/issues/001-desconto.md:8
+
+NOTA: nenhuma
+
+GIT:
+ M src/invoice.js
+ M test/invoice.test.js
+?? .claude/
+?? AGENTS.md
+(.claude/ e AGENTS.md já untracked antes desta tarefa, não tocados)
+```
+
+── oathbound run: agente=smith runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=54s sessao=ef58731b-fb68-40d3-a335-f6b3c345ff7a
+── alterados na chamada (2):
+   src/invoice.js
+   test/invoice.test.js
+-- node --test depois --
+✔ total sem desconto soma itens e frete padrão (1.2576ms)
+✔ total com desconto aplica somente sobre subtotal, frete somado depois (0.2137ms)
+✔ total com múltiplos itens sem desconto (0.1839ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 142.6249
+-- exit_processo=0 duracao=60s
+````
+
+Passo f.1 — com o runner `claude`, o `smith` recusou editar `src/invoice.js` (fora do
+escopo autorizado `docs/*`) e só anotou o bloqueio em
+`docs/issues/001-desconto.md` ([`docs/demo-logs/f1-smith.log`](docs/demo-logs/f1-smith.log)).
+
+Passo f.2 — simulação com runner `generic` e script que ignora o escopo: o script
+determinístico `oath-rebel.js` escreveu `src/probe.js` fora do escopo (`docs/*`) e o
+wrapper detectou:
+
+````text
+agente escreveu src/probe.js
+
+── oathbound run: agente=smith runner=generic modo=edicao modelo=configuração do projeto exit=0 tempo=4s sessao=oathbound-smith-12652-1790377599174
+── alterados na chamada (1):
+   src/probe.js
+── FORA DO ESCOPO (1) — confira autoria:
+   ! src/probe.js
+-- exit_processo=3 duracao=9s
+````
+
+Recibo completo, ambiente, cópia B (fila) e problemas encontrados em
+[`docs/demo.md`](docs/demo.md).
 
 ---
 

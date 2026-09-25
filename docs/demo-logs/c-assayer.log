@@ -1,0 +1,10 @@
+PS> Set-Location (Join-Path $Tmp 'invoice')
+  node .claude/skills/oathbound/scripts/run.js -d . -u claude -R -a assayer -- "Revise o git diff de src/ e test/ contra a issue docs/issues/001-desconto.md. O diff corrige o bug corretamente?"
+Fórmula bate com issue: `subtotal * (1 - discount) + FRETE_PADRAO`. Caso aceite `total([{price:100,qty:1}], 0.1)` = `100*0.9+15=105`. Confere.
+
+No issues.
+
+── oathbound run: agente=assayer runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=19s sessao=b3a34226-575b-447f-8eb1-28fad728b9e6
+── alterados na chamada (0):
+
+-- exit_processo=0 duracao=25s

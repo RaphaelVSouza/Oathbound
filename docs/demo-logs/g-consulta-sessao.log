@@ -1,0 +1,17 @@
+PS> Set-Location (Join-Path $Tmp 'invoice')
+  node .claude/skills/oathbound/scripts/run.js -d . -u claude -S ef58731b-fb68-40d3-a335-f6b3c345ff7a -Q status -- "Qual o status atual?"
+Etapa atual: tarefa concluída. TDD feito, fix aplicado, aceite validado.
+
+Progresso observável:
+- test/invoice.test.js: teste corrigido, espera 105.
+- src/invoice.js: fórmula fixada, desconto só sobre subtotal, frete somado depois.
+- node --test: fail 0, 3 testes passam.
+
+Próximo passo: nenhum pendente nesta tarefa. Entrega pronta para oathkeeper revisar/commitar.
+
+Estimativa: não aplicável, tarefa já fechada.
+
+── oathbound run: agente=smith runner=claude modo=consulta modelo=configuração do projeto exit=0 tempo=13s sessao=ef58731b-fb68-40d3-a335-f6b3c345ff7a
+── alterados na chamada (0):
+
+-- exit_processo=0 duracao=20s

@@ -1,0 +1,42 @@
+PS> Copy-Item -Recurse -Force (Join-Path $Repo 'examples\invoice') (Join-Path $Tmp 'invoice-opencode')
+  Set-Location (Join-Path $Tmp 'invoice-opencode')
+  Write-Output '-- R6 status antes --'
+  git status --porcelain 2>&1
+  Write-Output '-- R6 listagem --'
+  Get-ChildItem -Force -Name
+  git init
+  git add -A
+  git config user.email 'demo@example.invalid'
+  git config user.name 'Oathbound Demo'
+  git commit -m 'chore: commit inicial do exemplo invoice (copia opencode)'
+  Write-Output '-- install --'
+  pwsh -NoProfile -File "$Repo\install.ps1" -Project (Join-Path $Tmp 'invoice-opencode') -Runner opencode
+-- R6 status antes --
+fatal: not a git repository (or any of the parent directories): .git
+-- R6 listagem --
+docs
+src
+test
+aceite.txt
+README.md
+Initialized empty Git repository in <tmp>/invoice-opencode/.git/
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'aceite.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/issues/001-desconto.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/invoice.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'test/invoice.test.js', LF will be replaced by CRLF the next time Git touches it
+[main (root-commit) 51203c4] chore: commit inicial do exemplo invoice (copia opencode)
+ 5 files changed, 70 insertions(+)
+ create mode 100644 README.md
+ create mode 100644 aceite.txt
+ create mode 100644 docs/issues/001-desconto.md
+ create mode 100644 src/invoice.js
+ create mode 100644 test/invoice.test.js
+-- install --
+[agent-transpiler] Runner 'opencode': 10/10 agentes gravados em <tmp>/invoice-opencode\.opencode\agents
+Oathbound 0.21.0 instalado em <tmp>/invoice-opencode (runner: opencode)
+Fluxo Matt Pocock (triagem, spec, tickets) incorporado aos agentes canônicos.
+Inicie o oathkeeper como agente primário (OpenCode) ou por `claude --agent oathkeeper` (Claude Code).
+Criado AGENTS.md com o ponteiro da governança.
+Revise os arquivos e configure o runner/modelo (OpenCode, Claude, Codex, AGY, Generic).
+-- exit_processo=0 duracao=2s

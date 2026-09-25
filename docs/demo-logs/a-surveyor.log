@@ -1,0 +1,11 @@
+PS> Set-Location (Join-Path $Tmp 'invoice')
+  node .claude/skills/oathbound/scripts/run.js -d . -u claude -R -a surveyor -- "onde o desconto e aplicado?"
+RESPOSTA: desconto aplicado em `total()`, sobre subtotal+frete (base errada — bug conhecido, ver issue 001).
+EVIDÊNCIA:
+  - src\invoice.js:14-15 — `const comFrete = subtotal + FRETE_PADRAO; const comDesconto = comFrete * (1 - discount);`
+LACUNAS: nenhuma
+
+── oathbound run: agente=surveyor runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=12s sessao=2ea45f3a-e1f5-4ab3-a53c-ee5caee2c891
+── alterados na chamada (0):
+
+-- exit_processo=0 duracao=18s

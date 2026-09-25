@@ -1,0 +1,26 @@
+PS> Set-Location (Join-Path $Tmp 'invoice')
+  node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "CHANGELOG.md" -a herald -- "Registre no CHANGELOG.md deste projeto a correcao do bug de desconto (commit 960026a), com base no git log e no diff."
+  Write-Output '-- CHANGELOG.md --'
+  Get-Content CHANGELOG.md -ErrorAction SilentlyContinue
+```text
+ARQUIVOS: CHANGELOG.md — criado, entrada Fixed para commit 960026a
+FONTES: correção de cálculo (subtotal antes do frete) → git show 960026a, src/invoice.js diff; mudança valor esperado teste (103.5 → 105) → git show 960026a, test/invoice.test.js diff
+PR: não pedido
+NOTA: CHANGELOG.md não existia antes; criado do zero, sem formato/versão anterior a preservar
+GIT: ?? CHANGELOG.md
+```
+
+── oathbound run: agente=herald runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=22s sessao=116de765-7883-4a5a-8858-24c16be5f140
+── alterados na chamada (1):
+   CHANGELOG.md
+-- CHANGELOG.md --
+# Changelog
+
+## [Unreleased]
+
+### Fixed
+
+- Desconto agora aplica somente sobre o subtotal dos itens, com frete somado depois (commit `960026a`). Antes, `discount` incidia sobre `subtotal + FRETE_PADRAO`, cobrando desconto indevido sobre o frete.
+  - `src/invoice.js`: `total()` agora calcula `subtotalComDesconto = subtotal * (1 - discount)` e soma `FRETE_PADRAO` depois, em vez de aplicar o desconto sobre `comFrete`.
+  - `test/invoice.test.js`: teste "total com desconto aplica somente sobre subtotal, frete somado depois" (antes "total com desconto e um único item") passa a esperar `105` para `items = [{ price: 100, qty: 1 }]` com `discount = 0.1` (antes esperava `103.5`).
+-- exit_processo=0 duracao=27s

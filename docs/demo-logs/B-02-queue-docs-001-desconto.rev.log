@@ -1,0 +1,9 @@
+Sem tool de diff/bash nesse contexto — avalio arquivos direto (equivalente ao diff, já que são não rastreados/staged novos).
+
+Verifico teste que falha sem mudança: implementação atual já usa fórmula correta (linha 14-15 `invoice.js`). Não há versão "antes" para comparar aqui, mas conteúdo bate 100% com spec e aceite.
+
+`No issues.`
+
+── oathbound run: agente=assayer runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=17s sessao=67af82ea-7823-46ed-a5b5-e1c7ac26f25d
+── alterados na chamada (0):
+

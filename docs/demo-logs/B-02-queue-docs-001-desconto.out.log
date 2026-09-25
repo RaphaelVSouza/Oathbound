@@ -1,0 +1,15 @@
+```
+ARQUIVOS: src/invoice.js — ordem correta: desconto no subtotal, frete somado depois; test/invoice.test.js — caso de aceite ajustado para 105
+ACEITE: node --test → exit 0, fail 0 (esperado: passa); total([{price:100,qty:1}],0.1) → 105 (esperado: 105)
+FONTES: FRETE_PADRAO = 15 → src/invoice.js:3; fórmula e valor 105 → docs/issues/001-desconto.md:8,18
+NOTA: .claude/ e AGENTS.md já sujos ao início, fora do escopo (src/*, test/*), preservados sem alteração
+GIT: M src/invoice.js
+ M test/invoice.test.js
+ ?? .claude/
+ ?? AGENTS.md
+```
+
+── oathbound run: agente=smith runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=35s sessao=1d3a1a00-6442-4cfe-a6dd-214ba88b9b56
+── alterados na chamada (2):
+   src/invoice.js
+   test/invoice.test.js

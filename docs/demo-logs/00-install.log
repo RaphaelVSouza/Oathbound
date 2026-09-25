@@ -1,0 +1,52 @@
+PS> Set-Location (Join-Path $Tmp 'invoice')
+  Write-Output '-- R6: git status --porcelain (deve ser vazio) --'
+  git status --porcelain
+  Write-Output '-- R6: Get-ChildItem -Force -Name --'
+  Get-ChildItem -Force -Name
+  Write-Output '-- claude --version --'
+  claude --version
+  Write-Output '-- SO --'
+  [Environment]::OSVersion
+  (Get-CimInstance Win32_OperatingSystem).Caption
+  Write-Output '-- node --version --'
+  node --version
+  Write-Output '-- PSVersionTable --'
+  $PSVersionTable.PSVersion
+  Write-Output '-- data --'
+  Get-Date
+  Write-Output '-- install.ps1 --'
+  pwsh -NoProfile -File "$Repo\install.ps1" -Project (Join-Path $Tmp 'invoice') -Runner claude
+-- R6: git status --porcelain (deve ser vazio) --
+-- R6: Get-ChildItem -Force -Name --
+.git
+docs
+src
+test
+aceite.txt
+README.md
+-- claude --version --
+2.1.283 (Claude Code)
+-- SO --
+
+Platform ServicePack Version      VersionString
+-------- ----------- -------      -------------
+ Win32NT             10.0.26200.0 Microsoft Windows NT 10.0.26200.0
+Microsoft Windows 11 Pro
+-- node --version --
+v24.21.0
+-- PSVersionTable --
+                                  
+-- data --
+                                  
+-- install.ps1 --
+[agent-transpiler] Runner 'claude': 10/10 agentes gravados em <tmp>/invoice\.claude\agents
+Oathbound 0.21.0 instalado em <tmp>/invoice (runner: claude)
+Fluxo Matt Pocock (triagem, spec, tickets) incorporado aos agentes canônicos.
+Inicie o oathkeeper como agente primário (OpenCode) ou por `claude --agent oathkeeper` (Claude Code).
+Criado AGENTS.md com o ponteiro da governança.
+Revise os arquivos e configure o runner/modelo (OpenCode, Claude, Codex, AGY, Generic).
+
+-- exit_processo=0 duracao=2s
+-- correcao: PSVersionTable e Get-Date nao serializaram no log acima (ToString necessario) --
+PSVersion: 7.6.6
+Data: 2026-09-25 20:00:50

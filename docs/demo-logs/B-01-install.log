@@ -1,0 +1,9 @@
+PS> Set-Location (Join-Path $Tmp 'invoice-queue')
+  pwsh -NoProfile -File "$Repo\install.ps1" -Project (Join-Path $Tmp 'invoice-queue') -Runner claude
+[agent-transpiler] Runner 'claude': 10/10 agentes gravados em <tmp>/invoice-queue\.claude\agents
+Oathbound 0.21.0 instalado em <tmp>/invoice-queue (runner: claude)
+Fluxo Matt Pocock (triagem, spec, tickets) incorporado aos agentes canônicos.
+Inicie o oathkeeper como agente primário (OpenCode) ou por `claude --agent oathkeeper` (Claude Code).
+Criado AGENTS.md com o ponteiro da governança.
+Revise os arquivos e configure o runner/modelo (OpenCode, Claude, Codex, AGY, Generic).
+-- exit_processo=0 duracao=1s

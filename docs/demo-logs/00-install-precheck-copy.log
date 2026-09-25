@@ -1,0 +1,21 @@
+PS> Copy-Item -Recurse -Force (Join-Path $Repo 'examples\invoice') (Join-Path $Tmp 'invoice')
+  Set-Location (Join-Path $Tmp 'invoice')
+  git init
+  git add -A
+  git config user.email 'demo@example.invalid'
+  git config user.name 'Oathbound Demo'
+  git commit -m 'chore: commit inicial do exemplo invoice'
+Initialized empty Git repository in <tmp>/invoice/.git/
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'aceite.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/issues/001-desconto.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/invoice.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'test/invoice.test.js', LF will be replaced by CRLF the next time Git touches it
+[main (root-commit) 86b7255] chore: commit inicial do exemplo invoice
+ 5 files changed, 70 insertions(+)
+ create mode 100644 README.md
+ create mode 100644 aceite.txt
+ create mode 100644 docs/issues/001-desconto.md
+ create mode 100644 src/invoice.js
+ create mode 100644 test/invoice.test.js
+-- exit_processo=0 duracao=1s
