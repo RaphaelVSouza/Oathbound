@@ -1,16 +1,16 @@
 # Fluxo obrigatório inspirado em Matt Pocock
 
 As regras relevantes das skills originais de Matt Pocock foram consolidadas
-diretamente nos agentes em `adapters/opencode/agents/`, sem duplicatas de arquivos.
+diretamente nos agentes em `guild/`, sem duplicatas de arquivos.
 Nenhuma skill adicional é instalada ou carregada. O orquestrador conserva a
 escolha do papel, o escopo da chamada, a conferência do resultado e o avanço da
 fila.
 
 | Etapa | Agente | Regras incorporadas |
 | --- | --- | --- |
-| Triagem, spec, tickets e instruções de agentes | [`ds-governance`](../../adapters/opencode/agents/ds-governance.md) | `triage`, `to-spec`, `to-tickets`, `writing-for-agents`. |
-| Implementação de um ticket ou recorte de spec | [`ds-runner`](../../adapters/opencode/agents/ds-runner.md) | `implement`; ciclos de TDD somente quando testes fizerem parte da tarefa. |
-| Revisão de uma entrega | [`ds-reviewer`](../../adapters/opencode/agents/ds-reviewer.md) | Dois eixos de `code-review`: padrões e spec. |
+| Triagem, spec, tickets e instruções de agentes | [`ds-governance`](../guild/ds-governance.md) | `triage`, `to-spec`, `to-tickets`, `writing-for-agents`. |
+| Implementação de um ticket ou recorte de spec | [`ds-runner`](../guild/ds-runner.md) | `implement`; ciclos de TDD somente quando testes fizerem parte da tarefa. |
+| Revisão de uma entrega | [`ds-reviewer`](../guild/ds-reviewer.md) | Dois eixos de `code-review`: padrões e spec. |
 
 `ds-explorer`, `ds-researcher`, `ds-mutant`, `ds-committer` e `ds-security` mantêm instruções específicas de seus papéis.
 `ds-researcher` incorpora o contrato de pesquisa em fontes primárias da skill
@@ -24,7 +24,7 @@ agentes de execução.
 O projeto define seu tracker: local das specs e tickets, estados, bloqueios,
 quem aprova e como registrar aceite. `.scratch/` pode ser escolhido para
 rascunhos ou tracker local; sua existência não o torna obrigatório. Use o
-[fragmento opcional](templates/AGENTS.fragment.md) para apontar essa
+[fragmento opcional](../templates/AGENTS.matt-pocock.fragment.md) para apontar essa
 configuração. O instalador não altera `AGENTS.md`.
 
 Este módulo é uma adaptação, não uma cópia integral das skills originais.

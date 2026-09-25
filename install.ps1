@@ -42,7 +42,7 @@ if ($Global) {
 }
 
 $skillSource = Join-Path $PSScriptRoot 'skill'
-$agentsSource = Join-Path $PSScriptRoot 'adapters/opencode/agents'
+$agentsSource = Join-Path $PSScriptRoot 'guild'
 $agentFiles = @(Get-ChildItem -LiteralPath $agentsSource -File -Filter '*.md')
 if ($Upgrade -and -not $Global) {
     throw '-Upgrade só se aplica a -Global; o modo -Project nunca sobrescreve automaticamente (ver README).'
@@ -87,7 +87,7 @@ Copy-Item -LiteralPath $skillSource -Destination $skillTarget -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Destination (Join-Path $skillTarget 'VERSION')
 
 # Compila e instala agentes canônicos para o(s) runner(s) alvo
-$transpilerScript = Join-Path $PSScriptRoot 'adapters/agent-transpiler.js'
+$transpilerScript = Join-Path $PSScriptRoot 'tools/guild-transpiler.js'
 $transpilerArgs = @(
     $transpilerScript,
     '--source', $agentsSource,

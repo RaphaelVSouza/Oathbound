@@ -13,7 +13,7 @@ const {
   transpileAgent,
   getNativeAgentDir,
   transpileAll
-} = require('../adapters/agent-transpiler.js');
+} = require('../tools/guild-transpiler.js');
 
 test('agent-transpiler: parseFrontmatter extrai campos e corpo corretamente', () => {
   const content = `---

@@ -13,11 +13,11 @@ ANSI e barras de progresso interativas na saída.
 
 | Runner | Invocação | Guardrails de escopo | Descoberta de sessão | Documentação |
 | --- | --- | --- | --- | --- |
-| `opencode` (padrão) | `-u opencode` | YAML frontmatter (`edit: deny`, `bash`) | `opencode session list` | [`opencode/README.md`](opencode/README.md) |
-| `claude` | `-u claude` | `--tools` + injeção no prompt | `--resume` / ID no recibo | [`claude/README.md`](claude/README.md) |
-| `codex` | `-u codex` | Sandbox `-s read-only` + prompt | ID no recibo | [`codex/README.md`](codex/README.md) |
-| `agy` | `-u agy` | `--mode plan` + prompt | `--conversation` | [`agy/README.md`](agy/README.md) |
-| `generic` | `-u generic` | Injeção no prompt / script | ID no recibo | [`generic/README.md`](generic/README.md) |
+| `opencode` (padrão) | `-u opencode` | YAML frontmatter (`edit: deny`, `bash`) | `opencode session list` | [`opencode.md`](opencode.md) |
+| `claude` | `-u claude` | `--tools` + injeção no prompt | `--resume` / ID no recibo | [`claude.md`](claude.md) |
+| `codex` | `-u codex` | Sandbox `-s read-only` + prompt | ID no recibo | [`codex.md`](codex.md) |
+| `agy` | `-u agy` | `--mode plan` + prompt | `--conversation` | [`agy.md`](agy.md) |
+| `generic` | `-u generic` | Injeção no prompt / script | ID no recibo | [`generic.md`](generic.md) |
 
 ## Configuração do runner
 
@@ -30,7 +30,7 @@ Defina o runner ativo por três vias, em ordem de precedência:
 ## Modelos e Reasoning Effort
 
 - **Modelo:** passe `-m <modelo>` ou defina `GOVKIT_MODEL`. Descubra modelos disponíveis no ambiente via CLI (`opencode models`, `agy models`, `claude --help`).
-- **Esforço de raciocínio:** passe `-e <low|medium|high>` ou defina `GOVKIT_EFFORT`. Consulte as diretrizes e regras de prompt caching em [`skill/references/models.md`](../skill/references/models.md).
+- **Esforço de raciocínio:** passe `-e <low|medium|high>` ou defina `GOVKIT_EFFORT`. Consulte as diretrizes e regras de prompt caching em [`skill/references/models.md`](../../skill/references/models.md).
 
 ## Adapters customizados
 
@@ -41,7 +41,7 @@ o caminho do arquivo JavaScript com `--runner`:
 node .claude/skills/agent-governance/scripts/ds-run.js -d . -s "src/*" --runner ./meu-adapter.js -- "tarefa"
 ```
 
-O arquivo exportado deve implementar o contrato canônico de [`skill/scripts/runner-adapter.js`](../skill/scripts/runner-adapter.js):
+O arquivo exportado deve implementar o contrato canônico de [`skill/scripts/runner-adapter.js`](../../skill/scripts/runner-adapter.js):
 
 - `name`: identificador em string.
 - `resolveAgentFile({ root, agent, agentDir })`: localiza o arquivo do papel.
@@ -57,7 +57,7 @@ O arquivo exportado deve implementar o contrato canônico de [`skill/scripts/run
 
 ## Transpilação e instalação de agentes nativos
 
-O kit inclui o transpilador [`adapters/agent-transpiler.js`](agent-transpiler.js) para converter as definições canônicas de agentes (localizadas em `adapters/opencode/agents/`) nos formatos esperados por cada ecossistema:
+O kit inclui o transpilador [`tools/guild-transpiler.js`](../../tools/guild-transpiler.js) para converter as definições canônicas de agentes (localizadas em `guild/`) nos formatos esperados por cada ecossistema:
 
 | Runner | Destino no projeto | Formato gerado |
 | --- | --- | --- |
@@ -66,7 +66,7 @@ O kit inclui o transpilador [`adapters/agent-transpiler.js`](agent-transpiler.js
 | `agy` | `.agents/agents/` | YAML frontmatter com `name`, `description` e corpo de instruções |
 | `codex` | N/A | Opera via `AGENTS.md` e skills (Codex não utiliza pasta de arquivos de agentes) |
 
-O transpilador é acionado pelo instalador [`install.ps1`](../install.ps1):
+O transpilador é acionado pelo instalador [`install.ps1`](../../install.ps1):
 
 ```powershell
 .\install.ps1 -Project . -Runner all      # Instala para OpenCode, Claude e AGY
@@ -76,6 +76,6 @@ O transpilador é acionado pelo instalador [`install.ps1`](../install.ps1):
 Ou diretamente via linha de comando:
 
 ```bash
-node adapters/agent-transpiler.js --target . --runner all
+node tools/guild-transpiler.js --target . --runner all
 ```
 

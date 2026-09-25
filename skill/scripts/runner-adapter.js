@@ -166,7 +166,7 @@ function resolveAgentPath({ root = process.cwd(), agent, agentDir = '', runner =
       path.join(root, '.opencode', 'agents'),
       path.join(root, '.claude', 'agents'),
       path.join(root, '.agents', 'agents'),
-      path.join(root, 'adapters', 'opencode', 'agents')
+      path.join(root, 'guild')
     );
   }
   if (home) {

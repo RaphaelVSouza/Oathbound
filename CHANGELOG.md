@@ -7,6 +7,13 @@
   `'ds-runner'`, `'ds-reviewer'`, `'ds-committer'` e `'ds-queue'` antes espalhados por `ds-run.js`,
   `ds-queue.js`, `ds-kill.js`, `git.js` e `git-commit.js`. Refatoração sem mudança de comportamento;
   prepara a renomeação futura do projeto para "Oathbound" (sessão 2 de 6).
+- **Reorganização de estrutura de pastas (sessão 3 de 6 — "Oathbound"):** `adapters/opencode/agents/`
+  passa a ser `guild/`; `adapters/agent-transpiler.js` passa a ser `tools/guild-transpiler.js`;
+  os READMEs de cada runner (`adapters/*/README.md`) passam a ser `docs/runners/*.md`; a
+  documentação e o fragmento de `AGENTS.md` do pacote opcional Matt Pocock passam a ser
+  `docs/matt-pocock.md` e `templates/AGENTS.matt-pocock.fragment.md`. Removidos os repasses de
+  uma linha `adapters/*/runner.js`, sem uso fora deles. `adapters/` e `optional/` não existem
+  mais. Nomes de agentes (`ds-*.md`) e de scripts (`ds-run.js` etc.) não foram alterados.
 
 ## 0.20.3 — 2026-09-25
 

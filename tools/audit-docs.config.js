@@ -16,8 +16,8 @@ module.exports = {
   },
   rootDocs: ['AGENTS.md', 'README.md', 'CHANGELOG.md', 'CONTRIBUTING.md'],
   docs: [
-    { path: 'adapters', recursive: true, lineNumberRefs: 'allow' },
-    { path: 'optional', recursive: true, lineNumberRefs: 'allow' },
+    { path: 'guild', recursive: true, lineNumberRefs: 'allow' },
+    { path: 'docs', recursive: true, lineNumberRefs: 'allow' },
     { path: 'skill', recursive: true, lineNumberRefs: 'allow' },
     { path: 'templates', recursive: true, lineNumberRefs: 'allow' },
     { path: 'tools', recursive: false, lineNumberRefs: 'allow' }

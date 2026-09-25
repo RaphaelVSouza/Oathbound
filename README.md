@@ -32,18 +32,18 @@ O **Agent Governance Kit** resolve esses problemas através de:
 
 ## Agentes Canônicos
 
-O kit disponibiliza oito papéis especializados com permissões estritas em [`adapters/opencode/agents/`](adapters/opencode/agents/):
+O kit disponibiliza oito papéis especializados com permissões estritas em [`guild/`](guild/):
 
 | Papel | Responsabilidade | Permissões Padrão |
 | :--- | :--- | :--- |
-| [`ds-governance`](adapters/opencode/agents/ds-governance.md) | Triagem de issues, elaboração de especificações e decomposição em tickets técnicos. | Edição em `docs/`, `AGENTS.md` e rascunhos; shell somente leitura (`git`). |
-| [`ds-runner`](adapters/opencode/agents/ds-runner.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); execução de comandos de teste/build. |
-| [`ds-reviewer`](adapters/opencode/agents/ds-reviewer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura de código; shell restrito a `git diff`, `git status`, `git show` e `git log -p`. |
-| [`ds-explorer`](adapters/opencode/agents/ds-explorer.md) | Leitura rápida e orientação de código com evidências compactas (`caminho:linha`). | Somente leitura (`glob`, `read`); escrita e shell terminantemente proibidos. |
-| [`ds-researcher`](adapters/opencode/agents/ds-researcher.md) | Pesquisa técnica em fontes primárias externas com citação de links verificáveis. | Somente leitura; navegação web permitida; escrita local bloqueada. |
-| [`ds-mutant`](adapters/opencode/agents/ds-mutant.md) | Testes por mutação no código-fonte para avaliar eficácia das asserções de teste. | Edição temporária em fontes (exceto testes); restauração manual/pelo agente (wrapper não reverte automaticamente). |
-| [`ds-committer`](adapters/opencode/agents/ds-committer.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; operação de Git restrita aos arquivos autorizados. |
-| [`ds-security`](adapters/opencode/agents/ds-security.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
+| [`ds-governance`](guild/ds-governance.md) | Triagem de issues, elaboração de especificações e decomposição em tickets técnicos. | Edição em `docs/`, `AGENTS.md` e rascunhos; shell somente leitura (`git`). |
+| [`ds-runner`](guild/ds-runner.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); execução de comandos de teste/build. |
+| [`ds-reviewer`](guild/ds-reviewer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura de código; shell restrito a `git diff`, `git status`, `git show` e `git log -p`. |
+| [`ds-explorer`](guild/ds-explorer.md) | Leitura rápida e orientação de código com evidências compactas (`caminho:linha`). | Somente leitura (`glob`, `read`); escrita e shell terminantemente proibidos. |
+| [`ds-researcher`](guild/ds-researcher.md) | Pesquisa técnica em fontes primárias externas com citação de links verificáveis. | Somente leitura; navegação web permitida; escrita local bloqueada. |
+| [`ds-mutant`](guild/ds-mutant.md) | Testes por mutação no código-fonte para avaliar eficácia das asserções de teste. | Edição temporária em fontes (exceto testes); restauração manual/pelo agente (wrapper não reverte automaticamente). |
+| [`ds-committer`](guild/ds-committer.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; operação de Git restrita aos arquivos autorizados. |
+| [`ds-security`](guild/ds-security.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
 
 ---
 
@@ -105,12 +105,12 @@ node .claude/skills/agent-governance/scripts/ds-queue.js -d . -u agy -A docs/ace
 
 Consulte a [referência da fila](skill/references/queue.md) para detalhes de critérios de aceite, checagens e checkpoints.
 
-### 3. Transpilador de Agentes (`agent-transpiler.js`)
+### 3. Transpilador de Agentes (`guild-transpiler.js`)
 
 Compila dinamicamente as definições canônicas de agentes para qualquer host suportado:
 
 ```bash
-node adapters/agent-transpiler.js --target . --runner all
+node tools/guild-transpiler.js --target . --runner all
 ```
 
 ---
@@ -119,9 +119,9 @@ node adapters/agent-transpiler.js --target . --runner all
 
 | Diretório / Arquivo | Responsabilidade |
 | :--- | :--- |
-| [`adapters/`](adapters/README.md) | Documentação de integração e adaptadores para OpenCode, Claude Code, Codex, AGY e Generic. |
-| [`adapters/agent-transpiler.js`](adapters/agent-transpiler.js) | Compilador que converte definições canônicas de agentes nos formatos específicos de cada CLI. |
-| [`adapters/opencode/agents/`](adapters/opencode/agents/) | Definições canônicas em Markdown dos 8 agentes de governança. |
+| [`docs/runners/`](docs/runners/README.md) | Documentação de integração e adaptadores para OpenCode, Claude Code, Codex, AGY e Generic. |
+| [`tools/guild-transpiler.js`](tools/guild-transpiler.js) | Compilador que converte definições canônicas de agentes nos formatos específicos de cada CLI. |
+| [`guild/`](guild/) | Definições canônicas em Markdown dos 8 agentes de governança. |
 | [`skill/SKILL.md`](skill/SKILL.md) | Skill do orquestrador com instruções operacionais e escolha de papéis. |
 | [`skill/scripts/`](skill/scripts/) | Scripts de runtime: runner com auditoria de escopo, fila transacional e controle de processos. |
 | [`skill/references/models.md`](skill/references/models.md) | Guia prático de reasoning effort e estratégias perenes de prompt caching KV. |

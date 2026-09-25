@@ -264,7 +264,7 @@ function getNativeAgentDir(targetRoot, runner, isGlobal = false) {
  * @returns {{ results: Array<{ runner: string, count: number, targetDir: string|null, skipped: boolean }> }}
  */
 function transpileAll({
-  sourceDir = path.join(__dirname, 'opencode', 'agents'),
+  sourceDir = path.join(__dirname, '..', 'guild'),
   targetRoot = process.cwd(),
   runner = 'all',
   isGlobal = false,
@@ -328,7 +328,7 @@ function transpileAll({
 // CLI entrypoint
 if (require.main === module) {
   const args = process.argv.slice(2);
-  let sourceDir = path.join(__dirname, 'opencode', 'agents');
+  let sourceDir = path.join(__dirname, '..', 'guild');
   let targetRoot = process.cwd();
   let runner = 'all';
   let isGlobal = false;
@@ -342,10 +342,10 @@ if (require.main === module) {
     else if (a === '--global') { isGlobal = true; }
     else if (a === '--force') { force = true; }
     else if (a === '-h' || a === '--help') {
-      console.log('Uso: node adapters/agent-transpiler.js [opções]');
+      console.log('Uso: node tools/guild-transpiler.js [opções]');
       console.log('');
       console.log('Opções:');
-      console.log('  --source <dir>    Diretório dos agentes canônicos (padrão: adapters/opencode/agents)');
+      console.log('  --source <dir>    Diretório dos agentes canônicos (padrão: guild)');
       console.log('  --target <dir>    Raiz do projeto de destino (padrão: cwd)');
       console.log('  --runner <name>   Runner alvo: all, opencode, claude, agy, codex, generic (padrão: all)');
       console.log('  --global          Instalar nos diretórios globais do usuário (~/.claude, ~/.config, etc.)');
