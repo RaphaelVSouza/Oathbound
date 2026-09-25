@@ -5,6 +5,7 @@ const { options, one } = require('./cli-options');
 const { run, alive } = require('./process-runner');
 const { globMatch, snapshot, changedPaths, head, committedPaths, repoPaths } = require('./git');
 const { killRegistered } = require('./ds-kill');
+const { StringDecoder } = require('node:string_decoder');
 const { getRunnerAdapter, validateAdapter, feedbackPrompts } = require('./runner-adapter');
 const { temporaryAgent, feedbackAgent } = require('./runners/opencode');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -178,9 +179,10 @@ async function runSession(opts = {}) {
     let capturedSession = '';
     let earlyBuffer = '';
     const display = runner.createDisplay ? runner.createDisplay() : { push: chunk => chunk, flush: () => '' };
+    const stdoutTextDecoder = new StringDecoder('utf8');
 
     const handleStdoutChunk = (chunk) => {
-      const str = chunk.toString();
+      const str = stdoutTextDecoder.write(chunk);
 
       // Guarda o id de sessão assim que aparece no stream, evitando perda por corte de maxCapture
       if (!capturedSession && !sessionInput) {
@@ -229,6 +231,11 @@ async function runSession(opts = {}) {
     if (logStream) await new Promise(resolve => logStream.end(resolve));
 
     if (output) {
+      const tail = stdoutTextDecoder.end();
+      if (tail) {
+        const tailText = display.push(tail);
+        if (tailText) process.stdout.write(tailText);
+      }
       const flushed = display.flush(r.stdout);
       if (flushed) process.stdout.write(flushed);
     }

@@ -20,6 +20,12 @@
 - **Runner escreve em pipe, não em TTY:** stdout/stderr do processo do runner são sempre capturados
   via pipe; CLIs invocadas podem omitir cores ANSI e barras de progresso interativas ao detectar a
   ausência de TTY.
+- **Correção de corrupção UTF-8 entre chunks (`process-runner.js`, `ds-run.js`):** captura de
+  stdout/stderr passa a usar `StringDecoder` (`node:string_decoder`), um por stream, em vez de
+  converter cada chunk isoladamente com `chunk.toString()` / concatenação `stdout + chunk`. Evita
+  corromper caracteres multibyte (ex.: acentos) divididos entre dois chunks de leitura. O texto
+  passado a `display.push` e ao `earlyBuffer` de captura de sessão em `ds-run.js` usa decoder
+  próprio, com `decoder.end()` repassado a `display.push` antes de `display.flush`.
 
 ## 0.20.2 — 2026-09-25
 
