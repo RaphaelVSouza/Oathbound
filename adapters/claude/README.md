@@ -30,6 +30,16 @@ node .claude/skills/agent-governance/scripts/ds-run.js -d . -u claude -R -a ds-e
 
 - **Invocação não-interativa:** executa `claude -p "<prompt>" --dangerously-skip-permissions`.
 - **Modo somente leitura (`-R`):** restringe as ferramentas do Claude a inspeção (`--tools Read,Grep,Glob`) e injeta bloqueio explícito de escrita no prompt.
-- **Guardrails de escopo:** os globs de arquivos autorizados são injetados como instruções de cabeçalho no prompt, e a conformidade final é auditada pelo Git antes e depois da chamada.
 - **Sessões:** suporta retomada de contexto com `-S <session-id>` (passado para `--resume`).
 - **Modelo:** selecione com `-m <modelo>` (repassado para `--model`).
+
+## 3. Instalação de subagentes nativos no Claude Code
+
+O kit pode compilar e instalar os agentes canônicos como subagentes nativos em `.claude/agents/`:
+
+```powershell
+.\install.ps1 -Project . -Runner claude
+```
+
+O transpilador converte as regras de permissão do kit na lista de ferramentas permitidas (`tools: [Read, Grep, Glob]`, etc.), permitindo que o Claude Code acione os subagentes automaticamente por descrição ou pelo menu `/agents`.
+

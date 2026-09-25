@@ -10,6 +10,7 @@ param(
     [string]$Project,
     [Parameter(Mandatory = $true, ParameterSetName = 'Global')]
     [switch]$Global,
+    [string]$Runner = 'opencode',
     [switch]$AuditDocs,
     [switch]$Upgrade
 )
@@ -24,7 +25,6 @@ if ($Global) {
     # host, sem duplicar arquivos nem arriscar drift entre cópias.
     $projectPath = $HOME
     $skillTarget = Join-Path $HOME '.agent-governance-kit'
-    $agentsTarget = Join-Path $HOME '.config/opencode/agents'
     $auditTarget = Join-Path $HOME '.agent-governance-kit/tools'
 } else {
     $projectPath = (Resolve-Path -LiteralPath $Project).Path
@@ -38,7 +38,6 @@ if ($Global) {
         throw "Passe a raiz do repositório Git: $resolvedRoot"
     }
     $skillTarget = Join-Path $projectPath '.claude/skills/agent-governance'
-    $agentsTarget = Join-Path $projectPath '.opencode/agents'
     $auditTarget = Join-Path $projectPath 'tools'
 }
 
@@ -60,11 +59,20 @@ if ($AuditDocs -and -not $Upgrade) {
     }
 }
 if (-not $Global) {
-    # -Global sobrescreve deliberadamente os agentes ds-* já instalados (README);
-    # agentes fora deste conjunto (ex.: ds-worker) não são tocados nem recusados.
-    foreach ($agentFile in $agentFiles) {
-        $target = Join-Path $agentsTarget $agentFile.Name
-        if (Test-Path -LiteralPath $target) { $collisions += $target }
+    $runnersToCheck = if ($Runner -eq 'all') { @('opencode', 'claude', 'agy') } else { @($Runner.ToLowerInvariant()) }
+    foreach ($r in $runnersToCheck) {
+        $rDir = switch ($r) {
+            'opencode' { Join-Path $projectPath '.opencode/agents' }
+            'claude'   { Join-Path $projectPath '.claude/agents' }
+            'agy'      { Join-Path $projectPath '.agents/agents' }
+            default    { $null }
+        }
+        if ($rDir -and (Test-Path -LiteralPath $rDir)) {
+            foreach ($agentFile in $agentFiles) {
+                $target = Join-Path $rDir $agentFile.Name
+                if (Test-Path -LiteralPath $target) { $collisions += $target }
+            }
+        }
     }
 }
 if ($collisions.Count -gt 0) {
@@ -74,12 +82,25 @@ if ($collisions.Count -gt 0) {
 if ($Upgrade -and (Test-Path -LiteralPath $skillTarget)) {
     Remove-Item -LiteralPath $skillTarget -Recurse -Force
 }
-New-Item -ItemType Directory -Path (Split-Path -Parent $skillTarget), $agentsTarget -Force | Out-Null
+New-Item -ItemType Directory -Path (Split-Path -Parent $skillTarget) -Force | Out-Null
 Copy-Item -LiteralPath $skillSource -Destination $skillTarget -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Destination (Join-Path $skillTarget 'VERSION')
-foreach ($agentFile in $agentFiles) {
-    Copy-Item -LiteralPath $agentFile.FullName -Destination (Join-Path $agentsTarget $agentFile.Name) -Force:$Global
+
+# Compila e instala agentes canônicos para o(s) runner(s) alvo
+$transpilerScript = Join-Path $PSScriptRoot 'adapters/agent-transpiler.js'
+$transpilerArgs = @(
+    $transpilerScript,
+    '--source', $agentsSource,
+    '--target', $projectPath,
+    '--runner', $Runner
+)
+if ($Global) { $transpilerArgs += '--global' }
+if ($Global -or $Upgrade) { $transpilerArgs += '--force' }
+& node @transpilerArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "Falha na compilação e instalação dos agentes para o runner: $Runner"
 }
+
 if ($AuditDocs) {
     New-Item -ItemType Directory -Path $auditTarget -Force | Out-Null
     foreach ($name in @('audit-docs.js', 'audit-docs.core.js', 'audit-docs.sources.js')) {
@@ -105,7 +126,7 @@ if ($Global) {
         try {
             New-Item -ItemType SymbolicLink -Path $link -Target $skillTarget -ErrorAction Stop | Out-Null
         } catch {
-            $symlinkFailures += "$link — $($_.Exception.Message)"
+            $symlinkFailures += "$link - $($_.Exception.Message)"
         }
     }
 }
@@ -113,7 +134,7 @@ if ($Global) {
 $version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Raw).Trim()
 if ($Global) {
     Write-Output "Agent Governance Kit $version instalado globalmente em $skillTarget"
-    Write-Output "Agentes ds-* sobrescritos em $agentsTarget (versão do repositório)."
+    Write-Output "Agentes ds-* instalados/atualizados para o runner '$Runner'."
     Write-Output "Symlinks criados em ~/.claude/skills/, ~/.codex/skills/ e ~/.gemini/config/skills/ (AGY e Antigravity Gemini nativo)."
     if ($symlinkFailures.Count -gt 0) {
         Write-Output "Falha ao criar symlink (ative o Modo de desenvolvedor do Windows ou rode como administrador):"
@@ -121,7 +142,7 @@ if ($Global) {
     }
     Write-Output "Outras CLIs sem convenção documentada: aponte manualmente para $skillTarget/SKILL.md."
 } else {
-    Write-Output "Agent Governance Kit $version instalado em $projectPath"
+    Write-Output "Agent Governance Kit $version instalado em $projectPath (runner: $Runner)"
 }
 Write-Output 'Fluxo Matt Pocock (triagem, spec, tickets) instalado nos agentes com variante disponível.'
 if ($AuditDocs) { Write-Output 'Auditor de documentação instalado; adapte tools/audit-docs.config.js antes de usar.' }

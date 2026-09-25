@@ -30,3 +30,8 @@ node .claude/skills/agent-governance/scripts/ds-run.js -d . -u codex -R -a ds-ex
 - **Modo somente leitura (`-R`):** força sandbox estrito via `-s read-only` e instrução de leitura no cabeçalho do prompt.
 - **Guardrails de escopo:** os caminhos autorizados em `-s` são injetados no prompt e auditados pelo Git após a conclusão do processo.
 - **Modelo:** selecione com `-m <modelo>` (repassado para `-m` do Codex) ou via `GOVKIT_MODEL`.
+
+## Modelo de agentes no Codex
+
+O Codex CLI não utiliza uma pasta de definições de agentes (como `.codex/agents/` — o comando `codex agents` lista sessões daemon ativas). A especialização de papéis opera via instruções no [`AGENTS.md`](../../AGENTS.md), skills em `.codex/skills/` e injeção contextual de papéis e sandboxes (`-s read-only`) pelo runner.
+

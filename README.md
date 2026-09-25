@@ -48,12 +48,13 @@ exigido pelos wrappers. O pacote não instala hooks automaticamente.
 Neste repositório, a configuração está em `tools/audit-docs.config.js` e os
 comandos estão no [guia do auditor](tools/README.md).
 
-O instalador copia a skill para `.claude/skills/agent-governance/` e os agentes
-para `.opencode/agents/`. OpenCode reconhece a skill nesse caminho; Claude
-também usa a pasta de skills do projeto. O instalador cria (ou completa, se já
-existir) `AGENTS.md` na raiz do projeto com um ponteiro de uma linha à skill —
-Claude Code o lê nativamente quando não há `CLAUDE.md` no diretório de
-trabalho ou pais, e Codex o lê sempre. O instalador não escolhe modelo, não
+O instalador copia a skill para `.claude/skills/agent-governance/` e compila os agentes
+para o diretório nativo do runner escolhido através de [`adapters/agent-transpiler.js`](adapters/agent-transpiler.js):
+`.opencode/agents/` (padrão ou `-Runner opencode`), `.claude/agents/` (`-Runner claude`),
+`.agents/agents/` (`-Runner agy`) ou todos simultaneamente (`-Runner all`). Codex opera via
+`AGENTS.md` e skills. O instalador cria (ou completa, se já existir) `AGENTS.md` na raiz do
+projeto com um ponteiro de uma linha à skill — Claude Code o lê nativamente quando não há
+`CLAUDE.md` no diretório de trabalho ou pais, e Codex o lê sempre. O instalador não escolhe modelo, não
 cria commits e recusa caminhos de destino já existentes (`AGENTS.md` é a única
 exceção: ganha uma linha acrescentada, nunca é sobrescrito). Revise os
 arquivos copiados antes de ativar a delegação no projeto.

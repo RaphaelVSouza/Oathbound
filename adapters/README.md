@@ -44,3 +44,28 @@ O arquivo exportado deve implementar o contrato canônico de [`skill/scripts/run
 - `prepareAgent({ agentFile, agent, others, feedback, scopes, readonly })`: prepara arquivos temporários ou guardrails de prompt (`promptPrefix`).
 - `buildCommand({ root, agent, agentFile, tempAgent, model, message, session, tag, promptPrefix, readonly, scopes })`: monta `{ command, args, env, input }`.
 - `resolveSession({ root, tag, sessionInput, runResult })`: extrai ou devolve o identificador estável da sessão.
+
+## Transpilação e instalação de agentes nativos
+
+O kit inclui o transpilador [`adapters/agent-transpiler.js`](agent-transpiler.js) para converter as definições canônicas de agentes (localizadas em `adapters/opencode/agents/`) nos formatos esperados por cada ecossistema:
+
+| Runner | Destino no projeto | Formato gerado |
+| --- | --- | --- |
+| `opencode` | `.opencode/agents/` | YAML frontmatter com permissões granulares (`permission`) |
+| `claude` | `.claude/agents/` | YAML frontmatter com whitelist de ferramentas (`tools: [Read, Grep, Glob...]`) |
+| `agy` | `.agents/agents/` | YAML frontmatter com `name`, `description` e corpo de instruções |
+| `codex` | N/A | Opera via `AGENTS.md` e skills (Codex não utiliza pasta de arquivos de agentes) |
+
+O transpilador é acionado pelo instalador [`install.ps1`](../install.ps1):
+
+```powershell
+.\install.ps1 -Project . -Runner all      # Instala para OpenCode, Claude e AGY
+.\install.ps1 -Project . -Runner claude   # Instala exclusivamente para Claude Code
+```
+
+Ou diretamente via linha de comando:
+
+```bash
+node adapters/agent-transpiler.js --target . --runner all
+```
+

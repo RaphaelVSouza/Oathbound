@@ -1,5 +1,20 @@
 # Histórico de versões
 
+## 0.20.0 — 2026-09-25
+
+- **Compilador e transpilador de agentes (`adapters/agent-transpiler.js`):** mecanismo agnóstico
+  para transformar as definições canônicas de agentes em formatos nativos para cada ecossistema CLI:
+  - `opencode`: preservação do formato original com permissões granulares (`permission`).
+  - `claude`: geração de YAML frontmatter para subagentes nativos (`.claude/agents/*.md`), convertendo
+    regras de permissão em whitelists de ferramentas (`tools: [Read, Grep, Glob, ...]`).
+  - `agy`: geração de YAML frontmatter limpo (`name`, `description`) para agentes nativos do Antigravity CLI (`.agents/agents/*.md`).
+  - `codex` / `generic`: dispensa arquivos de agentes, informando operação via `AGENTS.md` e skills.
+- **Instalador multi-CLI (`install.ps1`):** adição do parâmetro `-Runner <opencode|claude|agy|codex|generic|all>`
+  (padrão `opencode`), integrando com o transpilador e instalando agentes nativos nas respectivas pastas
+  (`.opencode/agents/`, `.claude/agents/`, `.agents/agents/`) tanto no modo `-Project` quanto `-Global`.
+- **Suíte de testes:** 8 novos testes em `test/agent-transpiler.test.js` cobrindo parse de frontmatter,
+  alocação de ferramentas por permissões, transposição de formato e resolução de pastas (52 testes no total).
+
 ## 0.19.0 — 2026-09-25
 
 - **Arquitetura agnóstica a runners:** desacoplamento da camada de execução em
