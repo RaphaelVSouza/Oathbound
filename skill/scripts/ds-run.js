@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { options, one } = require('./cli-options');
 const { run, alive } = require('./process-runner');
-const { globMatch, snapshot, changedPaths, head, committedPaths, repoPaths } = require('./git-state');
+const { globMatch, snapshot, changedPaths, head, committedPaths, repoPaths } = require('./git');
 const { killRegistered } = require('./ds-kill');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 

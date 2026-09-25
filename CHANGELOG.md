@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## 0.8.0 — 2026-09-24
+
+- Unificação das operações Git em um módulo profundo `skill/scripts/git.js` (consultas,
+  preparação de hunks/linhas e commits com regras de escopo in-process).
+- `git-stage.js` e `git-commit.js` passam a atuar como adaptadores finos de CLI.
+- Remoção de `git-state.js` e migração dos chamadores internos.
+- Criação de `CONTEXT.md` com o glossário de domínio canônico do kit.
+- Adição de suíte de testes isolada em `test/git.test.js` via `node --test`.
+
 ## 0.7.1 — 2026-09-24
 
 - Fontes do auditor para working tree e índice Git extraídas para

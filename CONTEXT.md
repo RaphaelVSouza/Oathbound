@@ -1,0 +1,25 @@
+# Agent Governance Kit
+
+Pacote reutilizável de delegação, auditoria e orquestração de agentes autônomos OpenCode com controle de escopo e mutação Git.
+
+## Language
+
+**Agent**:
+Um papel especializado de IA que executa tarefas delimitadas (como exploração, pesquisa, codificação, revisão ou commits).
+_Avoid_: Bot, Worker, Assistente
+
+**Scope**:
+Padrão glob que define os caminhos que um agente tem autorização explícita para criar ou modificar no repositório.
+_Avoid_: Limite, Permissão genérica
+
+**Claim**:
+Reserva de posse exclusiva de um padrão de escopo por um processo de agente ativo para evitar conflitos concorrentes.
+_Avoid_: Trava de arquivo, Mutex de SO
+
+**Session**:
+Execução rastreada de um agente, demarcada por identificador único, limites de timeout, registro de PIDs e auditoria de estado do Git antes e depois da chamada.
+_Avoid_: Thread, Prompt isolado
+
+**Git Module**:
+Módulo profundo que encapsula a inspeção de estado do repositório, fatiamento seletivo de hunks e criação de commits com checagem de escopo.
+_Avoid_: Git wrapper, Script de Git

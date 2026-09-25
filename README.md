@@ -98,7 +98,7 @@ o pacote não inventa valores esperados.
 
 Os comandos em `skill/scripts/` usam três módulos internos: `cli-options.js`
 interpreta argumentos, `process-runner.js` executa e encerra subprocessos, e
-`git-state.js` consulta e compara estados do Git. As interfaces exportadas têm
+`git.js` unifica consultas de estado, preparação seletiva de hunks e criação de commits protegidos por escopo. As interfaces exportadas têm
 contratos JSDoc; entradas externas críticas também são validadas durante a
 execução. A instalação copia esses módulos junto com os comandos.
 

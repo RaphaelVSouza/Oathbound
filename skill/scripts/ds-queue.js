@@ -4,7 +4,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { options, one } = require('./cli-options');
 const { run } = require('./process-runner');
-const { git, repoPaths } = require('./git-state');
+const { git, repoPaths } = require('./git');
 const { dsRun } = require('./ds-run');
 
 const tail = (value, count) => value.split(/\r?\n/).slice(-count).map(x => x.slice(0, 240)).join('\n');
