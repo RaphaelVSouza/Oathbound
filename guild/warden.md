@@ -1,6 +1,6 @@
 ---
 description: Auditor de segurança de aplicação (AppSec). Analisa vulnerabilidades, fronteiras de confiança e fluxos de dados sem editar código.
-mode: all
+mode: subagent
 temperature: 0
 reasoningEffort: high
 steps: 8

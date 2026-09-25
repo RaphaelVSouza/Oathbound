@@ -1,6 +1,6 @@
 ---
 description: Seleciona hunks, agrupa mudanças e cria commits semânticos apenas nos arquivos autorizados. Não faz push nem reescreve histórico.
-mode: all
+mode: subagent
 temperature: 0
 steps: 40
 permission:

@@ -13,6 +13,20 @@ O orquestrador Claude consulta o `AGENTS.md` do projeto e invoca as ferramentas 
 kit pelo terminal (`node .claude/skills/agent-governance/scripts/run.js` e
 `queue.js`).
 
+### Início com o orquestrador `oathkeeper`
+
+Instale os agentes nativos (`.\install.ps1 -Project . -Runner claude`) e inicie
+uma sessão já no papel de orquestrador:
+
+```bash
+claude --agent oathkeeper
+```
+
+`oathkeeper` é o agente primário da guilda: não edita nem commita e delega pelos
+scripts do kit. Os demais agentes viram subagentes em `.claude/agents/`, com
+`tools` derivadas das permissões canônicas. `oathkeeper` não é delegável: uma
+chamada `node .../run.js -a oathkeeper` é recusada com exit code 2.
+
 ## 2. Claude Code como runner delegado
 
 O orquestrador pode delegar tarefas para uma instância não-interativa do Claude Code

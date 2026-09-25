@@ -1,6 +1,6 @@
 ---
 description: Revisor de diffs e arquivos. Retorna somente achados com caminho, linha e severidade; não edita.
-mode: all
+mode: subagent
 temperature: 0
 steps: 8
 permission:

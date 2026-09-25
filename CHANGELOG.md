@@ -2,6 +2,28 @@
 
 ## 0.21.0 — não publicada
 
+- **Orquestrador e documentador da guilda (sessão 5 de 6 — "Oathbound"):** novos agentes
+  `oathkeeper` (`mode: primary`, `temperature: 0`) e `bard` (`mode: subagent`, `temperature: 0`).
+  O `oathkeeper` orquestra — escolhe o papel, entrega a tarefa fechada, confere diff/status/recibo
+  e decide — sem editar nem commitar; delega por `oathbound run`/`queue` e não é delegável
+  (`run.js -a oathkeeper` falha com exit code 2). O `bard` documenta **depois** do trabalho
+  (README, CHANGELOG, guias e a descrição do PR na resposta), sempre citando commit, arquivo ou
+  saída de comando.
+- **Divisão scribe/bard:** o `scribe` passa a escrever **antes** da implementação (spec, tickets,
+  decisões e instruções de agentes) e não mantém README nem CHANGELOG; o `bard` cobre a
+  documentação posterior. A tabela de papéis da skill separa as duas linhas.
+- **Papéis e modo dos agentes (`roles.js`, `guild/`):** `ROLES.orchestrator = 'oathkeeper'` e
+  `ROLES.documenter = 'bard'` centralizam os novos nomes. Os demais agentes de `guild/` passam de
+  `mode: all` para `mode: subagent`; só o `oathkeeper` fica `mode: primary`. A guilda passa a ter
+  dez agentes.
+- **Transpilação (`tools/guild-transpiler.js`):** a ferramenta `Write` acompanha `Edit` quando o
+  agente edita; um mapa de `bash` com `"*": deny` (comandos nomeados, sem execução livre) deixa de
+  emitir a ferramenta `Bash` no Claude. `oathkeeper` sai só com leitura; o `bard` sai com
+  `Edit`/`Write` e sem `Bash` livre.
+- **Documentação dos runners (`docs/runners/`):** `opencode.md` e `claude.md` descrevem como
+  iniciar com o `oathkeeper` (OpenCode: agente primário; Claude Code: `claude --agent oathkeeper`);
+  `codex.md`, `agy.md` e `generic.md` registram que aí as regras do orquestrador valem só pelo
+  `AGENTS.md`/skill, sem imposição por permissão.
 - **Renomeação de agentes, scripts, variáveis e estado (sessão 4 de 6 — "Oathbound"):** os agentes
   passam a nomes de ofícios da guilda — `ds-explorer` → `cartographer`, `ds-researcher` → `sage`,
   `ds-governance` → `scribe`, `ds-runner` → `smith`, `ds-reviewer` → `assayer`, `ds-security` →

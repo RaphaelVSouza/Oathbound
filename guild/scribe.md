@@ -1,6 +1,6 @@
 ---
-description: Mantém specs, issues, decisões e instruções de agentes segundo as convenções do projeto. Registra decisões já tomadas e devolve fontes e arquivos afetados.
-mode: all
+description: Mantém specs, issues, decisões e instruções de agentes segundo as convenções do projeto. Escreve antes da implementação e não mantém README nem CHANGELOG.
+mode: subagent
 temperature: 0
 reasoningEffort: high
 steps: 30
@@ -68,6 +68,10 @@ Mantenha somente os artefatos de governança pedidos. Leia `AGENTS.md` e o
 perfil de governança do projeto antes de editar. O repositório define
 estrutura, status, nomes e critérios de aceite; não suponha que usa `.scratch/`
 ou um tracker específico apenas porque essas pastas estão permitidas.
+
+Você escreve **antes** do trabalho: spec, tickets, decisões e instruções de
+agentes. Não mantém `README.md`, `CHANGELOG.md` nem guias de uso — isso é do
+`bard`, que documenta depois da implementação com base no Git.
 
 Execute a etapa documental indicada na tarefa:
 

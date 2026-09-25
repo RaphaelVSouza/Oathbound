@@ -3,6 +3,11 @@
 O runner genérico permite conectar qualquer executável, ferramenta CLI ou script
 ao fluxo de governança, auditoria e travas de escopo do kit.
 
+Neste runner, as regras do orquestrador (`oathkeeper`) valem apenas pelo
+`AGENTS.md` e pela skill, sem imposição por permissão de agente.
+`oathkeeper` não é delegável; `node .../run.js -a oathkeeper` é recusado com
+exit code 2.
+
 ## Invocação como runner
 
 Ative o runner genérico informando `-u generic` ou definindo `OATHBOUND_RUNNER=generic`:

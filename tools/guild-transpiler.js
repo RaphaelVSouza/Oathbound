@@ -110,11 +110,15 @@ function determineClaudeTools(permission = {}) {
     }
   }
 
+  // "Bash livre" = execução sem restrição. Um mapa com `"*": deny` só libera
+  // comandos nomeados; o Claude Code não tem Bash com escopo, então esse caso
+  // não recebe a ferramenta `Bash`.
   let hasBash = false;
   if (permission.bash) {
     if (permission.bash === 'allow') hasBash = true;
     else if (typeof permission.bash === 'object') {
-      hasBash = Object.values(permission.bash).some(v => v === 'allow');
+      const restricted = permission.bash['*'] === 'deny';
+      hasBash = !restricted && Object.values(permission.bash).some(v => v === 'allow');
     }
   }
 
@@ -123,7 +127,7 @@ function determineClaudeTools(permission = {}) {
     hasWeb = true;
   }
 
-  if (hasEdit) tools.push('Edit');
+  if (hasEdit) { tools.push('Edit'); tools.push('Write'); }
   if (hasBash) tools.push('Bash');
   if (hasWeb) tools.push('WebFetch');
 

@@ -12,6 +12,12 @@ commits auditados ou execução de fila.
 O Codex segue a skill como especificação operacional do repositório e dispara as
 chamadas CLI a partir da raiz do projeto.
 
+Neste runner, as regras do orquestrador (`oathkeeper`) valem apenas pelo
+`AGENTS.md` e pela skill: não há agente primário nem imposição por permissão.
+Trate `oathkeeper` como papel lógico descrito no `AGENTS.md`; a recusa de
+`run.js -a oathkeeper` continua valendo porque o script é comum a todos os
+runners.
+
 ## 2. Codex como runner delegado
 
 Invoque o Codex como executor subordinado de uma tarefa adicionando `-u codex`:

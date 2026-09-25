@@ -13,14 +13,20 @@ skill fornece os papéis e wrappers.
 
 | Trabalho | Agente | Invocação |
 | --- | --- | --- |
+| Orquestração da guilda | `oathkeeper` | agente primário; ver [docs/runners](../docs/runners/README.md) |
 | Pergunta fechada sobre código | `cartographer` | `node run.js -R -a cartographer` |
 | Pesquisa em fontes externas | `sage` | `node run.js -R -a sage` |
+| Spec, tickets, decisões e instruções de agentes (antes) | `scribe` | `node run.js -a scribe -s <glob>` |
 | Implementação com comandos | `smith` | `node run.js -s <glob>` |
 | Revisão fria | `assayer` | `node run.js -R -a assayer` |
+| README, CHANGELOG e guias (depois, com base no Git) | `bard` | `node run.js -a bard -s <glob>` |
 | Preparação de hunks e commits | `archivist` | `node run.js -a archivist -s <arquivo>` |
-| Registro documental | `scribe` | `node run.js -a scribe -s <glob>` |
 | Auditoria por mutação | `gremlin` | `node run.js -a gremlin -s <glob>`, em série |
 | Auditoria de segurança de aplicação | `warden` | `node run.js -R -a warden` |
+
+A disciplina do orquestrador (escolha do papel, tarefa fechada, conferência de
+diff/status/recibo e decisão) vive em [`guild/oathkeeper.md`](../guild/oathkeeper.md);
+este documento resume os papéis e aponta para lá.
 
 Use um agente nomeado; o agente padrão do OpenCode não recebe as permissões
 destes papéis. Passe ao agente uma tarefa fechada, os caminhos permitidos,
@@ -67,4 +73,6 @@ Não use este pacote como fonte de regras de negócio de outro repositório.
 `scribe` levanta probabilidade e impacto de um risco com fonte, mas não
 prioriza. Definir prioridade entre riscos ou issues é do orquestrador: só ele
 enxerga a fila inteira, prazos e decisões de negócio fora do escopo de uma
-única spec.
+única spec. O `scribe` escreve antes do trabalho (spec, tickets, decisões,
+instruções de agentes); o `bard` documenta depois (README, CHANGELOG, guias),
+sempre com base nos commits, no diff e nas saídas de comando.

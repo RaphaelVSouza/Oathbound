@@ -1,6 +1,6 @@
 ---
 description: Executor para implementação delimitada, validação por comandos e correção na causa. Devolve recibo factual compacto; não faz commit ou push.
-mode: all
+mode: subagent
 temperature: 0
 steps: 60
 permission:

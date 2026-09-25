@@ -79,6 +79,11 @@ async function runSession(opts = {}) {
   if (!dir) throw Error('repositório obrigatório');
 
   const agent = opts.agent || ROLES.implementer;
+  if (agent === ROLES.orchestrator) {
+    const e = Error(`${ROLES.orchestrator} não é delegável; inicie a sessão com ele`);
+    e.code = 2;
+    throw e;
+  }
   const model = opts.model !== undefined ? opts.model : (readEnv('MODEL') || '');
   const effort = opts.effort !== undefined ? opts.effort : (readEnv('EFFORT') || '');
   const timeout = Number(opts.timeout !== undefined ? opts.timeout : 1800);

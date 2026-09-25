@@ -2,7 +2,13 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 /** Nomes canônicos dos papéis de agente usados pelo pacote. Fonte única para evitar literais espalhados. */
-const ROLES = Object.freeze({ implementer: 'smith', reviewer: 'assayer', committer: 'archivist' });
+const ROLES = Object.freeze({
+  orchestrator: 'oathkeeper',
+  documenter: 'bard',
+  implementer: 'smith',
+  reviewer: 'assayer',
+  committer: 'archivist'
+});
 
 /** Nome do diretório de estado (claims, filas, banco de governança) dentro do gitDir. */
 const STATE_DIR_NAME = 'oathbound';

@@ -2,6 +2,11 @@
 
 O AGY opera como **runner de execução** subordinado ao kit através do executável `agy`.
 
+Neste runner, as regras do orquestrador (`oathkeeper`) valem apenas pelo
+`AGENTS.md` e pela skill: o AGY não tem agente primário com imposição por
+permissão. `oathkeeper` não é delegável em nenhum runner;
+`node .../run.js -a oathkeeper` é recusado com exit code 2.
+
 ## Invocação como runner
 
 Ative o runner AGY informando `-u agy` ou exportando `OATHBOUND_RUNNER=agy`:

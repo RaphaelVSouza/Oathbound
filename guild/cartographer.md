@@ -1,6 +1,6 @@
 ---
 description: Explorador de leitura para perguntas fechadas sobre código. Devolve evidência caminho:linha e lacunas; não edita nem roda comandos.
-mode: all
+mode: subagent
 temperature: 0
 steps: 6
 permission:

@@ -1,6 +1,6 @@
 ---
 description: Pesquisa perguntas técnicas em fontes primárias externas e devolve ao orquestrador achados com links verificáveis, sem editar arquivos.
-mode: all
+mode: subagent
 temperature: 0
 steps: 35
 permission:

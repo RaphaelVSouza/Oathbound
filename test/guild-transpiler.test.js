@@ -67,7 +67,15 @@ test('agent-transpiler: determineClaudeTools aloca ferramentas conforme permiss√
     edit: { '*': 'allow' },
     bash: 'allow'
   });
-  assert.deepEqual(editBashTools, ['Read', 'Grep', 'Glob', 'Edit', 'Bash']);
+  assert.deepEqual(editBashTools, ['Read', 'Grep', 'Glob', 'Edit', 'Write', 'Bash']);
+
+  // Bash restrito (`"*": deny` + comandos nomeados) n√£o vira ferramenta `Bash`
+  const restrictedBashTools = determineClaudeTools({
+    read: { '*': 'allow' },
+    edit: 'deny',
+    bash: { '*': 'deny', 'git status*': 'allow' }
+  });
+  assert.deepEqual(restrictedBashTools, ['Read', 'Grep', 'Glob']);
 
   // Com webfetch
   const webTools = determineClaudeTools({

@@ -1,6 +1,6 @@
 ---
 description: Auditor de testes por mutação. Altera um trecho de fonte por vez, mede as asserções e restaura o arquivo; não edita testes.
-mode: all
+mode: subagent
 temperature: 0
 steps: 80
 permission:
