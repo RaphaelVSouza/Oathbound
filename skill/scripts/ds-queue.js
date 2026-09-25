@@ -6,6 +6,7 @@ const { options, one } = require('./cli-options');
 const { run } = require('./process-runner');
 const { git, repoPaths } = require('./git');
 const { runSession } = require('./ds-run');
+const { openGovernanceStore } = require('./governance-db');
 
 const tail = (value, count) => value.split(/\r?\n/).slice(-count).map(x => x.slice(0, 240)).join('\n');
 async function queue(argv) {
@@ -15,6 +16,10 @@ async function queue(argv) {
   const { root, gitDir } = await repoPaths(dir);
   const state = path.join(gitDir, 'ds-queue', 'state');
   fs.mkdirSync(state, { recursive: true });
+  let store = null;
+  try {
+    store = openGovernanceStore(path.join(gitDir, 'ds-queue', 'governance.db'));
+  } catch {}
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-queue-'));
   console.log(`── ds-queue: logs em ${work}`);
   let rs = one(o, '-S'), vs = one(o, '-V');
@@ -24,7 +29,7 @@ async function queue(argv) {
     const id = `${path.basename(path.dirname(path.dirname(issue)))}-${path.basename(issue, '.md')}`;
     if (o['-P']) { rs = ''; vs = ''; }
     const marker = path.join(state, id);
-    const stage = fs.existsSync(marker) ? fs.readFileSync(marker, 'utf8').trim() : '';
+    const stage = store?.getStage(id) || (fs.existsSync(marker) ? fs.readFileSync(marker, 'utf8').trim() : '');
     if (stage === 'revisada') { console.log(`##### ${id} já revisada (checkpoint) — pulando`); continue; }
     if (stage !== 'implementada') {
       const message = `${root}\nIssue da fila: ${issue} (leia-a inteira).\n${fs.readFileSync(accept, 'utf8')}`;
@@ -44,7 +49,11 @@ async function queue(argv) {
       console.log(`##### ${id} runner exit=${r.code} sessao=${rs}`);
       const important = (r.stdout + r.receipt).split(/\r?\n/).filter(x => /ACEITE|FONTES|CHECKLIST|NOTA|FORA DO ESCOPO/.test(x));
       console.log(tail(important.length ? important.join('\n') : r.stdout + r.receipt, 30));
-      if (r.code !== 0 && r.code !== 3) { console.log(`── fila parada em ${id} (exit ${r.code})`); return r.code; }
+      if (r.code !== 0 && r.code !== 3) {
+        console.log(`── fila parada em ${id} (exit ${r.code})`);
+        store?.close();
+        return r.code;
+      }
       console.log(`##### ${id} diff (git, não o agente):`);
       console.log(tail(await git(root, 'diff', '--stat', '--', ...scopes), 15));
       console.log((await git(root, 'ls-files', '--others', '--exclude-standard', '--', ...scopes)).split('\n').filter(Boolean).map(x => `  novo: ${x}`).join('\n'));
@@ -55,10 +64,17 @@ async function queue(argv) {
         const stream = fs.createWriteStream(log);
         const c = await run(shell, shellArgs, { cwd: root, timeout: Number(one(o, '-T', '900')), capture: false, onData: b => stream.write(b) });
         await new Promise(resolve => stream.end(resolve));
-        if (c.code) { fs.writeFileSync(marker, `falhou ${log}`); console.log(`── fila parada em ${id}: checagem falhou (${check}); log ${log}`); return 5; }
+        if (c.code) {
+          fs.writeFileSync(marker, `falhou ${log}`);
+          store?.setStage(id, 'falhou', log);
+          console.log(`── fila parada em ${id}: checagem falhou (${check}); log ${log}`);
+          store?.close();
+          return 5;
+        }
         console.log(`##### ${id} checagem ok: ${check}`);
       }
       fs.writeFileSync(marker, 'implementada');
+      store?.setStage(id, 'implementada');
     } else console.log(`##### ${id} já implementada (checkpoint) — só revisão`);
     const prompt = `${root}\nRevise o git diff do escopo (inclua não rastreados) contra ${issue}. Só bug real ou risco com severidade, e teste que passa sem a mudança.`;
     const reviewFile = path.join(work, `${id}.rev`);
@@ -75,15 +91,24 @@ async function queue(argv) {
     });
     const review = v.stdout + v.stderr + v.receipt;
     fs.appendFileSync(reviewFile, v.receipt);
-    if (v.code) { console.error(`── fila parada em ${id}: reviewer exit=${v.code}; log ${path.join(work, `${id}.rev`)}`); console.error(tail(review, 30)); return v.code; }
+    if (v.code) {
+      console.error(`── fila parada em ${id}: reviewer exit=${v.code}; log ${path.join(work, `${id}.rev`)}`);
+      console.error(tail(review, 30));
+      store?.close();
+      return v.code;
+    }
     if (!/^No issues\.$|^totals:|^[^\s]+:\d+: (🔴|🟡|🔵|❓)/m.test(review)) {
-      console.error(`── fila parada em ${id}: reviewer sem recibo conclusivo; log ${path.join(work, `${id}.rev`)}`); return 6;
+      console.error(`── fila parada em ${id}: reviewer sem recibo conclusivo; log ${path.join(work, `${id}.rev`)}`);
+      store?.close();
+      return 6;
     }
     vs = v.session || vs;
     console.log(`##### ${id} reviewer sessao=${vs}`);
     console.log(tail(review.split(/\r?\n/).filter(x => /🔴|🟡|❓|totals|No issues\./.test(x)).join('\n'), 12));
     fs.writeFileSync(marker, 'revisada');
+    store?.setStage(id, 'revisada');
   }
+  store?.close();
   console.log(`── ds-queue: fim; sessoes runner=${rs} reviewer=${vs}`);
   return 0;
 }
