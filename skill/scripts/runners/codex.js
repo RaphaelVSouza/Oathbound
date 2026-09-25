@@ -55,21 +55,48 @@ const codexAdapter = {
     return { command, args };
   },
 
+  parseOutput(output) {
+    const raw = typeof output === 'object' && output !== null ? output.stdout || '' : String(output || '');
+    let session = '';
+    let usage = null;
+    const texts = [];
+
+    const lines = raw.split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) continue;
+      try {
+        const ev = JSON.parse(trimmed);
+        if (!session) {
+          if (ev.type === 'thread.started' && (ev.thread_id || ev.id)) session = ev.thread_id || ev.id;
+          else if (ev.thread_id) session = ev.thread_id;
+          else if (ev.conversation_id) session = ev.conversation_id;
+        }
+        if (!usage && (ev.usage || (ev.type === 'turn.completed' && ev.usage))) {
+          usage = ev.usage || null;
+        }
+
+        if (ev.item && (ev.item.type === 'agent_message' || ev.item.type === 'message') && typeof ev.item.text === 'string') {
+          texts.push(ev.item.text);
+        } else if (ev.type === 'agent_message' && typeof ev.text === 'string') {
+          texts.push(ev.text);
+        } else if (Array.isArray(ev.item?.content)) {
+          for (const part of ev.item.content) {
+            if (typeof part === 'string') texts.push(part);
+            else if (part && typeof part.text === 'string') texts.push(part.text);
+          }
+        }
+      } catch {}
+    }
+
+    const text = texts.length > 0 ? texts.join('\n\n') : raw;
+    return { text, session, usage };
+  },
+
   async resolveSession({ root, tag, sessionInput, runResult }) {
     if (sessionInput) return sessionInput;
     if (!runResult || !runResult.stdout) return '';
-    const lines = runResult.stdout.split(/\r?\n/);
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith('{')) continue;
-      try {
-        const ev = JSON.parse(trimmed);
-        if (ev.type === 'thread.started' && (ev.thread_id || ev.id)) return ev.thread_id || ev.id;
-        if (ev.thread_id) return ev.thread_id;
-        if (ev.conversation_id) return ev.conversation_id;
-      } catch {}
-    }
-    return '';
+    return codexAdapter.parseOutput(runResult.stdout).session || '';
   }
 };
 

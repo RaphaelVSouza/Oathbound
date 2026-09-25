@@ -84,6 +84,15 @@ const genericAdapter = {
     return { command, args };
   },
 
+  parseOutput(output) {
+    const raw = typeof output === 'object' && output !== null ? output.stdout || '' : String(output || '');
+    return {
+      text: raw,
+      session: '',
+      usage: null
+    };
+  },
+
   async resolveSession({ root, tag, sessionInput, runResult }) {
     return sessionInput || tag;
   }

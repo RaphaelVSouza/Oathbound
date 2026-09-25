@@ -18,6 +18,7 @@ test('runner-adapter: carrega e valida todos os runners embutidos', () => {
     assert.equal(typeof adapter.prepareAgent, 'function');
     assert.equal(typeof adapter.resolveAgentFile, 'function');
     assert.equal(typeof adapter.resolveSession, 'function');
+    assert.equal(typeof adapter.parseOutput, 'function');
   }
 });
 
@@ -33,6 +34,10 @@ test('runner-adapter: validação rejeita objetos incompletos ou inválidos', ()
   assert.throws(
     () => validateAdapter({ name: 'x', buildCommand: () => {}, prepareAgent: () => {}, resolveAgentFile: () => {} }),
     /resolveSession deve ser função/
+  );
+  assert.throws(
+    () => validateAdapter({ name: 'x', buildCommand: () => {}, prepareAgent: () => {}, resolveAgentFile: () => {}, resolveSession: () => {}, parseOutput: 'invalido' }),
+    /parseOutput deve ser função/
   );
 });
 
@@ -200,16 +205,46 @@ test('runner agy: buildCommand repassa --effort quando fornecido', () => {
 
 test('runner claude: buildCommand gera session-id ou repassa --resume', async () => {
   const adapter = getRunnerAdapter('claude');
-  const newCmd = adapter.buildCommand({ root: '.', agent: 'ds-runner', message: 'nova sessao', tag: 'tag-new-1' });
+  const claudeAgentFile = path.resolve('/fake/project/.claude/agents/ds-runner.md');
+  const newCmd = adapter.buildCommand({
+    root: '.',
+    agent: 'ds-runner',
+    agentFile: claudeAgentFile,
+    message: 'nova sessao',
+    tag: 'tag-new-1'
+  });
   assert.ok(newCmd.args.includes('--session-id'));
   assert.ok(newCmd.args.includes('--agent'));
   assert.ok(newCmd.args.includes('ds-runner'));
+  const promptArg = newCmd.args[newCmd.args.indexOf('-p') + 1];
+  assert.ok(!promptArg.includes('[PAPEL DO AGENTE'), 'não deve duplicar instruções no prompt quando agente está em .claude/agents');
+
   const sid = await adapter.resolveSession({ root: '.', tag: 'tag-new-1', sessionInput: '' });
   assert.match(sid, /^[0-9a-fA-F-]{36}$/);
 
   const resCmd = adapter.buildCommand({ root: '.', agent: 'ds-runner', message: 'retoma', session: 'my-session-uuid' });
   assert.ok(resCmd.args.includes('--resume'));
   assert.ok(resCmd.args.includes('my-session-uuid'));
+});
+
+test('runner claude: buildCommand não repassa --agent e injeta instruções no prompt quando fora de .claude/agents', (t) => {
+  const adapter = getRunnerAdapter('claude');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'govkit-claude-test-'));
+  t.after(() => { try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
+
+  const nonClaudeAgentFile = path.join(dir, 'ds-runner.md');
+  fs.writeFileSync(nonClaudeAgentFile, 'Corpo das instrucoes do agente');
+
+  const cmd = adapter.buildCommand({
+    root: '.',
+    agent: 'ds-runner',
+    agentFile: nonClaudeAgentFile,
+    message: 'minha tarefa'
+  });
+  assert.ok(!cmd.args.includes('--agent'), 'não deve repassar --agent quando arquivo está fora de .claude/agents');
+  const promptArg = cmd.args[cmd.args.indexOf('-p') + 1];
+  assert.ok(promptArg.includes('[PAPEL DO AGENTE (ds-runner)]'), 'deve incluir papel do agente no prompt como fallback');
+  assert.ok(promptArg.includes('Corpo das instrucoes do agente'));
 });
 
 test('runner codex: buildCommand isola sandbox em readonly e suporta resume na ordem correta', () => {
@@ -272,4 +307,65 @@ test('runners: resolveAgentFile localiza agentes em suas pastas nativas', (t) =>
   const resolvedAgy = agy.resolveAgentFile({ root: dir, agent: 'ds-runner' });
   assert.equal(resolvedAgy, path.join(agyAgentDir, 'ds-runner.md'));
 });
+
+test('runner codex: parseOutput extrai text, session e usage de stream JSONL', () => {
+  const adapter = getRunnerAdapter('codex');
+  const jsonl = [
+    '{"type":"thread.started","thread_id":"th-001"}',
+    '{"type":"turn.started"}',
+    '{"type":"item.completed","item":{"type":"agent_message","text":"No issues."}}',
+    '{"type":"turn.completed","usage":{"input_tokens":1500,"cached_input_tokens":1200,"output_tokens":45}}'
+  ].join('\n');
+
+  const parsed = adapter.parseOutput(jsonl);
+  assert.equal(parsed.session, 'th-001');
+  assert.equal(parsed.text, 'No issues.');
+  assert.deepEqual(parsed.usage, { input_tokens: 1500, cached_input_tokens: 1200, output_tokens: 45 });
+});
+
+test('runner codex: parseOutput acumula multiplas mensagens de agente e faz fallback em texto cru', () => {
+  const adapter = getRunnerAdapter('codex');
+  const jsonlMulti = [
+    '{"type":"item.completed","item":{"type":"agent_message","text":"Primeira parte."}}',
+    '{"type":"item.completed","item":{"type":"agent_message","text":"Segunda parte."}}'
+  ].join('\n');
+
+  const parsedMulti = adapter.parseOutput(jsonlMulti);
+  assert.equal(parsedMulti.text, 'Primeira parte.\n\nSegunda parte.');
+
+  const fallback = adapter.parseOutput('Saída em texto simples sem JSON');
+  assert.equal(fallback.text, 'Saída em texto simples sem JSON');
+  assert.equal(fallback.session, '');
+  assert.equal(fallback.usage, null);
+});
+
+test('runner agy: parseOutput extrai text, session e usage de JSON e JSONL', () => {
+  const adapter = getRunnerAdapter('agy');
+  const jsonSingle = JSON.stringify({
+    conversation_id: 'conv-agy-123',
+    response: 'No issues.',
+    usage: { prompt_tokens: 200, completion_tokens: 30 }
+  });
+
+  const parsedSingle = adapter.parseOutput(jsonSingle);
+  assert.equal(parsedSingle.session, 'conv-agy-123');
+  assert.equal(parsedSingle.text, 'No issues.');
+  assert.deepEqual(parsedSingle.usage, { prompt_tokens: 200, completion_tokens: 30 });
+
+  const jsonl = '{"conversation_id":"conv-stream","text":"Resultado do stream"}\n';
+  const parsedStream = adapter.parseOutput(jsonl);
+  assert.equal(parsedStream.session, 'conv-stream');
+  assert.equal(parsedStream.text, 'Resultado do stream');
+});
+
+test('runner claude, opencode e generic: parseOutput repassam texto cru', () => {
+  for (const name of ['claude', 'opencode', 'generic']) {
+    const adapter = getRunnerAdapter(name);
+    const parsed = adapter.parseOutput('saida de teste');
+    assert.equal(parsed.text, 'saida de teste');
+    assert.equal(parsed.session, '');
+    assert.equal(parsed.usage, null);
+  }
+});
+
 

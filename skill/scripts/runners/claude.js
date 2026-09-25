@@ -6,6 +6,12 @@ const { extractInstructions, resolveAgentPath } = require('../runner-adapter');
 
 const sessionMap = new Map();
 
+function isClaudeAgentFile(agentFile) {
+  if (!agentFile) return false;
+  const normalized = path.resolve(agentFile);
+  return /[\\/]\.claude[\\/]agents([\\/]|$)/.test(normalized);
+}
+
 const claudeAdapter = {
   name: 'claude',
 
@@ -31,12 +37,19 @@ const claudeAdapter = {
 
   buildCommand({ root, agent, agentFile, model, effort, message, session, tag, promptPrefix, readonly }) {
     const command = 'claude';
-    const pureBody = extractInstructions(agentFile);
-    const instructions = pureBody
-      ? `[PAPEL DO AGENTE (${agent})]\n${pureBody}\n`
-      : `[PAPEL DO AGENTE: ${agent}]\n`;
+    const isClaudeNative = isClaudeAgentFile(agentFile);
 
-    const fullMessage = [instructions, promptPrefix, message].filter(Boolean).join('\n\n');
+    let fullMessage;
+    if (isClaudeNative) {
+      fullMessage = [promptPrefix, message].filter(Boolean).join('\n\n');
+    } else {
+      const pureBody = extractInstructions(agentFile);
+      const instructions = pureBody
+        ? `[PAPEL DO AGENTE (${agent})]\n${pureBody}\n`
+        : `[PAPEL DO AGENTE: ${agent}]\n`;
+      fullMessage = [instructions, promptPrefix, message].filter(Boolean).join('\n\n');
+    }
+
     const args = ['-p', fullMessage, '--dangerously-skip-permissions'];
 
     const activeSession = session || (tag ? (sessionMap.get(tag) || crypto.randomUUID()) : crypto.randomUUID());
@@ -48,12 +61,24 @@ const claudeAdapter = {
       args.push('--session-id', activeSession);
     }
 
-    if (agent) args.push('--agent', agent);
+    if (isClaudeNative && agent) {
+      args.push('--agent', agent);
+    }
+
     if (model) args.push('--model', model);
     if (effort) args.push('--effort', effort);
     if (readonly) args.push('--tools', 'Read,Grep,Glob');
 
     return { command, args };
+  },
+
+  parseOutput(output) {
+    const raw = typeof output === 'object' && output !== null ? output.stdout || '' : String(output || '');
+    return {
+      text: raw,
+      session: '',
+      usage: null
+    };
   },
 
   async resolveSession({ root, tag, sessionInput, runResult }) {

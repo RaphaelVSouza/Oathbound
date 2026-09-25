@@ -2,7 +2,7 @@
 
 > Framework reutilizável e agnóstico de governança determinística, auditoria e orquestração multi-agente para desenvolvimento de software com LLMs.
 
-[![Versão](https://img.shields.io/badge/versão-0.20.1-blue.svg)](VERSION)
+[![Versão](https://img.shields.io/badge/versão-0.20.2-blue.svg)](VERSION)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-green.svg)](https://nodejs.org/)
 [![Dependências](https://img.shields.io/badge/dependências-zero-brightgreen.svg)](README.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
@@ -137,7 +137,7 @@ node adapters/agent-transpiler.js --target . --runner all
 O projeto adota a suíte nativa `node:test` e validação estática de integridade sem dependências externas:
 
 ```bash
-# Executa todos os testes unitários (61 testes nativos)
+# Executa todos os testes unitários (68 testes nativos)
 node --test test/*.test.js
 
 # Executa testes com relatório de cobertura nativo

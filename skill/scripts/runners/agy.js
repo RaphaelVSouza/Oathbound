@@ -45,17 +45,64 @@ const agyAdapter = {
     return { command, args };
   },
 
+  parseOutput(output) {
+    const raw = typeof output === 'object' && output !== null ? output.stdout || '' : String(output || '');
+    let session = '';
+    let usage = null;
+    let text = '';
+
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        const data = JSON.parse(trimmed);
+        session = data.conversation_id || data.session_id || data.id || '';
+        usage = data.usage || data.stats || null;
+        if (typeof data.response === 'string') text = data.response;
+        else if (typeof data.text === 'string') text = data.text;
+        else if (typeof data.content === 'string') text = data.content;
+        else if (typeof data.message === 'string') text = data.message;
+        else if (data.message && typeof data.message.content === 'string') text = data.message.content;
+        else if (typeof data.output === 'string') text = data.output;
+      } catch {}
+    }
+
+    if (!text) {
+      const lines = raw.split(/\r?\n/);
+      const texts = [];
+      for (const line of lines) {
+        const lTrim = line.trim();
+        if (!lTrim.startsWith('{') || !lTrim.endsWith('}')) continue;
+        try {
+          const ev = JSON.parse(lTrim);
+          if (!session) {
+            session = ev.conversation_id || ev.session_id || ev.id || '';
+          }
+          if (!usage && (ev.usage || ev.stats)) {
+            usage = ev.usage || ev.stats || null;
+          }
+          const msg = ev.response ?? ev.text ?? ev.content ?? ev.message?.content ?? (typeof ev.message === 'string' ? ev.message : null);
+          if (typeof msg === 'string') texts.push(msg);
+        } catch {}
+      }
+      if (texts.length) text = texts.join('\n\n');
+    }
+
+    if (!session) {
+      const match = raw.match(/"conversation_id"\s*:\s*"([0-9a-fA-F-]+)"/);
+      if (match) session = match[1];
+    }
+
+    return {
+      text: text || raw,
+      session,
+      usage
+    };
+  },
+
   async resolveSession({ root, tag, sessionInput, runResult }) {
     if (sessionInput) return sessionInput;
     if (!runResult || !runResult.stdout) return '';
-    try {
-      const data = JSON.parse(runResult.stdout.trim());
-      if (data.conversation_id) return data.conversation_id;
-    } catch {
-      const match = runResult.stdout.match(/"conversation_id"\s*:\s*"([0-9a-fA-F-]+)"/);
-      if (match) return match[1];
-    }
-    return '';
+    return agyAdapter.parseOutput(runResult.stdout).session || '';
   }
 };
 

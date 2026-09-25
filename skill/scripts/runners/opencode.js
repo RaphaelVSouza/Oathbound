@@ -88,6 +88,15 @@ const opencodeAdapter = {
     return { command, args };
   },
 
+  parseOutput(output) {
+    const raw = typeof output === 'object' && output !== null ? output.stdout || '' : String(output || '');
+    return {
+      text: raw,
+      session: '',
+      usage: null
+    };
+  },
+
   async resolveSession({ root, tag, sessionInput, runResult }) {
     if (sessionInput) return sessionInput;
     try {

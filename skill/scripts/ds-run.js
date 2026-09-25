@@ -174,6 +174,66 @@ async function runSession(opts = {}) {
 
     const started = Date.now();
     const logStream = logFile ? fs.createWriteStream(logFile) : null;
+
+    let capturedSession = '';
+    let earlyBuffer = '';
+    let codexLineBuffer = '';
+
+    const handleStdoutChunk = (chunk) => {
+      const str = chunk.toString();
+
+      // Guarda o id de sessão assim que aparece no stream, evitando perda por corte de maxCapture
+      if (!capturedSession && !sessionInput) {
+        earlyBuffer += str;
+        try {
+          const early = runner.parseOutput ? runner.parseOutput(earlyBuffer) : null;
+          if (early && early.session) {
+            capturedSession = early.session;
+            earlyBuffer = '';
+          } else if (earlyBuffer.length > 65536) {
+            earlyBuffer = earlyBuffer.slice(-8192);
+          }
+        } catch {}
+      }
+
+      // Exibição paralela no terminal
+      if (output) {
+        if (runner.name === 'codex') {
+          codexLineBuffer += str;
+          const lines = codexLineBuffer.split(/\r?\n/);
+          codexLineBuffer = lines.pop() || '';
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+              try {
+                const ev = JSON.parse(trimmed);
+                if (ev.item && (ev.item.type === 'agent_message' || ev.item.type === 'message') && typeof ev.item.text === 'string') {
+                  process.stdout.write(ev.item.text + '\n');
+                } else if (ev.type === 'agent_message' && typeof ev.text === 'string') {
+                  process.stdout.write(ev.text + '\n');
+                }
+              } catch {
+                process.stdout.write(line + '\n');
+              }
+            } else {
+              process.stdout.write(line + '\n');
+            }
+          }
+        } else if (runner.name === 'agy') {
+          // AGY com --output-format json gera objeto estruturado exibido no fechamento
+        } else {
+          process.stdout.write(chunk);
+        }
+      }
+    };
+
+    const handleStderrChunk = (chunk) => {
+      if (output) {
+        process.stderr.write(chunk);
+      }
+    };
+
     const r = await run(command, cmdArgs, {
       cwd: root, timeout,
       env: {
@@ -185,14 +245,28 @@ async function runSession(opts = {}) {
         GOVKIT_SCOPES: JSON.stringify(scopes)
       },
       input: cmdInput,
-      output: output ? 'inherit' : undefined,
-      capture: !output,
+      capture: true,
       onData: chunk => logStream?.write(chunk),
+      onStdout: handleStdoutChunk,
+      onStderr: handleStderrChunk
     });
 
     if (logStream) await new Promise(resolve => logStream.end(resolve));
 
-    let session = await runner.resolveSession({ root, tag, sessionInput, runResult: r });
+    if (output && runner.name === 'codex' && codexLineBuffer.trim()) {
+      const trimmed = codexLineBuffer.trim();
+      if (!trimmed.startsWith('{')) {
+        process.stdout.write(trimmed + '\n');
+      }
+    }
+
+    const parsed = runner.parseOutput ? runner.parseOutput(r.stdout) : { text: r.stdout, session: '', usage: null };
+
+    if (output && runner.name === 'agy' && parsed.text && parsed.text !== r.stdout) {
+      process.stdout.write(parsed.text + '\n');
+    }
+
+    let session = sessionInput || capturedSession || parsed.session || await runner.resolveSession({ root, tag, sessionInput, runResult: r });
 
     const after = await snapshot(root), afterHead = await head(root);
     const committed = await committedPaths(root, beforeHead, afterHead);
@@ -203,6 +277,19 @@ async function runSession(opts = {}) {
     const mode = feedback ? 'consulta' : commitMode ? 'git' : readonly ? 'leitura' : 'edicao';
 
     let receipt = `\n── ds-run: agente=${agent} runner=${runner.name} modo=${mode} modelo=${model || 'configuração do projeto'}${effort ? ` effort=${effort}` : ''} ${runner.name === 'opencode' ? `opencode_exit=${r.code}` : `exit=${r.code}`} tempo=${elapsed}s sessao=${session}\n`;
+    if (parsed.usage) {
+      const u = parsed.usage;
+      const parts = [];
+      const inTokens = u.input_tokens ?? u.prompt_tokens;
+      const cachedTokens = u.cached_input_tokens ?? u.cache_read_input_tokens;
+      const outTokens = u.output_tokens ?? u.completion_tokens;
+      if (inTokens !== undefined) parts.push(`in=${inTokens}`);
+      if (cachedTokens !== undefined) parts.push(`cached=${cachedTokens}`);
+      if (outTokens !== undefined) parts.push(`out=${outTokens}`);
+      if (parts.length) {
+        receipt += `── telemetria: ${parts.join(' ')}\n`;
+      }
+    }
     receipt += `── alterados na chamada (${changed.length}):\n${changed.map(p => `   ${p}`).join('\n')}\n`;
     if (beforeHead !== afterHead) receipt += `── HEAD: ${beforeHead || '(sem commit)'} → ${afterHead || '(sem commit)'}; arquivos commitados=${committed.length}\n`;
     if (foreign.length) receipt += `── de outro agente (${foreign.length}) — informativo:\n${foreign.map(p => `   · ${p}`).join('\n')}\n`;
@@ -214,8 +301,10 @@ async function runSession(opts = {}) {
       code: r.code === 0 && outside.length ? 3 : r.code,
       receipt,
       session,
-      stdout: r.stdout,
+      stdout: parsed.text,
+      rawStdout: r.stdout,
       stderr: r.stderr,
+      usage: parsed.usage || null,
       changed,
       root
     };
