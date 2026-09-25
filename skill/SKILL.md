@@ -14,14 +14,14 @@ skill fornece os papéis e wrappers.
 | Trabalho | Agente | Invocação |
 | --- | --- | --- |
 | Orquestração da guilda | `oathkeeper` | agente primário; ver [docs/runners](../docs/runners/README.md) |
-| Pergunta fechada sobre código | `cartographer` | `node run.js -R -a cartographer` |
-| Pesquisa em fontes externas | `sage` | `node run.js -R -a sage` |
+| Pergunta fechada sobre código | `surveyor` | `node run.js -R -a surveyor` |
+| Pesquisa em fontes externas | `scholar` | `node run.js -R -a scholar` |
 | Spec, tickets, decisões e instruções de agentes (antes) | `scribe` | `node run.js -a scribe -s <glob>` |
 | Implementação com comandos | `smith` | `node run.js -s <glob>` |
 | Revisão fria | `assayer` | `node run.js -R -a assayer` |
-| README, CHANGELOG e guias (depois, com base no Git) | `bard` | `node run.js -a bard -s <glob>` |
+| README, CHANGELOG e guias (depois, com base no Git) | `herald` | `node run.js -a herald -s <glob>` |
 | Preparação de hunks e commits | `archivist` | `node run.js -a archivist -s <arquivo>` |
-| Auditoria por mutação | `gremlin` | `node run.js -a gremlin -s <glob>`, em série |
+| Auditoria por mutação | `breaker` | `node run.js -a breaker -s <glob>`, em série |
 | Auditoria de segurança de aplicação | `warden` | `node run.js -R -a warden` |
 
 A disciplina do oathkeeper (escolha do papel, tarefa fechada, conferência de
@@ -33,7 +33,7 @@ destes papéis. Passe ao agente uma tarefa fechada, os caminhos permitidos,
 aceite com valor esperado e estado inicial do worktree. O modelo é configurado
 no projeto; `OATHBOUND_MODEL` e `-m` substituem opcionalmente nos wrappers; `-e` e
 `OATHBOUND_EFFORT` definem o esforço de raciocínio conforme [models.md](references/models.md).
-Edições mecânicas também vão para `smith`. Para `sage`, delimite
+Edições mecânicas também vão para `smith`. Para `scholar`, delimite
 a pergunta; o agente devolve fontes primárias e lacunas na resposta, enquanto
 o oathkeeper decide o próximo passo.
 
@@ -74,5 +74,5 @@ Não use este pacote como fonte de regras de negócio de outro repositório.
 prioriza. Definir prioridade entre riscos ou issues é do oathkeeper: só ele
 enxerga a fila inteira, prazos e decisões de negócio fora do escopo de uma
 única spec. O `scribe` escreve antes do trabalho (spec, tickets, decisões,
-instruções de agentes); o `bard` documenta depois (README, CHANGELOG, guias),
+instruções de agentes); o `herald` documenta depois (README, CHANGELOG, guias),
 sempre com base nos commits, no diff e nas saídas de comando.

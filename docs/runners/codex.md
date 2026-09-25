@@ -27,7 +27,7 @@ Invoque o Codex como executor subordinado de uma tarefa adicionando `-u codex`:
 node .claude/skills/oathbound/scripts/run.js -d . -u codex -s "src/db/*" -a smith -- "Criar migração"
 
 # Inspeção somente leitura
-node .claude/skills/oathbound/scripts/run.js -d . -u codex -R -a cartographer -- "Mapear esquemas de tabela"
+node .claude/skills/oathbound/scripts/run.js -d . -u codex -R -a surveyor -- "Mapear esquemas de tabela"
 ```
 
 ### Características de execução

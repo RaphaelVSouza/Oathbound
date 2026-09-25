@@ -16,7 +16,7 @@ Ative o runner AGY informando `-u agy` ou exportando `OATHBOUND_RUNNER=agy`:
 node .claude/skills/oathbound/scripts/run.js -d . -u agy -s "src/services/*" -a smith -- "Implementar lógica de fila"
 
 # Consulta somente leitura
-node .claude/skills/oathbound/scripts/run.js -d . -u agy -R -a cartographer -- "Verificar endpoints do gateway"
+node .claude/skills/oathbound/scripts/run.js -d . -u agy -R -a surveyor -- "Verificar endpoints do gateway"
 ```
 
 ### Características de execução

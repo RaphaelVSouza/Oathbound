@@ -71,7 +71,7 @@ ou um tracker específico apenas porque essas pastas estão permitidas.
 
 Você escreve **antes** do trabalho: spec, tickets, decisões e instruções de
 agentes. Não mantém `README.md`, `CHANGELOG.md` nem guias de uso — isso é do
-`bard`, que documenta depois da implementação com base no Git.
+`herald`, que documenta depois da implementação com base no Git.
 
 Execute a etapa documental indicada na tarefa:
 

@@ -316,13 +316,36 @@ test('stateDir: migra .git/ds-queue para .git/oathbound com governance.db para o
   const legacy = path.join(dir, 'ds-queue');
   fs.mkdirSync(legacy, { recursive: true });
   fs.writeFileSync(path.join(legacy, 'governance.db'), 'conteudo');
+  fs.writeFileSync(path.join(legacy, 'governance.db-wal'), 'wal');
+  fs.writeFileSync(path.join(legacy, 'governance.db-shm'), 'shm');
 
   const resolved = stateDir(dir);
 
   assert.equal(resolved, path.join(dir, 'oathbound'));
   assert.ok(fs.existsSync(path.join(dir, 'oathbound')));
   assert.ok(fs.existsSync(path.join(dir, 'oathbound', 'oathbound.db')));
-  assert.ok(!fs.existsSync(legacy));
+  assert.ok(fs.existsSync(path.join(dir, 'oathbound', 'oathbound.db-wal')));
+  assert.ok(fs.existsSync(path.join(dir, 'oathbound', 'oathbound.db-shm')));
+  assert.ok(!fs.existsSync(path.join(legacy)));
+});
+
+test('stateDir: dois gitDirs diferentes no mesmo processo migram ambos', (t) => {
+  const { stateDir } = require('../skill/scripts/roles');
+  const dirA = createTempDir(t);
+  const dirB = createTempDir(t);
+  for (const dir of [dirA, dirB]) {
+    const legacy = path.join(dir, 'ds-queue');
+    fs.mkdirSync(legacy, { recursive: true });
+    fs.writeFileSync(path.join(legacy, 'governance.db'), 'conteudo');
+  }
+
+  stateDir(dirA);
+  stateDir(dirB);
+
+  assert.ok(fs.existsSync(path.join(dirA, 'oathbound')));
+  assert.ok(fs.existsSync(path.join(dirB, 'oathbound')));
+  assert.ok(!fs.existsSync(path.join(dirA, 'ds-queue')));
+  assert.ok(!fs.existsSync(path.join(dirB, 'ds-queue')));
 });
 
 test('stateDir: com ambos os diretorios, usa oathbound e preserva o legado', (t) => {

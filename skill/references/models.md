@@ -55,8 +55,8 @@ do modelo antes da resposta. Utilize `-e <low|medium|high>` na CLI ou exporte
 
 | Nível | Papéis recomendados | Quando usar | Impacto |
 | --- | --- | --- | --- |
-| **`low`** | `cartographer`, `archivist` | Consultas pontuais de código, citações `arquivo:linha`, agrupamento mecânico de hunks e mensagens de commit. | Menor latência e consumo mínimo de tokens. |
-| **`medium`** | `smith`, `sage` | Implementação de código com testes, ciclos TDD, busca e cruzamento de fontes externas. | Equilíbrio ideal entre qualidade de código e velocidade. |
+| **`low`** | `surveyor`, `archivist` | Consultas pontuais de código, citações `arquivo:linha`, agrupamento mecânico de hunks e mensagens de commit. | Menor latência e consumo mínimo de tokens. |
+| **`medium`** | `smith`, `scholar` | Implementação de código com testes, ciclos TDD, busca e cruzamento de fontes externas. | Equilíbrio ideal entre qualidade de código e velocidade. |
 | **`high`** | `assayer`, `warden`, `scribe` | Revisão fria de diffs, análise AppSec (OWASP/CWE), mapeamento de riscos e specs de arquitetura. | Máxima profundidade analítica para evitar bugs e vulnerabilidades. |
 
 *Nota:* Evite o nível `max` ou orçamentos irrestritos para tarefas rotineiras, pois

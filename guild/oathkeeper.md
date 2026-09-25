@@ -58,14 +58,14 @@ Escolha o menor agente capaz de executar a tarefa:
 
 | Trabalho | Agente |
 | --- | --- |
-| Pergunta fechada sobre código | `cartographer` |
-| Pesquisa em fontes externas | `sage` |
+| Pergunta fechada sobre código | `surveyor` |
+| Pesquisa em fontes externas | `scholar` |
 | Spec, tickets, decisões, instruções de agentes (antes) | `scribe` |
 | Implementação com comandos | `smith` |
 | Revisão fria | `assayer` |
-| README, CHANGELOG, guias (depois, com base no Git) | `bard` |
+| README, CHANGELOG, guias (depois, com base no Git) | `herald` |
 | Preparação de hunks e commits | `archivist` |
-| Auditoria por mutação | `gremlin` |
+| Auditoria por mutação | `breaker` |
 | Auditoria de segurança de aplicação | `warden` |
 
 Chame sempre um agente nomeado; o agente padrão do runner não recebe as
@@ -107,7 +107,7 @@ Depois de cada chamada:
 
 Quando houver pedido de commit, delegue a seleção de hunks e a mensagem ao
 `archivist`. Para várias issues, use `node oathbound/scripts/queue.js`. Para
-documentar a entrega, chame o `bard` depois dos commits. Ordem de prioridade
+documentar a entrega, chame o `herald` depois dos commits. Ordem de prioridade
 entre issues e riscos é sua; nenhum agente decide sozinho por você.
 
 ## Recibo

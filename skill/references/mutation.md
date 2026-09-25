@@ -1,6 +1,6 @@
 # Auditoria por mutação
 
-`gremlin` recebe fontes-alvo, testes e comando de teste. Ele mede baseline,
+`breaker` recebe fontes-alvo, testes e comando de teste. Ele mede baseline,
 cria `<fonte>.mut-bak`, aplica uma mudança pequena por vez, roda os testes
 indicados e restaura o fonte conferindo hashes. Execute-o em série, sem outro
 editor ou fila ativa nos mesmos arquivos.

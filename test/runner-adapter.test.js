@@ -96,7 +96,7 @@ test('runner claude: buildCommand inclui -p e restringe tools em readonly', () =
 
   const cmd = adapter.buildCommand({
     root: '.',
-    agent: 'cartographer',
+    agent: 'surveyor',
     message: 'pesquise X',
     promptPrefix: prep.promptPrefix,
     readonly: true
@@ -130,7 +130,7 @@ test('runner agy: buildCommand inclui -p e mode plan em readonly', () => {
   const adapter = getRunnerAdapter('agy');
   const cmd = adapter.buildCommand({
     root: '.',
-    agent: 'cartographer',
+    agent: 'surveyor',
     message: 'analise Z',
     readonly: true
   });

@@ -37,7 +37,7 @@ adicionando `-u claude` à chamada:
 node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/api/*" -a smith -- "Implementar endpoint"
 
 # Consulta somente leitura
-node .claude/skills/oathbound/scripts/run.js -d . -u claude -R -a cartographer -- "Localizar handlers de autenticação"
+node .claude/skills/oathbound/scripts/run.js -d . -u claude -R -a surveyor -- "Localizar handlers de autenticação"
 ```
 
 ### Características de execução

@@ -32,19 +32,19 @@ O **Oathbound** resolve esses problemas através de:
 
 ## A guilda
 
-O Oathbound distribui o trabalho entre dez papéis juramentados em [`guild/`](guild/) — um orquestrador, oito especialistas e um documentador:
+O Oathbound distribui o trabalho entre dez papéis juramentados em [`guild/`](guild/) — o `oathkeeper`, oito especialistas e o `herald`:
 
 | Ofício | Função | Permissões principais |
 | :--- | :--- | :--- |
 | [`oathkeeper`](guild/oathkeeper.md) | Orquestra a guilda: escolhe o papel, entrega a tarefa fechada, confere diff/recibo e decide o avanço. Não edita nem commita. | Somente leitura; shell restrito a `git status/diff/log/show` e aos scripts de `run.js`, `queue.js`, `kill.js`, `quiet.js`; não é delegável. |
-| [`cartographer`](guild/cartographer.md) | Leitura rápida e orientação de código com evidências compactas (`caminho:linha`). | Somente leitura (`glob`, `read`); escrita e shell proibidos. |
-| [`sage`](guild/sage.md) | Pesquisa técnica em fontes primárias externas com citação de links verificáveis. | Somente leitura; navegação web permitida; escrita local bloqueada. |
+| [`surveyor`](guild/surveyor.md) | Mapeia o código e responde com `arquivo:linha`. | Somente leitura (`glob`, `read`); escrita e shell proibidos. |
+| [`scholar`](guild/scholar.md) | Pesquisa em fontes externas primárias. | Somente leitura; navegação web permitida; escrita local bloqueada. |
 | [`scribe`](guild/scribe.md) | Specs, tickets, decisões e instruções de agentes, antes da implementação. | Edição em `docs/`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` e `.scratch/`; shell somente leitura (`git`). |
 | [`smith`](guild/smith.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); comandos de teste/build; Git que altera histórico bloqueado. |
 | [`assayer`](guild/assayer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura; shell restrito a `git diff`, `git status`, `git show` e `git log -p`. |
-| [`bard`](guild/bard.md) | Documenta depois do trabalho, sempre com base no Git: README, CHANGELOG, guias e descrição do PR. | Edição só em `README.md`, `CHANGELOG.md` e `docs/`; shell somente leitura (`git`). |
+| [`herald`](guild/herald.md) | README, CHANGELOG e texto do PR, com base em commits, diff e saídas de comando. | Edição só em `README.md`, `CHANGELOG.md` e `docs/`; shell somente leitura (`git`). |
 | [`archivist`](guild/archivist.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; Git restrito aos arquivos autorizados (`git-stage.js`, `git-commit.js`). |
-| [`gremlin`](guild/gremlin.md) | Testes por mutação no código-fonte para avaliar a eficácia das asserções. | Edição temporária em fontes (exceto testes); restauração conferida por hash; Git destrutivo bloqueado. |
+| [`breaker`](guild/breaker.md) | Testes de mutação: quebra o código de propósito para medir se os testes percebem. | Edição temporária em fontes (exceto testes); restauração conferida por hash; Git destrutivo bloqueado. |
 | [`warden`](guild/warden.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
 
 ---
@@ -93,7 +93,7 @@ Executa um agente sob um escopo explícito e com auditoria de diff antes e após
 node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/services/*" -a smith -- "Implementar cálculo de desconto"
 
 # Exploração somente leitura via OpenCode com reasoning effort alto
-node .claude/skills/oathbound/scripts/run.js -d . -u opencode -R -e high -a cartographer -- "Mapear fluxo de autenticação"
+node .claude/skills/oathbound/scripts/run.js -d . -u opencode -R -e high -a surveyor -- "Mapear fluxo de autenticação"
 ```
 
 ### 2. Fila Orquestrada de Tarefas (`queue.js`)
@@ -151,15 +151,15 @@ A partir da versão 0.21.0 o projeto passa a se chamar **Oathbound**. A migraç�
 
 | Antes | Depois |
 | :--- | :--- |
-| `ds-explorer` | `cartographer` |
-| `ds-researcher` | `sage` |
+| `ds-explorer` | `surveyor` |
+| `ds-researcher` | `scholar` |
 | `ds-governance` | `scribe` |
 | `ds-runner` | `smith` |
 | `ds-reviewer` | `assayer` |
 | `ds-security` | `warden` |
-| `ds-mutant` | `gremlin` |
+| `ds-mutant` | `breaker` |
 | `ds-committer` | `archivist` |
-| — (novos) | `oathkeeper` (orquestrador) e `bard` (documentador) |
+| — (novos) | `oathkeeper` e `herald` |
 
 ### Scripts de runtime
 

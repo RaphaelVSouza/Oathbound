@@ -12,8 +12,8 @@ fila.
 | Implementação de um ticket ou recorte de spec | [`smith`](../guild/smith.md) | `implement`; ciclos de TDD somente quando testes fizerem parte da tarefa. |
 | Revisão de uma entrega | [`assayer`](../guild/assayer.md) | Dois eixos de `code-review`: padrões e spec. |
 
-`cartographer`, `sage`, `gremlin`, `archivist` e `warden` mantêm instruções específicas de seus papéis.
-`sage` incorpora o contrato de pesquisa em fontes primárias da skill
+`surveyor`, `scholar`, `breaker`, `archivist` e `warden` mantêm instruções específicas de seus papéis.
+`scholar` incorpora o contrato de pesquisa em fontes primárias da skill
 `research` de Matt Pocock e devolve as fontes ao oathkeeper sem carregar
 essa skill. O trabalho de `implement-spec` sobre vários tickets continua com
 o oathkeeper e a fila
