@@ -1,182 +1,162 @@
 # Agent Governance Kit
 
-Pacote reutilizável de delegação, auditoria e orquestração de agentes. Esta
-versão reúne uma skill, oito papéis de agentes e wrappers de execução
-agnósticos a runners (`opencode`, `claude`, `codex`, `agy`, `generic`). Regras de domínio, endpoints, hosts, comandos de validação e
-decisões de produção pertencem ao repositório que adota o pacote.
+> Framework reutilizável e agnóstico de governança determinística, auditoria e orquestração multi-agente para desenvolvimento de software com LLMs.
 
-**Versão:** [`VERSION`](VERSION) · **estado:** pacote para revisão,
-sem execução de fila ou agentes neste pacote.
+[![Versão](https://img.shields.io/badge/versão-0.20.0-blue.svg)](VERSION)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-green.svg)](https://nodejs.org/)
+[![Dependências](https://img.shields.io/badge/dependências-zero-brightgreen.svg)](README.md)
+[![Licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
 
-## Conteúdo
+O **Agent Governance Kit** estabelece uma camada de engenharia e controle rigoroso sobre agentes de codificação autônomos. Ele desacopla o orquestrador das CLIs de execução, impede mutações fora do escopo delimitado, gerencia filas de tarefas com transações ACID em SQLite e garante prefixos estáveis para maximizar o reaproveitamento de **prompt caching (KV cache)**.
 
-| Caminho | Responsabilidade |
-| --- | --- |
-| [`skill/SKILL.md`](skill/SKILL.md) | Escolha de papéis e disciplina do orquestrador. |
-| [`skill/scripts/`](skill/scripts/) | Runner com auditoria de escopo, fila, saída curta e controle de processos. |
-| [`adapters/opencode/agents/`](adapters/opencode/agents/) | Oito agentes com permissões por papel, incluindo pesquisa externa e commits; o modelo vem da configuração do projeto. |
-| [`adapters/`](adapters/) | Instruções e adapters de integração para OpenCode, Claude, Codex, AGY e Generic. |
-| [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Ponteiro curto a adaptar no repositório consumidor. |
-| [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Documentação e referências do fluxo Matt Pocock (triagem, spec, tickets, implementação e revisão) incorporado aos agentes canônicos. |
-| [`tools/audit-docs.js`](tools/README.md) | Auditor de links e contratos documentais, configurado para este repositório e instalável de forma opcional. |
-| [`install.ps1`](install.ps1) | Instalação em um repositório Git sem substituir arquivos existentes. |
+---
 
-## Instalação em um projeto
+## 🚀 Por que o kit existe?
 
-Requisitos para a instalação: PowerShell 7 e Git. Para executar os wrappers:
-Node.js 22 LTS ou superior, Git e um runner suportado (OpenCode, Claude Code, Codex, AGY ou executável customizado). Os wrappers e ferramentas utilizam
-apenas recursos e módulos nativos do Node (incluindo `node:test`,
-`node:util.parseArgs`, `path.matchesGlob`, `fs.globSync` e `node:sqlite`), com
-zero dependências externas e sem etapa de `npm install`. O auditor de documentação
-usa o mesmo Node. No Windows, o encerramento da árvore usa `taskkill /T /F`; em Linux/macOS,
-usa o grupo de processos criado para cada comando.
-Um descendente já separado do processo pai no Windows pode exigir limpeza
-manual; o registro de PID do wrapper não é uma garantia de isolamento.
+Agentes de código com LLMs frequentemente:
+- Alteram arquivos além da tarefa designada, gerando quebras e drift acidental.
+- Permanecem travados no ecossistema proprietário de uma única CLI.
+- Re-injetam todo o contexto a cada turno, descartando o reaproveitamento de cache KV de prefixo.
+- Criam commits genéricos ou desordenados sem rastreabilidade.
 
-```powershell
-pwsh -NoProfile -File D:\agent-governance-kit\install.ps1 -Project D:\caminho\do\projeto
-```
+O **Agent Governance Kit** resolve esses problemas através de:
 
-O fluxo Matt Pocock (triagem, spec, tickets) já vem incorporado a
-`ds-governance`, `ds-runner` e `ds-reviewer` — não é uma opção à parte.
+1. **Executores Agnósticos (Runners):** Suporte nativo e intercambiável para **OpenCode**, **Claude Code**, **OpenAI Codex**, **Antigravity CLI (AGY)** e comandos customizados via contrato `RunnerAdapter`.
+2. **Guardrails Determinísticos de Escopo:** Auditoria de git tree antes e depois de cada execução; qualquer mutação fora dos globs autorizados (`-s`) é detectada no diff e encerra com código de saída `3` (sem reverter arquivos automaticamente, preservando evidências).
+3. **Fila Sequencial com Checkpoints Persistentes (`ds-queue`):** Execução sequencial de tarefas com persistência de estágio em `node:sqlite` (`queue_state`) e arquivos de estado, permitindo retomar de onde parou sem reprocessar tickets concluídos.
+4. **Alinhamento para Prompt Caching KV:** Prompt engineering ordenado estritamente do estático para o volátil (instruções do papel → regras do repositório → guardrails de escopo → dados voláteis da tarefa), garantindo prefixos byte-exact estáveis.
+5. **Transpilação Nativa de Agentes:** Conversor automático que traduz permissões granulares canônicas em whitelists de ferramentas (`tools`) para Claude Code e definições para AGY CLI.
+6. **Zero Dependências Externas:** Construído 100% sobre os módulos nativos do **Node.js 22 LTS** (`node:test`, `node:sqlite`, `node:util.parseArgs`, `path.matchesGlob`, `fs.globSync`).
 
-Para incluir também o auditor de documentação, acrescente `-AuditDocs` ao
-comando de instalação. Ele copia motor e configuração modelo para `tools/` do
-projeto consumidor; adapte a configuração antes de usá-la. Ele usa o Node já
-exigido pelos wrappers. O pacote não instala hooks automaticamente.
+---
 
-Neste repositório, a configuração está em `tools/audit-docs.config.js` e os
-comandos estão no [guia do auditor](tools/README.md).
+## 👥 Agentes Canônicos
 
-O instalador copia a skill para `.claude/skills/agent-governance/` e compila os agentes
-para o diretório nativo do runner escolhido através de [`adapters/agent-transpiler.js`](adapters/agent-transpiler.js):
-`.opencode/agents/` (padrão ou `-Runner opencode`), `.claude/agents/` (`-Runner claude`),
-`.agents/agents/` (`-Runner agy`) ou todos simultaneamente (`-Runner all`). Codex opera via
-`AGENTS.md` e skills. O instalador cria (ou completa, se já existir) `AGENTS.md` na raiz do
-projeto com um ponteiro de uma linha à skill — Claude Code o lê nativamente quando não há
-`CLAUDE.md` no diretório de trabalho ou pais, e Codex o lê sempre. O instalador não escolhe modelo, não
-cria commits e recusa caminhos de destino já existentes (`AGENTS.md` é a única
-exceção: ganha uma linha acrescentada, nunca é sobrescrito). Revise os
-arquivos copiados antes de ativar a delegação no projeto.
+O kit disponibiliza oito papéis especializados com permissões estritas em [`adapters/opencode/agents/`](adapters/opencode/agents/):
 
-As regras de etapa Matt Pocock já vêm consolidadas diretamente nos agentes
-`ds-governance`, `ds-runner` e `ds-reviewer` em `adapters/opencode/agents/` —
-não há arquivos duplicados nem variantes separadas. Nenhuma skill adicional é
-instalada ou carregada por eles. Configure o tracker no projeto e adapte o
-[fragmento](optional/matt-pocock/templates/AGENTS.fragment.md). O instalador
-não atualiza uma instalação prévia; compare e migre seus arquivos manualmente.
+| Papel | Responsabilidade | Permissões Padrão |
+| :--- | :--- | :--- |
+| [`ds-governance`](adapters/opencode/agents/ds-governance.md) | Triagem de issues, elaboração de especificações e decomposição em tickets técnicos. | Edição em `docs/`, `AGENTS.md` e rascunhos; shell somente leitura (`git`). |
+| [`ds-runner`](adapters/opencode/agents/ds-runner.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); execução de comandos de teste/build. |
+| [`ds-reviewer`](adapters/opencode/agents/ds-reviewer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura de código; shell restrito a `git diff` e `git status`. |
+| [`ds-explorer`](adapters/opencode/agents/ds-explorer.md) | Leitura rápida e orientação de código com evidências compactas (`caminho:linha`). | Somente leitura (`glob`, `read`); escrita e shell terminantemente proibidos. |
+| [`ds-researcher`](adapters/opencode/agents/ds-researcher.md) | Pesquisa técnica em fontes primárias externas com citação de links verificáveis. | Somente leitura; navegação web permitida; escrita local bloqueada. |
+| [`ds-mutant`](adapters/opencode/agents/ds-mutant.md) | Testes por mutação no código-fonte para avaliar eficácia das asserções de teste. | Edição temporária em fontes (exceto testes); restauração manual/pelo agente (wrapper não reverte automaticamente). |
+| [`ds-committer`](adapters/opencode/agents/ds-committer.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; operação de Git restrita aos arquivos autorizados. |
+| [`ds-security`](adapters/opencode/agents/ds-security.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
 
-No projeto consumidor, defina o modelo no OpenCode ou passe `GOVKIT_MODEL` ao
-chamar os scripts. Registre no `AGENTS.md` os comandos de validação, áreas de
-edição, exigências de ambiente e a política de produção desse projeto. A
-aceitação de uma fila é um arquivo do projeto, passado por `node ds-queue.js -A`;
-o pacote não inventa valores esperados.
+---
 
-## Instalação global (agnóstica de CLI)
+## 📦 Instalação
+
+Requisitos: **PowerShell 7+**, **Git** e **Node.js 22 LTS+**.
+
+### Instalação em um Projeto Específico
+
+Instala a skill de governança, o ponteiro `AGENTS.md` e compila os agentes para o diretório nativo das CLIs escolhidas:
 
 ```powershell
-pwsh -NoProfile -File D:\agent-governance-kit\install.ps1 -Global
+# Instala para todos os runners (OpenCode, Claude Code e AGY)
+pwsh -File .\install.ps1 -Project D:\caminho\do\projeto -Runner all
+
+# Ou instala exclusivamente para o runner desejado (opencode, claude, agy)
+pwsh -File .\install.ps1 -Project D:\caminho\do\projeto -Runner claude
 ```
 
-Não exige repositório Git. Copia a skill para `~/.agent-governance-kit/`
-(caminho neutro, sem sinal de um host específico) — fonte única de verdade —
-e sobrescreve os agentes `ds-*` em `~/.config/opencode/agents/` com a versão
-deste repositório; agentes fora desse conjunto (ex.: um `ds-worker` de outra
-origem) não são tocados. Cria um symlink em `~/.claude/skills/agent-governance`
-e outro em `~/.codex/skills/agent-governance` apontando para a fonte, para
-que a skill fique invocável nativamente (`/agent-governance` no Claude Code,
-`$agent-governance` no Codex) sem duplicar arquivos. Symlink no Windows exige
-Modo de desenvolvedor ativo ou elevação; se falhar, o instalador avisa mas não
-aborta — a skill segue usável via referência manual ao SKILL.md. Para AGY ou
-qualquer outra CLI sem convenção de skills documentada, aponte manualmente
-para `~/.agent-governance-kit/SKILL.md` no lugar que essa CLI usa.
+> **Dica:** Para incluir o auditor documental de links e contratos no projeto consumidor, acrescente a flag `-AuditDocs`.
 
-`-AuditDocs` funciona igual ao modo por-projeto. O fluxo Matt Pocock é
-instalado sempre, sem switch — igual ao modo por-projeto.
+### Instalação Global (Agnóstica de CLI)
 
-Terceiro symlink em `~/.gemini/config/skills/agent-governance` cobre o AGY CLI e o
-Gemini nativo do Antigravity IDE, que compartilham essa mesma raiz de configuração.
-
-## Atualizar uma instalação global
+Configura uma fonte única em `~/.agent-governance-kit/` com symlinks automáticos para as pastas de skills do usuário (`~/.claude/skills/`, `~/.codex/skills/`, `~/.gemini/config/skills/`) e compila os agentes nativos em cada CLI:
 
 ```powershell
-pwsh -NoProfile -File D:\agent-governance-kit\install.ps1 -Global -Upgrade
+# Instalação global inicial
+pwsh -File .\install.ps1 -Global -Runner all
+
+# Atualização de instalação global existente
+pwsh -File .\install.ps1 -Global -Runner all -Upgrade
 ```
 
-`-Upgrade` só é aceito com `-Global` — o modo `-Project` nunca sobrescreve
-automaticamente (preserva mudanças locais do consumidor, ver seção acima).
-Substitui a fonte da skill (`~/.agent-governance-kit/`) e o auditor de
-documentação, se instalado, pela versão atual do repositório. Os agentes
-`ds-*` e os symlinks já são sincronizados a cada execução do modo `-Global`,
-com ou sem `-Upgrade`. Não existe script de atualização separado: o mesmo
-`install.ps1` instala e atualiza, para não duplicar a lógica de colisão e
-symlink em dois lugares.
+---
 
-## Contrato de execução
+## 🛠️ Modos de Uso
 
-- `node skill/scripts/ds-run.js` exige `-d` (repositório) e uma mensagem. `-u, --runner <nome|caminho>`
-  seleciona o runner (padrão `opencode`, ou via `GOVKIT_RUNNER`). Para agentes de leitura,
-  use `-R` sem `-s`; para agentes que editam, use ao menos um `-s` (glob).
-  Registra a sessão e detecta mudanças durante a chamada. Exit `3` informa
-  mudança incompatível com o modo e não reverte arquivos.
-- `node skill/scripts/ds-queue.js` executa runner, checagens `-C` opcionais e reviewer por issue.
-  Aceita `-u, --runner` para definir o executor da fila.
-  Correção de achados, mutação, commits e atualização documental dependem do
-  orquestrador. Consulte a [referência da fila](skill/references/queue.md).
-- `ds-committer` escolhe hunks e grupos, prepara o índice e cria commits apenas
-  para arquivos autorizados. Consulte [commits.md](skill/references/commits.md).
-  O wrapper também detecta mudanças no índice e arquivos incluídos em commits.
-- `ds-run.js -S <id> -Q status|bloqueios|evidencias|entrega` consulta uma sessão
-  entre etapas com escrita e shell bloqueados. Veja os
-  [comandos prontos](skill/references/feedback.md).
-- `node skill/scripts/quiet.js -t 600 -- <comando>` guarda a saída completa em
-  log e imprime um recibo curto. `node skill/scripts/ds-kill.js -d <repo> -l`
-  lista PIDs registrados; `--orphans` e `--all` encerram as árvores registradas.
-- `ds-mutant` altera o fonte temporariamente. Rode sozinho e confira hashes e
-  worktree após a chamada. O wrapper do pacote não restaura backups de
-  mutação automaticamente.
-- Permissões por padrão textual são guardas operacionais, não isolamento de
-  segurança. O orquestrador revisa diff, status e logs decisivos.
+### 1. Execução de Tarefa Isolada (`ds-run.js`)
 
-## Evolução e limites
-
-Os comandos em `skill/scripts/` usam cinco módulos internos: `cli-options.js`
-interpreta argumentos via `node:util.parseArgs`, `process-runner.js` executa e
-encerra subprocessos via `Promise.withResolvers`, `governance-db.js` fornece persistência
-transacional ACID com `node:sqlite`, `git.js` unifica consultas de estado,
-preparação seletiva de hunks e criação de commits protegidos por escopo com
-`path.matchesGlob` e `fs.globSync`, e `runner-adapter.js` desacopla e orquestra
-os executores de agentes (`opencode`, `claude`, `codex`, `agy`, `generic`). As interfaces exportadas têm contratos JSDoc;
-entradas externas críticas também são validadas durante a execução. A instalação
-copia esses módulos junto com os comandos.
-
-Para rodar a suíte de testes unitários isolada com relatório nativo de cobertura:
+Executa um agente sob um escopo explícito e com auditoria de diff antes e após a chamada:
 
 ```bash
-node --test --experimental-test-coverage test/*.test.js
+# Implementação delimitada via Claude Code com escopo definido
+node .claude/skills/agent-governance/scripts/ds-run.js -d . -u claude -s "src/services/*" -a ds-runner -- "Implementar cálculo de desconto"
+
+# Exploração somente leitura via OpenCode com reasoning effort alto
+node .claude/skills/agent-governance/scripts/ds-run.js -d . -u opencode -R -e high -a ds-explorer -- "Mapear fluxo de autenticação"
 ```
 
-Altere o pacote aqui, registre a mudança no [`CHANGELOG.md`](CHANGELOG.md),
-incremente `VERSION` e instale a nova versão em cada projeto após revisar o
-diff local. O instalador inicial não faz upgrade para preservar modificações
-do projeto consumidor. Para diretrizes de contribuição, padrões de código e
-testes, consulte [`CONTRIBUTING.md`](CONTRIBUTING.md).
+### 2. Fila Orquestrada de Tarefas (`ds-queue.js`)
 
-Os wrappers em Node substituem os scripts Bash do fluxo original. Ainda precisam
-de validação em projetos consumidores, especialmente recuperação após
-interrupção abrupta, permissões OpenCode e timeout de mutação.
+Orquestra sequencialmente as etapas de implementação, validação e revisão para um conjunto de issues/tickets:
 
-## Créditos e Agradecimentos
+```bash
+# Executa fila de tickets com arquivo de critérios de aceite (-A) e escopo delimitado (-s)
+node .claude/skills/agent-governance/scripts/ds-queue.js -d . -u agy -A docs/aceite.txt -s "src/*" -- docs/tickets/001.md docs/tickets/002.md
+```
 
-Este projeto utiliza conceitos, convenções e adaptações inspiradas nos seguintes trabalhos de código aberto:
+Consulte a [referência da fila](skill/references/queue.md) para detalhes de critérios de aceite, checagens e checkpoints.
 
-- **[Matt Pocock — Skills for Real Engineers](https://github.com/mattpocock/skills)** (Licença MIT):
-  Inspirou os fluxos de triagem, specs, decomposição em tickets e revisão de código incorporados aos agentes `ds-governance`, `ds-runner` e `ds-reviewer`.
-- **[RTK — Rust Token Killer](https://github.com/rtk-ai/rtk)** (Licença Apache 2.0):
-  Regras de interceptação e compressão de saídas de terminal para redução de consumo de tokens em ferramentas CLI.
-- **[Caveman](https://github.com/JuliusBrussee/caveman)** (Licença MIT):
-  Conceito e convenções de comunicação ultra-concisa para preservação de janela de contexto em interações com LLMs.
+### 3. Transpilador de Agentes (`agent-transpiler.js`)
 
-## Licença
+Compila dinamicamente as definições canônicas de agentes para qualquer host suportado:
 
-Distribuído sob a licença MIT. Consulte [LICENSE](LICENSE) para mais detalhes.
+```bash
+node adapters/agent-transpiler.js --target . --runner all
+```
+
+---
+
+## 🧭 Estrutura do Pacote
+
+| Diretório / Arquivo | Responsabilidade |
+| :--- | :--- |
+| [`adapters/`](adapters/README.md) | Documentação de integração e adaptadores para OpenCode, Claude Code, Codex, AGY e Generic. |
+| [`adapters/agent-transpiler.js`](adapters/agent-transpiler.js) | Compilador que converte definições canônicas de agentes nos formatos específicos de cada CLI. |
+| [`adapters/opencode/agents/`](adapters/opencode/agents/) | Definições canônicas em Markdown dos 8 agentes de governança. |
+| [`skill/SKILL.md`](skill/SKILL.md) | Skill do orquestrador com instruções operacionais e escolha de papéis. |
+| [`skill/scripts/`](skill/scripts/) | Scripts de runtime: runner com auditoria de escopo, fila transacional e controle de processos. |
+| [`skill/references/models.md`](skill/references/models.md) | Guia prático de reasoning effort e estratégias perenes de prompt caching KV. |
+| [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Fragmentos de configuração de `AGENTS.md` para novos repositórios. |
+| [`tools/README.md`](tools/README.md) | Motor de auditoria estática de integridade documental, links e contratos. |
+| [`install.ps1`](install.ps1) | Script PowerShell idempotente de instalação e distribuição por projeto ou global. |
+
+---
+
+## 🧪 Qualidade e Testes
+
+O projeto adota a suíte nativa `node:test` e validação estática de integridade sem dependências externas:
+
+```bash
+# Executa todos os testes unitários (52 testes nativos)
+node --test test/*.test.js
+
+# Executa testes com relatório de cobertura nativo
+node --test --experimental-test-coverage test/*.test.js
+
+# Valida integridade documental, contratos e links
+node tools/audit-docs.js
+```
+
+---
+
+## 📖 Créditos e Referências
+
+O Agent Governance Kit sintetiza e adapta conceitos das seguintes referências:
+
+- **[Matt Pocock — Skills for Real Engineers](https://github.com/mattpocock/skills):** Padrões de desenvolvimento orientado a especificações (triagem, spec, tickets, TDD e revisão em dois eixos) incorporados nativamente aos agentes canônicos `ds-governance`, `ds-runner` e `ds-reviewer`.
+- **[RTK — Rust Token Killer](https://github.com/rtk-ai/rtk):** Estratégias de compressão de saída de terminal para mitigação de consumo de contexto em LLMs.
+- **[Caveman](https://github.com/JuliusBrussee/caveman):** Comunicação técnica ultra-concisa para extensão da janela de contexto do modelo.
+
+---
+
+## 📄 Licença
+
+Distribuído sob a licença MIT. Consulte [`LICENSE`](LICENSE) para mais detalhes.

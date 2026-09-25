@@ -28,7 +28,7 @@ invalida todo o cache subsequente.
 
 ### Regra de ouro da ordenação do contexto
 
-O kit organiza o prompt nas seguintes camadas para maximizar *cache hits* (>90% de economia):
+O kit organiza o prompt nas seguintes camadas para maximizar *cache hits* por prefixo:
 
 1. **Camada estática (topo imutável):** Instruções do papel (`[PAPEL DO AGENTE]`) +
    regras globais e convenções locais do projeto (`AGENTS.md`).
