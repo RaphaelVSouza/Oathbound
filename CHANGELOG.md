@@ -1,6 +1,15 @@
 # Histórico de versões
 
-## 0.9.0 — 2026-09-24
+## 0.10.0 — 2026-09-24
+
+- Modernização com recursos nativos do Node 22 LTS (Active LTS *Jod*):
+  - `skill/scripts/process-runner.js`: simplificação do ciclo assíncrono com `Promise.withResolvers()`.
+  - `skill/scripts/cli-options.js`: migração do parser manual de flags para `node:util.parseArgs` nativo, mantendo compatibilidade retroativa total.
+  - `skill/scripts/git.js` e `skill/scripts/ds-run.js`: adoção de `path.matchesGlob` e `fs.globSync` nativos para verificação de escopos e descoberta de arquivos.
+  - `skill/scripts/governance-db.js`: criação do `GovernanceStore` encapsulando persistência transacional ACID com `node:sqlite` para fila e claims de agentes.
+- Expansão da suíte de testes unitários para 32 testes via `node:test` e adição de comando nativo de cobertura com `--experimental-test-coverage`.
+- Registro do termo *Governance Store* no `CONTEXT.md`.
+
 
 - `ds-run.js` ganha interface programática profunda `runSession()` com opções tipadas
   em JavaScript (`repo`, `message`, `agent`, `scopes`, `readonly`, `feedback`, `session`, `label`).

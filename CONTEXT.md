@@ -35,3 +35,8 @@ _Avoid_: File provider, Git reader
 **Process Runner**:
 Módulo profundo de execução assíncrona de subprocessos com controle de tempo, encerramento de árvores e isolamento de particularidades de SO.
 _Avoid_: Exec, Spawn wrapper
+
+**Governance Store**:
+Módulo transacional baseado em `node:sqlite` para persistência atômica de estados da fila, estágios de issues e reservas concorrentes de escopo (claims).
+_Avoid_: Banco de dados genérico, Estado em arquivo texto
+

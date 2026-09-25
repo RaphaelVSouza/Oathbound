@@ -24,9 +24,11 @@ sem execução de fila ou agentes neste pacote.
 ## Instalação em um projeto
 
 Requisitos para a instalação: PowerShell 7 e Git. Para executar os wrappers:
-Node.js 22 ou superior, OpenCode e Git. Os wrappers usam apenas módulos nativos
-do Node, sem `npm install`. O auditor de documentação usa o mesmo Node.
-No Windows, o encerramento da árvore usa `taskkill /T /F`; em Linux/macOS,
+Node.js 22 LTS ou superior, OpenCode e Git. Os wrappers e ferramentas utilizam
+apenas recursos e módulos nativos do Node (incluindo `node:test`,
+`node:util.parseArgs`, `path.matchesGlob`, `fs.globSync` e `node:sqlite`), com
+zero dependências externas e sem etapa de `npm install`. O auditor de documentação
+usa o mesmo Node. No Windows, o encerramento da árvore usa `taskkill /T /F`; em Linux/macOS,
 usa o grupo de processos criado para cada comando.
 Um descendente já separado do processo pai no Windows pode exigir limpeza
 manual; o registro de PID do wrapper não é uma garantia de isolamento.
@@ -96,11 +98,20 @@ o pacote não inventa valores esperados.
 
 ## Evolução e limites
 
-Os comandos em `skill/scripts/` usam três módulos internos: `cli-options.js`
-interpreta argumentos, `process-runner.js` executa e encerra subprocessos, e
-`git.js` unifica consultas de estado, preparação seletiva de hunks e criação de commits protegidos por escopo. As interfaces exportadas têm
-contratos JSDoc; entradas externas críticas também são validadas durante a
-execução. A instalação copia esses módulos junto com os comandos.
+Os comandos em `skill/scripts/` usam quatro módulos internos: `cli-options.js`
+interpreta argumentos via `node:util.parseArgs`, `process-runner.js` executa e
+encerra subprocessos via `Promise.withResolvers`, `governance-db.js` fornece persistência
+transacional ACID com `node:sqlite`, e `git.js` unifica consultas de estado,
+preparação seletiva de hunks e criação de commits protegidos por escopo com
+`path.matchesGlob` e `fs.globSync`. As interfaces exportadas têm contratos JSDoc;
+entradas externas críticas também são validadas durante a execução. A instalação
+copia esses módulos junto com os comandos.
+
+Para rodar a suíte de testes unitários isolada com relatório nativo de cobertura:
+
+```bash
+node --test --experimental-test-coverage test/*.test.js
+```
 
 Altere o pacote aqui, registre a mudança no [`CHANGELOG.md`](CHANGELOG.md),
 incremente `VERSION` e instale a nova versão em cada projeto após revisar o
