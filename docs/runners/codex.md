@@ -1,9 +1,9 @@
 # Codex
 
-O Codex opera no Oathbound como **host orquestrador** ou como
+O Codex opera no Oathbound como **host do oathkeeper** ou como
 **runner de execução** subordinado.
 
-## 1. Codex como host (orquestrador)
+## 1. Codex como host (oathkeeper)
 
 Use o `AGENTS.md` do projeto como ponto de entrada. Acrescente um ponteiro para
 `.claude/skills/oathbound/SKILL.md` quando o trabalho exigir delegação de papéis,

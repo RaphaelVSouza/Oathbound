@@ -18,7 +18,7 @@ caminhos de instalação e o estado em `.git/`. Nenhum nome antigo permanece com
 - **Caminhos e estado:** `.claude/skills/agent-governance/` → `.claude/skills/oathbound/`;
   `~/.agent-governance-kit/` → `~/.oathbound/`; symlinks `agent-governance` → `oathbound`;
   `.git/ds-queue/` → `.git/oathbound/`; `governance.db` → `oathbound.db`; tag de sessão
-  `ds-queue-…` → `oathbound-…`. O instalador detecta instalações antigas e interrompe sem apagar nada.
+  `dsrun-…` → `oathbound-…`. O instalador detecta instalações antigas e interrompe sem apagar nada.
 - **Módulos internos:** `Governance Store` → `Oathbound Store` (CONTEXT.md); prefixos internos de
   agente, escopos, tag de sessão e temporários migram para `oathbound-*`.
 

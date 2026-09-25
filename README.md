@@ -188,7 +188,7 @@ A partir da versão 0.21.0 o projeto passa a se chamar **Oathbound**. A migraç�
 | `~/.agent-governance-kit/` | `~/.oathbound/` |
 | `.git/ds-queue/` | `.git/oathbound/` |
 | `governance.db` | `oathbound.db` |
-| tag de sessão `ds-queue-…` | tag `oathbound-…` |
+| tag de sessão `dsrun-…` | tag `oathbound-…` |
 
 O estado em `.git/oathbound/` é migrado automaticamente na primeira execução: `stateDir()` renomeia `.git/ds-queue` para `.git/oathbound` e `governance.db` para `oathbound.db`, preservando o legado quando ambos existirem.
 

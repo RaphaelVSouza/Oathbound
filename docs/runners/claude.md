@@ -1,22 +1,22 @@
 # Claude Code
 
-O Claude Code opera no Oathbound em dois papéis: como **host orquestrador**
+O Claude Code opera no Oathbound em dois papéis: como **host do oathkeeper**
 interativo e como **runner de execução** subordinado.
 
-## 1. Claude Code como host (orquestrador)
+## 1. Claude Code como host (oathkeeper)
 
 A skill fica disponível em `.claude/skills/oathbound/`. Para que o Claude
 leia as regras do projeto, mantenha um `CLAUDE.md` curto na raiz importando
 o `AGENTS.md` (`@AGENTS.md`).
 
-O orquestrador Claude consulta o `AGENTS.md` do projeto e invoca as ferramentas do
+O oathkeeper Claude consulta o `AGENTS.md` do projeto e invoca as ferramentas do
 kit pelo terminal (`node .claude/skills/oathbound/scripts/run.js` e
 `queue.js`).
 
-### Início com o orquestrador `oathkeeper`
+### Início com o oathkeeper
 
 Instale os agentes nativos (`.\install.ps1 -Project . -Runner claude`) e inicie
-uma sessão já no papel de orquestrador:
+uma sessão já no papel de oathkeeper:
 
 ```bash
 claude --agent oathkeeper
@@ -29,7 +29,7 @@ chamada `node .../run.js -a oathkeeper` é recusada com exit code 2.
 
 ## 2. Claude Code como runner delegado
 
-O orquestrador pode delegar tarefas para uma instância não-interativa do Claude Code
+O oathkeeper pode delegar tarefas para uma instância não-interativa do Claude Code
 adicionando `-u claude` à chamada:
 
 ```bash
