@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## 0.9.0 — 2026-09-24
+
+- `ds-run.js` ganha interface programática profunda `runSession()` com opções tipadas
+  em JavaScript (`repo`, `message`, `agent`, `scopes`, `readonly`, `feedback`, `session`, `label`).
+- `ds-queue.js` migrado para invocar `runSession()` diretamente com objetos nativos,
+  eliminando a serialização intermediária de strings de linha de comando.
+- `dsRun()` preservado como adaptador fino para CLI e chamadas legadas.
+- Criação de suíte de testes em `test/ds-run.test.js` para `overlap`, `mutex`, `feedbackAgent`
+  e validações de escopo.
+
 ## 0.8.2 — 2026-09-24
 
 - `process-runner.js` absorve detecção de cmd-shims e ativação de shell no Windows automaticamente.

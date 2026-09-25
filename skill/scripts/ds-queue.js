@@ -5,7 +5,7 @@ const os = require('node:os');
 const { options, one } = require('./cli-options');
 const { run } = require('./process-runner');
 const { git, repoPaths } = require('./git');
-const { dsRun } = require('./ds-run');
+const { runSession } = require('./ds-run');
 
 const tail = (value, count) => value.split(/\r?\n/).slice(-count).map(x => x.slice(0, 240)).join('\n');
 async function queue(argv) {
@@ -29,7 +29,16 @@ async function queue(argv) {
     if (stage !== 'implementada') {
       const message = `${root}\nIssue da fila: ${issue} (leia-a inteira).\n${fs.readFileSync(accept, 'utf8')}`;
       const outFile = path.join(work, `${id}.out`);
-      const r = await dsRun(['-d', root, '-t', one(o, '-t', '2400'), '-L', id, ...(rs ? ['-S', rs] : []), ...scopes.flatMap(s => ['-s', s]), '--', message], false, outFile);
+      const r = await runSession({
+        repo: root,
+        timeout: Number(one(o, '-t', '2400')),
+        label: id,
+        session: rs,
+        scopes,
+        message,
+        output: false,
+        logFile: outFile
+      });
       fs.appendFileSync(outFile, r.receipt);
       rs = r.session || rs;
       console.log(`##### ${id} runner exit=${r.code} sessao=${rs}`);
@@ -53,7 +62,17 @@ async function queue(argv) {
     } else console.log(`##### ${id} já implementada (checkpoint) — só revisão`);
     const prompt = `${root}\nRevise o git diff do escopo (inclua não rastreados) contra ${issue}. Só bug real ou risco com severidade, e teste que passa sem a mudança.`;
     const reviewFile = path.join(work, `${id}.rev`);
-    const v = await dsRun(['-R', '-d', root, '-a', 'ds-reviewer', '-t', '900', '-L', `rev-${id}`, ...(vs ? ['-S', vs] : []), '--', prompt], false, reviewFile);
+    const v = await runSession({
+      repo: root,
+      agent: 'ds-reviewer',
+      readonly: true,
+      timeout: 900,
+      label: `rev-${id}`,
+      session: vs,
+      message: prompt,
+      output: false,
+      logFile: reviewFile
+    });
     const review = v.stdout + v.stderr + v.receipt;
     fs.appendFileSync(reviewFile, v.receipt);
     if (v.code) { console.error(`── fila parada em ${id}: reviewer exit=${v.code}; log ${path.join(work, `${id}.rev`)}`); console.error(tail(review, 30)); return v.code; }

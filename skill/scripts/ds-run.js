@@ -11,19 +11,31 @@ function overlap(a, b) {
   const prefix = x => x.split(/[*?[]/, 1)[0];
   return prefix(a).startsWith(prefix(b)) || prefix(b).startsWith(prefix(a));
 }
+
 async function mutex(dir, action) {
   const lock = path.join(dir, 'mutex');
   for (let n = 0; n < 100; n++) {
-    try { fs.mkdirSync(lock); fs.writeFileSync(path.join(lock, 'pid'), String(process.pid)); break; }
-    catch {
+    try {
+      fs.mkdirSync(lock);
+      fs.writeFileSync(path.join(lock, 'pid'), String(process.pid));
+      break;
+    } catch {
       const owner = Number(fs.existsSync(path.join(lock, 'pid')) ? fs.readFileSync(path.join(lock, 'pid'), 'utf8') : 0);
-      if (owner && !alive(owner)) { fs.rmSync(lock, { recursive: true, force: true }); continue; }
+      if (owner && !alive(owner)) {
+        fs.rmSync(lock, { recursive: true, force: true });
+        continue;
+      }
       if (n === 99) throw Error(`mutex preso: ${lock}`);
       await sleep(200);
     }
   }
-  try { return await action(); } finally { fs.rmSync(lock, { recursive: true, force: true }); }
+  try {
+    return await action();
+  } finally {
+    fs.rmSync(lock, { recursive: true, force: true });
+  }
 }
+
 function temporaryAgent(file, name, others) {
   const src = fs.readFileSync(file, 'utf8');
   if (!/^  edit:$/m.test(src)) return '';
@@ -41,6 +53,7 @@ function temporaryAgent(file, name, others) {
   fs.writeFileSync(target, result.join('\n'));
   return target;
 }
+
 function feedbackAgent(file, name) {
   const lines = fs.readFileSync(file, 'utf8').split('\n'), result = [];
   let skip = false, foundEdit = false, foundBash = false;
@@ -66,67 +79,152 @@ const feedbackPrompts = {
   entrega: 'Resuma o trabalho feito nesta sessão, arquivos afetados, evidências de aceite e pendências. Não execute ações.'
 };
 
-async function dsRun(args, output = true, logFile = '') {
-  const o = options(args, ['-d', '-a', '-m', '-t', '-s', '-f', '-S', '-L', '-Q'], ['-R']);
-  const dir = one(o, '-d'), agent = one(o, '-a', 'ds-runner');
-  const model = one(o, '-m', process.env.GOVKIT_MODEL || '');
-  const timeout = Number(one(o, '-t', '1800'));
-  const feedback = one(o, '-Q');
-  const scopes = o['-s'] || [], readonly = !!o['-R'] || !!feedback, commitMode = agent === 'ds-committer' && !feedback;
-  const sessionInput = one(o, '-S'), label = one(o, '-L', agent);
-  if (feedback && (!feedbackPrompts[feedback] || !sessionInput || scopes.length || o['-f'])) throw Error('uso de -Q: -S <sessão> -Q status|bloqueios|evidencias|entrega, sem -s ou -f');
-  if (!dir || !Number.isInteger(timeout) || timeout <= 0 || (readonly ? scopes.length : !scopes.length)) throw Error('uso: node ds-run.js -d repo (-R | -s glob) [-a agente] [-t segundos] -- mensagem');
-  let message = feedback ? `${feedbackPrompts[feedback]}${o._.length ? `\nPergunta adicional: ${o._.join(' ')}` : ''}` : one(o, '-f') ? fs.readFileSync(one(o, '-f'), 'utf8') : o._.join(' ');
+/**
+ * @typedef {{
+ *   repo: string,
+ *   message: string,
+ *   agent?: string,
+ *   model?: string,
+ *   timeout?: number,
+ *   scopes?: string[],
+ *   readonly?: boolean,
+ *   feedback?: string,
+ *   session?: string,
+ *   label?: string,
+ *   output?: boolean,
+ *   logFile?: string
+ * }} SessionOptions
+ *
+ * @typedef {{
+ *   code: number,
+ *   receipt: string,
+ *   session: string,
+ *   stdout: string,
+ *   stderr: string,
+ *   changed: string[],
+ *   root: string
+ * }} SessionResult
+ */
+
+/**
+ * Execute an agent session with scope claim locking and before/after Git audit.
+ * @param {SessionOptions} opts
+ * @returns {Promise<SessionResult>}
+ */
+async function runSession(opts = {}) {
+  const dir = opts.repo;
+  if (!dir) throw Error('repositório obrigatório');
+
+  const agent = opts.agent || 'ds-runner';
+  const model = opts.model !== undefined ? opts.model : (process.env.GOVKIT_MODEL || '');
+  const timeout = Number(opts.timeout !== undefined ? opts.timeout : 1800);
+  const feedback = opts.feedback || '';
+  const scopes = opts.scopes || [];
+  const readonly = !!opts.readonly || !!feedback;
+  const commitMode = agent === 'ds-committer' && !feedback;
+  const sessionInput = opts.session || '';
+  const label = opts.label || agent;
+  const output = opts.output !== false;
+  const logFile = opts.logFile || '';
+
+  if (feedback && (!feedbackPrompts[feedback] || !sessionInput || scopes.length)) {
+    throw Error('uso de feedback: sessão obrigatória (-S), sem escopos de escrita (-s)');
+  }
+  if (!Number.isInteger(timeout) || timeout <= 0) {
+    throw Error('timeout inválido: informe um número inteiro positivo de segundos');
+  }
+  if (readonly ? scopes.length : !scopes.length) {
+    throw Error('modo somente leitura proíbe escopos; modo de edição exige ao menos um escopo');
+  }
+
+  let message = opts.message || '';
+  if (feedback) {
+    message = `${feedbackPrompts[feedback]}${message.trim() ? `\nPergunta adicional: ${message}` : ''}`;
+  }
   if (!message.trim()) throw Error('falta mensagem');
+
   const { root, gitDir } = await repoPaths(dir);
   const agentDir = process.env.GOVKIT_AGENT_DIR || path.join(root, '.opencode', 'agents');
   const agentFile = path.join(agentDir, `${agent}.md`);
   if (!fs.existsSync(agentFile)) throw Error(`agente ausente: ${agentFile}`);
-  if (readonly && !feedback && !/^  edit: deny$/m.test(fs.readFileSync(agentFile, 'utf8'))) throw Error(`-R exige edit: deny no agente: ${agent}`);
+  if (readonly && !feedback && !/^  edit: deny$/m.test(fs.readFileSync(agentFile, 'utf8'))) {
+    throw Error(`modo somente leitura exige edit: deny no agente: ${agent}`);
+  }
+
   const queueDir = path.join(gitDir, 'ds-queue'), claimDir = path.join(queueDir, 'claims');
   fs.mkdirSync(claimDir, { recursive: true });
   const others = [], claim = path.join(claimDir, `${process.pid}.claim`);
   let claimed = false, tempAgent = '', tag = '';
+
   try {
-    if (!readonly) await mutex(queueDir, () => {
-      for (const file of fs.readdirSync(claimDir).filter(x => x.endsWith('.claim'))) {
-        const pid = Number(file.slice(0, -6)), target = path.join(claimDir, file);
-        if (!alive(pid)) { fs.rmSync(target, { force: true }); continue; }
-        const lines = fs.readFileSync(target, 'utf8').split(/\r?\n/);
-        const otherLabel = lines.find(x => x.startsWith('label='))?.slice(6) || file;
-        for (const glob of lines.filter(x => x.startsWith('glob=')).map(x => x.slice(5))) {
-          for (const mine of scopes) if (commitMode || overlap(mine, glob)) { const e = Error(`conflito de posse — '${mine}' sobrepõe '${glob}' de ${otherLabel} (pid ${pid})`); e.code = 4; throw e; }
-          others.push({ glob, label: otherLabel });
+    if (!readonly) {
+      await mutex(queueDir, () => {
+        for (const file of fs.readdirSync(claimDir).filter(x => x.endsWith('.claim'))) {
+          const pid = Number(file.slice(0, -6)), target = path.join(claimDir, file);
+          if (!alive(pid)) { fs.rmSync(target, { force: true }); continue; }
+          const lines = fs.readFileSync(target, 'utf8').split(/\r?\n/);
+          const otherLabel = lines.find(x => x.startsWith('label='))?.slice(6) || file;
+          for (const glob of lines.filter(x => x.startsWith('glob=')).map(x => x.slice(5))) {
+            for (const mine of scopes) {
+              if (commitMode || overlap(mine, glob)) {
+                const e = Error(`conflito de posse — '${mine}' sobrepõe '${glob}' de ${otherLabel} (pid ${pid})`);
+                e.code = 4;
+                throw e;
+              }
+            }
+            others.push({ glob, label: otherLabel });
+          }
         }
-      }
-      fs.writeFileSync(claim, [`label=${label}`, `agent=${agent}`, `start=${Date.now()}`, ...(commitMode ? ['glob=*'] : scopes.map(g => `glob=${g}`))].join('\n'));
-      claimed = true;
-    });
+        fs.writeFileSync(claim, [`label=${label}`, `agent=${agent}`, `start=${Date.now()}`, ...(commitMode ? ['glob=*'] : scopes.map(g => `glob=${g}`))].join('\n'));
+        claimed = true;
+      });
+    }
+
     if (feedback) tempAgent = feedbackAgent(agentFile, agent);
     if (others.length) {
       tempAgent = temporaryAgent(agentFile, agent, others);
       message += `\nEm uso por outros agentes — só leitura, não edite: ${others.map(x => `${x.glob} (${x.label})`).join('; ')}`;
     }
+
     const before = await snapshot(root), beforeHead = await head(root);
     tag = `dsrun-${label.replace(/[^\w-]/g, '_')}-${process.pid}-${Date.now()}`;
     const procDir = path.join(queueDir, 'procs', tag);
     fs.mkdirSync(procDir, { recursive: true });
     fs.writeFileSync(path.join(procDir, '.owner'), String(process.pid));
     await killRegistered(root, '--orphans', true);
-    const command = ['run', '--standalone', ...(sessionInput ? ['--session', sessionInput] : ['--title', tag]), '--agent', tempAgent ? path.basename(tempAgent, '.md') : agent, ...(model ? ['-m', model] : []), message];
+
+    const command = [
+      'run', '--standalone',
+      ...(sessionInput ? ['--session', sessionInput] : ['--title', tag]),
+      '--agent', tempAgent ? path.basename(tempAgent, '.md') : agent,
+      ...(model ? ['-m', model] : []),
+      message
+    ];
+
     const started = Date.now();
     const logStream = logFile ? fs.createWriteStream(logFile) : null;
-    const r = await run('opencode', command, { cwd: root, timeout,
-      env: { ...process.env, DSRUN_TAG: tag, DSRUN_PROCS: path.join(queueDir, 'procs'), GOVKIT_AGENT: agent, GOVKIT_SCOPES: JSON.stringify(scopes) },
+    const r = await run('opencode', command, {
+      cwd: root, timeout,
+      env: {
+        ...process.env,
+        DSRUN_TAG: tag,
+        DSRUN_PROCS: path.join(queueDir, 'procs'),
+        GOVKIT_AGENT: agent,
+        GOVKIT_SCOPES: JSON.stringify(scopes)
+      },
       output: output ? 'inherit' : undefined,
-      capture: !output, onData: chunk => logStream?.write(chunk),
+      capture: !output,
+      onData: chunk => logStream?.write(chunk),
     });
+
     if (logStream) await new Promise(resolve => logStream.end(resolve));
+
     let session = sessionInput;
     if (!session) {
       const list = await run('opencode', ['session', 'list', '-n', '50'], { cwd: root });
       session = list.stdout.split(/\r?\n/).find(x => x.split('\t')[1] === tag)?.split('\t')[0] || '';
     }
+
     const after = await snapshot(root), afterHead = await head(root);
     const committed = await committedPaths(root, beforeHead, afterHead);
     const changed = changedPaths(before, after, committed);
@@ -134,18 +232,84 @@ async function dsRun(args, output = true, logFile = '') {
     const outside = changed.filter(p => !scopes.some(g => globMatch(p, g)) && !foreign.includes(p));
     const elapsed = Math.floor((Date.now() - started) / 1000);
     const mode = feedback ? 'consulta' : commitMode ? 'git' : readonly ? 'leitura' : 'edicao';
+
     let receipt = `\n── ds-run: agente=${agent} modo=${mode} modelo=${model || 'configuração do projeto'} opencode_exit=${r.code} tempo=${elapsed}s sessao=${session}\n`;
     receipt += `── alterados na chamada (${changed.length}):\n${changed.map(p => `   ${p}`).join('\n')}\n`;
     if (beforeHead !== afterHead) receipt += `── HEAD: ${beforeHead || '(sem commit)'} → ${afterHead || '(sem commit)'}; arquivos commitados=${committed.length}\n`;
     if (foreign.length) receipt += `── de outro agente (${foreign.length}) — informativo:\n${foreign.map(p => `   · ${p}`).join('\n')}\n`;
     if (outside.length) receipt += `── ${readonly ? 'ALTERAÇÃO DURANTE LEITURA' : 'FORA DO ESCOPO'} (${outside.length}) — confira autoria:\n${outside.map(p => `   ! ${p}`).join('\n')}\n`;
+
     if (output) process.stdout.write(receipt);
-    return { code: r.code === 0 && outside.length ? 3 : r.code, receipt, session, stdout: r.stdout, stderr: r.stderr, changed, root };
+
+    return {
+      code: r.code === 0 && outside.length ? 3 : r.code,
+      receipt,
+      session,
+      stdout: r.stdout,
+      stderr: r.stderr,
+      changed,
+      root
+    };
   } finally {
     if (claimed) fs.rmSync(claim, { force: true });
     if (tempAgent) fs.rmSync(tempAgent, { force: true });
     if (tag) await killRegistered(root, tag, true);
   }
 }
-if (require.main === module) dsRun(process.argv.slice(2)).then(r => { process.exitCode = r.code; }).catch(e => { console.error(e.message); process.exitCode = e.code || 2; });
-module.exports = { dsRun };
+
+/** CLI adapter for ds-run invocations. */
+async function dsRun(args, output = true, logFile = '') {
+  const o = options(args, ['-d', '-a', '-m', '-t', '-s', '-f', '-S', '-L', '-Q'], ['-R']);
+  const dir = one(o, '-d');
+  const agent = one(o, '-a', 'ds-runner');
+  const model = one(o, '-m', process.env.GOVKIT_MODEL || '');
+  const timeout = Number(one(o, '-t', '1800'));
+  const feedback = one(o, '-Q');
+  const scopes = o['-s'] || [];
+  const readonly = !!o['-R'] || !!feedback;
+  const session = one(o, '-S');
+  const label = one(o, '-L', agent);
+
+  if (feedback && (!feedbackPrompts[feedback] || !session || scopes.length || o['-f'])) {
+    throw Error('uso de -Q: -S <sessão> -Q status|bloqueios|evidencias|entrega, sem -s ou -f');
+  }
+  if (!dir || (readonly ? scopes.length : !scopes.length)) {
+    throw Error('uso: node ds-run.js -d repo (-R | -s glob) [-a agente] [-t segundos] -- mensagem');
+  }
+
+  const message = one(o, '-f') ? fs.readFileSync(one(o, '-f'), 'utf8') : o._.join(' ');
+
+  return runSession({
+    repo: dir,
+    message,
+    agent,
+    model,
+    timeout,
+    scopes,
+    readonly,
+    feedback,
+    session,
+    label,
+    output,
+    logFile
+  });
+}
+
+if (require.main === module) {
+  dsRun(process.argv.slice(2)).then(r => {
+    process.exitCode = r.code;
+  }).catch(e => {
+    console.error(e.message);
+    process.exitCode = e.code || 2;
+  });
+}
+
+module.exports = {
+  runSession,
+  dsRun,
+  overlap,
+  mutex,
+  temporaryAgent,
+  feedbackAgent,
+  feedbackPrompts
+};
