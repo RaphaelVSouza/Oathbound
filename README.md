@@ -160,3 +160,18 @@ do projeto consumidor.
 Os wrappers em Node substituem os scripts Bash do fluxo original. Ainda precisam
 de validação em projetos consumidores, especialmente recuperação após
 interrupção abrupta, permissões OpenCode e timeout de mutação.
+
+## Créditos e Agradecimentos
+
+Este projeto utiliza conceitos, convenções e adaptações inspiradas nos seguintes trabalhos de código aberto:
+
+- **[Matt Pocock — Skills for Real Engineers](https://github.com/mattpocock/skills)** (Licença MIT):
+  Inspirou os fluxos de triagem, specs, decomposição em tickets e revisão de código incorporados aos agentes `ds-governance`, `ds-runner` e `ds-reviewer`.
+- **[RTK — Rust Token Killer](https://github.com/rtk-ai/rtk)** (Licença Apache 2.0):
+  Regras de interceptação e compressão de saídas de terminal para redução de consumo de tokens em ferramentas CLI.
+- **[Caveman](https://github.com/JuliusBrussee/caveman)** (Licença MIT):
+  Conceito e convenções de comunicação ultra-concisa para preservação de janela de contexto em interações com LLMs.
+
+## Licença
+
+Distribuído sob a licença MIT. Consulte [LICENSE](LICENSE) para mais detalhes.
