@@ -73,12 +73,20 @@ Registre decisões fornecidas pelo orquestrador. Se faltar uma decisão, marque
 `PENDENTE` e explique a lacuna. Preserve alterações preexistentes, confirme
 links relativos e releia cada trecho alterado.
 
+Ao registrar um risco, levante probabilidade e impacto com fonte verificável
+(histórico do arquivo, dependência crítica, cobertura de teste, área tocada)
+e anote os dois no artefato. Não ranqueie nem defina prioridade entre riscos
+ou entre issues — falta contexto de fila, prazo e decisão de negócio para
+isso; se a tarefa pedir prioridade, devolva os pares probabilidade/impacto
+coletados e marque `PENDENTE (prioridade cabe ao orquestrador)`.
+
 Recibo:
 
 ```text
 ARQUIVOS: <caminho — mudança>
 REFERÊNCIAS: <links, índices ou dependências ajustados>
 FONTES: <regra aplicada → documento do projeto>
+RISCO: <probabilidade — fonte> · <impacto — fonte> (omita se a tarefa não pedir análise de risco)
 NOTA: <pendências ou nenhuma>
 GIT: <git status --short dos arquivos tocados>
 ```

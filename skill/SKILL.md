@@ -58,3 +58,8 @@ O wrapper mede mudanças antes/depois e registra posse por glob. Permissões de
 shell do OpenCode casam texto e podem ser contornadas por ofuscação. Use o
 aceite do projeto e revisão humana para decisões irreversíveis ou com dados.
 Não use este pacote como fonte de regras de negócio de outro repositório.
+
+`ds-governance` levanta probabilidade e impacto de um risco com fonte, mas não
+prioriza. Definir prioridade entre riscos ou issues é do orquestrador: só ele
+enxerga a fila inteira, prazos e decisões de negócio fora do escopo de uma
+única spec.

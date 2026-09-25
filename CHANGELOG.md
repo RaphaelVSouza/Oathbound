@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## 0.15.0 — 2026-09-25
+
+- `ds-governance` (base e Matt Pocock) ganha responsabilidade explícita de
+  análise qualitativa de risco: levanta probabilidade e impacto com fonte
+  verificável, sem ranquear ou definir prioridade. Recibo ganha campo `RISCO`.
+- `skill/SKILL.md` documenta a divisão: prioridade entre riscos ou issues é
+  sempre do orquestrador, que enxerga fila, prazo e decisão de negócio fora
+  do escopo de uma única spec.
+
 ## 0.14.0 — 2026-09-25
 
 - **Ruptura:** fluxo Matt Pocock (triagem, spec, tickets) deixa de ser

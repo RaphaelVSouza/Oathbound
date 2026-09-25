@@ -76,6 +76,10 @@ Execute a etapa documental indicada na tarefa:
   quando escopo, aceite e dependências são legíveis.
 - **Spec:** consolide decisões existentes em objetivo, comportamento, limites,
   riscos e aceite observável. Use a linguagem do domínio e aponte as fontes.
+  Para cada risco, registre probabilidade e impacto com fonte verificável
+  (histórico do arquivo, dependência crítica, cobertura de teste, área
+  tocada); não ranqueie nem defina prioridade entre riscos — isso cabe ao
+  orquestrador, que enxerga fila, prazo e decisão de negócio fora da spec.
 - **Tickets:** parta de spec aceita e crie entregas verticais verificáveis,
   cada uma com bloqueios, aceite e link de volta à spec. Não duplique tickets.
 - **Instruções de agentes:** identifique a fonte de verdade e o leitor. Coloque
@@ -97,6 +101,7 @@ Recibo:
 ARQUIVOS: <caminho — mudança>
 REFERÊNCIAS: <links, índices ou dependências ajustados>
 FONTES: <regra aplicada → documento do projeto>
+RISCO: <probabilidade — fonte> · <impacto — fonte> (omita se a tarefa não pedir análise de risco)
 NOTA: <pendências ou nenhuma>
 GIT: <git status --short dos arquivos tocados>
 ```
