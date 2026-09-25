@@ -1,5 +1,19 @@
 # Histórico de versões
 
+## 0.11.0 — 2026-09-25
+
+- `install.ps1`: novo parâmetro `-Global`, mutuamente exclusivo com `-Project`.
+  Instala o pacote de forma agnóstica de CLI, sem exigir repositório Git:
+  - Fonte única em `~/.agent-governance-kit/`; symlinks em
+    `~/.claude/skills/agent-governance` e `~/.codex/skills/agent-governance`
+    mantêm a skill invocável nativamente em cada host sem duplicar arquivos.
+    Falha de symlink (Windows sem Modo de desenvolvedor/elevação) avisa mas
+    não aborta a instalação.
+  - Agentes `ds-*` em `~/.config/opencode/agents/` são sobrescritos com a
+    versão do repositório; agentes fora desse conjunto não são tocados.
+- Modo `-Project`: o instalador agora cria (ou completa, sem sobrescrever)
+  `AGENTS.md` na raiz do projeto com um ponteiro de uma linha à skill.
+
 ## 0.10.0 — 2026-09-24
 
 - Modernização com recursos nativos do Node 22 LTS (Active LTS *Jod*):

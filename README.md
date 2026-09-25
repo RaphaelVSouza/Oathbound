@@ -53,11 +53,13 @@ comandos estão no [guia do auditor](tools/README.md).
 
 O instalador copia a skill para `.claude/skills/agent-governance/` e os agentes
 para `.opencode/agents/`. OpenCode reconhece a skill nesse caminho; Claude
-também usa a pasta de skills do projeto. Para Codex, adicione ao `AGENTS.md`
-do projeto um ponteiro à skill, usando o [fragmento](templates/AGENTS.fragment.md).
-O instalador não modifica `AGENTS.md`, não escolhe modelo, não cria commits e
-recusa caminhos de destino já existentes. Revise os arquivos copiados antes de
-ativar a delegação no projeto.
+também usa a pasta de skills do projeto. O instalador cria (ou completa, se já
+existir) `AGENTS.md` na raiz do projeto com um ponteiro de uma linha à skill —
+Claude Code o lê nativamente quando não há `CLAUDE.md` no diretório de
+trabalho ou pais, e Codex o lê sempre. O instalador não escolhe modelo, não
+cria commits e recusa caminhos de destino já existentes (`AGENTS.md` é a única
+exceção: ganha uma linha acrescentada, nunca é sobrescrito). Revise os
+arquivos copiados antes de ativar a delegação no projeto.
 
 Com `-MattPocock`, instala as variantes de `ds-governance`, `ds-runner` e
 `ds-reviewer` com regras de etapa nos próprios agentes. Nenhuma skill adicional
@@ -71,6 +73,27 @@ chamar os scripts. Registre no `AGENTS.md` os comandos de validação, áreas de
 edição, exigências de ambiente e a política de produção desse projeto. A
 aceitação de uma fila é um arquivo do projeto, passado por `node ds-queue.js -A`;
 o pacote não inventa valores esperados.
+
+## Instalação global (agnóstica de CLI)
+
+```powershell
+pwsh -NoProfile -File D:\agent-governance-kit\install.ps1 -Global
+```
+
+Não exige repositório Git. Copia a skill para `~/.agent-governance-kit/`
+(caminho neutro, sem sinal de um host específico) — fonte única de verdade —
+e sobrescreve os agentes `ds-*` em `~/.config/opencode/agents/` com a versão
+deste repositório; agentes fora desse conjunto (ex.: um `ds-worker` de outra
+origem) não são tocados. Cria um symlink em `~/.claude/skills/agent-governance`
+e outro em `~/.codex/skills/agent-governance` apontando para a fonte, para
+que a skill fique invocável nativamente (`/agent-governance` no Claude Code,
+`$agent-governance` no Codex) sem duplicar arquivos. Symlink no Windows exige
+Modo de desenvolvedor ativo ou elevação; se falhar, o instalador avisa mas não
+aborta — a skill segue usável via referência manual ao SKILL.md. Para AGY ou
+qualquer outra CLI sem convenção de skills documentada, aponte manualmente
+para `~/.agent-governance-kit/SKILL.md` no lugar que essa CLI usa.
+
+`-MattPocock` e `-AuditDocs` funcionam igual ao modo por-projeto.
 
 ## Contrato de execução
 
