@@ -2,6 +2,7 @@
 description: Mantém specs, issues, decisões e instruções de agentes segundo as convenções do projeto. Registra decisões já tomadas e devolve fontes e arquivos afetados.
 mode: all
 temperature: 0
+reasoningEffort: high
 steps: 30
 permission:
   read:

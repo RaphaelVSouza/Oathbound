@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 0.13.0 — 2026-09-25
+
+- `ds-governance` (base e variante Matt Pocock) ganha `reasoningEffort: high`
+  no frontmatter, sobrepondo o `reasoningEffort` global de menor esforço.
+  Papel julga estrutura, convenções e decisões de governança — tarefa que se
+  beneficia de mais raciocínio, diferente de agentes de edição mecânica
+  (`ds-runner`, `ds-committer`), que seguem sem o campo (herdam o padrão).
+
 ## 0.12.0 — 2026-09-25
 
 - `install.ps1`: novo switch `-Upgrade`, aceito só com `-Global`. Libera
