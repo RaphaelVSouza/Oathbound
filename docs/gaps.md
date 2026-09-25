@@ -79,9 +79,11 @@ verificável. Correções não são feitas na mesma sessão em que a lacuna é r
   em todo `buildCommand`. Os únicos freios são o prompt (guardrails de escopo/leitura
   injetados em `prepareAgent`, linhas 22-36) e a auditoria de diff pós-fato do Oathbound;
   não há restrição de ferramenta imposta pela CLI do Claude nesse runner.
-- Impacto: um agente com `-R` que ignore o guardrail de prompt pode rodar qualquer comando
-  Bash sem confirmação, dependendo só da disciplina do modelo — a auditoria de escopo do
-  Oathbound (diff Git) detecta a mutação depois, não impede a execução do comando.
+- Impacto: com `-R` o runner já restringe a `Read,Grep,Glob` (`claude.js:70`), então o
+  guardrail de leitura não depende só do prompt. O risco real é no modo de edição:
+  `--dangerously-skip-permissions` libera Bash e Edit/Write em qualquer arquivo, e o
+  escopo autorizado (`-s`) só é verificado depois, pela auditoria de diff Git
+  (`exit_processo=3`), que não impede a execução do comando — só a detecta.
 - Proposta: avaliar se `--tools` (já usado quando `readonly`) pode restringir Bash também
   fora do modo `-R`, ou documentar explicitamente que o isolamento é só por prompt+auditoria.
 
@@ -122,9 +124,10 @@ verificável. Correções não são feitas na mesma sessão em que a lacuna é r
 - Evidência: `skill/scripts/runners/claude.js:75-82` — `parseOutput` retorna
   `{ text: raw, session: '', usage: null }` incondicionalmente; não há extração de tokens
   da saída do `claude -p`.
-- Impacto: telemetria de uso de tokens/cache KV documentada no README (`docs/runners/`)
-  não existe de fato para o runner `claude`; qualquer relatório de custo por chamada fica
-  sem dado nesse runner.
+- Impacto: o runner `claude` não fornece `usage` (tokens de entrada/saída/cache), ao
+  contrário do runner `codex` (`skill/scripts/runners/codex.js:61-93`), que extrai
+  `usage` real dos eventos JSONL; qualquer relatório de custo por chamada fica sem dado
+  quando o runner é `claude`.
 - Proposta: extrair `usage` da saída estruturada do Claude Code quando disponível
   (ex.: `--output-format json`), similar ao que `agy.js` já faz.
 
