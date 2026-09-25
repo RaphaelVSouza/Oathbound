@@ -1,9 +1,10 @@
-# Fluxo opcional inspirado em Matt Pocock
+# Fluxo obrigatório inspirado em Matt Pocock
 
-`-MattPocock` instala variantes de três agentes. As regras relevantes das
-skills originais foram adaptadas para as instruções desses agentes. Nenhuma
-skill adicional é instalada ou carregada. O orquestrador conserva a escolha
-do papel, o escopo da chamada, a conferência do resultado e o avanço da fila.
+O instalador sempre usa estas variantes de três agentes — não há mais versão
+base sem elas. As regras relevantes das skills originais foram adaptadas para
+as instruções desses agentes. Nenhuma skill adicional é instalada ou
+carregada. O orquestrador conserva a escolha do papel, o escopo da chamada, a
+conferência do resultado e o avanço da fila.
 
 | Etapa | Agente | Regras incorporadas |
 | --- | --- | --- |

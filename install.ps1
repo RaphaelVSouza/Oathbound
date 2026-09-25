@@ -10,7 +10,6 @@ param(
     [string]$Project,
     [Parameter(Mandatory = $true, ParameterSetName = 'Global')]
     [switch]$Global,
-    [switch]$MattPocock,
     [switch]$AuditDocs,
     [switch]$Upgrade
 )
@@ -80,11 +79,12 @@ New-Item -ItemType Directory -Path (Split-Path -Parent $skillTarget), $agentsTar
 Copy-Item -LiteralPath $skillSource -Destination $skillTarget -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Destination (Join-Path $skillTarget 'VERSION')
 foreach ($agentFile in $agentFiles) {
+    # Fluxo Matt Pocock (triagem, spec, tickets) é obrigatório: todo agente com
+    # variante disponível usa essa versão; agentes sem variante (ex.: ds-committer,
+    # ds-explorer, ds-mutant, ds-researcher, ds-worker) seguem com a base.
     $source = $agentFile.FullName
-    if ($MattPocock) {
-        $candidate = Join-Path $mattSource "agents/$($agentFile.Name)"
-        if (Test-Path -LiteralPath $candidate) { $source = $candidate }
-    }
+    $candidate = Join-Path $mattSource "agents/$($agentFile.Name)"
+    if (Test-Path -LiteralPath $candidate) { $source = $candidate }
     Copy-Item -LiteralPath $source -Destination (Join-Path $agentsTarget $agentFile.Name) -Force:$Global
 }
 if ($AuditDocs) {
@@ -130,7 +130,7 @@ if ($Global) {
 } else {
     Write-Output "Agent Governance Kit $version instalado em $projectPath"
 }
-if ($MattPocock) { Write-Output 'Fluxo opcional Matt Pocock instalado.' }
+Write-Output 'Fluxo Matt Pocock (triagem, spec, tickets) instalado nos agentes com variante disponível.'
 if ($AuditDocs) { Write-Output 'Auditor de documentação instalado; adapte tools/audit-docs.config.js antes de usar.' }
 if (-not $Global) {
     Write-Output 'Revise os arquivos, configure o modelo OpenCode e adicione o ponteiro ao AGENTS.md do projeto.'

@@ -17,7 +17,7 @@ sem execução de fila ou agentes neste pacote.
 | [`adapters/opencode/agents/`](adapters/opencode/agents/) | Sete agentes com permissões por papel, incluindo pesquisa externa e commits; o modelo vem da configuração do projeto. |
 | [`adapters/`](adapters/) | Instruções de integração para OpenCode, Claude e Codex. |
 | [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Ponteiro curto a adaptar no repositório consumidor. |
-| [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Variantes opcionais de três agentes com triagem, spec, tickets, implementação e revisão incorporadas. |
+| [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Variantes obrigatórias de três agentes com triagem, spec, tickets, implementação e revisão incorporadas — o instalador sempre as usa. |
 | [`tools/audit-docs.js`](tools/README.md) | Auditor de links e contratos documentais, configurado para este repositório e instalável de forma opcional. |
 | [`install.ps1`](install.ps1) | Instalação em um repositório Git sem substituir arquivos existentes. |
 
@@ -37,11 +37,8 @@ manual; o registro de PID do wrapper não é uma garantia de isolamento.
 pwsh -NoProfile -File D:\agent-governance-kit\install.ps1 -Project D:\caminho\do\projeto
 ```
 
-Para incluir o fluxo opcional:
-
-```powershell
-pwsh -NoProfile -File D:\agent-governance-kit\install.ps1 -Project D:\caminho\do\projeto -MattPocock
-```
+O fluxo Matt Pocock (triagem, spec, tickets) já vem incorporado a
+`ds-governance`, `ds-runner` e `ds-reviewer` — não é uma opção à parte.
 
 Para incluir também o auditor de documentação, acrescente `-AuditDocs` ao
 comando de instalação. Ele copia motor e configuração modelo para `tools/` do
@@ -61,12 +58,12 @@ cria commits e recusa caminhos de destino já existentes (`AGENTS.md` é a únic
 exceção: ganha uma linha acrescentada, nunca é sobrescrito). Revise os
 arquivos copiados antes de ativar a delegação no projeto.
 
-Com `-MattPocock`, instala as variantes de `ds-governance`, `ds-runner` e
-`ds-reviewer` com regras de etapa nos próprios agentes. Nenhuma skill adicional
-é instalada ou carregada por eles. Configure o tracker no projeto e adapte o
-[fragmento opcional](optional/matt-pocock/templates/AGENTS.fragment.md). O
-instalador não atualiza uma instalação prévia; compare e migre seus arquivos
-antes de tentar instalar outra variante.
+As variantes de `ds-governance`, `ds-runner` e `ds-reviewer` com regras de
+etapa Matt Pocock são as únicas instaladas — não há versão base sem elas.
+Nenhuma skill adicional é instalada ou carregada por eles. Configure o
+tracker no projeto e adapte o
+[fragmento](optional/matt-pocock/templates/AGENTS.fragment.md). O instalador
+não atualiza uma instalação prévia; compare e migre seus arquivos manualmente.
 
 No projeto consumidor, defina o modelo no OpenCode ou passe `GOVKIT_MODEL` ao
 chamar os scripts. Registre no `AGENTS.md` os comandos de validação, áreas de
@@ -93,7 +90,8 @@ aborta — a skill segue usável via referência manual ao SKILL.md. Para AGY ou
 qualquer outra CLI sem convenção de skills documentada, aponte manualmente
 para `~/.agent-governance-kit/SKILL.md` no lugar que essa CLI usa.
 
-`-MattPocock` e `-AuditDocs` funcionam igual ao modo por-projeto.
+`-AuditDocs` funciona igual ao modo por-projeto. O fluxo Matt Pocock é
+instalado sempre, sem switch — igual ao modo por-projeto.
 
 Terceiro symlink em `~/.gemini/config/skills/agent-governance` cobre o AGY CLI e o
 Gemini nativo do Antigravity IDE, que compartilham essa mesma raiz de configuração.

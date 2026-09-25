@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 0.14.0 — 2026-09-25
+
+- **Ruptura:** fluxo Matt Pocock (triagem, spec, tickets) deixa de ser
+  opcional. Switch `-MattPocock` removido de `install.ps1`; `ds-governance`,
+  `ds-runner` e `ds-reviewer` sempre instalam a variante com as regras de
+  etapa incorporadas, em `-Project` e em `-Global`. Sem migração automática:
+  quem já tinha a versão base instalada compara e migra manualmente.
+
 ## 0.13.0 — 2026-09-25
 
 - `ds-governance` (base e variante Matt Pocock) ganha `reasoningEffort: high`
