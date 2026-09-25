@@ -44,7 +44,6 @@ if ($Global) {
 
 $skillSource = Join-Path $PSScriptRoot 'skill'
 $agentsSource = Join-Path $PSScriptRoot 'adapters/opencode/agents'
-$mattSource = Join-Path $PSScriptRoot 'optional/matt-pocock'
 $agentFiles = @(Get-ChildItem -LiteralPath $agentsSource -File -Filter '*.md')
 if ($Upgrade -and -not $Global) {
     throw '-Upgrade só se aplica a -Global; o modo -Project nunca sobrescreve automaticamente (ver README).'
@@ -79,13 +78,7 @@ New-Item -ItemType Directory -Path (Split-Path -Parent $skillTarget), $agentsTar
 Copy-Item -LiteralPath $skillSource -Destination $skillTarget -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Destination (Join-Path $skillTarget 'VERSION')
 foreach ($agentFile in $agentFiles) {
-    # Fluxo Matt Pocock (triagem, spec, tickets) é obrigatório: todo agente com
-    # variante disponível usa essa versão; agentes sem variante (ex.: ds-committer,
-    # ds-explorer, ds-mutant, ds-researcher, ds-security, ds-worker) seguem com a base.
-    $source = $agentFile.FullName
-    $candidate = Join-Path $mattSource "agents/$($agentFile.Name)"
-    if (Test-Path -LiteralPath $candidate) { $source = $candidate }
-    Copy-Item -LiteralPath $source -Destination (Join-Path $agentsTarget $agentFile.Name) -Force:$Global
+    Copy-Item -LiteralPath $agentFile.FullName -Destination (Join-Path $agentsTarget $agentFile.Name) -Force:$Global
 }
 if ($AuditDocs) {
     New-Item -ItemType Directory -Path $auditTarget -Force | Out-Null

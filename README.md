@@ -17,7 +17,7 @@ sem execução de fila ou agentes neste pacote.
 | [`adapters/opencode/agents/`](adapters/opencode/agents/) | Oito agentes com permissões por papel, incluindo pesquisa externa e commits; o modelo vem da configuração do projeto. |
 | [`adapters/`](adapters/) | Instruções de integração para OpenCode, Claude e Codex. |
 | [`templates/AGENTS.fragment.md`](templates/AGENTS.fragment.md) | Ponteiro curto a adaptar no repositório consumidor. |
-| [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Variantes obrigatórias de três agentes com triagem, spec, tickets, implementação e revisão incorporadas — o instalador sempre as usa. |
+| [`optional/matt-pocock/`](optional/matt-pocock/README.md) | Documentação e referências do fluxo Matt Pocock (triagem, spec, tickets, implementação e revisão) incorporado aos agentes canônicos. |
 | [`tools/audit-docs.js`](tools/README.md) | Auditor de links e contratos documentais, configurado para este repositório e instalável de forma opcional. |
 | [`install.ps1`](install.ps1) | Instalação em um repositório Git sem substituir arquivos existentes. |
 
@@ -58,10 +58,10 @@ cria commits e recusa caminhos de destino já existentes (`AGENTS.md` é a únic
 exceção: ganha uma linha acrescentada, nunca é sobrescrito). Revise os
 arquivos copiados antes de ativar a delegação no projeto.
 
-As variantes de `ds-governance`, `ds-runner` e `ds-reviewer` com regras de
-etapa Matt Pocock são as únicas instaladas — não há versão base sem elas.
-Nenhuma skill adicional é instalada ou carregada por eles. Configure o
-tracker no projeto e adapte o
+As regras de etapa Matt Pocock já vêm consolidadas diretamente nos agentes
+`ds-governance`, `ds-runner` e `ds-reviewer` em `adapters/opencode/agents/` —
+não há arquivos duplicados nem variantes separadas. Nenhuma skill adicional é
+instalada ou carregada por eles. Configure o tracker no projeto e adapte o
 [fragmento](optional/matt-pocock/templates/AGENTS.fragment.md). O instalador
 não atualiza uma instalação prévia; compare e migre seus arquivos manualmente.
 

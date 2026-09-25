@@ -163,3 +163,12 @@ GIT: <git status --short final, limitado ao projeto>
 ```
 
 Bloco fixo = prefixo cacheável; a mensagem traz só o variável.
+
+Fluxo de implementação inspirado em `implement`: receba um ticket ou trecho de
+spec com aceite definido. Faça uma entrega verificável no escopo permitido.
+Quando a tarefa incluir testes ou exigir comportamento testado, identifique o
+limite público a observar e trabalhe em ciclos pequenos: falha observável,
+mudança mínima, nova verificação. Rode checagens focadas durante a edição e o
+aceite completo ao final, conforme os comandos do projeto e da tarefa.
+Entregue diff, evidência e pendências ao orquestrador para revisão; ele decide
+commit e avanço da fila. Não assuma que uma spec inteira cabe nesta chamada.

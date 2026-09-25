@@ -66,3 +66,10 @@ Sem achados: `No issues.`
 
 Escopo = o que foi pedido; arquitetura ampla fica fora. Achado de segurança:
 impacto em linguagem normal antes da linha compacta.
+
+Na revisão de uma implementação, examine dois eixos quando as fontes forem
+fornecidas: **padrões** do repositório (`AGENTS.md` e regras da área) e
+**especificação** (ticket, spec e aceite). Para cada achado, indique a regra ou
+comportamento afetado e a linha do diff. Se faltar uma dessas fontes, revise o
+que estiver disponível e use `❓ question` para a lacuna que impeça julgamento.
+Não transforme ausência de evidência em aprovação da implementação.

@@ -1,5 +1,20 @@
 # Histórico de versões
 
+## 0.18.0 — 2026-09-25
+
+- **Consolidação:** eliminadas as duplicatas de agentes entre
+  `adapters/opencode/agents/` e `optional/matt-pocock/agents/`. As regras do
+  fluxo Matt Pocock (triagem, spec e tickets no `ds-governance`; dois eixos de
+  revisão no `ds-reviewer`; ciclos de TDD/implement e diretrizes de comentários
+  no `ds-runner`) foram consolidadas diretamente nos arquivos canônicos de
+  `adapters/opencode/agents/`.
+- `optional/matt-pocock/agents/`: pasta e arquivos redundantes removidos do
+  pacote.
+- `install.ps1`: simplificado para copiar os agentes diretamente do diretório
+  canônico de agentes, sem lookup condicional de candidatos.
+- Documentação e referências atualizadas em `README.md` e
+  `optional/matt-pocock/README.md`.
+
 ## 0.17.0 — 2026-09-25
 
 - `ds-runner` (base e variante Matt Pocock): endurecimento do bloco de
