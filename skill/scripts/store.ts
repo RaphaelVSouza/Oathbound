@@ -35,6 +35,7 @@ interface RegisterClaimParams {
  */
 class OathboundStore {
   db: any;
+  private _inTransaction = false;
   private _stmtGetStage: any;
   private _stmtSetStage: any;
   private _stmtAllStages: any;
@@ -101,6 +102,8 @@ class OathboundStore {
    * Automatically executes BEGIN, commits on success, or rolls back if an error is thrown.
    */
   async transaction<T>(fn: (store: OathboundStore) => T | Promise<T>): Promise<T> {
+    if (this._inTransaction) throw Error('transação aninhada: chamada de transaction() dentro de outra transação ativa');
+    this._inTransaction = true;
     this.db.exec('BEGIN');
     try {
       const res = await fn(this);
@@ -109,6 +112,8 @@ class OathboundStore {
     } catch (err) {
       this.db.exec('ROLLBACK');
       throw err;
+    } finally {
+      this._inTransaction = false;
     }
   }
 

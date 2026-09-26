@@ -105,3 +105,21 @@ test('store: transacao estruturada faz rollback em caso de erro', async () => {
     store.close();
   }
 });
+
+test('store: transacao aninhada rejeita e libera o estado apos o erro', async () => {
+  const store = openStore(':memory:');
+  try {
+    await assert.rejects(
+      store.transaction(async s => {
+        await s.transaction(() => {});
+      }),
+      /transação aninhada/
+    );
+    await store.transaction(s => {
+      s.setStage('t-apos-aninhada', 'ok');
+    });
+    assert.equal(store.getStage('t-apos-aninhada'), 'ok');
+  } finally {
+    store.close();
+  }
+});

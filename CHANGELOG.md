@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## 0.23.3 — 2026-09-26
+
+### Corrigido
+
+- **Transação aninhada em `OathboundStore`:** `transaction()` agora rejeita quando chamado dentro de outra transação ainda ativa, em vez de emitir um segundo `BEGIN` que o SQLite recusaria silenciosamente em falha posterior.
+
+### Removido
+
+- **Fallback `.js` morto em `getRunnerAdapter`:** resolução de runners embutidos (`opencode`, `claude`, `codex`, `agy`, `generic`) carrega apenas `.ts`, já que a migração para TypeScript nativo no Node 24 LTS eliminou os arquivos `.js` correspondentes.
+
 ## 0.23.2 — 2026-09-26
 
 ### Corrigido

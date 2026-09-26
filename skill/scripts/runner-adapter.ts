@@ -122,12 +122,10 @@ function getRunnerAdapter(nameOrPath: string = 'opencode', root: string = proces
 
   // 1. Built-in runner by name
   if (BUILTIN_RUNNERS.includes(runnerKey)) {
-    for (const ext of ['.ts', '.js']) {
-      const builtinFile = path.join(__dirname, 'runners', `${runnerKey}${ext}`);
-      if (fs.existsSync(builtinFile)) {
-        const mod = require(builtinFile);
-        return validateAdapter(mod.adapter || mod);
-      }
+    const builtinFile = path.join(__dirname, 'runners', `${runnerKey}.ts`);
+    if (fs.existsSync(builtinFile)) {
+      const mod = require(builtinFile);
+      return validateAdapter(mod.adapter || mod);
     }
   }
 
