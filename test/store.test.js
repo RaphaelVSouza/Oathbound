@@ -76,10 +76,10 @@ test('store: expoe OathboundStore como classe', () => {
   }
 });
 
-test('store: transacao estruturada commita em sucesso', () => {
+test('store: transacao estruturada commita em sucesso', async () => {
   const store = openStore(':memory:');
   try {
-    store.transaction(s => {
+    await store.transaction(s => {
       s.setStage('t1', 'etapa1');
       s.setStage('t2', 'etapa2');
     });
@@ -90,12 +90,13 @@ test('store: transacao estruturada commita em sucesso', () => {
   }
 });
 
-test('store: transacao estruturada faz rollback em caso de erro', () => {
+test('store: transacao estruturada faz rollback em caso de erro', async () => {
   const store = openStore(':memory:');
   try {
-    assert.throws(() => {
-      store.transaction(s => {
+    await assert.rejects(async () => {
+      await store.transaction(async s => {
         s.setStage('t-rollback', 'deve-sumir');
+        await Promise.resolve();
         throw Error('falha forcada');
       });
     }, /falha forcada/);

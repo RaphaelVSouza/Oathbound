@@ -43,11 +43,18 @@ function resolveCommand(
   if (platform !== 'win32') return same;
   const ext = path.extname(command).toLowerCase();
   if (ext === '.cmd' || ext === '.bat') return resolveShim(command);
-  if (ext || /[\\/]/.test(command)) return same;
   const key = Object.keys(env).find(k => k.toUpperCase() === 'PATH');
   const dirs = String((key && env[key]) || '').split(';').map(d => d.trim().replace(/^"|"$/g, '')).filter(Boolean);
   const hit = (suffixes: string[]) => dirs.flatMap(d => suffixes.map(s => path.join(d, command + s))).find(f => isFile(f));
-  if (hit(['.com', '.exe'])) return same;
+  if (ext || /[\\/]/.test(command)) {
+    if (!/[\\/]/.test(command) && ['.com', '.exe'].includes(ext)) {
+      const executable = dirs.map(d => path.join(d, command)).find(isFile);
+      if (executable) return { command: executable, prefix: [] };
+    }
+    return same;
+  }
+  const executable = hit(['.com', '.exe']);
+  if (executable) return { command: executable, prefix: [] };
   const shim = hit(['.cmd', '.bat']);
   return shim ? resolveShim(shim) : same;
 }
@@ -118,15 +125,16 @@ function run(command: string, args: string[] = [], opts: RunOptions = {}): Promi
     opts.onData?.(chunk);
     opts.onStderr?.(chunk);
   });
-  const onInt = () => { interrupted = 130; killTree(child.pid!); };
-  const onTerm = () => { interrupted = 143; killTree(child.pid!); };
+  const killChild = () => { try { child.kill('SIGKILL'); } catch {} };
+  const onInt = () => { interrupted = 130; killTree(child.pid!, killChild); };
+  const onTerm = () => { interrupted = 143; killTree(child.pid!, killChild); };
   process.on('SIGINT', onInt);
   process.on('SIGTERM', onTerm);
   let timer: any;
   if (opts.timeout) timer = setTimeout(() => {
     timedOut = true;
     process.stderr.write(`── tree-timeout: ${opts.timeout}s estourados, matando árvore do pid ${child.pid}\n`);
-    killTree(child.pid!);
+    killTree(child.pid!, killChild);
   }, opts.timeout * 1000);
   child.on('error', (error: Error) => { stderr += error.message; opts.onData?.(Buffer.from(error.message)); });
   child.on('close', (code: number | null) => {
@@ -147,11 +155,19 @@ function run(command: string, args: string[] = [], opts: RunOptions = {}): Promi
 }
 
 /** Terminate a process and its descendants when pid is a valid child PID. */
-function killTree(pid?: number): void {
+function killTree(pid?: number, fallback?: () => void): void {
   if (!pid) return;
   if (process.platform === 'win32') {
-    const child = spawn('taskkill.exe', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
-    child.on('error', () => {});
+    const taskkill = resolveCommand('taskkill.exe');
+    const killer = spawn(taskkill.command, ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
+    let finished = false;
+    const fallbackOnce = () => {
+      if (finished) return;
+      finished = true;
+      fallback?.();
+    };
+    killer.on('error', fallbackOnce);
+    killer.on('close', code => { if (code !== 0) fallbackOnce(); });
   } else {
     try { (process as any).kill(-pid, 'SIGKILL'); } catch { try { process.kill(pid, 'SIGKILL'); } catch {} }
   }

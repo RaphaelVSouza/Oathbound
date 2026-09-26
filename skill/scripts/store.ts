@@ -100,10 +100,10 @@ class OathboundStore {
    * Run operations inside a structured SQLite transaction.
    * Automatically executes BEGIN, commits on success, or rolls back if an error is thrown.
    */
-  transaction<T>(fn: (store: OathboundStore) => T): T {
+  async transaction<T>(fn: (store: OathboundStore) => T | Promise<T>): Promise<T> {
     this.db.exec('BEGIN');
     try {
-      const res = fn(this);
+      const res = await fn(this);
       this.db.exec('COMMIT');
       return res;
     } catch (err) {

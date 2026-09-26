@@ -7,7 +7,7 @@ const { run } = require('./process-runner.ts');
 
 (async () => {
   const o = options(process.argv.slice(2), ['-l', '-n', '-p', '-t']);
-  if (!o._.length) throw Error('uso: node quiet.js [-l log] [-n linhas] [-p regex] [-t segundos] -- comando args...');
+  if (!o._.length) throw Error('uso: node quiet.ts [-l log] [-n linhas] [-p regex] [-t segundos] -- comando args...');
   const log = one(o, '-l') || path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-quiet-')), 'output.log');
   const max = Number(one(o, '-n', '60')), timeout = Number(one(o, '-t', '600'));
   if (!Number.isInteger(max) || max < 1 || !Number.isInteger(timeout) || timeout < 1) throw Error('limites inválidos');

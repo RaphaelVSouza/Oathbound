@@ -2,7 +2,7 @@
 
 > Camada de governança determinística, auditoria e orquestração multi-agente para CLIs de código com LLMs.
 
-[![Versão](https://img.shields.io/badge/versão-0.23.0-blue.svg)](VERSION)
+[![Versão](https://img.shields.io/badge/versão-0.23.1-blue.svg)](VERSION)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D24.0.0-green.svg)](https://nodejs.org/)
 [![Dependências](https://img.shields.io/badge/dependências-zero-brightgreen.svg)](README.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
@@ -23,7 +23,7 @@ O **Oathbound** resolve esses problemas através de:
 
 1. **Executores Agnósticos (Runners):** Suporte nativo e intercambiável para **OpenCode**, **Claude Code**, **OpenAI Codex**, **Antigravity CLI (AGY)** e comandos customizados via contrato `RunnerAdapter`.
 2. **Auditoria Determinística de Escopo:** O kit não cria virtualização de filesystem nem isolamento de kernel; a governança apoia-se em restrições de ferramentas e prompt guards, combinados com auditoria factual de snapshot Git antes e depois de cada chamada. Qualquer mutação fora dos globs autorizados (`-s`) é detectada no diff e encerra com código de saída `3` (sem descartar alterações automaticamente, preservando evidências para conferência).
-3. **Fila Sequencial com Checkpoints Persistentes (`queue`):** Execução sequencial de tarefas com persistência de estágio em `node:sqlite` (`queue_state`) e arquivos de estado, permitindo retomar de onde parou sem reprocessar tickets concluídos.
+3. **Fila Sequencial com Checkpoints Persistentes (`queue`):** Execução sequencial de tarefas com persistência de estágio em `node:sqlite` (`queue_state`) e arquivos de estado, permitindo retomar de onde parou sem reprocessar tickets concluídos. `OathboundStore.transaction()` oferece transações assíncronas para operações agrupadas.
 4. **Alinhamento para Prompt Caching KV:** Prompt engineering ordenado estritamente do estático para o volátil (instruções do papel → regras do repositório → guardrails de escopo → dados voláteis da tarefa), garantindo prefixos byte-exact estáveis.
 5. **Transpilação Nativa de Agentes:** Conversor automático que traduz permissões granulares canônicas em whitelists de ferramentas (`tools`) para Claude Code e definições para AGY CLI.
 6. **Zero Dependências Externas:** Construído 100% sobre os módulos nativos do **Node.js 24 LTS** (`node:test`, `node:sqlite`, `node:util.parseArgs`, `path.matchesGlob`, `fs.globSync`).

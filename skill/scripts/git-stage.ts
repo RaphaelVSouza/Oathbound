@@ -7,7 +7,7 @@ async function main(argv: string[]): Promise<void> {
   const o = options(argv, ['-d', '-f', '--hunks', '--lines'], ['--list', '--all']);
   const dir = one(o, '-d'), requested = one(o, '-f');
   const modes = Number(!!o['--list']) + Number(!!o['--all']) + Number(!!o['--hunks']) + Number(!!o['--lines']);
-  if (!dir || !requested || modes !== 1) throw Error('uso: node git-stage.js -d repo -f arquivo (--list | --all | --hunks 1,3 | --lines 2,5)');
+  if (!dir || !requested || modes !== 1) throw Error('uso: node git-stage.ts -d repo -f arquivo (--list | --all | --hunks 1,3 | --lines 2,5)');
 
   let mode: 'all' | 'list' | 'hunks' | 'lines' = 'all';
   let hunks: number[] | undefined, lines: number[] | undefined;

@@ -26,8 +26,8 @@ permission:
     "git log*": allow
     "git ls-files*": allow
     "git rev-parse*": allow
-    "node .claude/skills/oathbound/scripts/git-stage.js*": allow
-    "node .claude/skills/oathbound/scripts/git-commit.js*": allow
+    "node .claude/skills/oathbound/scripts/git-stage.ts*": allow
+    "node .claude/skills/oathbound/scripts/git-commit.ts*": allow
   task: deny
   skill: deny
   webfetch: deny
@@ -48,7 +48,7 @@ terminarem. Preserve mudanças de outras tarefas.
    informe o ponto preciso. Não infira ticket.
 2. Separe as mudanças por intenção. Escolha arquivos e hunks que pertencem a
    cada commit. Para ver hunks, use
-   `node .claude/skills/oathbound/scripts/git-stage.js -d . -f <arquivo> --list`.
+   `node .claude/skills/oathbound/scripts/git-stage.ts -d . -f <arquivo> --list`.
    Prepare apenas os números escolhidos com `--hunks 1,3` ou as linhas
    alteradas com `--lines 2,5`; para um arquivo inteiro ou não rastreado use
    `--all`. Refaça `--list` após cada preparação, pois a numeração muda. A seleção é relativa ao diff ainda
@@ -56,7 +56,7 @@ terminarem. Preserve mudanças de outras tarefas.
    Se um arquivo tiver conteúdo já preparado que não pertence ao grupo,
    pare: o auxiliar não remove preparação preexistente.
 3. Crie cada commit com
-   `node .claude/skills/oathbound/scripts/git-commit.js -d . -m '<tipo>(<escopo>): <resumo>' -m '<corpo>'`.
+   `node .claude/skills/oathbound/scripts/git-commit.ts -d . -m '<tipo>(<escopo>): <resumo>' -m '<corpo>'`.
    O auxiliar recusa caminhos preparados fora do escopo e executa
    `git diff --cached --check`. Use `feat`, `fix`, `refactor`, `perf`, `docs`,
    `test`, `build`, `ci`, `chore` ou `revert`; resumo imperativo em pt-BR,

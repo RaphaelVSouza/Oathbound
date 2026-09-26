@@ -265,7 +265,7 @@ async function commit(dir: string, messages: string[], opts: CommitOptions = {})
     scopes = JSON.parse(process.env.OATHBOUND_SCOPES || '[]');
   }
   if (agent === ROLES.committer) {
-    if (!scopes || !scopes.length) throw Error(`git-commit.js exige sessão ${ROLES.committer} com escopo via run.js`);
+    if (!scopes || !scopes.length) throw Error(`git-commit.ts exige sessão ${ROLES.committer} com escopo via run.js`);
   }
 
   const { root } = await repoPaths(dir);

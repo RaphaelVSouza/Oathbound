@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## 0.23.1 — 2026-09-26
+
+### Corrigido
+
+- **Invocação de executáveis `.exe` no Windows:** resolução agora retorna caminho completo para binários no `PATH`, incluindo nomes já sufixados; encerramento usa fallback no processo filho quando `taskkill` falha.
+- **Transações SQLite:** `OathboundStore.transaction()` aguarda callbacks assíncronos antes de confirmar ou reverter.
+- **Comandos após migração TypeScript:** guilda, skill e referência de commits agora apontam para `git-stage.ts`, `git-commit.ts`, `kill.ts` e `quiet.ts`.
+- **Instrução RTK no Windows:** registra forma compatível de ler arquivos sem passar cmdlets PowerShell como executáveis.
+
 ## 0.23.0 — 2026-09-26
 
 ### Adicionado

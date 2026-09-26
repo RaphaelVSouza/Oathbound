@@ -86,7 +86,14 @@ test('resolveCommand: shim npm .cmd vira node + script alvo', t => {
 test('resolveCommand: .exe no PATH tem prioridade sobre .cmd', t => {
   const { dir } = shimDir(t);
   fs.writeFileSync(path.join(dir, 'fakecli.exe'), '');
-  assert.deepEqual(resolveCommand('fakecli', { platform: 'win32', env: { PATH: dir } }), { command: 'fakecli', prefix: [] });
+  assert.deepEqual(resolveCommand('fakecli', { platform: 'win32', env: { PATH: dir } }), { command: path.join(dir, 'fakecli.exe'), prefix: [] });
+});
+
+test('resolveCommand: localiza .exe explicito pelo PATH', t => {
+  const { dir } = shimDir(t);
+  const executable = path.join(dir, 'opencode.exe');
+  fs.writeFileSync(executable, '');
+  assert.deepEqual(resolveCommand('opencode.exe', { platform: 'win32', env: { PATH: dir } }), { command: executable, prefix: [] });
 });
 
 test('resolveCommand: shim que aponta para .exe executa o binario direto', t => {
