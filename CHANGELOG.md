@@ -1,5 +1,19 @@
 # Histórico de versões
 
+## 0.23.0 — 2026-09-26
+
+### Adicionado
+
+- **Migração para Node.js 24 LTS como runtime padrão definitivo:** o kit adota Node.js 24 LTS+, preservando a arquitetura de zero dependências npm externas.
+- **Type Stripping nativo sem etapa de compilação:** migração dos módulos da skill (`cli-options.ts`, `store.ts`, `runner-adapter.ts`, `process-runner.ts`, `git.ts`, `kill.ts`, `git-stage.ts`, `git-commit.ts`, `quiet.ts`, `roles.ts`, `env.ts` e adapters de runners) para TypeScript nativo, executado diretamente pelo Node 24 sem bundlers.
+- **Transações estruturadas no `node:sqlite`:** implementação de `store.transaction(fn)` no `OathboundStore` com `BEGIN`/`COMMIT`/`ROLLBACK` para integridade transacional na fila e claims.
+- **Configuração de tipos no editor:** criação de `tsconfig.json` com `noEmit: true` para autocompletion e validação estática imediata em IDEs.
+
+### Corrigido
+
+- **Permissão de leitura de `surveyor` no OpenCode (G-001):** normalização de `guild/surveyor.md` para `edit: deny` (compatível com `assayer`, `scholar` e `warden`) e ampliação de regex em `opencode.ts` para aceitar blocos e linhas simples em modo somente leitura (`-R`).
+- **Globbing nativo sem fallbacks legados:** simplificação de `globMatch` e `findFiles` em `git.ts` aproveitando `path.matchesGlob` e `fs.globSync` garantidos no Node 24.
+
 ## 0.21.2 — 2026-09-26
 
 ### Corrigido

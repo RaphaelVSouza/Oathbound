@@ -11,7 +11,7 @@ const {
   temporaryAgent,
   feedbackAgent
 } = require('../skill/scripts/run');
-const { ROLES } = require('../skill/scripts/roles');
+const { ROLES } = require('../skill/scripts/roles.ts');
 
 /** Helper to create isolated directory */
 function createTempDir(t) {
@@ -138,7 +138,7 @@ test('dsRun: adaptador CLI valida sintaxe e opcoes legadas', async () => {
 
 test('runSession: captura sessao antecipadamente e extrai parsed.text e telemetria', async (t) => {
   const dir = createTempDir(t);
-  const { run } = require('../skill/scripts/process-runner');
+  const { run } = require('../skill/scripts/process-runner.ts');
   await run('git', ['-C', dir, 'init']);
   await run('git', ['-C', dir, 'config', 'user.email', 'test@test.com']);
   await run('git', ['-C', dir, 'config', 'user.name', 'Test']);
@@ -158,7 +158,7 @@ test('runSession: captura sessao antecipadamente e extrai parsed.text e telemetr
       command: 'node',
       args: ['-e', script]
     }),
-    parseOutput: require('../skill/scripts/runners/codex').adapter.parseOutput,
+    parseOutput: require('../skill/scripts/runners/codex.ts').adapter.parseOutput,
     resolveSession: async () => ''
   };
 
@@ -179,7 +179,7 @@ test('runSession: captura sessao antecipadamente e extrai parsed.text e telemetr
 
 test('runSession: reconstroi UTF-8 dividido entre chunks no stdout capturado', async (t) => {
   const dir = createTempDir(t);
-  const { run } = require('../skill/scripts/process-runner');
+  const { run } = require('../skill/scripts/process-runner.ts');
   await run('git', ['-C', dir, 'init']);
   await run('git', ['-C', dir, 'config', 'user.email', 'test@test.com']);
   await run('git', ['-C', dir, 'config', 'user.name', 'Test']);
@@ -211,7 +211,7 @@ test('runSession: reconstroi UTF-8 dividido entre chunks no stdout capturado', a
 
 test('runSession: agente committer grava claim com glob=* (modo commit)', async (t) => {
   const dir = createTempDir(t);
-  const { run } = require('../skill/scripts/process-runner');
+  const { run } = require('../skill/scripts/process-runner.ts');
   await run('git', ['-C', dir, 'init']);
   await run('git', ['-C', dir, 'config', 'user.email', 'test@test.com']);
   await run('git', ['-C', dir, 'config', 'user.name', 'Test']);
@@ -261,20 +261,20 @@ test('guarda: skill/scripts nao usa literais de papel/estado fora de roles.js', 
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) out = out.concat(walk(full));
-      else if (entry.name.endsWith('.js')) out.push(full);
+      else if (entry.name.endsWith('.js') || entry.name.endsWith('.ts')) out.push(full);
     }
     return out;
   }
 
   const offenders = walk(scriptsDir)
-    .filter(file => path.basename(file) !== 'roles.js')
+    .filter(file => !path.basename(file).startsWith('roles.'))
     .filter(file => literalRe.test(fs.readFileSync(file, 'utf8')));
 
   assert.deepEqual(offenders, [], 'use ROLES/stateDir de roles.js em vez de literais de papel/estado');
 });
 
 test('readEnv: OATHBOUND_ tem prioridade sobre GOVKIT_', () => {
-  const { readEnv } = require('../skill/scripts/env');
+  const { readEnv } = require('../skill/scripts/env.ts');
   const prevCurrent = process.env.OATHBOUND_RUNNER;
   const prevLegacy = process.env.GOVKIT_RUNNER;
   try {
@@ -288,7 +288,7 @@ test('readEnv: OATHBOUND_ tem prioridade sobre GOVKIT_', () => {
 });
 
 test('readEnv: fallback GOVKIT_ funciona e avisa uma vez em stderr', () => {
-  const { readEnv } = require('../skill/scripts/env');
+  const { readEnv } = require('../skill/scripts/env.ts');
   const prevCurrent = process.env.OATHBOUND_SCOPES;
   const prevLegacy = process.env.GOVKIT_SCOPES;
   const writes = [];
@@ -311,7 +311,7 @@ test('readEnv: fallback GOVKIT_ funciona e avisa uma vez em stderr', () => {
 });
 
 test('stateDir: migra .git/ds-queue para .git/oathbound com governance.db para oathbound.db', (t) => {
-  const { stateDir } = require('../skill/scripts/roles');
+  const { stateDir } = require('../skill/scripts/roles.ts');
   const dir = createTempDir(t);
   const legacy = path.join(dir, 'ds-queue');
   fs.mkdirSync(legacy, { recursive: true });
@@ -330,7 +330,7 @@ test('stateDir: migra .git/ds-queue para .git/oathbound com governance.db para o
 });
 
 test('stateDir: dois gitDirs diferentes no mesmo processo migram ambos', (t) => {
-  const { stateDir } = require('../skill/scripts/roles');
+  const { stateDir } = require('../skill/scripts/roles.ts');
   const dirA = createTempDir(t);
   const dirB = createTempDir(t);
   for (const dir of [dirA, dirB]) {
@@ -349,7 +349,7 @@ test('stateDir: dois gitDirs diferentes no mesmo processo migram ambos', (t) => 
 });
 
 test('stateDir: com ambos os diretorios, usa oathbound e preserva o legado', (t) => {
-  const { stateDir } = require('../skill/scripts/roles');
+  const { stateDir } = require('../skill/scripts/roles.ts');
   const dir = createTempDir(t);
   fs.mkdirSync(path.join(dir, 'ds-queue'), { recursive: true });
   fs.mkdirSync(path.join(dir, 'oathbound'), { recursive: true });

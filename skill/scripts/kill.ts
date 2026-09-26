@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 const fs = require('node:fs');
 const path = require('node:path');
-const { repoPaths } = require('./git');
-const { alive, killTree } = require('./process-runner');
-const { stateDir } = require('./roles');
-async function killRegistered(root, mode = '-l', quiet = false) {
+const { repoPaths } = require('./git.ts');
+const { alive, killTree } = require('./process-runner.ts');
+const { stateDir } = require('./roles.ts');
+
+async function killRegistered(root: string, mode: string = '-l', quiet: boolean = false): Promise<void> {
   const { gitDir } = await repoPaths(root);
   const base = path.join(stateDir(gitDir), 'procs');
   if (!fs.existsSync(base)) return;
@@ -29,6 +30,7 @@ async function killRegistered(root, mode = '-l', quiet = false) {
     fs.rmdirSync(dir);
   }
 }
+
 if (require.main === module) (async () => {
   const args = process.argv.slice(2), di = args.indexOf('-d');
   const root = di >= 0 ? args.splice(di, 2)[1] : '.';
@@ -36,4 +38,5 @@ if (require.main === module) (async () => {
   if (quiet) args.splice(qi, 1);
   await killRegistered(root, args[0] || '-l', quiet);
 })().catch(e => { console.error(e.message); process.exitCode = 2; });
+
 module.exports = { killRegistered };

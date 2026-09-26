@@ -1,24 +1,24 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { extractInstructions, resolveAgentPath } = require('../runner-adapter');
+const { extractInstructions, resolveAgentPath } = require('../runner-adapter.ts');
 
 const agyAdapter = {
   name: 'agy',
 
-  resolveAgentFile({ root, agent, agentDir }) {
+  resolveAgentFile({ root, agent, agentDir }: { root?: string; agent: string; agentDir?: string }) {
     return resolveAgentPath({ root, agent, agentDir, runner: 'agy' });
   },
 
-  prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {
-    const guards = [];
+  prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }: any) {
+    const guards: string[] = [];
     if (readonly) {
       guards.push('[MODO: SOMENTE LEITURA — Não modifique arquivos nem execute operações de escrita/commit no repositório]');
     } else if (scopes.length) {
       guards.push(`[ESCOPO AUTORIZADO — Edite APENAS arquivos que casem com: ${scopes.join(', ')}. É estritamente proibido tocar em outros arquivos]`);
     }
     if (others.length) {
-      guards.push(`[EM USO POR OUTROS AGENTES — Não edite: ${others.map(x => `${x.glob} (${x.label})`).join('; ')}]`);
+      guards.push(`[EM USO POR OUTROS AGENTES — Não edite: ${others.map((x: any) => `${x.glob} (${x.label})`).join('; ')}]`);
     }
 
     return {
@@ -26,7 +26,7 @@ const agyAdapter = {
     };
   },
 
-  buildCommand({ root, agent, agentFile, model, effort, message, session, tag, promptPrefix, readonly }) {
+  buildCommand({ root, agent, agentFile, model, effort, message, session, tag, promptPrefix, readonly }: any) {
     const command = 'agy';
     const pureBody = extractInstructions(agentFile);
     const instructions = pureBody
@@ -45,7 +45,7 @@ const agyAdapter = {
     return { command, args };
   },
 
-  parseOutput(output) {
+  parseOutput(output: any) {
     const raw = typeof output === 'object' && output !== null ? output.stdout || '' : String(output || '');
     let session = '';
     let usage = null;
@@ -68,7 +68,7 @@ const agyAdapter = {
 
     if (!text) {
       const lines = raw.split(/\r?\n/);
-      const texts = [];
+      const texts: string[] = [];
       for (const line of lines) {
         const lTrim = line.trim();
         if (!lTrim.startsWith('{') || !lTrim.endsWith('}')) continue;
@@ -99,7 +99,7 @@ const agyAdapter = {
     };
   },
 
-  async resolveSession({ root, tag, sessionInput, runResult }) {
+  async resolveSession({ root, tag, sessionInput, runResult }: any) {
     if (sessionInput) return sessionInput;
     if (!runResult || !runResult.stdout) return '';
     return agyAdapter.parseOutput(runResult.stdout).session || '';
@@ -110,7 +110,7 @@ const agyAdapter = {
       push() {
         return '';
       },
-      flush(rawStdout) {
+      flush(rawStdout: string) {
         if (!rawStdout) return '';
         const { text } = agyAdapter.parseOutput(rawStdout);
         return text ? text + '\n' : '';

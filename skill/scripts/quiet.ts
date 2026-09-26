@@ -2,8 +2,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { options, one } = require('./cli-options');
-const { run } = require('./process-runner');
+const { options, one } = require('./cli-options.ts');
+const { run } = require('./process-runner.ts');
+
 (async () => {
   const o = options(process.argv.slice(2), ['-l', '-n', '-p', '-t']);
   if (!o._.length) throw Error('uso: node quiet.js [-l log] [-n linhas] [-p regex] [-t segundos] -- comando args...');
@@ -13,17 +14,17 @@ const { run } = require('./process-runner');
   fs.mkdirSync(path.dirname(log), { recursive: true });
   const stream = fs.createWriteStream(log);
   const started = Date.now();
-  const r = await run(o._[0], o._.slice(1), { timeout, capture: false, onData: chunk => stream.write(chunk) });
+  const r = await run(o._[0], o._.slice(1), { timeout, capture: false, onData: (chunk: Buffer) => stream.write(chunk) });
   await new Promise(resolve => stream.end(resolve));
   const lines = fs.readFileSync(log, 'utf8').split(/\r?\n/);
   const elapsed = Math.floor((Date.now() - started) / 1000);
   if (r.code === 0) {
-    console.log(lines.filter(x => x.trim()).slice(-5).join('\n'));
+    console.log(lines.filter((x: string) => x.trim()).slice(-5).join('\n'));
     console.log(`── ok exit=0 ${elapsed}s linhas=${lines.length} log=${log}`);
   } else {
     const pattern = `(^|[^a-z])(fail(ed|ure)?|error|exception|assert|expected|received|timeout|timed out|panic|traceback|✘|✖|×)([^a-z]|$)${one(o, '-p') ? `|${one(o, '-p')}` : ''}`;
     const re = new RegExp(pattern, 'i');
-    const selected = [];
+    const selected: string[] = [];
     for (let i = 0; i < lines.length && selected.length < max; i++) if (re.test(lines[i])) {
       for (let j = i; j < Math.min(i + 4, lines.length) && selected.length < max; j++) selected.push(`${j + 1}:${lines[j]}`);
       i += 3;

@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { run } = require('../skill/scripts/process-runner');
-const { ROLES } = require('../skill/scripts/roles');
+const { run } = require('../skill/scripts/process-runner.ts');
+const { ROLES } = require('../skill/scripts/roles.ts');
 
 /** Helper to create an isolated git repo in os.tmpdir() */
 async function createIsolatedRepo(t) {
@@ -26,7 +26,7 @@ test('git-commit.js: recusa quando OATHBOUND_AGENT nao e o committer', async t =
   fs.writeFileSync(path.join(repo, 'app.js'), 'console.log(1);\n', 'utf8');
   await run('git', ['-C', repo, 'add', 'app.js']);
 
-  const script = path.join(__dirname, '..', 'skill', 'scripts', 'git-commit.js');
+  const script = path.join(__dirname, '..', 'skill', 'scripts', 'git-commit.ts');
   const res = await run('node', [script, '-d', repo, '-m', 'feat: teste'], {
     env: { ...process.env, OATHBOUND_AGENT: 'papel-errado' }
   });

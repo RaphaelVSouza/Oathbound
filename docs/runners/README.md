@@ -48,7 +48,7 @@ o caminho do arquivo JavaScript com `--runner`:
 node .claude/skills/oathbound/scripts/run.js -d . -s "src/*" --runner ./meu-adapter.js -- "tarefa"
 ```
 
-O arquivo exportado deve implementar o contrato canônico de [`skill/scripts/runner-adapter.js`](../../skill/scripts/runner-adapter.js):
+O arquivo exportado deve implementar o contrato canônico de [`skill/scripts/runner-adapter.ts`](../../skill/scripts/runner-adapter.ts):
 
 - `name`: identificador em string.
 - `resolveAgentFile({ root, agent, agentDir })`: localiza o arquivo do papel.

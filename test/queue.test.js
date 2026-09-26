@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { queue } = require('../skill/scripts/queue');
-const { run } = require('../skill/scripts/process-runner');
+const { run } = require('../skill/scripts/process-runner.ts');
 
 async function initRepo() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-test-queue-'));
@@ -196,7 +196,7 @@ test('queue: processa issue com runner emitindo saida estruturada JSONL sem falh
 
   const mockRunnerPath = path.join(dir, 'mock-codex-runner.js');
   const codexScript = `
-    const codex = require(${JSON.stringify(path.resolve(__dirname, '../skill/scripts/runners/codex'))}).adapter;
+    const codex = require(${JSON.stringify(path.resolve(__dirname, '../skill/scripts/runners/codex.ts'))}).adapter;
     module.exports = {
       name: 'mock-codex',
       resolveAgentFile: () => '',

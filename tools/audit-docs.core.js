@@ -1,6 +1,6 @@
 'use strict';
 
-// Auditor estático de documentação portável. Requer Node >= 22.
+// Auditor estático de documentação portável. Requer Node >= 24.
 // Sem dependências externas.
 
 const fs = require('fs');

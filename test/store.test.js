@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { OathboundStore, openStore, isSqliteAvailable } = require('../skill/scripts/store');
+const { OathboundStore, openStore, isSqliteAvailable } = require('../skill/scripts/store.ts');
 
-test('store: verifica disponibilidade de node:sqlite no Node 22+', () => {
+test('store: verifica disponibilidade de node:sqlite no Node 24+', () => {
   assert.equal(isSqliteAvailable(), true);
 });
 
@@ -71,6 +71,35 @@ test('store: expoe OathboundStore como classe', () => {
   const store = new OathboundStore(':memory:');
   try {
     assert.equal(store.getStage('ausente'), null);
+  } finally {
+    store.close();
+  }
+});
+
+test('store: transacao estruturada commita em sucesso', () => {
+  const store = openStore(':memory:');
+  try {
+    store.transaction(s => {
+      s.setStage('t1', 'etapa1');
+      s.setStage('t2', 'etapa2');
+    });
+    assert.equal(store.getStage('t1'), 'etapa1');
+    assert.equal(store.getStage('t2'), 'etapa2');
+  } finally {
+    store.close();
+  }
+});
+
+test('store: transacao estruturada faz rollback em caso de erro', () => {
+  const store = openStore(':memory:');
+  try {
+    assert.throws(() => {
+      store.transaction(s => {
+        s.setStage('t-rollback', 'deve-sumir');
+        throw Error('falha forcada');
+      });
+    }, /falha forcada/);
+    assert.equal(store.getStage('t-rollback'), null);
   } finally {
     store.close();
   }

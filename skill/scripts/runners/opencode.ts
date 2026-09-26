@@ -1,13 +1,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { run } = require('../process-runner');
-const { resolveAgentPath } = require('../runner-adapter');
-const { readEnv } = require('../env');
+const { run } = require('../process-runner.ts');
+const { resolveAgentPath } = require('../runner-adapter.ts');
+const { readEnv } = require('../env.ts');
 
-function temporaryAgent(file, name, others) {
+function temporaryAgent(file: string, name: string, others: any[]): string {
   const src = fs.readFileSync(file, 'utf8');
   if (!/^  edit:$/m.test(src)) return '';
-  const lines = src.split('\n'), result = [];
+  const lines = src.split('\n'), result: string[] = [];
   let inside = false;
   for (const line of lines) {
     if (inside && !/^    /.test(line)) {
@@ -22,8 +22,8 @@ function temporaryAgent(file, name, others) {
   return target;
 }
 
-function feedbackAgent(file, name) {
-  const lines = fs.readFileSync(file, 'utf8').split('\n'), result = [];
+function feedbackAgent(file: string, name: string): string {
+  const lines = fs.readFileSync(file, 'utf8').split('\n'), result: string[] = [];
   let skip = false, foundEdit = false, foundBash = false;
   for (const line of lines) {
     if (skip && /^    /.test(line)) continue;
@@ -43,13 +43,14 @@ function feedbackAgent(file, name) {
 const opencodeAdapter = {
   name: 'opencode',
 
-  resolveAgentFile({ root, agent, agentDir }) {
-    return resolveAgentPath({ root, agent, agentDir, runner: 'opencode' }) || path.join(agentDir || readEnv('AGENT_DIR') || path.join(root, '.opencode', 'agents'), `${agent}.md`);
+  resolveAgentFile({ root, agent, agentDir }: { root?: string; agent: string; agentDir?: string }) {
+    return resolveAgentPath({ root, agent, agentDir, runner: 'opencode' }) || path.join(agentDir || readEnv('AGENT_DIR') || path.join(root || '.', '.opencode', 'agents'), `${agent}.md`);
   },
 
-  prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {
+  prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }: any) {
     if (!fs.existsSync(agentFile)) throw Error(`agente ausente: ${agentFile}`);
-    if (readonly && !feedback && !/^  edit: deny$/m.test(fs.readFileSync(agentFile, 'utf8'))) {
+    const normalizedContent = fs.readFileSync(agentFile, 'utf8').replace(/\r\n/g, '\n');
+    if (readonly && !feedback && !/^  edit:\s*(deny$|\n\s*"\*":\s*deny)/m.test(normalizedContent)) {
       throw Error(`modo somente leitura exige edit: deny no agente: ${agent}`);
     }
 
@@ -62,7 +63,7 @@ const opencodeAdapter = {
 
     let promptPrefix = '';
     if (others.length) {
-      promptPrefix = `Em uso por outros agentes — só leitura, não edite: ${others.map(x => `${x.glob} (${x.label})`).join('; ')}`;
+      promptPrefix = `Em uso por outros agentes — só leitura, não edite: ${others.map((x: any) => `${x.glob} (${x.label})`).join('; ')}`;
     }
 
     return {
@@ -76,20 +77,21 @@ const opencodeAdapter = {
     };
   },
 
-  buildCommand({ root, agent, tempAgent, model, message, session, tag, promptPrefix }) {
+  buildCommand({ root, agent, tempAgent, model, message, session, tag, promptPrefix }: any) {
     const fullMessage = promptPrefix ? `${message}\n${promptPrefix}` : message;
     const command = 'opencode';
+    const chosenModel = model || readEnv('MODEL');
     const args = [
       'run', '--standalone',
       ...(session ? ['--session', session] : ['--title', tag]),
       '--agent', tempAgent ? path.basename(tempAgent, '.md') : agent,
-      ...(model ? ['-m', model] : []),
+      ...(chosenModel ? ['-m', chosenModel] : []),
       fullMessage
     ];
     return { command, args };
   },
 
-  parseOutput(output) {
+  parseOutput(output: any) {
     const raw = typeof output === 'object' && output !== null ? output.stdout || '' : String(output || '');
     return {
       text: raw,
@@ -98,11 +100,11 @@ const opencodeAdapter = {
     };
   },
 
-  async resolveSession({ root, tag, sessionInput, runResult }) {
+  async resolveSession({ root, tag, sessionInput, runResult }: any) {
     if (sessionInput) return sessionInput;
     try {
       const list = await run('opencode', ['session', 'list', '-n', '50'], { cwd: root });
-      return list.stdout.split(/\r?\n/).find(x => x.split('\t')[1] === tag)?.split('\t')[0] || '';
+      return list.stdout.split(/\r?\n/).find((x: string) => x.split('\t')[1] === tag)?.split('\t')[0] || '';
     } catch {
       return '';
     }

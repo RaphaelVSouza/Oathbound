@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { run, alive, resolveCommand } = require('../skill/scripts/process-runner');
+const { run, alive, resolveCommand } = require('../skill/scripts/process-runner.ts');
 
 test('run: executa processo com sucesso e captura stdout', async () => {
   const r = await run('node', ['-e', 'console.log("teste de execucao")']);

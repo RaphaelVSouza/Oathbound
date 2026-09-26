@@ -1,24 +1,24 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { extractInstructions, resolveAgentPath } = require('../runner-adapter');
+const { extractInstructions, resolveAgentPath } = require('../runner-adapter.ts');
 
 const codexAdapter = {
   name: 'codex',
 
-  resolveAgentFile({ root, agent, agentDir }) {
+  resolveAgentFile({ root, agent, agentDir }: { root?: string; agent: string; agentDir?: string }) {
     return resolveAgentPath({ root, agent, agentDir, runner: 'codex' });
   },
 
-  prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }) {
-    const guards = [];
+  prepareAgent({ agentFile, agent, others = [], feedback = '', scopes = [], readonly = false }: any) {
+    const guards: string[] = [];
     if (readonly) {
       guards.push('[MODO: SOMENTE LEITURA — Não modifique arquivos nem execute operações de escrita/commit no repositório]');
     } else if (scopes.length) {
       guards.push(`[ESCOPO AUTORIZADO — Edite APENAS arquivos que casem com: ${scopes.join(', ')}. É estritamente proibido tocar em outros arquivos]`);
     }
     if (others.length) {
-      guards.push(`[EM USO POR OUTROS AGENTES — Não edite: ${others.map(x => `${x.glob} (${x.label})`).join('; ')}]`);
+      guards.push(`[EM USO POR OUTROS AGENTES — Não edite: ${others.map((x: any) => `${x.glob} (${x.label})`).join('; ')}]`);
     }
 
     return {
@@ -26,7 +26,7 @@ const codexAdapter = {
     };
   },
 
-  buildCommand({ root, agent, agentFile, model, message, session, tag, promptPrefix, readonly }) {
+  buildCommand({ root, agent, agentFile, model, message, session, tag, promptPrefix, readonly }: any) {
     const command = 'codex';
     const pureBody = extractInstructions(agentFile);
     const instructions = pureBody
@@ -55,11 +55,11 @@ const codexAdapter = {
     return { command, args };
   },
 
-  parseOutput(output) {
+  parseOutput(output: any) {
     const raw = typeof output === 'object' && output !== null ? output.stdout || '' : String(output || '');
     let session = '';
     let usage = null;
-    const texts = [];
+    const texts: string[] = [];
 
     const lines = raw.split(/\r?\n/);
     for (const line of lines) {
@@ -93,7 +93,7 @@ const codexAdapter = {
     return { text, session, usage };
   },
 
-  async resolveSession({ root, tag, sessionInput, runResult }) {
+  async resolveSession({ root, tag, sessionInput, runResult }: any) {
     if (sessionInput) return sessionInput;
     if (!runResult || !runResult.stdout) return '';
     return codexAdapter.parseOutput(runResult.stdout).session || '';
@@ -103,11 +103,11 @@ const codexAdapter = {
     let lineBuffer = '';
 
     return {
-      push(chunk) {
+      push(chunk: string) {
         lineBuffer += chunk;
         const lines = lineBuffer.split(/\r?\n/);
         lineBuffer = lines.pop() || '';
-        const out = [];
+        const out: string[] = [];
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed) continue;

@@ -1,7 +1,7 @@
 # Auditor de documentação
 
 `audit-docs.js` verifica documentos configurados sem dependências npm. Requer
-Node.js 22 ou superior; Git é necessário para `--staged`. A configuração deste
+Node.js 24 ou superior; Git é necessário para `--staged`. A configuração deste
 repositório fica em `audit-docs.config.js`.
 
 O executável `audit-docs.js` carrega `audit-docs.core.js`, que usa
