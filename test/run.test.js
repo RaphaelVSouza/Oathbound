@@ -361,3 +361,58 @@ test('stateDir: com ambos os diretorios, usa oathbound e preserva o legado', (t)
 });
 
 
+
+function staleLock(dir, pid, ageMs = 0) {
+  const lock = path.join(dir, 'mutex');
+  fs.mkdirSync(lock);
+  if (pid !== undefined) fs.writeFileSync(path.join(lock, 'pid'), String(pid));
+  if (ageMs) {
+    const when = new Date(Date.now() - ageMs);
+    fs.utimesSync(lock, when, when);
+  }
+  return lock;
+}
+
+test('mutex: trava de PID morto é removida mesmo com uma única tentativa', async t => {
+  const dir = createTempDir(t);
+  staleLock(dir, 99999999);
+  assert.equal(await mutex(dir, async () => 'ok', { attempts: 1, waitMs: 1 }), 'ok');
+  assert.ok(!fs.existsSync(path.join(dir, 'mutex')));
+});
+
+test('mutex: trava sem PID vira órfã depois do prazo e é removida', async t => {
+  const dir = createTempDir(t);
+  staleLock(dir, undefined, 60000);
+  assert.equal(await mutex(dir, async () => 'ok', { attempts: 1, waitMs: 1, ownerlessMs: 5000 }), 'ok');
+});
+
+test('mutex: trava sem PID recente não é roubada', async t => {
+  const dir = createTempDir(t);
+  const lock = staleLock(dir);
+  let ran = false;
+  await assert.rejects(mutex(dir, async () => { ran = true; }, { attempts: 2, waitMs: 1, ownerlessMs: 60000 }), /mutex preso/);
+  assert.equal(ran, false);
+  assert.ok(fs.existsSync(lock));
+});
+
+test('mutex: trava de processo vivo não é roubada nem apagada', async t => {
+  const dir = createTempDir(t);
+  const lock = staleLock(dir, process.ppid);
+  let ran = false;
+  await assert.rejects(mutex(dir, async () => { ran = true; }, { attempts: 2, waitMs: 1 }), /mutex preso/);
+  assert.equal(ran, false);
+  assert.equal(fs.readFileSync(path.join(lock, 'pid'), 'utf8'), String(process.ppid));
+});
+
+test('mutex: não apaga trava que passou a ter outro dono', async t => {
+  const dir = createTempDir(t);
+  await mutex(dir, async () => {
+    fs.writeFileSync(path.join(dir, 'mutex', 'pid'), String(process.ppid));
+  });
+  assert.ok(fs.existsSync(path.join(dir, 'mutex')));
+});
+
+test('mutex: erro diferente de trava existente é repassado sem espera', async t => {
+  const dir = path.join(createTempDir(t), 'inexistente', 'fundo');
+  await assert.rejects(mutex(dir, async () => {}, { attempts: 100, waitMs: 1000 }), { code: 'ENOENT' });
+});

@@ -1,39 +1,20 @@
 # Histórico de versões
 
-## 0.22.0 — 2026-09-26
+## 0.21.2 — 2026-09-26
 
 ### Corrigido
 
-- **`queue.js` reviewer sem o diff real (G-003):** o reviewer rodava em modo leitura recebendo só a
-  referência à issue, sem o diff produzido pelo runner de implementação. Agora a fila monta o diff do
-  escopo (rastreado e não rastreado), salva a íntegra em `<git-dir>/oathbound/review/<id>.diff` e
-  embute até 20000 caracteres no prompt (limite dimensionado pra linha de comando do processo, já que
-  todo adapter de runner recebe a mensagem via argv). Diff vazio no escopo interrompe a fila com exit
-  `6` sem chamar o reviewer.
-- **`queue.js` recibo "No issues." sensível a formatação (G-002):** variações de Markdown do reviewer
-  (` `No issues.` `, `**No issues.**`, bloco de código) não eram reconhecidas e paravam a fila com
-  exit `6` mesmo sem achado real. A comparação agora ignora espaço, crase e asterisco nas pontas de
-  cada linha antes de casar o marcador de aceite.
-- **`queue.js` aceita diretório em `-A`/issue (G-009):** um caminho de diretório passava pelas
-  validações e só falhava depois de abrir uma sessão de runner. Agora é rejeitado com exit `2` antes
-  de qualquer chamada.
-- **`queue.js` resolve `-A` fora da raiz do repositório (G-010):** `-A` relativo resolvia contra o
-  diretório de trabalho atual, não a raiz do repo (inconsistente com o tratamento das issues). Agora
-  resolve contra a raiz; se só existir a partir do cwd, a fila usa esse caminho e avisa no stderr que
-  esse retrocesso será removido.
-
-### Alterado
-
-- **`queue.js` novo esquema de id de checkpoint (G-012):** o id de checkpoint era
-  `<diretório-avô>-<nome-do-arquivo>`, o que colidia entre issues de nomes iguais em pastas-irmãs
-  diferentes (ex.: `a/x/001.md` e `a/y/001.md` geravam o mesmo id `a-001`). O novo id é o caminho da
-  issue relativo à raiz do repositório, sem extensão, com separadores trocados por `--`
-  (`docs/tickets/001.md` → `docs--tickets--001`). Checkpoints no esquema antigo continuam
-  reconhecidos: a fila migra o estágio automaticamente pro novo id na primeira execução.
-- **`queue.js` para a fila em exit `3` (G-013):** mudança fora do escopo declarado em `-s` só era
-  reportada; a fila seguia para revisão e marcava a issue como `implementada`. Agora qualquer exit não
-  zero do runner de implementação — incluindo `3` — interrompe a fila, lista os arquivos fora do
-  escopo e não marca a issue como `implementada`, preservando o rastro pra revisão manual.
+- **Auditoria de escopo lenta em árvores com muitos arquivos alterados:** `snapshot` (`git.js`) abria
+  dois processos Git por arquivo modificado ou não rastreado (`hash-object` e `ls-files --stage`), e
+  `run.js` tira dois snapshots por chamada. Agora são dois processos no total: `git hash-object
+  --stdin-paths` em lote e um único `git ls-files --stage -z`. Medido em Linux com 650 arquivos
+  alterados: de ~3,6 s para ~16 ms por snapshot. Nomes com quebra de linha ou aspas iniciais seguem
+  pelo caminho de um arquivo por vez.
+- **Trava de posse (`mutex` em `run.js`):** quando a última tentativa removia uma trava abandonada, a
+  execução seguia sem trava e, ao final, apagava a trava de outro processo. Uma trava criada sem PID
+  (processo morto entre criar o diretório e gravar o PID) bloqueava todas as execuções seguintes até
+  remoção manual. Agora a remoção de trava abandonada não gasta tentativa, trava sem PID vira órfã após
+  5 s, a trava só é apagada por quem a detém e erros diferentes de "já existe" são repassados na hora.
 
 ## 0.21.1 — 2026-09-26
 

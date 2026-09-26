@@ -1,5 +1,6 @@
 .DS_Store
 *.log
+!docs/demo-logs/*.log
 *.tmp
 .scratch/
 .agents/

@@ -1,0 +1,12 @@
+PS> Set-Location (Join-Path $Tmp 'invoice')
+  git status --porcelain
+  Write-Output '-- conteudo src/probe.js --'
+  Get-Content src/probe.js -ErrorAction SilentlyContinue
+ M docs/issues/001-desconto.md
+?? .claude/
+?? AGENTS.md
+?? CHANGELOG.md
+?? src/probe.js
+-- conteudo src/probe.js --
+// escrito fora do escopo autorizado
+-- exit_processo=0 duracao=0s

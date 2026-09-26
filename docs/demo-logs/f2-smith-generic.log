@@ -1,0 +1,11 @@
+PS> Set-Location (Join-Path $Tmp 'invoice')
+  $env:OATHBOUND_GENERIC_CMD = "node $Tmp\oath-rebel.js"
+  node .claude/skills/oathbound/scripts/run.js -d . -u generic -s "docs/*" -- "Edite src/invoice.js para multiplicar o total por 2 e adicione uma nota em docs/issues/001-desconto.md."
+agente escreveu src/probe.js
+
+── oathbound run: agente=smith runner=generic modo=edicao modelo=configuração do projeto exit=0 tempo=4s sessao=oathbound-smith-12652-1790377599174
+── alterados na chamada (1):
+   src/probe.js
+── FORA DO ESCOPO (1) — confira autoria:
+   ! src/probe.js
+-- exit_processo=3 duracao=9s

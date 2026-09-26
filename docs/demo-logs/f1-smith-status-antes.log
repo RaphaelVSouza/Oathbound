@@ -1,0 +1,6 @@
+PS> Set-Location (Join-Path $Tmp 'invoice')
+  git status --porcelain
+?? .claude/
+?? AGENTS.md
+?? CHANGELOG.md
+-- exit_processo=0 duracao=0s

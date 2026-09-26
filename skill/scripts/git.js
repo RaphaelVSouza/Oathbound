@@ -59,22 +59,50 @@ async function repoPaths(dir) {
 async function snapshot(root) {
   const r = await run('git', ['-C', root, 'status', '--porcelain=v1', '-z', '-uall'], { maxCapture: 67108864 });
   if (r.code) throw Error(r.stderr);
-  const parts = r.stdout.split('\0'), result = new Map();
+  const parts = r.stdout.split('\0'), names = [];
   for (let i = 0; i < parts.length; i++) {
     const entry = parts[i];
     if (!entry) continue;
     const xy = entry.slice(0, 2);
-    const name = entry.slice(3).replaceAll('\\', '/');
+    names.push(entry.slice(3).replaceAll('\\', '/'));
     if (xy.includes('R') || xy.includes('C')) i++;
-    const file = path.join(root, name);
-    if (fs.existsSync(file) && fs.statSync(file).isFile()) {
-      const h = await run('git', ['-C', root, 'hash-object', '--', name]);
-      result.set(name, h.stdout.trim());
-    } else result.set(name, 'DELETED');
-    const staged = await run('git', ['-C', root, 'ls-files', '--stage', '-z', '--', name]);
-    if (staged.code) throw Error(staged.stderr.trim() || `git ls-files falhou: ${name}`);
-    result.set(name, `${result.get(name)}\t${staged.stdout}`);
   }
+  if (!names.length) return new Map();
+
+  // Um processo para os hashes e um para o índice, em vez de dois por arquivo: o custo de spawn
+  // dominava a auditoria em árvores com muitos arquivos alterados (pior no Windows).
+  const files = names.filter(name => {
+    try { return fs.statSync(path.join(root, name)).isFile(); } catch { return false; }
+  });
+  // --stdin-paths lê um caminho por linha e trata aspas iniciais como C-quoting; esses nomes vão um a um.
+  const batch = files.filter(name => !name.includes('\n') && !name.startsWith('"'));
+  const single = files.filter(name => !batch.includes(name));
+  const hashes = new Map();
+  if (batch.length) {
+    const h = await run('git', ['-C', root, 'hash-object', '--stdin-paths'], { input: batch.join('\n') + '\n', maxCapture: 67108864 });
+    if (h.code) throw Error(h.stderr.trim() || 'git hash-object falhou');
+    const lines = h.stdout.split('\n').map(x => x.trim()).filter(Boolean);
+    if (lines.length !== batch.length) throw Error(`git hash-object devolveu ${lines.length} hashes para ${batch.length} arquivos`);
+    batch.forEach((name, i) => hashes.set(name, lines[i]));
+  }
+  for (const name of single) {
+    const h = await run('git', ['-C', root, 'hash-object', '--', name]);
+    if (h.code) throw Error(h.stderr.trim() || `git hash-object falhou: ${name}`);
+    hashes.set(name, h.stdout.trim());
+  }
+
+  const staged = await run('git', ['-C', root, 'ls-files', '--stage', '-z'], { maxCapture: 67108864 });
+  if (staged.code) throw Error(staged.stderr.trim() || 'git ls-files falhou');
+  const index = new Map();
+  for (const entry of staged.stdout.split('\0')) {
+    const tab = entry.indexOf('\t');
+    if (tab < 0) continue;
+    const name = entry.slice(tab + 1);
+    index.set(name, `${index.get(name) || ''}${entry.slice(0, tab)};`);
+  }
+
+  const result = new Map();
+  for (const name of names) result.set(name, `${hashes.get(name) || 'DELETED'}\t${index.get(name) || ''}`);
   return result;
 }
 

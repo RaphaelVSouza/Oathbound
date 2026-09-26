@@ -1,0 +1,4 @@
+PS> Set-Location (Join-Path $Tmp 'invoice-opencode')
+  node .claude/skills/oathbound/scripts/run.js -d . -u opencode -R -a surveyor -- "onde o desconto e aplicado?"
+modo somente leitura exige edit: deny no agente: surveyor
+-- exit_processo=2 duracao=1s

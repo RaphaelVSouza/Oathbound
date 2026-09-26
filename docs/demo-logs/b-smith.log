@@ -1,0 +1,75 @@
+PS> Write-Output "-- node --test antes --"
+  node --test
+  node .claude/skills/oathbound/scripts/run.js -d . -u claude -s "src/*" -s "test/*" -- "Corrija o bug de calculo do desconto em src/invoice.js: o desconto deve incidir somente sobre o subtotal dos itens, e o frete (FRETE_PADRAO) deve ser somado depois, sem desconto. Use TDD: rode node --test antes, corrija o teste marcado como todo em test/invoice.test.js removendo o todo (o valor esperado 105 ja esta correto), corrija src/invoice.js na causa raiz, rode node --test depois e confirme que o teste do desconto passa sem o todo."
+  Write-Output "-- node --test depois --"
+  node --test
+-- node --test antes --
+✔ total sem desconto soma itens e frete padrão (3.7964ms)
+⚠ total com desconto e um único item (3.9399ms) # bug proposital, issue 001
+✔ total com múltiplos itens sem desconto (0.4557ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 1
+ℹ duration_ms 287.109
+
+✖ failing tests:
+
+test at test\invoice.test.js:12:1
+⚠ total com desconto e um único item (3.9399ms) # bug proposital, issue 001
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  103.5 !== 105
+  
+      at TestContext.<anonymous> (<tmp>/invoice\test\invoice.test.js:14:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 103.5,
+    expected: 105,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+`.claude/` e `AGENTS.md` já existiam sujos antes (fora escopo, não toquei).
+
+```
+ARQUIVOS:
+src/invoice.js — desconto aplicado só no subtotal, frete somado depois sem desconto
+test/invoice.test.js — removido todo do teste de desconto (issue 001)
+
+ACEITE: node --test → antes: 1 fail (103.5 obtido vs 105 esperado), 1 todo. Depois: 3 pass, 0 fail, 0 todo.
+
+FONTES: valor esperado 105 → test/invoice.test.js:14 (já correto, não alterado)
+
+NOTA: nenhuma
+
+GIT:
+ M src/invoice.js
+ M test/invoice.test.js
+```
+
+── oathbound run: agente=smith runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=36s sessao=fd3b904b-51ac-4226-8574-2f0a3f6311fb
+── alterados na chamada (2):
+   src/invoice.js
+   test/invoice.test.js
+-- node --test depois --
+✔ total sem desconto soma itens e frete padrão (1.6782ms)
+✔ total com desconto e um único item (0.2671ms)
+✔ total com múltiplos itens sem desconto (0.2211ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 182.1374
+── exit_processo=0 duracao=47s

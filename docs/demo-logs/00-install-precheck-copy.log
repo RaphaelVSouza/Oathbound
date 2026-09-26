@@ -1,0 +1,21 @@
+-- git status --porcelain (R6, deve vazio) --
+fatal: not a git repository (or any of the parent directories): .git
+-- Get-ChildItem -Force -Name --
+docs
+src
+test
+aceite.txt
+README.md
+Initialized empty Git repository in <tmp>/invoice/.git/
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'aceite.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/issues/001-desconto.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/invoice.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'test/invoice.test.js', LF will be replaced by CRLF the next time Git touches it
+[main (root-commit) 469f7df] chore: commit inicial do exemplo invoice
+ 5 files changed, 70 insertions(+)
+ create mode 100644 README.md
+ create mode 100644 aceite.txt
+ create mode 100644 docs/issues/001-desconto.md
+ create mode 100644 src/invoice.js
+ create mode 100644 test/invoice.test.js

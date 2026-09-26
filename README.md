@@ -2,7 +2,7 @@
 
 > Camada de governança determinística, auditoria e orquestração multi-agente para CLIs de código com LLMs.
 
-[![Versão](https://img.shields.io/badge/versão-0.21.1-blue.svg)](VERSION)
+[![Versão](https://img.shields.io/badge/versão-0.21.2-blue.svg)](VERSION)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-green.svg)](https://nodejs.org/)
 [![Dependências](https://img.shields.io/badge/dependências-zero-brightgreen.svg)](README.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-blue.svg)](LICENSE)
@@ -46,6 +46,23 @@ O Oathbound distribui o trabalho entre dez papéis juramentados em [`guild/`](gu
 | [`archivist`](guild/archivist.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; Git restrito aos arquivos autorizados (`git-stage.js`, `git-commit.js`). |
 | [`breaker`](guild/breaker.md) | Testes de mutação: quebra o código de propósito para medir se os testes percebem. | Edição temporária em fontes (exceto testes); restauração conferida por hash; Git destrutivo bloqueado. |
 | [`warden`](guild/warden.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
+
+---
+
+## Demonstração
+Execução real contra [`examples/invoice/`](examples/invoice/). Recibo f.2 — script que
+ignora o escopo autorizado (`docs/*`), detectado pela auditoria de diff do Oathbound:
+````text
+agente escreveu src/probe.js
+
+── oathbound run: agente=smith runner=generic modo=edicao modelo=configuração do projeto exit=0 tempo=4s sessao=oathbound-smith-12652-1790377599174
+── alterados na chamada (1):
+   src/probe.js
+── FORA DO ESCOPO (1) — confira autoria:
+   ! src/probe.js
+-- exit_processo=3 duracao=9s
+````
+Recibos completos em [`docs/demo.md`](docs/demo.md).
 
 ---
 
@@ -225,6 +242,8 @@ node --test --experimental-test-coverage test/*.test.js
 # Valida integridade documental, contratos e links
 node tools/audit-docs.js
 ```
+
+Lacunas conhecidas, com evidência e status, em [`docs/gaps.md`](docs/gaps.md).
 
 ---
 

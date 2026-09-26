@@ -1,0 +1,11 @@
+Só um commit, nenhum arquivo modificado ou não rastreado depois dele (índice bate working tree — invoice.js e test já commitados assim). Diff contra HEAD vazio. Nada pra revisar como mudança.
+
+```text
+No issues.
+```
+
+Nota: working tree igual HEAD, sem diff e sem arquivo não rastreado fora dos já commitados. Código em `src/invoice.js` já corresponde ao aceite de `docs/issues/001-desconto.md` (fórmula linha 14-15, teste linha 12-15 passa).
+
+── oathbound run: agente=assayer runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=21s sessao=c5b3f75e-0822-4ada-8c6c-43eebc1044d0
+── alterados na chamada (0):
+
