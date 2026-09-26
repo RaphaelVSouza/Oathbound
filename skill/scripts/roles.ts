@@ -1,5 +1,4 @@
 const path = require('node:path');
-const fs = require('node:fs');
 
 interface Roles {
   orchestrator: string;
@@ -24,45 +23,10 @@ const STATE_DIR_NAME = 'oathbound';
 /** Nome do banco de dados transacional dentro do diretório de estado. */
 const DB_FILE_NAME = 'oathbound.db';
 
-/** gitDirs já processados por `migrateLegacyStateDir` neste processo. */
-const migratedStateDirs: Set<string> = new Set();
-
-/**
- * Migra o diretório de estado legado `ds-queue` para `oathbound` e o banco
- * `governance.db` para `oathbound.db`, uma única vez por gitDir, quando o
- * diretório novo ainda não existe. Escreve um aviso em stderr. Se os dois
- * diretórios existirem, mantém `oathbound` e avisa que o legado ficou para trás.
- */
-function migrateLegacyStateDir(gitDir: string): void {
-  const legacyDir = path.join(gitDir, 'ds-queue');
-  const currentDir = path.join(gitDir, STATE_DIR_NAME);
-  if (migratedStateDirs.has(gitDir) || !fs.existsSync(legacyDir)) return;
-  migratedStateDirs.add(gitDir);
-
-  if (fs.existsSync(currentDir)) {
-    process.stderr.write(`diretório de estado legado ${legacyDir} ignorado; usando ${currentDir}\n`);
-    return;
-  }
-
-  fs.renameSync(legacyDir, currentDir);
-  for (const [legacyName, currentName] of [
-    ['governance.db', DB_FILE_NAME],
-    ['governance.db-wal', `${DB_FILE_NAME}-wal`],
-    ['governance.db-shm', `${DB_FILE_NAME}-shm`]
-  ]) {
-    const legacyFile = path.join(currentDir, legacyName);
-    if (fs.existsSync(legacyFile)) {
-      fs.renameSync(legacyFile, path.join(currentDir, currentName));
-    }
-  }
-  process.stderr.write(`diretório de estado legado ${legacyDir} migrado para ${currentDir}\n`);
-}
-
 /**
  * Caminho do diretório de estado dentro do gitDir do repositório.
  */
 function stateDir(gitDir: string): string {
-  migrateLegacyStateDir(gitDir);
   return path.join(gitDir, STATE_DIR_NAME);
 }
 

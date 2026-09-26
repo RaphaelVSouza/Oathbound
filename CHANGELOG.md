@@ -1,5 +1,19 @@
 # Histórico de versões
 
+## 0.23.7 — 2026-09-26
+
+### Removido
+
+- **Compatibilidade legada `agent-governance-kit`/`GOVKIT_*`/`ds-queue`:** fim do período de
+  transição pós-renomeação para Oathbound.
+  - `env.ts`: `readEnv` não lê mais o prefixo `GOVKIT_*`; só `OATHBOUND_*` é aceito.
+  - `roles.ts`: `stateDir` não migra mais `.git/ds-queue`/`governance.db` para
+    `.git/oathbound`/`oathbound.db`; assume-se que a migração automática de versões
+    anteriores já rodou.
+  - `install.ps1`: removida a detecção de instalação antiga (`~/.agent-governance-kit`,
+    `.claude/skills/agent-governance`, agentes `ds-*.md`) que abortava a instalação.
+  - `README.md`: removida a seção "Migração a partir do agent-governance-kit".
+
 ## 0.23.6 — 2026-09-26
 
 ### Adicionado

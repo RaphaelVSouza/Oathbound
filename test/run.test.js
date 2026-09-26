@@ -273,94 +273,25 @@ test('guarda: skill/scripts nao usa literais de papel/estado fora de roles.js', 
   assert.deepEqual(offenders, [], 'use ROLES/stateDir de roles.js em vez de literais de papel/estado');
 });
 
-test('readEnv: OATHBOUND_ tem prioridade sobre GOVKIT_', () => {
+test('readEnv: lê OATHBOUND_*', () => {
   const { readEnv } = require('../skill/scripts/env.ts');
-  const prevCurrent = process.env.OATHBOUND_RUNNER;
-  const prevLegacy = process.env.GOVKIT_RUNNER;
+  const prev = process.env.OATHBOUND_RUNNER;
   try {
     process.env.OATHBOUND_RUNNER = 'novo';
-    process.env.GOVKIT_RUNNER = 'antigo';
     assert.equal(readEnv('RUNNER'), 'novo');
   } finally {
-    if (prevCurrent !== undefined) process.env.OATHBOUND_RUNNER = prevCurrent; else delete process.env.OATHBOUND_RUNNER;
-    if (prevLegacy !== undefined) process.env.GOVKIT_RUNNER = prevLegacy; else delete process.env.GOVKIT_RUNNER;
+    if (prev !== undefined) process.env.OATHBOUND_RUNNER = prev; else delete process.env.OATHBOUND_RUNNER;
   }
 });
 
-test('readEnv: fallback GOVKIT_ funciona e avisa uma vez em stderr', () => {
-  const { readEnv } = require('../skill/scripts/env.ts');
-  const prevCurrent = process.env.OATHBOUND_SCOPES;
-  const prevLegacy = process.env.GOVKIT_SCOPES;
-  const writes = [];
-  const original = process.stderr.write;
-  try {
-    delete process.env.OATHBOUND_SCOPES;
-    process.env.GOVKIT_SCOPES = 'legado';
-    process.stderr.write = chunk => { writes.push(String(chunk)); return true; };
-
-    assert.equal(readEnv('SCOPES'), 'legado');
-    assert.equal(readEnv('SCOPES'), 'legado');
-
-    assert.equal(writes.length, 1);
-    assert.ok(writes[0].includes('GOVKIT_SCOPES está obsoleta; use OATHBOUND_SCOPES'));
-  } finally {
-    process.stderr.write = original;
-    if (prevCurrent !== undefined) process.env.OATHBOUND_SCOPES = prevCurrent; else delete process.env.OATHBOUND_SCOPES;
-    if (prevLegacy !== undefined) process.env.GOVKIT_SCOPES = prevLegacy; else delete process.env.GOVKIT_SCOPES;
-  }
-});
-
-test('stateDir: migra .git/ds-queue para .git/oathbound com governance.db para oathbound.db', (t) => {
+test('stateDir: resolve .git/oathbound', (t) => {
   const { stateDir } = require('../skill/scripts/roles.ts');
   const dir = createTempDir(t);
-  const legacy = path.join(dir, 'ds-queue');
-  fs.mkdirSync(legacy, { recursive: true });
-  fs.writeFileSync(path.join(legacy, 'governance.db'), 'conteudo');
-  fs.writeFileSync(path.join(legacy, 'governance.db-wal'), 'wal');
-  fs.writeFileSync(path.join(legacy, 'governance.db-shm'), 'shm');
 
   const resolved = stateDir(dir);
 
   assert.equal(resolved, path.join(dir, 'oathbound'));
-  assert.ok(fs.existsSync(path.join(dir, 'oathbound')));
-  assert.ok(fs.existsSync(path.join(dir, 'oathbound', 'oathbound.db')));
-  assert.ok(fs.existsSync(path.join(dir, 'oathbound', 'oathbound.db-wal')));
-  assert.ok(fs.existsSync(path.join(dir, 'oathbound', 'oathbound.db-shm')));
-  assert.ok(!fs.existsSync(path.join(legacy)));
 });
-
-test('stateDir: dois gitDirs diferentes no mesmo processo migram ambos', (t) => {
-  const { stateDir } = require('../skill/scripts/roles.ts');
-  const dirA = createTempDir(t);
-  const dirB = createTempDir(t);
-  for (const dir of [dirA, dirB]) {
-    const legacy = path.join(dir, 'ds-queue');
-    fs.mkdirSync(legacy, { recursive: true });
-    fs.writeFileSync(path.join(legacy, 'governance.db'), 'conteudo');
-  }
-
-  stateDir(dirA);
-  stateDir(dirB);
-
-  assert.ok(fs.existsSync(path.join(dirA, 'oathbound')));
-  assert.ok(fs.existsSync(path.join(dirB, 'oathbound')));
-  assert.ok(!fs.existsSync(path.join(dirA, 'ds-queue')));
-  assert.ok(!fs.existsSync(path.join(dirB, 'ds-queue')));
-});
-
-test('stateDir: com ambos os diretorios, usa oathbound e preserva o legado', (t) => {
-  const { stateDir } = require('../skill/scripts/roles.ts');
-  const dir = createTempDir(t);
-  fs.mkdirSync(path.join(dir, 'ds-queue'), { recursive: true });
-  fs.mkdirSync(path.join(dir, 'oathbound'), { recursive: true });
-
-  const resolved = stateDir(dir);
-
-  assert.equal(resolved, path.join(dir, 'oathbound'));
-  assert.ok(fs.existsSync(path.join(dir, 'ds-queue')));
-});
-
-
 
 function staleLock(dir, pid, ageMs = 0) {
   const lock = path.join(dir, 'mutex');
