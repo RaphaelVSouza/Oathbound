@@ -1,38 +1,36 @@
 # Histórico de versões
 
-## 0.21.1 — 2026-09-25
+## 0.21.2 — 2026-09-26
 
-### Adicionado
+### Corrigido
 
-- **Projeto de exemplo `examples/invoice/`:** módulo Node mínimo (zero dependências,
-  `node:test`) com um bug proposital (desconto aplicado sobre o frete em vez de só
-  sobre o subtotal), issue em `docs/issues/001-desconto.md` e critério de aceite em
-  `aceite.txt`. O teste de aceite (`test/invoice.test.js`) fica marcado
-  `{ todo: 'bug proposital, issue 001' }`, esperando o valor correto (`105`), até que o
-  fluxo real corrija a causa e remova o `todo`. Usado para provar o fluxo real do
-  Oathbound com recibos verdadeiros.
-- **Demonstração de ponta a ponta (`docs/demo.md`, `docs/demo-logs/`):** execução real,
-  fora do repositório, dos passos `surveyor` → `smith` (TDD, com o teste `todo` falhando
-  antes e passando sem o `todo` depois) → `assayer` → `archivist` → `herald` contra
-  `examples/invoice/`, com sessão de consulta (`-S`/`-Q status`), um caso negativo com
-  dois runners (`claude`: a recusa em editar fora do escopo veio do modelo, não de um
-  guardrail determinístico do Oathbound; `generic` determinístico confirmando
-  `exit_processo=3` ao escrever fora do escopo — essa é a garantia determinística real)
-  e uma execução de `queue.js`. Logs sanitizados em `docs/demo-logs/` (exceção pontual
-  ao `*.log` do `.gitignore` via `!docs/demo-logs/*.log`). Seção "Demonstração"
-  adicionada ao `README.md`.
-- **Registro de lacunas (`docs/gaps.md`):** primeira entrada do registro contínuo de
-  lacunas observadas pelo oathkeeper em entregas reais, com evidência arquivo:linha ou
-  saída de comando para cada uma; inclui os problemas confirmados nesta demonstração e
-  entradas de revisões anteriores conferidas contra o `main` atual. Link na seção
-  "Qualidade e Testes" do `README.md`.
-- **Problemas confirmados nesta execução:** `guild/surveyor.md` é o único agente de
-  leitura que gera bloco `edit:` no agente opencode (os demais já usam a linha simples
-  `edit: deny`), e `runners/opencode.js` exige essa linha para `-R` (`exit_processo=2`);
-  a validação de revisão em `queue.js` não reconhece `` `No issues.` `` com crase
-  simples ao redor — reproduzido em uma execução, não reproduzido em outra com o mesmo
-  fluxo, porque a formatação da resposta do reviewer não é determinística. Detalhes,
-  vereditos e correções sugeridas em `docs/demo.md` e `docs/gaps.md`.
+- **Auditoria de escopo lenta em árvores com muitos arquivos alterados:** `snapshot` (`git.js`) abria
+  dois processos Git por arquivo modificado ou não rastreado (`hash-object` e `ls-files --stage`), e
+  `run.js` tira dois snapshots por chamada. Agora são dois processos no total: `git hash-object
+  --stdin-paths` em lote e um único `git ls-files --stage -z`. Medido em Linux com 650 arquivos
+  alterados: de ~3,6 s para ~16 ms por snapshot. Nomes com quebra de linha ou aspas iniciais seguem
+  pelo caminho de um arquivo por vez.
+- **Trava de posse (`mutex` em `run.js`):** quando a última tentativa removia uma trava abandonada, a
+  execução seguia sem trava e, ao final, apagava a trava de outro processo. Uma trava criada sem PID
+  (processo morto entre criar o diretório e gravar o PID) bloqueava todas as execuções seguintes até
+  remoção manual. Agora a remoção de trava abandonada não gasta tentativa, trava sem PID vira órfã após
+  5 s, a trava só é apagada por quem a detém e erros diferentes de "já existe" são repassados na hora.
+
+## 0.21.1 — 2026-09-26
+
+### Corrigido
+
+- **Runners instalados via npm no Windows (`ENOENT`):** `process-runner.js` acrescentava `.exe` a
+  `opencode`, `claude`, `codex` e `agy`; quando a CLI só existia como shim do npm (`opencode.cmd`), o
+  spawn falhava com `ENOENT`. Agora o comando é resolvido no `PATH` sem shell: `.exe`/`.com` seguem
+  direto; um shim `.cmd`/`.bat` do npm é lido e substituído pelo programa que ele chama (script Node
+  executado com o Node atual, ou o `.exe` alvo). Argumentos com `&`, `|`, aspas e `%` chegam intactos.
+  `shell: true` foi descartado por corromper esses argumentos. Shim fora do formato do npm falha com
+  erro explícito.
+
+### Alterado
+
+- **CI:** a matriz passa a testar Node 24 LTS (antes Node 22) em Ubuntu e Windows.
 
 ## 0.21.0 — 2026-09-25
 
