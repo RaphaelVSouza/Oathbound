@@ -46,6 +46,15 @@ terminarem. Preserve mudanças de outras tarefas.
    o commit do Git incluiria esse conteúdo. Se houver conflito, segredo,
    artefato gerado sem fonte, arquivo temporário ou intenção ambígua, pare e
    informe o ponto preciso. Não infira ticket.
+
+   **Se o shell falhar** (ex.: `Permission denied: shell` no runner, veja
+   [models.md §1.1](models.md)), não pare no primeiro erro: leia
+   `.git/HEAD`, `.git/logs/HEAD` e `.git/index` diretamente via `read` (não
+   requerem shell) para diagnosticar branch, HEAD e histórico recente antes
+   de reportar. Isso só cobre diagnóstico e inspeção; preparar hunks e
+   commitar (passos 2 e 3) exigem `git-stage.ts`/`git-commit.ts` via shell —
+   sem shell, esses passos são impossíveis. Reporte a pendência com o que foi
+   possível diagnosticar por `read`, em vez de travar sem informação.
 2. Separe as mudanças por intenção. Escolha arquivos e hunks que pertencem a
    cada commit. Para ver hunks, use
    `node .claude/skills/oathbound/scripts/git-stage.ts -d . -f <arquivo> --list`.

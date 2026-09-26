@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## 0.23.6 — 2026-09-26
+
+### Adicionado
+
+- **Fallback de diagnóstico no `archivist` quando shell falha:** passo 1 agora instrui, quando comandos `git` via shell não executam (ex.: runner OpenCode com allowlist `bash` restrita, ver `models.md` §1.1), a ler `.git/HEAD`, `.git/logs/HEAD` e `.git/index` diretamente via `read` para diagnosticar branch/HEAD/histórico antes de reportar pendência. Não destrava a preparação de hunks nem o commit em si (`git-stage.ts`/`git-commit.ts` continuam exigindo shell); apenas evita que o agente trave sem informação no primeiro erro.
+
 ## 0.23.5 — 2026-09-26
 
 ### Corrigido
