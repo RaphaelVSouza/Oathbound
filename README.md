@@ -146,8 +146,6 @@ Os wrappers leem variáveis `OATHBOUND_*` para substituir opcionalmente `-u`, `-
 | `OATHBOUND_AGENT_DIR` | Diretório alternativo de arquivos de agente. |
 | `OATHBOUND_GENERIC_CMD` | Comando usado pelo runner `generic`. |
 
-> **Compatibilidade de uma versão:** o prefixo legado `GOVKIT_*` continua aceito por uma versão. Quando a variável nova está ausente e a antiga existe, o valor antigo é usado e um único aviso é escrito em `stderr` (`GOVKIT_RUNNER está obsoleta; use OATHBOUND_RUNNER`). Migre para `OATHBOUND_*` antes da próxima versão.
-
 ---
 
 ## Como o Oathbound se compara
@@ -157,57 +155,6 @@ Frameworks como **CrewAI**, **AutoGen** e **LangGraph** orquestram chamadas a mo
 O Oathbound parte de outro ponto: governa CLIs de código já existentes (OpenCode, Claude Code, Codex, AGY), que continuam a conversar com seus próprios provedores e modelos. O que o Oathbound acrescenta é a moldura de escopo auditada no Git — papéis juramentados, globs autorizados, auditoria de diff antes e depois de cada chamada e uma fila transacional com checkpoints.
 
 As duas abordagens resolvem problemas diferentes e podem coexistir. Este documento apenas descreve o recorte do Oathbound; não emite juízo de valor sobre os outros projetos.
-
----
-
-## Migração a partir do agent-governance-kit
-
-A partir da versão 0.21.0 o projeto passa a se chamar **Oathbound**. A migração renomeia agentes, scripts, variáveis, caminhos de instalação e o estado em `.git/`. Nenhum destes nomes permanece como alias (só `GOVKIT_*` funciona por uma versão, com aviso).
-
-### Agentes
-
-| Antes | Depois |
-| :--- | :--- |
-| `ds-explorer` | `surveyor` |
-| `ds-researcher` | `scholar` |
-| `ds-governance` | `scribe` |
-| `ds-runner` | `smith` |
-| `ds-reviewer` | `assayer` |
-| `ds-security` | `warden` |
-| `ds-mutant` | `breaker` |
-| `ds-committer` | `archivist` |
-| — (novos) | `oathkeeper` e `herald` |
-
-### Scripts de runtime
-
-| Antes | Depois |
-| :--- | :--- |
-| `ds-run.js` | `run.js` |
-| `ds-queue.js` | `queue.js` |
-| `ds-kill.js` | `kill.js` |
-| `GovernanceStore` / `openGovernanceStore` | `OathboundStore` / `openStore` |
-
-### Variáveis de ambiente
-
-| Antes | Depois |
-| :--- | :--- |
-| `GOVKIT_RUNNER` | `OATHBOUND_RUNNER` |
-| `GOVKIT_MODEL` | `OATHBOUND_MODEL` |
-| `GOVKIT_EFFORT` | `OATHBOUND_EFFORT` |
-| `GOVKIT_AGENT_DIR` | `OATHBOUND_AGENT_DIR` |
-| `GOVKIT_GENERIC_CMD` | `OATHBOUND_GENERIC_CMD` |
-
-### Caminhos e estado
-
-| Antes | Depois |
-| :--- | :--- |
-| `.claude/skills/agent-governance/` | `.claude/skills/oathbound/` |
-| `~/.agent-governance-kit/` | `~/.oathbound/` |
-| `.git/ds-queue/` | `.git/oathbound/` |
-| `governance.db` | `oathbound.db` |
-| tag de sessão `dsrun-…` | tag `oathbound-…` |
-
-O estado em `.git/oathbound/` é migrado automaticamente na primeira execução: `stateDir()` renomeia `.git/ds-queue` para `.git/oathbound` e `governance.db` para `oathbound.db`, preservando o legado quando ambos existirem.
 
 ---
 

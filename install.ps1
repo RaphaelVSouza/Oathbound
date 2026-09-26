@@ -50,44 +50,6 @@ if ($Upgrade -and -not $Global) {
 
 $collisions = @()
 
-# Detecção de instalação antiga (agent-governance-kit). Não remove nada; apenas
-# interrompe e lista os caminhos para decisão manual.
-$legacyPaths = @()
-if ($Global) {
-    $legacyPaths += @(
-        (Join-Path $HOME '.agent-governance-kit'),
-        (Join-Path $HOME '.claude/skills/agent-governance'),
-        (Join-Path $HOME '.codex/skills/agent-governance'),
-        (Join-Path $HOME '.gemini/config/skills/agent-governance')
-    )
-    foreach ($legacyAgentDir in @(
-            (Join-Path $HOME '.config/opencode/agents'),
-            (Join-Path $HOME '.claude/agents'),
-            (Join-Path $HOME '.gemini/antigravity-cli/agents')
-        )) {
-        if (Test-Path -LiteralPath $legacyAgentDir) {
-            $legacyPaths += @(Get-ChildItem -LiteralPath $legacyAgentDir -File -Filter 'ds-*.md' | ForEach-Object { $_.FullName })
-        }
-    }
-    $legacyPaths = @($legacyPaths | Where-Object { Test-Path -LiteralPath $_ })
-} else {
-    if (Test-Path -LiteralPath (Join-Path $projectPath '.claude/skills/agent-governance')) {
-        $legacyPaths += (Join-Path $projectPath '.claude/skills/agent-governance')
-    }
-    foreach ($legacyAgentDir in @(
-            (Join-Path $projectPath '.opencode/agents'),
-            (Join-Path $projectPath '.claude/agents'),
-            (Join-Path $projectPath '.agents/agents')
-        )) {
-        if (Test-Path -LiteralPath $legacyAgentDir) {
-            $legacyPaths += @(Get-ChildItem -LiteralPath $legacyAgentDir -File -Filter 'ds-*.md' | ForEach-Object { $_.FullName })
-        }
-    }
-}
-if ($legacyPaths.Count -gt 0) {
-    throw "Instalação antiga (agent-governance-kit) detectada; nada foi alterado. Revise e remova manualmente:`n$($legacyPaths -join "`n")"
-}
-
 if ((Test-Path -LiteralPath $skillTarget) -and -not $Upgrade) { $collisions += $skillTarget }
 if ($AuditDocs -and -not $Upgrade) {
     foreach ($name in @('audit-docs.js', 'audit-docs.core.js', 'audit-docs.sources.js', 'audit-docs.config.js')) {
