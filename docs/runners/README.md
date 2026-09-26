@@ -9,6 +9,13 @@ O runner é sempre executado com stdout/stderr em pipe, nunca em TTY. CLIs
 invocadas por um adapter podem detectar a ausência de TTY e omitir cores
 ANSI e barras de progresso interativas na saída.
 
+No Windows, o runner nunca é executado via shell. Um `.exe`/`.com` no `PATH` é chamado
+direto. Quando só existe o shim do npm (`opencode.cmd`, `codex.cmd`, `claude.cmd`), o
+Oathbound lê o shim e executa o que ele chamaria: o script Node do pacote com o próprio
+Node, ou o `.exe` apontado. Assim os argumentos (prompt com `&`, `|`, aspas, `%`) chegam
+intactos, sem passar pelo `cmd.exe`. Um `.cmd`/`.bat` que não siga o formato do shim do
+npm falha com erro explícito; aponte o runner para o executável real.
+
 ## Runners disponíveis
 
 | Runner | Invocação | Guardrails de escopo | Descoberta de sessão | Documentação |
