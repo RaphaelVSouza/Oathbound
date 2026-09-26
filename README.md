@@ -40,16 +40,16 @@ O Oathbound distribui o trabalho entre dez papéis juramentados em [`guild/`](gu
 
 | Ofício | Função | Permissões principais |
 | :--- | :--- | :--- |
-| [`oathkeeper`](guild/oathkeeper.md) | Orquestra a guilda: escolhe o papel, entrega a tarefa fechada, confere diff/recibo e decide o avanço. Não edita nem commita. | Somente leitura; shell restrito a `git status/diff/log/show` e aos scripts de `run.js`, `queue.js`, `kill.js`, `quiet.js`; não é delegável. |
-| [`surveyor`](guild/surveyor.md) | Mapeia o código e responde com `arquivo:linha`. | Somente leitura (`glob`, `read`); escrita e shell proibidos. |
-| [`scholar`](guild/scholar.md) | Pesquisa em fontes externas primárias. | Somente leitura; navegação web permitida; escrita local bloqueada. |
-| [`scribe`](guild/scribe.md) | Specs, tickets, decisões e instruções de agentes, antes da implementação. | Edição em `docs/`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` e `.scratch/`; shell somente leitura (`git`). |
-| [`smith`](guild/smith.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); comandos de teste/build; Git que altera histórico bloqueado. |
-| [`assayer`](guild/assayer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura; shell restrito a `git diff`, `git status`, `git show` e `git log -p`. |
-| [`herald`](guild/herald.md) | README, CHANGELOG e texto do PR, com base em commits, diff e saídas de comando. | Edição só em `README.md`, `CHANGELOG.md` e `docs/`; shell somente leitura (`git`). |
-| [`archivist`](guild/archivist.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; Git restrito aos arquivos autorizados (`git-stage.js`, `git-commit.js`). |
-| [`breaker`](guild/breaker.md) | Testes de mutação: quebra o código de propósito para medir se os testes percebem. | Edição temporária em fontes (exceto testes); restauração conferida por hash; Git destrutivo bloqueado. |
-| [`warden`](guild/warden.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
+| <img src="oathbound-visual-identity/svg/agents/oathbound-ag-oathkeeper.svg" width="20" alt=""> [`oathkeeper`](guild/oathkeeper.md) | Orquestra a guilda: escolhe o papel, entrega a tarefa fechada, confere diff/recibo e decide o avanço. Não edita nem commita. | Somente leitura; shell restrito a `git status/diff/log/show` e aos scripts de `run.js`, `queue.js`, `kill.js`, `quiet.js`; não é delegável. |
+| <img src="oathbound-visual-identity/svg/agents/oathbound-ag-surveyor.svg" width="20" alt=""> [`surveyor`](guild/surveyor.md) | Mapeia o código e responde com `arquivo:linha`. | Somente leitura (`glob`, `read`); escrita e shell proibidos. |
+| <img src="oathbound-visual-identity/svg/agents/oathbound-ag-scholar.svg" width="20" alt=""> [`scholar`](guild/scholar.md) | Pesquisa em fontes externas primárias. | Somente leitura; navegação web permitida; escrita local bloqueada. |
+| <img src="oathbound-visual-identity/svg/agents/oathbound-ag-scribe.svg" width="20" alt=""> [`scribe`](guild/scribe.md) | Specs, tickets, decisões e instruções de agentes, antes da implementação. | Edição em `docs/`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` e `.scratch/`; shell somente leitura (`git`). |
+| <img src="oathbound-visual-identity/svg/agents/oathbound-ag-smith.svg" width="20" alt=""> [`smith`](guild/smith.md) | Implementação delimitada de um ticket com ciclo TDD e correção na causa-raiz. | Edição restrita aos arquivos do escopo (`-s`); comandos de teste/build; Git que altera histórico bloqueado. |
+| <img src="oathbound-visual-identity/svg/agents/oathbound-ag-assayer.svg" width="20" alt=""> [`assayer`](guild/assayer.md) | Revisão técnica em dois eixos independentes: padrões do projeto e aderência à spec. | Somente leitura; shell restrito a `git diff`, `git status`, `git show` e `git log -p`. |
+| <img src="oathbound-visual-identity/svg/agents/oathbound-ag-herald.svg" width="20" alt=""> [`herald`](guild/herald.md) | README, CHANGELOG e texto do PR, com base em commits, diff e saídas de comando. | Edição só em `README.md`, `CHANGELOG.md` e `docs/`; shell somente leitura (`git`). |
+| <img src="oathbound-visual-identity/svg/agents/oathbound-ag-archivist.svg" width="20" alt=""> [`archivist`](guild/archivist.md) | Seleção de hunks, auditoria de escopo e criação de commits semânticos rastreados. | Edição direta proibida; Git restrito aos arquivos autorizados (`git-stage.js`, `git-commit.js`). |
+| <img src="oathbound-visual-identity/svg/agents/oathbound-ag-breaker.svg" width="20" alt=""> [`breaker`](guild/breaker.md) | Testes de mutação: quebra o código de propósito para medir se os testes percebem. | Edição temporária em fontes (exceto testes); restauração conferida por hash; Git destrutivo bloqueado. |
+| <img src="oathbound-visual-identity/svg/agents/oathbound-ag-warden.svg" width="20" alt=""> [`warden`](guild/warden.md) | Auditoria de segurança de aplicação (AppSec), fronteiras de confiança e fluxos de dados. | Somente leitura estrita com esforço de raciocínio elevado (`high`). |
 
 ---
 
