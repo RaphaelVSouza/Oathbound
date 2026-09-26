@@ -5,21 +5,27 @@ verificável. Correções não são feitas na mesma sessão em que a lacuna é r
 
 | ID | Status | Área | Resumo |
 |---|---|---|---|
-| G-001 | aberta | runners/opencode | `surveyor` usa bloco `edit:` no opencode; validação de `-R` exige linha `edit: deny` |
+| G-001 | resolvida (83d954e) | runners/opencode | `surveyor` usa bloco `edit:` no opencode; validação de `-R` exige linha `edit: deny` |
 | G-002 | aberta | fila (queue.js) | `queue.js:108` não reconhece `` `No issues.` `` com crase simples; não reproduzido em toda chamada |
 | G-003 | aberta | fila (queue.js) | Revisor da fila não recebe diff nem Bash com `-R` no Claude; avalia arquivo cru |
-| G-004 | aberta | runners/claude | Runner roda com `--dangerously-skip-permissions`; único freio é o prompt |
-| G-005 | suspeita | guild/archivist | `git-stage.js`/`git-commit.js` liberados só no caminho `.claude/skills/oathbound/…` |
+| G-004 | resolvida (36630a9) | runners/claude | Runner nativo usava `--dangerously-skip-permissions` |
+| G-005 | resolvida (36630a9) | guild/archivist | Auxiliares Git liberados só no caminho da instalação local |
 | G-006 | suspeita | runners/agy | Flags do AGY (`--output-format json`, `conversation_id`, `--mode plan`, `--agent`) nunca testadas contra a CLI real |
 | G-007 | aberta | runners/claude | `parseOutput` do runner `claude` sempre devolve `usage: null` |
 | G-008 | aberta | runners/generic | `resolveSession` do runner `generic` devolve a tag local como id de sessão |
 | G-009 | aberta | fila (queue.js) | `queue.js` aceita diretório como issue ou como aceite sem erro (`fs.existsSync`) |
 | G-010 | aberta | fila (queue.js) | `-A` resolve contra o diretório atual; a issue resolve contra a raiz do repositório |
 | G-011 | aberta | store.js | Tabela `agent_claims` criada e com métodos prontos, mas nenhum script chama `registerClaim`/`getActiveClaims`/`cleanStaleClaims` |
+| G-012 | aberta | runners/claude | Claude aceita `Write(path)` mas ignora regra na checagem de arquivo |
+| G-013 | aberta | runners/claude | Bash genérico pode escrever fora de `-s` por subprocesso |
+| G-014 | aberta | guild-transpiler | Negativas de leitura por caminho não entram no JSON Claude |
+| G-015 | aberta | instalação | JSON existente preservado pode ficar defasado dos agentes atualizados |
+| G-016 | aberta | testes | `node --test` na raiz mostra falha proposital do exemplo com exit 0 |
+| G-017 | suspeita | documentação | Prompt pede Node 22; CONTRIBUTING exige Node 24 ou superior |
 
 ## G-001 — `surveyor` usa bloco `edit:` no opencode; validação de `-R` exige linha simples
 
-- Status: aberta
+- Status: resolvida (83d954e)
 - Encontrada em: `docs/demo`, 2026-09-25, commit base `45122fb`
 - Tipo: observada
 - Evidência: `guild/surveyor.md:31-32` declara `edit:\n    "*": deny` (bloco), único entre os
@@ -72,7 +78,7 @@ verificável. Correções não são feitas na mesma sessão em que a lacuna é r
 
 ## G-004 — Runner `claude` roda com `--dangerously-skip-permissions`
 
-- Status: aberta
+- Status: resolvida (36630a9)
 - Encontrada em: `main`, 2026-09-25, commit base `45122fb`
 - Tipo: observada
 - Evidência: `skill/scripts/runners/claude.js:53` inclui `--dangerously-skip-permissions`
@@ -86,10 +92,14 @@ verificável. Correções não são feitas na mesma sessão em que a lacuna é r
   (`exit_processo=3`), que não impede a execução do comando — só a detecta.
 - Proposta: avaliar se `--tools` (já usado quando `readonly`) pode restringir Bash também
   fora do modo `-R`, ou documentar explicitamente que o isolamento é só por prompt+auditoria.
+- Evidência nova: `skill/scripts/runners/claude.ts` no commit `36630a9` usa `dontAsk`
+  e regras por agente nativo. Teste manual em repositório temporário com
+  `run.js -u claude -a smith -s "src/*"`: Claude informou `Edit negado` para
+  `docs/x.md`; recibo mostrou `alterados na chamada (0)` e arquivo permaneceu `original`.
 
 ## G-005 — `archivist` só commita pelo caminho `.claude/skills/oathbound/…` (suspeita)
 
-- Status: suspeita
+- Status: resolvida (36630a9)
 - Encontrada em: `main`, 2026-09-25, commit base `45122fb`
 - Tipo: suspeita — não reproduzida nesta sessão (instalação global não foi testada)
 - Evidência: `guild/archivist.md:29-30` libera Bash só para
@@ -100,6 +110,8 @@ verificável. Correções não são feitas na mesma sessão em que a lacuna é r
   porque o guardrail de Bash do OpenCode casa texto literal do caminho.
 - Proposta: parametrizar o caminho no guardrail conforme o diretório real de instalação,
   ou documentar que `archivist` só funciona com instalação por projeto.
+- Evidência nova: `guild/archivist.md` no commit `36630a9` usa
+  `node *oathbound/scripts/git-stage.ts*` e `git-commit.ts*`.
 
 ## G-006 — Flags do AGY nunca verificadas contra a CLI real (suspeita)
 
@@ -190,3 +202,68 @@ verificável. Correções não são feitas na mesma sessão em que a lacuna é r
   tabela SQLite.
 - Proposta: ligar `registerClaim`/`releaseClaim` ao ciclo de vida de `run.js`/`queue.js`,
   ou remover a tabela e os métodos não usados até que haja um chamador real.
+
+## G-012 — `Write(path)` não participa da checagem de arquivo do Claude
+
+- Status: aberta
+- Encontrada em: `feat/claude-permissions`, 2026-09-26
+- Tipo: observada
+- Evidência: execução manual `claude -p ... --permission-mode dontAsk --allowedTools
+  "Read,Edit(src/*),Write(src/*)"` em diretório temporário imprimiu
+  `Write(src/*) is not matched by file permission checks — only Edit(path) rules are`.
+  A [documentação de permissões](https://code.claude.com/docs/en/permissions) confirma.
+- Impacto: regra `Write(<glob>)` gerada por requisito não acrescenta proteção; `Edit(<glob>)` governa Edit e Write.
+- Proposta: remover regra redundante após ajustar contrato documentado e testes.
+
+## G-013 — Bash genérico contorna escopo de edição por subprocessos
+
+- Status: aberta
+- Encontrada em: `feat/claude-permissions`, 2026-09-26
+- Tipo: suspeita — não houve tentativa de escrita via Bash fora do escopo
+- Evidência: `guild/smith.md` tem `bash: "*": allow`; `tools/guild-transpiler.js`
+  gera `Bash` genérico. [Documentação do Claude](https://code.claude.com/docs/en/permissions)
+  afirma que regras `Edit` não cobrem subprocessos arbitrários como Node/Python.
+- Impacto: `-s` impede Edit/Write fora do glob, mas Bash ainda pode alterar arquivos;
+  auditoria Git posterior detecta mudança sem impedir execução.
+- Proposta: executar Bash em sandbox de sistema ou restringir comandos de escrita para agentes com `-s`.
+
+## G-014 — Negativas de leitura por caminho não são transpiladas
+
+- Status: aberta
+- Encontrada em: `feat/claude-permissions`, 2026-09-26
+- Tipo: observada no código; acesso ao caminho sensível não testado
+- Evidência: `guild/smith.md` contém `read: "*.env": deny`; `determineClaudePermissions`
+  em `tools/guild-transpiler.js` emite só `Read`, sem `Read(*.env)` em `deny`.
+- Impacto: Claude pode ler caminho proibido no OpenCode quando arquivo não estiver protegido por outra configuração.
+- Proposta: traduzir negativas `read` em regras Claude `Read(<glob>)` e cobrir com teste.
+
+## G-015 — JSON de permissões pode ficar defasado após instalação
+
+- Status: aberta
+- Encontrada em: `feat/claude-permissions`, 2026-09-26
+- Tipo: observada no código
+- Evidência: `tools/guild-transpiler.js` grava `oathbound-permissions.json` somente
+  quando arquivo não existe ou `force` é verdadeiro; `install.ps1` preserva arquivos existentes.
+- Impacto: agentes atualizados podem continuar usando regras antigas até atualização manual.
+- Proposta: apresentar diff por agente e permitir atualização explícita do manifesto.
+
+## G-016 — `node --test` na raiz inclui falha do exemplo sem falhar processo
+
+- Status: aberta
+- Encontrada em: `feat/claude-permissions`, 2026-09-26
+- Tipo: observada
+- Evidência: `node --test` exibiu `103.5 !== 105` em
+  `examples/invoice/test/invoice.test.js:14`, com anotação `bug proposital, issue 001`;
+  processo terminou com exit 0. `node --test test/*.test.js` passou 125/125.
+- Impacto: saída da suíte geral parece conter falha real apesar do exit 0; leitura manual fica ambígua.
+- Proposta: documentar exemplo intencional ou limitar descoberta automática ao diretório `test/`.
+
+## G-017 — Versão Node diverge entre pedido e guia
+
+- Status: suspeita
+- Encontrada em: `feat/claude-permissions`, 2026-09-26
+- Tipo: ambiguidade de instruções
+- Evidência: pedido desta entrega descreve "Node 22"; `CONTRIBUTING.md`
+  exige versão 24 ou superior; `CHANGELOG.md` 0.23.0 registra migração para Node 24.
+- Impacto: reprodução em Node 22 pode falhar em APIs exigidas pelo repositório.
+- Proposta: alinhar especificação de ambiente com versão atual do pacote.
