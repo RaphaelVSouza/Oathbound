@@ -223,8 +223,9 @@ test('snapshot: detecta mudança só no índice, no worktree, remoção e renome
 
 test('snapshot: nomes com espaço, acento e caracteres de glob são tratados literalmente', async t => {
   const repo = await createIsolatedRepo(t);
-  const names = ['com espaço.txt', 'ação.txt', 'src/a*b?.txt', 'src/[x].txt'];
-  if (process.platform !== 'win32') names.push('"aspas".txt');
+  const names = ['com espaço.txt', 'ação.txt', 'src/[x].txt'];
+  // O Windows proíbe *, ? e aspas em nomes de arquivo.
+  if (process.platform !== 'win32') names.push('src/a*b?.txt', '"aspas".txt');
   fs.mkdirSync(path.join(repo, 'src'));
   for (const name of names) fs.writeFileSync(path.join(repo, name), 'v1\n');
   const before = await snapshot(repo);
