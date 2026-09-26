@@ -1,0 +1,24 @@
+`.claude/` e `AGENTS.md` já untracked antes desta chamada — não toquei, estado de entrada.
+
+```
+ARQUIVOS:
+src/invoice.js — fórmula corrigida: desconto incide só no subtotal, frete somado depois
+test/invoice.test.js — removido { todo: ... } do teste do bug (agora roda de verdade)
+
+ACEITE: node --test → obtido: 3 pass, 0 fail | esperado: passa, total([{price:100,qty:1}],0.1)=105 → obtido 105
+
+FONTES: FRETE_PADRAO=15 → src/invoice.js:3; fórmula esperada → docs/issues/001-desconto.md:8
+
+NOTA: nenhuma
+
+GIT:
+ M src/invoice.js
+ M test/invoice.test.js
+?? .claude/
+?? AGENTS.md
+```
+
+── oathbound run: agente=smith runner=claude modo=edicao modelo=configuração do projeto exit=0 tempo=27s sessao=9c17252c-317d-441b-a355-1c82e53aad70
+── alterados na chamada (2):
+   src/invoice.js
+   test/invoice.test.js

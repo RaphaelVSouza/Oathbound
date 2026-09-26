@@ -49,6 +49,23 @@ O Oathbound distribui o trabalho entre dez papéis juramentados em [`guild/`](gu
 
 ---
 
+## Demonstração
+Execução real contra [`examples/invoice/`](examples/invoice/). Recibo f.2 — script que
+ignora o escopo autorizado (`docs/*`), detectado pela auditoria de diff do Oathbound:
+````text
+agente escreveu src/probe.js
+
+── oathbound run: agente=smith runner=generic modo=edicao modelo=configuração do projeto exit=0 tempo=4s sessao=oathbound-smith-12652-1790377599174
+── alterados na chamada (1):
+   src/probe.js
+── FORA DO ESCOPO (1) — confira autoria:
+   ! src/probe.js
+-- exit_processo=3 duracao=9s
+````
+Recibos completos em [`docs/demo.md`](docs/demo.md).
+
+---
+
 ## Instalação
 
 Requisitos: **PowerShell 7+**, **Git** e **Node.js 22 LTS+**.
@@ -225,6 +242,8 @@ node --test --experimental-test-coverage test/*.test.js
 # Valida integridade documental, contratos e links
 node tools/audit-docs.js
 ```
+
+Lacunas conhecidas, com evidência e status, em [`docs/gaps.md`](docs/gaps.md).
 
 ---
 

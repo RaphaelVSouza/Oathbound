@@ -1,0 +1,9 @@
+PS> node .claude/skills/oathbound/scripts/run.js -d . -u claude -R -a assayer -- "Revise o git diff de src/ e test/ contra a issue docs/issues/001-desconto.md. Confirme se a formula subtotal*(1-discount)+FRETE_PADRAO foi aplicada corretamente e se o teste do desconto (antes marcado todo) agora cobre o caso corretamente."
+Fórmula bate: `subtotal*(1-discount)+FRETE_PADRAO`, frete fora do desconto. Linha 14-15 correta. Teste linha 13-14 cobre caso exato do aceite (100, qty 1, desconto 0.1 → 105), não é mais `.todo`, ativo e correto.
+
+No issues.
+
+── oathbound run: agente=assayer runner=claude modo=leitura modelo=configuração do projeto exit=0 tempo=16s sessao=a9531cc1-8e5b-4697-991a-6b9d1fd75b5e
+── alterados na chamada (0):
+
+── exit_processo=0 duracao=23s
