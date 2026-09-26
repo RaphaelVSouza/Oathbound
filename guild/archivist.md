@@ -48,7 +48,7 @@ terminarem. Preserve mudanças de outras tarefas.
    informe o ponto preciso. Não infira ticket.
 
    **Se o shell falhar** (ex.: `Permission denied: shell` no runner, veja
-   [models.md §1.1](models.md)), não pare no primeiro erro: leia
+   [models.md §1.1](../skill/references/models.md)), não pare no primeiro erro: leia
    `.git/HEAD`, `.git/logs/HEAD` e `.git/index` diretamente via `read` (não
    requerem shell) para diagnosticar branch, HEAD e histórico recente antes
    de reportar. Isso só cobre diagnóstico e inspeção; preparar hunks e
