@@ -289,6 +289,7 @@ async function runSession(opts = {}) {
       stderr: r.stderr,
       usage: parsed.usage || null,
       changed,
+      outside,
       root
     };
   } finally {
