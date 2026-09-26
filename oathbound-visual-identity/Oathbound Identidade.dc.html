@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Spectral:wght@600&family=Jost:wght@500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* PALETA — troque aqui */
+:root{
+  --parchment:#F2ECDF; /* neutro claro: pergaminho */
+  --ink:#1B1A17;       /* neutro escuro: ferro */
+  --bronze:#7E6134;    /* latão envelhecido (fundo claro) */
+  --bronze-lt:#C9A46A; /* latão (fundo escuro) */
+  --seal:#9B2A22;      /* lacre carmim (fundo claro) */
+  --seal-lt:#D0503F;   /* lacre (fundo escuro) */
+  --stone:#E6E0D2; --muted:#5E5A50;
+}
+.t-light{--mark:var(--bronze);--accent:var(--seal);--knock:var(--parchment);--text:var(--ink);background:var(--parchment);color:var(--ink)}
+.t-dark{--mark:var(--bronze-lt);--accent:var(--seal-lt);--knock:var(--ink);--text:var(--parchment);background:var(--ink);color:var(--parchment)}
+.t-mono{--mark:var(--ink);--accent:var(--ink);--knock:var(--parchment);--text:var(--ink);background:var(--parchment);color:var(--ink)}
+/* DOCS / SITE — tokens semânticos */
+.th-light{--bg:#F7F3EA;--surface:#FFFCF5;--sunken:#EDE6D6;--border:#DDD4C1;--text:#1B1A17;--muted:#5E5A50;--brand:#7E6134;--link:#9B2A22;--ok:#4F7A34;--warn:#8F6210;--danger:#9B2A22;--inverse:#F7F3EA;--mark:#7E6134;--accent:#9B2A22;--knock:#F7F3EA}
+.th-dark{--bg:#161513;--surface:#1F1D1A;--sunken:#282622;--border:#36332D;--text:#EDE6D8;--muted:#A39D90;--brand:#C9A46A;--link:#E27A68;--ok:#8DB870;--warn:#D9A94A;--danger:#E27A68;--inverse:#161513;--mark:#C9A46A;--accent:#D0503F;--knock:#161513}
+/* AGENTES — cor primária de cada um */
+:root{--ag-oathkeeper:#A8822E;--ag-surveyor:#2E7A73;--ag-scholar:#4A4394;--ag-scribe:#2C5D8F;--ag-smith:#B4502A;--ag-assayer:#5C7F2E;--ag-warden:#4E5D6C;--ag-breaker:#7E3B8A;--ag-herald:#B03A5E;--ag-archivist:#7A5A3E;--glyph:var(--parchment)}
+.ag-oathkeeper{--c:var(--ag-oathkeeper)}.ag-surveyor{--c:var(--ag-surveyor)}.ag-scholar{--c:var(--ag-scholar)}.ag-scribe{--c:var(--ag-scribe)}.ag-smith{--c:var(--ag-smith)}.ag-assayer{--c:var(--ag-assayer)}.ag-warden{--c:var(--ag-warden)}.ag-breaker{--c:var(--ag-breaker)}.ag-herald{--c:var(--ag-herald)}.ag-archivist{--c:var(--ag-archivist)}
+body{margin:0;background:var(--stone);color:var(--ink);font-family:'IBM Plex Mono',monospace;-webkit-font-smoothing:antialiased}
+a{color:var(--seal)} a:hover{color:var(--ink)}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="sym-c" viewBox="0 0 64 64">
+      <g fill="none" stroke="var(--mark)" stroke-width="5">
+        <path d="M22 8V56"></path>
+        <circle cx="28" cy="32" r="14"></circle>
+        <path d="M22 13.5V25.2" stroke="var(--knock)" stroke-width="9"></path>
+        <path d="M22 13V25.7"></path>
+        <path d="M26.68 45.94A14 14 0 0 1 18.03 41.83" stroke="var(--knock)" stroke-width="9"></path>
+        <path d="M26.68 45.94A14 14 0 0 1 18.03 41.83"></path>
+      </g>
+      <g fill="var(--accent)"><circle cx="22" cy="8" r="5.5"></circle><circle cx="22" cy="56" r="5.5"></circle><circle cx="42" cy="32" r="5.5"></circle></g>
+    </symbol>
+    <symbol id="ag-frame" viewBox="0 0 64 64"><path d="M15 6H49A9 9 0 0 0 58 15V49A9 9 0 0 0 49 58H15A9 9 0 0 0 6 49V15A9 9 0 0 0 15 6Z" fill="var(--c)"></path></symbol>
+    <symbol id="ag-oathkeeper" viewBox="0 0 64 64"><use href="#ag-frame"></use>
+      <g transform="translate(32 32) scale(0.64) translate(-32 -32)">
+        <g fill="none" stroke="var(--glyph)" stroke-width="6.5">
+          <path d="M22 8V56"></path><circle cx="28" cy="32" r="14"></circle>
+          <path d="M22 13.5V25.2" stroke="var(--c)" stroke-width="12"></path><path d="M22 13V25.7"></path>
+          <path d="M26.68 45.94A14 14 0 0 1 18.03 41.83" stroke="var(--c)" stroke-width="12"></path><path d="M26.68 45.94A14 14 0 0 1 18.03 41.83"></path>
+        </g>
+        <g fill="var(--glyph)"><circle cx="22" cy="8" r="6.5"></circle><circle cx="22" cy="56" r="6.5"></circle><circle cx="42" cy="32" r="6.5"></circle></g>
+      </g></symbol>
+    <symbol id="ag-surveyor" viewBox="0 0 64 64"><use href="#ag-frame"></use>
+      <g fill="var(--glyph)"><path d="M29 16L34 18.5L19.5 51Z"></path><path d="M35 16L30 18.5L44.5 51Z"></path><circle cx="32" cy="14" r="5"></circle></g>
+      <circle cx="32" cy="14" r="1.8" fill="var(--c)"></circle>
+      <path d="M23.5 36A23.6 23.6 0 0 0 40.5 36" fill="none" stroke="var(--glyph)" stroke-width="2.5"></path></symbol>
+    <symbol id="ag-scholar" viewBox="0 0 64 64"><use href="#ag-frame"></use>
+      <rect x="19" y="14" width="26" height="36" fill="var(--glyph)"></rect>
+      <path d="M24.5 14V50" stroke="var(--c)" stroke-width="2.5"></path>
+      <path d="M34 14V31L37.5 27.5L41 31V14Z" fill="var(--c)"></path></symbol>
+    <symbol id="ag-scribe" viewBox="0 0 64 64"><use href="#ag-frame"></use>
+      <g fill="var(--glyph)"><rect x="17" y="35" width="24" height="15" rx="2"></rect><rect x="23" y="29" width="12" height="7"></rect><rect x="21" y="26.5" width="16" height="3.5" rx="1"></rect></g>
+      <ellipse cx="42" cy="17" rx="4.5" ry="10" transform="rotate(34 42 17)" fill="var(--glyph)"></ellipse>
+      <path d="M36.5 25L46.5 10" stroke="var(--c)" stroke-width="1.6" stroke-linecap="round"></path>
+      <path d="M36.6 24.8L32 31" stroke="var(--glyph)" stroke-width="2.5" stroke-linecap="round"></path>
+      <path d="M21 40H37" stroke="var(--c)" stroke-width="2"></path></symbol>
+    <symbol id="ag-smith" viewBox="0 0 64 64"><use href="#ag-frame"></use>
+      <path d="M14 22H48C48 29 44 32 39 32V38H45V45H19V38H25V32C20 32 16 28 14 22Z" fill="var(--glyph)"></path></symbol>
+    <symbol id="ag-assayer" viewBox="0 0 64 64"><use href="#ag-frame"></use>
+      <circle cx="32" cy="32" r="16" fill="var(--glyph)"></circle>
+      <path d="M45.20 32.00L49.00 32.00M41.33 41.33L44.02 44.02M32.00 45.20L32.00 49.00M22.67 41.33L19.98 44.02M18.80 32.00L15.00 32.00M22.67 22.67L19.98 19.98M32.00 18.80L32.00 15.00M41.33 22.67L44.02 19.98" stroke="var(--c)" stroke-width="2.2"></path>
+      <circle cx="32" cy="32" r="9" fill="var(--c)"></circle>
+      <path d="M26.5 31A6 6 0 0 1 31 26.5" fill="none" stroke="var(--glyph)" stroke-width="2.2" stroke-linecap="round"></path></symbol>
+    <symbol id="ag-warden" viewBox="0 0 64 64"><use href="#ag-frame"></use>
+      <path d="M18 48V30A14 14 0 0 1 46 30V48Z" fill="var(--glyph)"></path>
+      <g stroke="var(--c)" stroke-width="3.5"><path d="M25 20V48M32 17V48M39 20V48M18 37H46"></path></g></symbol>
+    <symbol id="ag-breaker" viewBox="0 0 64 64"><use href="#ag-frame"></use>
+      <path d="M13 43L20 23H44L51 43Z" fill="var(--glyph)"></path>
+      <path d="M34 20L29 30L36 35L31 46" fill="none" stroke="var(--c)" stroke-width="3.5" stroke-linejoin="bevel"></path></symbol>
+    <symbol id="ag-herald" viewBox="0 0 64 64"><use href="#ag-frame"></use>
+      <g transform="translate(0 4)" fill="var(--glyph)">
+        <rect x="10" y="20.5" width="3.5" height="7"></rect>
+        <rect x="13" y="22" width="24" height="4"></rect>
+        <path d="M36 21.5L51 12V36L36 26.5Z"></path>
+        <path d="M17 26H33V44L25 39.5L17 44Z"></path>
+        <path d="M25 29.5L28.5 33L25 36.5L21.5 33Z" fill="var(--c)"></path>
+      </g></symbol>
+    <symbol id="ag-archivist" viewBox="0 0 64 64"><use href="#ag-frame"></use>
+      <path d="M17 12H37L45 20V50H17Z" fill="var(--glyph)"></path>
+      <path d="M37 12V20H45" fill="none" stroke="var(--c)" stroke-width="2"></path>
+      <path d="M22 21H32M22 27.5H40M22 34H40M22 40.5H30" stroke="var(--c)" stroke-width="2.2"></path>
+      <circle cx="41" cy="45" r="9" fill="var(--c)"></circle>
+      <circle cx="41" cy="45" r="6.5" fill="var(--glyph)"></circle>
+      <path d="M41 41.5L44.5 45L41 48.5L37.5 45Z" fill="var(--c)"></path></symbol>
+  </defs>
+</svg>
+
+<div style="max-width:1320px;margin:0 auto;padding:64px 48px 96px;display:flex;flex-direction:column;gap:72px">
+  <header style="display:flex;flex-direction:column;gap:20px">
+    <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Oathbound · identidade visual · nó de juramento</div>
+    <div style="font-family:Marcellus,serif;font-size:56px;line-height:1.05;letter-spacing:.02em">Compromisso verificado</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;background:var(--parchment)"><span style="width:24px;height:24px;background:var(--parchment);outline:1px solid #0002"></span>--parchment #F2ECDF</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;background:var(--parchment)"><span style="width:24px;height:24px;background:var(--ink)"></span>--ink #1B1A17</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;background:var(--parchment)"><span style="width:24px;height:24px;background:var(--bronze)"></span>--bronze #7E6134</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;background:var(--parchment)"><span style="width:24px;height:24px;background:var(--bronze-lt)"></span>--bronze-lt #C9A46A</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;background:var(--parchment)"><span style="width:24px;height:24px;background:var(--seal)"></span>--seal #9B2A22</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;background:var(--parchment)"><span style="width:24px;height:24px;background:var(--seal-lt)"></span>--seal-lt #D0503F</div>
+    </div>
+    <div style="font-size:13px;line-height:1.6;color:var(--muted);max-width:760px;text-wrap:pretty">Latão e lacre, com pergaminho e ferro como neutros. Cada cor tem uma variante clara para fundo escuro, para manter contraste. Os símbolos usam três papéis: --mark (metal), --accent (lacre) e --knock (vazado, igual ao fundo).</div>
+  </header>
+
+  <!-- DOCS / SITE -->
+  <section id="docs" data-screen-label="Docs e site" style="display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;gap:20px;align-items:baseline;flex-wrap:wrap">
+      <span style="font-size:12px;font-weight:500;padding:4px 8px;background:var(--ink);color:var(--parchment)">3</span>
+      <span style="font-family:Jost,sans-serif;font-weight:500;font-size:32px">Docs e site</span>
+      <span style="font-size:12px;color:var(--muted)">tokens semânticos · claro e escuro</span>
+    </div>
+    <p style="margin:0;font-size:14px;line-height:1.65;max-width:780px;text-wrap:pretty">Para leitura longa, o fundo clareia (papel em vez de pergaminho) e o escuro fica em ferro quase preto. O lacre vira a cor de link e de erro, o latão marca a presença da marca, e o verde de "juramento cumprido" é reservado para resultados de auditoria. Os tokens ficam em .th-light e .th-dark no topo do arquivo.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+      <div style="background:var(--parchment);padding:24px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-size:10px;letter-spacing:.1em;color:var(--muted)">TOKENS · CLARO / ESCURO</span>
+        <div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:8px 12px;font-size:12px;align-items:center">
+          <span>--bg</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#F7F3EA;outline:1px solid #0002"></i>#F7F3EA</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#161513"></i>#161513</span>
+          <span>--surface</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#FFFCF5;outline:1px solid #0002"></i>#FFFCF5</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#1F1D1A"></i>#1F1D1A</span>
+          <span>--sunken</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#EDE6D6"></i>#EDE6D6</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#282622"></i>#282622</span>
+          <span>--border</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#DDD4C1"></i>#DDD4C1</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#36332D"></i>#36332D</span>
+          <span>--text</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#1B1A17"></i>#1B1A17</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#EDE6D8"></i>#EDE6D8</span>
+          <span>--muted</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#5E5A50"></i>#5E5A50</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#A39D90"></i>#A39D90</span>
+          <span>--brand</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#7E6134"></i>#7E6134</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#C9A46A"></i>#C9A46A</span>
+          <span>--link</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#9B2A22"></i>#9B2A22</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#E27A68"></i>#E27A68</span>
+          <span>--ok</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#4F7A34"></i>#4F7A34</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#8DB870"></i>#8DB870</span>
+          <span>--warn</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#8F6210"></i>#8F6210</span><span style="display:flex;gap:8px;align-items:center"><i style="width:22px;height:22px;background:#D9A94A"></i>#D9A94A</span>
+        </div>
+      </div>
+      <div style="background:var(--parchment);padding:24px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-size:10px;letter-spacing:.1em;color:var(--muted)">TIPOGRAFIA</span>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:var(--muted)">H1 · Jost 500 · 40/44</span><span style="font-family:Jost,sans-serif;font-weight:500;font-size:40px;line-height:1.1">Oaths</span></div>
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:var(--muted)">H2 · Jost 500 · 26/32</span><span style="font-family:Jost,sans-serif;font-weight:500;font-size:26px;line-height:1.25">Writing an oath</span></div>
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:var(--muted)">Corpo · IBM Plex Sans 400 · 16/26</span><span style="font-family:'IBM Plex Sans',sans-serif;font-size:16px;line-height:1.65">Every agent runs bound to a role, a file scope and an acceptance criterion.</span></div>
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:var(--muted)">Código · IBM Plex Mono 400 · 14/22</span><span style="font-family:'IBM Plex Mono',monospace;font-size:14px">oathbound run smith</span></div>
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:var(--muted)">Rótulo · IBM Plex Mono 500 · 11 · caixa alta</span><span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:11px;letter-spacing:.1em">AUDIT PASSED</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(600px,1fr));gap:16px">
+      <div class="th-light" style="background:var(--bg);color:var(--text);border:1px solid var(--border);font-family:'IBM Plex Sans',sans-serif;display:flex;flex-direction:column;min-width:0">
+        <div style="display:flex;align-items:center;gap:24px;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface)">
+          <div style="display:flex;align-items:center;gap:8px"><svg width="26" height="26" viewBox="0 0 64 64"><use href="#sym-c"></use></svg><span style="font-family:Jost,sans-serif;font-weight:500;font-size:21px">oathbound</span></div>
+          <div style="display:flex;gap:18px;font-size:14px;color:var(--muted)"><span style="color:var(--text);font-weight:500">Docs</span><span>Guild</span><span>Changelog</span></div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:10px"><span style="font-size:13px;color:var(--muted);padding:6px 10px;border:1px solid var(--border);background:var(--bg);display:flex;gap:24px">Search<span style="font-family:'IBM Plex Mono',monospace;font-size:11px">⌘K</span></span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:160px minmax(0,1fr)">
+          <div style="padding:20px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:2px;font-size:13.5px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:10.5px;letter-spacing:.1em;color:var(--muted);padding:0 10px 8px">GUIDE</span>
+            <span style="padding:6px 10px;color:var(--muted)">Getting started</span>
+            <span style="padding:6px 10px;background:var(--sunken);font-weight:500">Oaths</span>
+            <span style="padding:6px 10px;color:var(--muted)">The guild</span>
+            <span style="padding:6px 10px;color:var(--muted)">Git audit</span>
+            <span style="padding:6px 10px;color:var(--muted)">Configuration</span>
+          </div>
+          <div style="padding:28px 32px 32px;display:flex;flex-direction:column;gap:16px;min-width:0">
+            <span style="font-family:Jost,sans-serif;font-weight:500;font-size:38px;line-height:1.1">Oaths</span>
+            <p style="margin:0;font-size:15.5px;line-height:1.65;text-wrap:pretty">An oath binds one agent to a role, an authorized file scope and an acceptance criterion. Git checks the working tree before and after the run. See <a href="#docs" style="color:var(--link);text-decoration:underline;text-underline-offset:3px">Git audit</a>.</p>
+            <div style="background:var(--sunken);font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.75;padding:14px 16px;overflow:hidden">
+              <div><span style="color:var(--muted)">$</span> oathbound run smith --oath fix-login</div>
+              <div><span style="color:var(--ok)">✓</span> scope   src/auth/** · 3 files</div>
+              <div><span style="color:var(--ok)">✓</span> accept  npm test · 42 passed</div>
+              <div><span style="color:var(--ok)">✓</span> assayer oath kept</div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <span class="ag-smith" style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;background:var(--surface);border:1px solid var(--border);font-size:13px;font-weight:500"><svg width="20" height="20" viewBox="0 0 64 64"><use href="#ag-smith"></use></svg>smith</span>
+              <span class="ag-assayer" style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;background:var(--surface);border:1px solid var(--border);font-size:13px;font-weight:500"><svg width="20" height="20" viewBox="0 0 64 64"><use href="#ag-assayer"></use></svg>assayer</span>
+              <span class="ag-archivist" style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;background:var(--surface);border:1px solid var(--border);font-size:13px;font-weight:500"><svg width="20" height="20" viewBox="0 0 64 64"><use href="#ag-archivist"></use></svg>archivist</span>
+            </div>
+            <div style="border:1px solid var(--danger);padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:11px;letter-spacing:.1em;color:var(--danger)">OATH BROKEN</span>
+              <span style="font-size:14px;line-height:1.55">smith touched <code style="font-family:'IBM Plex Mono',monospace;font-size:13px;background:var(--sunken);padding:1px 5px">package.json</code>, outside the authorized scope. The run was rejected.</span>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <span style="padding:10px 16px;background:var(--text);color:var(--inverse);font-size:14px;font-weight:500">Get started</span>
+              <span style="padding:9px 15px;border:1px solid var(--border);background:var(--surface);font-size:14px;font-weight:500">View on GitHub</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="th-dark" style="background:var(--bg);color:var(--text);border:1px solid var(--border);font-family:'IBM Plex Sans',sans-serif;display:flex;flex-direction:column;min-width:0">
+        <div style="display:flex;align-items:center;gap:24px;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface)">
+          <div style="display:flex;align-items:center;gap:8px"><svg width="26" height="26" viewBox="0 0 64 64"><use href="#sym-c"></use></svg><span style="font-family:Jost,sans-serif;font-weight:500;font-size:21px">oathbound</span></div>
+          <div style="display:flex;gap:18px;font-size:14px;color:var(--muted)"><span style="color:var(--text);font-weight:500">Docs</span><span>Guild</span><span>Changelog</span></div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:10px"><span style="font-size:13px;color:var(--muted);padding:6px 10px;border:1px solid var(--border);background:var(--bg);display:flex;gap:24px">Search<span style="font-family:'IBM Plex Mono',monospace;font-size:11px">⌘K</span></span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:160px minmax(0,1fr)">
+          <div style="padding:20px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:2px;font-size:13.5px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:10.5px;letter-spacing:.1em;color:var(--muted);padding:0 10px 8px">GUIDE</span>
+            <span style="padding:6px 10px;color:var(--muted)">Getting started</span>
+            <span style="padding:6px 10px;background:var(--sunken);font-weight:500">Oaths</span>
+            <span style="padding:6px 10px;color:var(--muted)">The guild</span>
+            <span style="padding:6px 10px;color:var(--muted)">Git audit</span>
+            <span style="padding:6px 10px;color:var(--muted)">Configuration</span>
+          </div>
+          <div style="padding:28px 32px 32px;display:flex;flex-direction:column;gap:16px;min-width:0">
+            <span style="font-family:Jost,sans-serif;font-weight:500;font-size:38px;line-height:1.1">Oaths</span>
+            <p style="margin:0;font-size:15.5px;line-height:1.65;text-wrap:pretty">An oath binds one agent to a role, an authorized file scope and an acceptance criterion. Git checks the working tree before and after the run. See <a href="#docs" style="color:var(--link);text-decoration:underline;text-underline-offset:3px">Git audit</a>.</p>
+            <div style="background:var(--sunken);font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.75;padding:14px 16px;overflow:hidden">
+              <div><span style="color:var(--muted)">$</span> oathbound run smith --oath fix-login</div>
+              <div><span style="color:var(--ok)">✓</span> scope   src/auth/** · 3 files</div>
+              <div><span style="color:var(--ok)">✓</span> accept  npm test · 42 passed</div>
+              <div><span style="color:var(--ok)">✓</span> assayer oath kept</div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <span class="ag-smith" style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;background:var(--surface);border:1px solid var(--border);font-size:13px;font-weight:500"><svg width="20" height="20" viewBox="0 0 64 64"><use href="#ag-smith"></use></svg>smith</span>
+              <span class="ag-assayer" style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;background:var(--surface);border:1px solid var(--border);font-size:13px;font-weight:500"><svg width="20" height="20" viewBox="0 0 64 64"><use href="#ag-assayer"></use></svg>assayer</span>
+              <span class="ag-archivist" style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;background:var(--surface);border:1px solid var(--border);font-size:13px;font-weight:500"><svg width="20" height="20" viewBox="0 0 64 64"><use href="#ag-archivist"></use></svg>archivist</span>
+            </div>
+            <div style="border:1px solid var(--danger);padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:11px;letter-spacing:.1em;color:var(--danger)">OATH BROKEN</span>
+              <span style="font-size:14px;line-height:1.55">smith touched <code style="font-family:'IBM Plex Mono',monospace;font-size:13px;background:var(--sunken);padding:1px 5px">package.json</code>, outside the authorized scope. The run was rejected.</span>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <span style="padding:10px 16px;background:var(--text);color:var(--inverse);font-size:14px;font-weight:500">Get started</span>
+              <span style="padding:9px 15px;border:1px solid var(--border);background:var(--surface);font-size:14px;font-weight:500">View on GitHub</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENTES -->
+  <section id="agentes" data-screen-label="Agentes" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;gap:20px;align-items:baseline;flex-wrap:wrap">
+      <span style="font-size:12px;font-weight:500;padding:4px 8px;background:var(--ink);color:var(--parchment)">2</span>
+      <span style="font-family:Marcellus,serif;font-size:32px">A guilda</span>
+      <span style="font-size:12px;color:var(--muted)">emblemas de ofício · 1 cor por agente</span>
+    </div>
+    <p style="margin:0;font-size:14px;line-height:1.65;max-width:780px;text-wrap:pretty">Como os emblemas de classe de RPG de mesa, cada ofício tem um glifo próprio e uma cor. Todos ficam na mesma plaqueta, para a guilda ser lida como uma família. O glifo é vazado em pergaminho, e as cores ficam em --ag-* no topo do arquivo.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">
+      <div class="t-light ag-oathkeeper" style="padding:28px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#ag-oathkeeper"></use></svg><span style="font-family:Marcellus,serif;font-size:19px;letter-spacing:.12em;color:var(--c)">OATHKEEPER</span><span style="font-size:11px;color:var(--muted);text-align:center">delega · não edita nem commita</span></div>
+      <div class="t-light ag-surveyor" style="padding:28px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#ag-surveyor"></use></svg><span style="font-family:Marcellus,serif;font-size:19px;letter-spacing:.12em;color:var(--c)">SURVEYOR</span><span style="font-size:11px;color:var(--muted);text-align:center">lê o código · responde arquivo:linha</span></div>
+      <div class="t-light ag-scholar" style="padding:28px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#ag-scholar"></use></svg><span style="font-family:Marcellus,serif;font-size:19px;letter-spacing:.12em;color:var(--c)">SCHOLAR</span><span style="font-size:11px;color:var(--muted);text-align:center">pesquisa em fontes externas</span></div>
+      <div class="t-light ag-scribe" style="padding:28px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#ag-scribe"></use></svg><span style="font-family:Marcellus,serif;font-size:19px;letter-spacing:.12em;color:var(--c)">SCRIBE</span><span style="font-size:11px;color:var(--muted);text-align:center">spec, tickets e decisões</span></div>
+      <div class="t-light ag-smith" style="padding:28px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#ag-smith"></use></svg><span style="font-family:Marcellus,serif;font-size:19px;letter-spacing:.12em;color:var(--c)">SMITH</span><span style="font-size:11px;color:var(--muted);text-align:center">implementação</span></div>
+      <div class="t-light ag-assayer" style="padding:28px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#ag-assayer"></use></svg><span style="font-family:Marcellus,serif;font-size:19px;letter-spacing:.12em;color:var(--c)">ASSAYER</span><span style="font-size:11px;color:var(--muted);text-align:center">revisão a frio do diff</span></div>
+      <div class="t-light ag-warden" style="padding:28px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#ag-warden"></use></svg><span style="font-family:Marcellus,serif;font-size:19px;letter-spacing:.12em;color:var(--c)">WARDEN</span><span style="font-size:11px;color:var(--muted);text-align:center">segurança · AppSec</span></div>
+      <div class="t-light ag-breaker" style="padding:28px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#ag-breaker"></use></svg><span style="font-family:Marcellus,serif;font-size:19px;letter-spacing:.12em;color:var(--c)">BREAKER</span><span style="font-size:11px;color:var(--muted);text-align:center">teste de mutação</span></div>
+      <div class="t-light ag-herald" style="padding:28px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#ag-herald"></use></svg><span style="font-family:Marcellus,serif;font-size:19px;letter-spacing:.12em;color:var(--c)">HERALD</span><span style="font-size:11px;color:var(--muted);text-align:center">README, CHANGELOG e PR</span></div>
+      <div class="t-light ag-archivist" style="padding:28px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:14px"><svg width="96" height="96" viewBox="0 0 64 64"><use href="#ag-archivist"></use></svg><span style="font-family:Marcellus,serif;font-size:19px;letter-spacing:.12em;color:var(--c)">ARCHIVIST</span><span style="font-size:11px;color:var(--muted);text-align:center">prepara hunks e commits</span></div>
+    </div>
+    <div class="t-dark" style="padding:28px 32px;display:flex;flex-direction:column;gap:20px">
+      <span style="font-size:10px;letter-spacing:.1em;color:#A8A294">FUNDO ESCURO · 48 / 32 / 16 PX</span>
+      <div style="display:flex;flex-wrap:wrap;gap:28px">
+        <div class="ag-oathkeeper" style="display:flex;align-items:flex-end;gap:10px"><svg width="48" height="48" viewBox="0 0 64 64"><use href="#ag-oathkeeper"></use></svg><svg width="32" height="32" viewBox="0 0 64 64"><use href="#ag-oathkeeper"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#ag-oathkeeper"></use></svg></div>
+        <div class="ag-surveyor" style="display:flex;align-items:flex-end;gap:10px"><svg width="48" height="48" viewBox="0 0 64 64"><use href="#ag-surveyor"></use></svg><svg width="32" height="32" viewBox="0 0 64 64"><use href="#ag-surveyor"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#ag-surveyor"></use></svg></div>
+        <div class="ag-scholar" style="display:flex;align-items:flex-end;gap:10px"><svg width="48" height="48" viewBox="0 0 64 64"><use href="#ag-scholar"></use></svg><svg width="32" height="32" viewBox="0 0 64 64"><use href="#ag-scholar"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#ag-scholar"></use></svg></div>
+        <div class="ag-scribe" style="display:flex;align-items:flex-end;gap:10px"><svg width="48" height="48" viewBox="0 0 64 64"><use href="#ag-scribe"></use></svg><svg width="32" height="32" viewBox="0 0 64 64"><use href="#ag-scribe"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#ag-scribe"></use></svg></div>
+        <div class="ag-smith" style="display:flex;align-items:flex-end;gap:10px"><svg width="48" height="48" viewBox="0 0 64 64"><use href="#ag-smith"></use></svg><svg width="32" height="32" viewBox="0 0 64 64"><use href="#ag-smith"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#ag-smith"></use></svg></div>
+        <div class="ag-assayer" style="display:flex;align-items:flex-end;gap:10px"><svg width="48" height="48" viewBox="0 0 64 64"><use href="#ag-assayer"></use></svg><svg width="32" height="32" viewBox="0 0 64 64"><use href="#ag-assayer"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#ag-assayer"></use></svg></div>
+        <div class="ag-warden" style="display:flex;align-items:flex-end;gap:10px"><svg width="48" height="48" viewBox="0 0 64 64"><use href="#ag-warden"></use></svg><svg width="32" height="32" viewBox="0 0 64 64"><use href="#ag-warden"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#ag-warden"></use></svg></div>
+        <div class="ag-breaker" style="display:flex;align-items:flex-end;gap:10px"><svg width="48" height="48" viewBox="0 0 64 64"><use href="#ag-breaker"></use></svg><svg width="32" height="32" viewBox="0 0 64 64"><use href="#ag-breaker"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#ag-breaker"></use></svg></div>
+        <div class="ag-herald" style="display:flex;align-items:flex-end;gap:10px"><svg width="48" height="48" viewBox="0 0 64 64"><use href="#ag-herald"></use></svg><svg width="32" height="32" viewBox="0 0 64 64"><use href="#ag-herald"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#ag-herald"></use></svg></div>
+        <div class="ag-archivist" style="display:flex;align-items:flex-end;gap:10px"><svg width="48" height="48" viewBox="0 0 64 64"><use href="#ag-archivist"></use></svg><svg width="32" height="32" viewBox="0 0 64 64"><use href="#ag-archivist"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#ag-archivist"></use></svg></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIREÇÃO C -->
+  <section id="C" data-screen-label="C · Nó" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;gap:20px;align-items:baseline;flex-wrap:wrap">
+      <span style="font-size:12px;font-weight:500;padding:4px 8px;background:var(--ink);color:var(--parchment)">C</span>
+      <span style="font-family:Jost,sans-serif;font-weight:500;font-size:32px">Nó de juramento</span>
+      <span style="font-size:12px;color:var(--muted)">Jost Medium · 2 cores</span>
+    </div>
+    <p style="margin:0;font-size:14px;line-height:1.65;max-width:780px;text-wrap:pretty">Um tronco com um commit em cada ponta e uma volta que sai, contorna e retorna, trançada por cima e por baixo. Lido como corda é um nó; lido como grafo é um branch que diverge, passa pela verificação e volta a se fundir. A volta ainda desenha um b discreto, de bound.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+      <div class="t-light" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative"><svg width="128" height="128" viewBox="0 0 64 64"><use href="#sym-c"></use></svg><span style="position:absolute;left:12px;top:10px;font-size:10px;letter-spacing:.1em;color:var(--muted)">SÍMBOLO · CLARO</span></div>
+      <div class="t-dark" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative"><svg width="128" height="128" viewBox="0 0 64 64"><use href="#sym-c"></use></svg><span style="position:absolute;left:12px;top:10px;font-size:10px;letter-spacing:.1em;color:#A8A294">SÍMBOLO · ESCURO</span></div>
+      <div class="t-mono" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative"><svg width="128" height="128" viewBox="0 0 64 64"><use href="#sym-c"></use></svg><span style="position:absolute;left:12px;top:10px;font-size:10px;letter-spacing:.1em;color:var(--muted)">MONOCROMÁTICO</span></div>
+      <div style="aspect-ratio:1;display:grid;grid-template-columns:1fr 1fr;position:relative">
+        <div class="t-light" style="display:flex;align-items:center;justify-content:center;gap:14px;flex-direction:column"><svg width="32" height="32" viewBox="0 0 64 64"><use href="#sym-c"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#sym-c"></use></svg></div>
+        <div class="t-dark" style="display:flex;align-items:center;justify-content:center;gap:14px;flex-direction:column"><svg width="32" height="32" viewBox="0 0 64 64"><use href="#sym-c"></use></svg><svg width="16" height="16" viewBox="0 0 64 64"><use href="#sym-c"></use></svg></div>
+        <span style="position:absolute;left:12px;top:10px;font-size:10px;letter-spacing:.1em;color:var(--muted)">32 / 16 PX</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:12px">
+      <div class="t-light" style="padding:52px 32px;display:flex;justify-content:center;position:relative"><span style="font-family:Jost,sans-serif;font-weight:500;font-size:56px;letter-spacing:.01em;color:var(--text)">oathbound</span><span style="position:absolute;left:12px;top:10px;font-size:10px;letter-spacing:.1em;color:var(--muted)">LOGOTIPO</span></div>
+      <div class="t-dark" style="padding:52px 32px;display:flex;justify-content:center"><span style="font-family:Jost,sans-serif;font-weight:500;font-size:56px;letter-spacing:.01em;color:var(--text)">oathbound</span></div>
+      <div class="t-light" style="padding:48px 32px;display:flex;justify-content:center;align-items:center;gap:14px;position:relative"><svg width="64" height="64" viewBox="0 0 64 64"><use href="#sym-c"></use></svg><span style="font-family:Jost,sans-serif;font-weight:500;font-size:44px;letter-spacing:.01em;color:var(--text)">oathbound</span><span style="position:absolute;left:12px;top:10px;font-size:10px;letter-spacing:.1em;color:var(--muted)">HORIZONTAL</span></div>
+      <div class="t-dark" style="padding:48px 32px;display:flex;justify-content:center;align-items:center;gap:14px"><svg width="64" height="64" viewBox="0 0 64 64"><use href="#sym-c"></use></svg><span style="font-family:Jost,sans-serif;font-weight:500;font-size:44px;letter-spacing:.01em;color:var(--text)">oathbound</span></div>
+    </div>
+  </section>
+
+  <!-- BANNER C -->
+  <section id="banner-c" data-screen-label="Banner GitHub C" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;gap:20px;align-items:baseline;flex-wrap:wrap">
+      <span style="font-size:12px;font-weight:500;padding:4px 8px;background:var(--seal);color:var(--parchment)">C</span>
+      <span style="font-family:Jost,sans-serif;font-weight:500;font-size:32px">Social preview · 1280×640</span>
+      <span style="font-size:12px;color:var(--muted)">Direção escolhida: nó de juramento</span>
+    </div>
+    <div class="t-dark" style="width:1280px;height:640px;position:relative;display:flex;align-items:center;gap:64px;padding:0 128px;box-sizing:border-box;flex-shrink:0">
+      <svg width="240" height="240" viewBox="0 0 64 64" style="flex-shrink:0"><use href="#sym-c"></use></svg>
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <span style="font-family:Jost,sans-serif;font-weight:500;font-size:112px;line-height:.9;letter-spacing:.005em;color:var(--parchment)">oathbound</span>
+        <span style="font-family:Jost,sans-serif;font-weight:500;font-size:38px;color:var(--bronze-lt)">Sworn agents. Audited work.</span>
+      </div>
+      <div style="position:absolute;left:128px;right:128px;bottom:52px;font-size:15px;letter-spacing:.04em;color:#8F897C;display:flex;justify-content:space-between">
+        <span>oathkeeper</span><span>surveyor</span><span>scholar</span><span>scribe</span><span>smith</span><span>assayer</span><span>warden</span><span>breaker</span><span>herald</span><span>archivist</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.7">
+    <div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Arquivos SVG · paleta em variáveis no topo</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 20px">
+      <a href="svg/oathbound-c-symbol.svg">c-symbol.svg</a><a href="svg/oathbound-c-horizontal.svg">c-horizontal.svg</a>
+      <a href="svg/oathbound-banner.svg">banner.svg</a>
+    </div>
+  </section>
+</div>
+</x-dc>
+</body>
+</html>

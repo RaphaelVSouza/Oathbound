@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="oathbound-visual-identity/svg/oathbound-banner.svg" alt="Oathbound — Sworn agents. Audited work." width="640">
+</p>
+
 # Oathbound
 
 > Camada de governança determinística, auditoria e orquestração multi-agente para CLIs de código com LLMs.
