@@ -247,6 +247,33 @@ test('runner claude: buildCommand não repassa --agent e injeta instruções no 
   assert.ok(promptArg.includes('Corpo das instrucoes do agente'));
 });
 
+test('runner claude: aplica permissões nativas, escopo e modo leitura', (t) => {
+  const adapter = getRunnerAdapter('claude');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-claude-rules-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const agentDir = path.join(dir, '.claude', 'agents');
+  fs.mkdirSync(agentDir, { recursive: true });
+  const agentFile = path.join(agentDir, 'smith.md');
+  fs.writeFileSync(agentFile, '---\nname: smith\n---\nSmith');
+  fs.writeFileSync(path.join(agentDir, 'oathbound-permissions.json'), JSON.stringify({ smith: {
+    allow: ['Read', 'Glob', 'Edit', 'Write', 'Bash(git diff *)', 'Bash(git push *)'],
+    deny: ['Bash(git reset *)']
+  }}));
+  const cmd = adapter.buildCommand({ agent: 'smith', agentFile, message: 'tarefa', scopes: ['src/*'] });
+  assert.equal(cmd.args[cmd.args.indexOf('--permission-mode') + 1], 'dontAsk');
+  assert.ok(!cmd.args.includes('--dangerously-skip-permissions'));
+  const allowed = cmd.args[cmd.args.indexOf('--allowedTools') + 1].split(',');
+  assert.ok(allowed.includes('Edit(src/*)'));
+  assert.ok(allowed.includes('Write(src/*)'));
+  assert.ok(!allowed.includes('Edit'));
+  assert.ok(!allowed.includes('Write'));
+  assert.equal(cmd.args[cmd.args.indexOf('--disallowedTools') + 1], 'Bash(git reset *)');
+  const ro = adapter.buildCommand({ agent: 'smith', agentFile, message: 'leia', readonly: true });
+  assert.equal(ro.args[ro.args.indexOf('--tools') + 1], 'Read,Grep,Glob,Bash');
+  assert.ok(ro.args[ro.args.indexOf('--allowedTools') + 1].includes('Bash(git diff *)'));
+  assert.ok(!ro.args[ro.args.indexOf('--allowedTools') + 1].includes('Bash(git push *)'));
+});
+
 test('runner codex: buildCommand isola sandbox em readonly e suporta resume na ordem correta', () => {
   const adapter = getRunnerAdapter('codex');
   const readonlyCmd = adapter.buildCommand({ root: 'D:/repo', agent: 'assayer', message: 'leitura', readonly: true });
@@ -463,5 +490,4 @@ test('validateAdapter: nao altera o objeto original ao preencher padroes', () =>
   assert.equal(typeof validated.createDisplay, 'function');
   assert.notEqual(validated, original);
 });
-
 

@@ -5,6 +5,7 @@ const crypto = require('node:crypto');
 const { extractInstructions, resolveAgentPath } = require('../runner-adapter.ts');
 
 const sessionMap = new Map<string, string>();
+let warnedMissingPermissions = false;
 
 function isClaudeAgentFile(agentFile: string): boolean {
   if (!agentFile) return false;
@@ -35,7 +36,7 @@ const claudeAdapter = {
     };
   },
 
-  buildCommand({ root, agent, agentFile, model, effort, message, session, tag, promptPrefix, readonly }: any) {
+  buildCommand({ root, agent, agentFile, model, effort, message, session, tag, promptPrefix, readonly, scopes = [] }: any) {
     const command = 'claude';
     const isClaudeNative = isClaudeAgentFile(agentFile);
 
@@ -50,7 +51,33 @@ const claudeAdapter = {
       fullMessage = [instructions, promptPrefix, message].filter(Boolean).join('\n\n');
     }
 
-    const args = ['-p', fullMessage, '--dangerously-skip-permissions'];
+    const permissionsFile = isClaudeNative ? path.join(path.dirname(agentFile), 'oathbound-permissions.json') : '';
+    const permissions = permissionsFile && fs.existsSync(permissionsFile)
+      ? JSON.parse(fs.readFileSync(permissionsFile, 'utf8'))[agent]
+      : null;
+    const args = ['-p', fullMessage];
+    if (permissions) {
+      const allow: string[] = [...permissions.allow];
+      if (readonly) {
+        const readBash = /^Bash\(git (?:status|diff|show|log|ls-files|rev-parse)(?: |\))/;
+        allow.splice(0, allow.length, ...allow.filter(rule =>
+          ['Read', 'Grep', 'Glob'].includes(rule) || readBash.test(rule)));
+      } else if (scopes.length) {
+        const canEdit = allow.some(rule => rule === 'Edit' || rule === 'Write' || rule.startsWith('Edit(') || rule.startsWith('Write('));
+        allow.splice(0, allow.length, ...allow.filter(rule => rule !== 'Edit' && rule !== 'Write'));
+        if (canEdit) for (const scope of scopes) {
+          allow.push(`Edit(${scope})`, `Write(${scope})`);
+        }
+      }
+      args.push('--permission-mode', 'dontAsk', '--allowedTools', [...new Set(allow)].join(','));
+      if (permissions.deny.length) args.push('--disallowedTools', permissions.deny.join(','));
+    } else {
+      if (!warnedMissingPermissions) {
+        console.error('permissões do agente indisponíveis; rodando sem restrição de comandos');
+        warnedMissingPermissions = true;
+      }
+      args.push('--dangerously-skip-permissions');
+    }
 
     const activeSession = session || (tag ? (sessionMap.get(tag) || crypto.randomUUID()) : crypto.randomUUID());
     if (tag && !session) sessionMap.set(tag, activeSession);
@@ -67,7 +94,10 @@ const claudeAdapter = {
 
     if (model) args.push('--model', model);
     if (effort) args.push('--effort', effort);
-    if (readonly) args.push('--tools', 'Read,Grep,Glob');
+    if (readonly) {
+      const allowed = args[args.indexOf('--allowedTools') + 1] || '';
+      args.push('--tools', allowed.includes('Bash(') ? 'Read,Grep,Glob,Bash' : 'Read,Grep,Glob');
+    }
 
     return { command, args };
   },

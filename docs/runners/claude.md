@@ -42,8 +42,10 @@ node .claude/skills/oathbound/scripts/run.js -d . -u claude -R -a surveyor -- "L
 
 ### Características de execução
 
-- **Invocação não-interativa:** executa `claude -p "<prompt>" --dangerously-skip-permissions`.
-- **Modo somente leitura (`-R`):** restringe as ferramentas do Claude a inspeção (`--tools Read,Grep,Glob`) e injeta bloqueio explícito de escrita no prompt.
+- **Invocação não-interativa:** agentes nativos com `oathbound-permissions.json` usam `--permission-mode dontAsk`, `--allowedTools` e `--disallowedTools`. Regras fora da lista são negadas.
+- **Modo somente leitura (`-R`):** restringe ferramentas a `--tools Read,Grep,Glob` e acrescenta somente regras Bash de leitura do agente.
+- **Escopos (`-s`):** acrescenta `Edit(<glob>)` e `Write(<glob>)`; remove `Edit`/`Write` genéricos. A auditoria Git continua verificando alterações.
+- **Fallback:** sem arquivo de permissões, mantém `--dangerously-skip-permissions` e avisa uma vez no stderr.
 - **Sessões:** suporta retomada de contexto com `-S <session-id>` (passado para `--resume`).
 - **Modelo:** selecione com `-m <modelo>` (repassado para `--model`).
 
@@ -57,5 +59,16 @@ O kit pode compilar e instalar os agentes canônicos como subagentes nativos em 
 
 O transpilador converte as regras de permissão do kit na lista de ferramentas permitidas (`tools: [Read, Grep, Glob]`, etc.), permitindo que o Claude Code acione os subagentes automaticamente por descrição ou pelo menu `/agents`.
 
-O arquivo de subagente do Claude **só aceita nomes de ferramenta** — não há escopo de comando no `tools`. Por isso, quando o mapa `bash` do agente canônico tem qualquer comando liberado (mesmo com `"*": deny`), a ferramenta `Bash` é concedida por inteiro. A lista de comandos permitidos vale por permissão no OpenCode; no Claude, vale pelo prompt do agente e pela auditoria de escopo do Git. O transpilador não promete restrição de comando no Claude.
+O arquivo de subagente aceita apenas nomes de ferramenta. O transpilador também grava
+`oathbound-permissions.json`, com `allow` e `deny` para cada agente. No runner,
+`bash` nomeado vira `Bash(<padrão>)` (`git diff*` vira `Bash(git diff *)`);
+`"*": allow` vira `Bash`, e exceções `deny` viram `Bash(<padrão>)` em `deny`.
+`"*": deny` serve como padrão do OpenCode e não gera uma negação total no Claude.
+Globs `edit: allow` viram `Edit(<glob>)` e `Write(<glob>)`; `edit: deny` não gera regra.
+`read`, `glob` e `grep` permitem `Read`, `Glob` e `Grep`. `webfetch` e
+`websearch` permitem `WebFetch` e `WebSearch` separadamente.
 
+Regras de `deny` prevalecem sobre `allow`. Bash genérico de agentes como `smith`
+ainda permite comandos de escrita; o escopo `-s` restringe Edit/Write, enquanto
+a auditoria Git continua detectando alterações feitas por Bash fora do escopo.
+Instalações existentes não são sobrescritas; compare o JSON antes de atualizar.

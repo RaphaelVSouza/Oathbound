@@ -7,6 +7,7 @@ const os = require('node:os');
 const {
   parseFrontmatter,
   determineClaudeTools,
+  determineClaudePermissions,
   transpileForClaude,
   transpileForAgy,
   transpileForOpenCode,
@@ -128,6 +129,16 @@ test('agent-transpiler: agents reais recebem Bash no Claude conforme comando lib
   assert.ok(!surveyorTools.includes('Bash'), 'surveyor (bash: deny) não deve receber Bash');
 });
 
+test('agent-transpiler: permissões Claude preservam comandos e globs', () => {
+  const guildDir = path.join(__dirname, '..', 'guild');
+  const rules = name => determineClaudePermissions(parseFrontmatter(fs.readFileSync(path.join(guildDir, `${name}.md`), 'utf8')).frontmatter.permission);
+  assert.ok(rules('oathkeeper').allow.includes('Bash(node *oathbound/scripts/run.js *)'));
+  assert.ok(rules('smith').allow.includes('Bash'));
+  assert.ok(rules('smith').deny.includes('Bash(git push*)'));
+  assert.ok(!rules('surveyor').allow.some(x => x.startsWith('Bash')));
+  for (const glob of ['README.md', 'CHANGELOG.md', 'docs/**']) assert.ok(rules('herald').allow.includes(`Edit(${glob})`));
+});
+
 test('agent-transpiler: oathkeeper tem skill: allow para carregar a skill oathbound', () => {
   const raw = fs.readFileSync(path.join(__dirname, '..', 'guild', 'oathkeeper.md'), 'utf8');
   assert.equal(parseFrontmatter(raw).frontmatter.permission.skill, 'allow');
@@ -221,6 +232,8 @@ test('agent-transpiler: transpileAll gera arquivos em diretório temporário', (
     const claudeFiles = fs.readdirSync(claudeDir);
     assert.ok(claudeFiles.includes('surveyor.md'));
     assert.ok(claudeFiles.includes('archivist.md'));
+    const permissions = JSON.parse(fs.readFileSync(path.join(claudeDir, 'oathbound-permissions.json'), 'utf8'));
+    assert.equal(Object.keys(permissions).length, 10);
 
     const agyDir = path.join(tmpDir, '.agents', 'agents');
     assert.ok(fs.existsSync(agyDir));

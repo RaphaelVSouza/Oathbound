@@ -26,8 +26,8 @@ permission:
     "git log*": allow
     "git ls-files*": allow
     "git rev-parse*": allow
-    "node .claude/skills/oathbound/scripts/git-stage.ts*": allow
-    "node .claude/skills/oathbound/scripts/git-commit.ts*": allow
+    "node *oathbound/scripts/git-stage.ts*": allow
+    "node *oathbound/scripts/git-commit.ts*": allow
   task: deny
   skill: deny
   webfetch: deny

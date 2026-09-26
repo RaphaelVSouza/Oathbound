@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 0.24.0 — 2026-09-26
+
+### Adicionado
+
+- Runner Claude usa regras de permissão por agente em `.claude/agents/oathbound-permissions.json`, com `--permission-mode dontAsk`, `--allowedTools` e `--disallowedTools`. Com arquivo disponível, comandos fora da lista do agente passam a ser negados pela CLI.
+- Escopos `-s` geram regras `Edit(<glob>)` e `Write(<glob>)`; modo `-R` mantém ferramentas de leitura e comandos Git de leitura permitidos ao agente. Sem JSON, runner preserva o comportamento anterior e emite aviso.
+- `archivist` aceita auxiliares de commit em instalações locais e globais.
+
 ## 0.23.8 — 2026-09-26
 
 ### Adicionado

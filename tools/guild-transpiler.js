@@ -136,6 +136,35 @@ function determineClaudeTools(permission = {}) {
   return tools;
 }
 
+/** Translate canonical OpenCode permissions into Claude CLI allow/deny rules. */
+function determineClaudePermissions(permission = {}) {
+  const allow = [];
+  const deny = [];
+  const add = (target, rule) => { if (!target.includes(rule)) target.push(rule); };
+  if (permission.read === 'allow' || Object.values(permission.read || {}).includes('allow')) add(allow, 'Read');
+  if (permission.glob === 'allow') add(allow, 'Glob');
+  if (permission.grep === 'allow') add(allow, 'Grep');
+  if (permission.webfetch === 'allow') add(allow, 'WebFetch');
+  if (permission.websearch === 'allow') add(allow, 'WebSearch');
+  // Claude denies win over allows. OpenCode's "*": deny is a default, not a
+  // Claude deny-all: emit only named allows in that case. Edit denies cannot
+  // be represented here, so only positive globs become CLI rules.
+  const bash = permission.bash || {};
+  if (bash === 'allow' || bash['*'] === 'allow') add(allow, 'Bash');
+  if (typeof bash === 'object') for (const [pattern, decision] of Object.entries(bash)) {
+    if (pattern === '*') continue;
+    if (decision === 'allow' && bash['*'] !== 'allow') add(allow, `Bash(${pattern.replace(/\*$/, ' *')})`);
+    if (decision === 'deny') add(deny, `Bash(${pattern})`);
+  }
+  const edit = permission.edit || {};
+  if (edit === 'allow') { add(allow, 'Edit'); add(allow, 'Write'); }
+  if (typeof edit === 'object') for (const [glob, decision] of Object.entries(edit)) {
+    if (decision !== 'allow') continue;
+    for (const tool of ['Edit', 'Write']) add(allow, glob === '*' ? tool : `${tool}(${glob})`);
+  }
+  return { allow, deny };
+}
+
 /**
  * Transpiles an agent for Claude Code (.claude/agents/*.md).
  * @param {string} name
@@ -308,20 +337,27 @@ function transpileAll({
     fs.mkdirSync(targetDir, { recursive: true });
 
     let written = 0;
+    const permissions = {};
     for (const file of files) {
       const agentName = path.basename(file, '.md');
       const srcFile = path.join(sourceDir, file);
       const destFile = path.join(targetDir, file);
 
+      const raw = fs.readFileSync(srcFile, 'utf8');
+      if (rKey === 'claude') permissions[agentName] = determineClaudePermissions(parseFrontmatter(raw).frontmatter.permission);
       if (fs.existsSync(destFile) && !force) {
         // Skip existing without force
         continue;
       }
 
-      const raw = fs.readFileSync(srcFile, 'utf8');
       const transpiled = transpileAgent(agentName, raw, rKey);
       fs.writeFileSync(destFile, transpiled, 'utf8');
       written++;
+    }
+
+    if (rKey === 'claude') {
+      const permissionsFile = path.join(targetDir, 'oathbound-permissions.json');
+      if (!fs.existsSync(permissionsFile) || force) fs.writeFileSync(permissionsFile, JSON.stringify(permissions, null, 2) + '\n');
     }
 
     logger(`[agent-transpiler] Runner '${rKey}': ${written}/${files.length} agentes gravados em ${targetDir}`);
@@ -374,6 +410,7 @@ module.exports = {
   NATIVE_AGENT_RUNNERS,
   parseFrontmatter,
   determineClaudeTools,
+  determineClaudePermissions,
   transpileForClaude,
   transpileForAgy,
   transpileForOpenCode,
