@@ -10,9 +10,9 @@ committer bloqueia outras chamadas de edição enquanto ele trabalha.
 node .claude/skills/oathbound/scripts/run.js -d . -a archivist -s 'src/*' -s 'README.md' -- 'Crie commits para a entrega X; ticket Y se aplicável.'
 ```
 
-O agente usa `git-stage.js --list` para enumerar hunks e linhas alteradas de
+O agente usa `git-stage.ts --list` para enumerar hunks e linhas alteradas de
 cada arquivo. `--hunks 1,3`, `--lines 2,5` ou `--all` preparam o grupo;
-`git-commit.js` recusa commit
+`git-commit.ts` recusa commit
 com qualquer caminho preparado fora dos `-s`. Conteúdo previamente preparado
 fora do escopo exige intervenção do oathkeeper antes da chamada. O wrapper
 compara worktree, índice e caminhos dos commits criados para sinalizar alterações

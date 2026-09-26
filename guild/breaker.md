@@ -125,7 +125,7 @@ mutante que muda comportamento precisa deixar o teste **vermelho**.
    `equivalente` + motivo de uma linha; ele sai do denominador.
 5. **Aplicar um por vez.** Edite só o trecho; rode **só** os arquivos de
    teste dados, com timeout, via
-   `node .claude/skills/oathbound/scripts/quiet.js -- <comando>` a partir da raiz do repositório.
+   `node .claude/skills/oathbound/scripts/quiet.ts -- <comando>` a partir da raiz do repositório.
    Classifique:
    - `morto` — teste vermelho por asserção
    - `sobreviveu` — teste verde

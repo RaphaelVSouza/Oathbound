@@ -67,7 +67,7 @@ Depois de cada chamada:
 4. Rejeite recibo sem evidência; devolva a tarefa ao mesmo agente com o ponto
    faltante, em vez de aceitar por ausência de prova.
 
-Saídas longas de teste/build/lint passam por `node .claude/skills/oathbound/scripts/quiet.js`.
+Saídas longas de teste/build/lint passam por `node .claude/skills/oathbound/scripts/quiet.ts`.
 Para várias issues, use `node .claude/skills/oathbound/scripts/queue.js` conforme
 [queue.md](references/queue.md). O script não corrige achados, commita nem marca
 tickets como concluídos. Quando houver pedido de commit, delegue a seleção de

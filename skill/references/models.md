@@ -20,6 +20,28 @@ a CLI em uso no ambiente:
 No projeto, configure o modelo desejado passando `-m <modelo>` aos scripts ou
 definindo a variável de ambiente `OATHBOUND_MODEL`.
 
+## 1.1. Limitação conhecida: `bash` restritivo no runner OpenCode
+
+Em testes com OpenCode 2.0.18 (`opencode run --standalone`), agentes cujo
+frontmatter define `bash` com padrão restritivo (`"*": deny` + allowlist, ex.:
+`archivist`, `assayer`, `warden`, `scholar`, `surveyor`, `herald`) recebem
+`Permission denied: shell` para **todo** comando, inclusive os liberados
+explicitamente (`"git status*": allow`). O runtime substitui a tool `bash`
+por um mecanismo interno (`execute` com código JS chamando `search()`), que
+não expõe shell algum. Reproduzido com dois modelos diferentes
+(`deepseek/deepseek-flash`, `deepseek/deepseek-v4-pro`); não é causado por
+`~/.config/opencode/cli.json` (testado com `session.permissions` removido) nem
+por plugin local. Agentes com `bash: "*": allow` (`smith`, `breaker`) não são
+afetados.
+
+Não há correção do lado do Oathbound: o comportamento vem do runtime do
+OpenCode, sem cobertura na documentação pública consultada. Ao delegar para
+esses agentes via OpenCode, espere que comandos de leitura Git (`git status`,
+`git diff`, `git log`) falhem; os agentes tendem a degradar com fallback
+(ex.: `herald` lê `.git/logs/HEAD` diretamente) ou reportam o bloqueio como
+pendência. Runners `claude`, `agy` e `codex` não apresentaram o problema nos
+mesmos testes.
+
 ## 2. Invariante do Prompt Caching (KV Cache)
 
 Os principais provedores (Anthropic, OpenAI, Google) utilizam **prefix matching

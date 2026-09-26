@@ -1,8 +1,16 @@
 const path = require('node:path');
 const fs = require('node:fs');
 
+interface Roles {
+  orchestrator: string;
+  documenter: string;
+  implementer: string;
+  reviewer: string;
+  committer: string;
+}
+
 /** Nomes canônicos dos papéis de agente usados pelo pacote. Fonte única para evitar literais espalhados. */
-const ROLES = Object.freeze({
+const ROLES: Readonly<Roles> = Object.freeze({
   orchestrator: 'oathkeeper',
   documenter: 'herald',
   implementer: 'smith',
@@ -17,16 +25,15 @@ const STATE_DIR_NAME = 'oathbound';
 const DB_FILE_NAME = 'oathbound.db';
 
 /** gitDirs já processados por `migrateLegacyStateDir` neste processo. */
-const migratedStateDirs = new Set();
+const migratedStateDirs: Set<string> = new Set();
 
 /**
  * Migra o diretório de estado legado `ds-queue` para `oathbound` e o banco
  * `governance.db` para `oathbound.db`, uma única vez por gitDir, quando o
  * diretório novo ainda não existe. Escreve um aviso em stderr. Se os dois
  * diretórios existirem, mantém `oathbound` e avisa que o legado ficou para trás.
- * @param {string} gitDir
  */
-function migrateLegacyStateDir(gitDir) {
+function migrateLegacyStateDir(gitDir: string): void {
   const legacyDir = path.join(gitDir, 'ds-queue');
   const currentDir = path.join(gitDir, STATE_DIR_NAME);
   if (migratedStateDirs.has(gitDir) || !fs.existsSync(legacyDir)) return;
@@ -53,10 +60,8 @@ function migrateLegacyStateDir(gitDir) {
 
 /**
  * Caminho do diretório de estado dentro do gitDir do repositório.
- * @param {string} gitDir
- * @returns {string}
  */
-function stateDir(gitDir) {
+function stateDir(gitDir: string): string {
   migrateLegacyStateDir(gitDir);
   return path.join(gitDir, STATE_DIR_NAME);
 }

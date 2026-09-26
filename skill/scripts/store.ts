@@ -1,21 +1,52 @@
 const path = require('node:path');
 const fs = require('node:fs');
 
-let DatabaseSync;
+let DatabaseSync: any;
 try {
   DatabaseSync = require('node:sqlite').DatabaseSync;
 } catch {
   DatabaseSync = null;
 }
 
+interface QueueStageRecord {
+  id: string;
+  stage: string;
+  log_path: string | null;
+  updated_at: number;
+}
+
+interface AgentClaim {
+  pid: number;
+  label: string;
+  agent: string;
+  start: number;
+  scopes: string[];
+}
+
+interface RegisterClaimParams {
+  pid: number;
+  label: string;
+  agent: string;
+  scopes: string[];
+}
+
 /**
- * Encapsulates transactional state and claim tracking via native node:sqlite (Node 22 LTS).
+ * Encapsulates transactional state and claim tracking via native node:sqlite (Node 24 LTS).
  */
 class OathboundStore {
+  db: any;
+  private _inTransaction = false;
+  private _stmtGetStage: any;
+  private _stmtSetStage: any;
+  private _stmtAllStages: any;
+  private _stmtRegisterClaim: any;
+  private _stmtReleaseClaim: any;
+  private _stmtActiveClaims: any;
+
   /** @param {string} dbPath SQLite database file path or ':memory:' */
-  constructor(dbPath) {
+  constructor(dbPath: string) {
     if (!DatabaseSync) {
-      throw Error('node:sqlite não está disponível nesta versão do Node.js (exige Node 22 LTS+)');
+      throw Error('node:sqlite não está disponível nesta versão do Node.js (exige Node 24 LTS+)');
     }
     if (dbPath !== ':memory:') {
       fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -24,7 +55,7 @@ class OathboundStore {
     this._init();
   }
 
-  _init() {
+  private _init(): void {
     this.db.exec(`
       PRAGMA journal_mode = WAL;
       PRAGMA busy_timeout = 5000;
@@ -66,42 +97,50 @@ class OathboundStore {
     this._stmtActiveClaims = this.db.prepare('SELECT pid, label, agent, start, scopes FROM agent_claims ORDER BY start ASC');
   }
 
-  /** @param {string} id @returns {string|null} */
-  getStage(id) {
+  /**
+   * Run operations inside a structured SQLite transaction.
+   * Automatically executes BEGIN, commits on success, or rolls back if an error is thrown.
+   */
+  async transaction<T>(fn: (store: OathboundStore) => T | Promise<T>): Promise<T> {
+    if (this._inTransaction) throw Error('transação aninhada: chamada de transaction() dentro de outra transação ativa');
+    this._inTransaction = true;
+    this.db.exec('BEGIN');
+    try {
+      const res = await fn(this);
+      this.db.exec('COMMIT');
+      return res;
+    } catch (err) {
+      this.db.exec('ROLLBACK');
+      throw err;
+    } finally {
+      this._inTransaction = false;
+    }
+  }
+
+  getStage(id: string): string | null {
     const row = this._stmtGetStage.get(id);
     return row ? row.stage : null;
   }
 
-  /**
-   * @param {string} id
-   * @param {string} stage
-   * @param {string|null} [logPath]
-   */
-  setStage(id, stage, logPath = null) {
+  setStage(id: string, stage: string, logPath: string | null = null): void {
     this._stmtSetStage.run(id, stage, logPath, Date.now());
   }
 
-  /** @returns {Array<{ id: string, stage: string, log_path: string|null, updated_at: number }>} */
-  getAllStages() {
+  getAllStages(): QueueStageRecord[] {
     return this._stmtAllStages.all();
   }
 
-  /**
-   * @param {{ pid: number, label: string, agent: string, scopes: string[] }} claim
-   */
-  registerClaim({ pid, label, agent, scopes }) {
+  registerClaim({ pid, label, agent, scopes }: RegisterClaimParams): void {
     this._stmtRegisterClaim.run(pid, label, agent, Date.now(), JSON.stringify(scopes));
   }
 
-  /** @param {number} pid */
-  releaseClaim(pid) {
+  releaseClaim(pid: number): void {
     this._stmtReleaseClaim.run(pid);
   }
 
-  /** @returns {Array<{ pid: number, label: string, agent: string, start: number, scopes: string[] }>} */
-  getActiveClaims() {
+  getActiveClaims(): AgentClaim[] {
     const rows = this._stmtActiveClaims.all();
-    return rows.map(r => ({
+    return rows.map((r: any) => ({
       pid: r.pid,
       label: r.label,
       agent: r.agent,
@@ -110,11 +149,7 @@ class OathboundStore {
     }));
   }
 
-  /**
-   * Remove claims of dead processes.
-   * @param {(pid: number) => boolean} aliveCheck
-   */
-  cleanStaleClaims(aliveCheck) {
+  cleanStaleClaims(aliveCheck: (pid: number) => boolean): void {
     const claims = this.getActiveClaims();
     for (const c of claims) {
       if (!aliveCheck(c.pid)) {
@@ -123,17 +158,12 @@ class OathboundStore {
     }
   }
 
-  close() {
+  close(): void {
     this.db.close();
   }
 }
 
-/**
- * Open or create an OathboundStore.
- * @param {string} dbPath
- * @returns {OathboundStore}
- */
-function openStore(dbPath) {
+function openStore(dbPath: string): OathboundStore {
   return new OathboundStore(dbPath);
 }
 

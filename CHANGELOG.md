@@ -1,5 +1,68 @@
 # Histórico de versões
 
+## 0.23.6 — 2026-09-26
+
+### Adicionado
+
+- **Fallback de diagnóstico no `archivist` quando shell falha:** passo 1 agora instrui, quando comandos `git` via shell não executam (ex.: runner OpenCode com allowlist `bash` restrita, ver `models.md` §1.1), a ler `.git/HEAD`, `.git/logs/HEAD` e `.git/index` diretamente via `read` para diagnosticar branch/HEAD/histórico antes de reportar pendência. Não destrava a preparação de hunks nem o commit em si (`git-stage.ts`/`git-commit.ts` continuam exigindo shell); apenas evita que o agente trave sem informação no primeiro erro.
+
+## 0.23.5 — 2026-09-26
+
+### Corrigido
+
+- **Fallback caro de árvore disparado à toa quando processo já morreu:** `taskkill /T /F` retorna código 128 ("processo não encontrado") quando a árvore já terminou sozinha entre o timeout/sinal e a chamada — uma corrida normal. `killTree` tratava qualquer código diferente de 0 como falha e disparava a enumeração PowerShell/CIM completa, que é lenta em máquinas ocupadas (confirmado por relato equivalente em pnpm/pnpm#12406). Agora código 128 é tratado como sucesso e pula o fallback.
+
+## 0.23.4 — 2026-09-26
+
+### Corrigido
+
+- **Vazamento de listeners SIGINT/SIGTERM em `run()`:** os handlers de sinal agora são removidos assim que a árvore do processo é mandada matar (interrupção ou timeout), não só quando o processo fecha; antes, um processo que nunca emitisse `close` mantinha os listeners empilhados no processo pai indefinidamente.
+- **`killTree` não aguardava a árvore terminar de fato:** virou assíncrona e só resolve após `taskkill` (ou o fallback) concluir; `kill.ts` agora aguarda cada chamada antes de apagar o registro do PID.
+- **Fallback de encerramento no Windows matava só o processo raiz:** quando `taskkill /T` falha, o fallback agora enumera e mata a árvore inteira via PowerShell/CIM (`Get-CimInstance Win32_Process`), em vez de derrubar somente o PID informado e deixar descendentes órfãos.
+
+### Testes
+
+- `queue G-012` (ids que colidiam no esquema antigo) não depende mais de abrir uma sessão real de runner; usa a fixture `generic` já empregada pelos testes G-002, o que elimina uma trava potencial de minutos presa a rede/autenticação externa.
+
+## 0.23.3 — 2026-09-26
+
+### Corrigido
+
+- **Transação aninhada em `OathboundStore`:** `transaction()` agora rejeita quando chamado dentro de outra transação ainda ativa, em vez de emitir um segundo `BEGIN` que o SQLite recusaria silenciosamente em falha posterior.
+
+### Removido
+
+- **Fallback `.js` morto em `getRunnerAdapter`:** resolução de runners embutidos (`opencode`, `claude`, `codex`, `agy`, `generic`) carrega apenas `.ts`, já que a migração para TypeScript nativo no Node 24 LTS eliminou os arquivos `.js` correspondentes.
+
+## 0.23.2 — 2026-09-26
+
+### Corrigido
+
+- **Ocultação de janela no Windows:** `run()` em `process-runner.ts` agora adota `windowsHide: true` por padrão no `spawn()`, evitando que processos filhos sem console abram ou pisquem janelas de terminal do Windows Terminal / conhost.
+
+## 0.23.1 — 2026-09-26
+
+### Corrigido
+
+- **Invocação de executáveis `.exe` no Windows:** resolução agora retorna caminho completo para binários no `PATH`, incluindo nomes já sufixados; encerramento usa fallback no processo filho quando `taskkill` falha.
+- **Transações SQLite:** `OathboundStore.transaction()` aguarda callbacks assíncronos antes de confirmar ou reverter.
+- **Comandos após migração TypeScript:** guilda, skill e referência de commits agora apontam para `git-stage.ts`, `git-commit.ts`, `kill.ts` e `quiet.ts`.
+- **Instrução RTK no Windows:** registra forma compatível de ler arquivos sem passar cmdlets PowerShell como executáveis.
+
+## 0.23.0 — 2026-09-26
+
+### Adicionado
+
+- **Migração para Node.js 24 LTS como runtime padrão definitivo:** o kit adota Node.js 24 LTS+, preservando a arquitetura de zero dependências npm externas.
+- **Type Stripping nativo sem etapa de compilação:** migração dos módulos da skill (`cli-options.ts`, `store.ts`, `runner-adapter.ts`, `process-runner.ts`, `git.ts`, `kill.ts`, `git-stage.ts`, `git-commit.ts`, `quiet.ts`, `roles.ts`, `env.ts` e adapters de runners) para TypeScript nativo, executado diretamente pelo Node 24 sem bundlers.
+- **Transações estruturadas no `node:sqlite`:** implementação de `store.transaction(fn)` no `OathboundStore` com `BEGIN`/`COMMIT`/`ROLLBACK` para integridade transacional na fila e claims.
+- **Configuração de tipos no editor:** criação de `tsconfig.json` com `noEmit: true` para autocompletion e validação estática imediata em IDEs.
+
+### Corrigido
+
+- **Permissão de leitura de `surveyor` no OpenCode (G-001):** normalização de `guild/surveyor.md` para `edit: deny` (compatível com `assayer`, `scholar` e `warden`) e ampliação de regex em `opencode.ts` para aceitar blocos e linhas simples em modo somente leitura (`-R`).
+- **Globbing nativo sem fallbacks legados:** simplificação de `globMatch` e `findFiles` em `git.ts` aproveitando `path.matchesGlob` e `fs.globSync` garantidos no Node 24.
+
 ## 0.21.2 — 2026-09-26
 
 ### Corrigido

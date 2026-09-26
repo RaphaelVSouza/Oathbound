@@ -32,8 +32,8 @@ permission:
     "*": deny
     "node *oathbound/scripts/run.js*": allow
     "node *oathbound/scripts/queue.js*": allow
-    "node *oathbound/scripts/kill.js*": allow
-    "node *oathbound/scripts/quiet.js*": allow
+    "node *oathbound/scripts/kill.ts*": allow
+    "node *oathbound/scripts/quiet.ts*": allow
     "git status*": allow
     "git diff*": allow
     "git log*": allow

@@ -7,7 +7,7 @@ Agradecemos o interesse em contribuir com o **Oathbound**! Este documento orient
 1. **Independência de consumidor**:
    O repositório do pacote não deve conter caminhos absolutos, hosts específicos, segredos ou regras particulares de projetos consumidores. O fluxo comum vive neste kit; exceções devem ser configuradas no `AGENTS.md` de cada projeto usuário.
 2. **Zero dependências externas (`npm`)**:
-   As ferramentas de governança e os módulos internos utilizam exclusivamente os recursos nativos do Node.js (versão 22 ou superior), como `node:sqlite`, `node:util.parseArgs` e `node:test`.
+   As ferramentas de governança e os módulos internos utilizam exclusivamente os recursos nativos do Node.js (versão 24 ou superior), como `node:sqlite`, `node:util.parseArgs` e `node:test`.
 3. **Módulos profundos**:
    Interfaces públicas devem ser enxutas, bem documentadas com JSDoc e ocultar a complexidade operacional (ex.: tratamento de subprocessos em plataformas Windows/POSIX).
 
