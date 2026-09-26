@@ -348,17 +348,22 @@ test('queue G-012: issues que colidiam no esquema antigo (a/x/001.md e a/y/001.m
   fs.writeFileSync(path.join(dir, 'a', 'y', '001.md'), '# Issue Y');
 
   // Marca só a primeira (id novo) como revisada; a segunda deve ainda ser processada
-  // (não pulada por colisão), então usamos um id de sessão pra forçar exit rápido:
-  // aqui validamos apenas que os ids gerados internamente não colidem, inspecionando
-  // os markers gravados após passar as duas pelo checkpoint 'revisada' manualmente.
+  // (não pulada por colisão) — o que importa é que ids gerados internamente não colidam.
   const stateDirPath = path.join(dir, '.git', 'oathbound', 'state');
   fs.mkdirSync(stateDirPath, { recursive: true });
   fs.writeFileSync(path.join(stateDirPath, 'a--x--001'), 'revisada');
 
-  const code = await queue(['-d', dir, '-A', accept, '-s', 'src/*', '--', 'a/x/001.md', 'a/y/001.md']);
-  // a/x/001.md pula (checkpoint), a/y/001.md não tem checkpoint e tenta abrir sessão real
-  // (sem runner mockado aqui) — o que importa é que NÃO seja pulada por colisão de id.
-  assert.notEqual(code, 0, 'a/y/001.md não tem checkpoint; não deve ser pulada por colisão de id com a/x/001.md');
+  withGenericFixture(t, {
+    reply: 'No issues.',
+    writeFile: path.join(dir, 'src', 'feature.js'),
+    writeContent: 'export const ok = true;\n'
+  });
+  const code = await queue(['-d', dir, '-A', accept, '-s', 'src/*', '-u', 'generic', '--', 'a/x/001.md', 'a/y/001.md']);
+  // a/x/001.md pula (checkpoint) e não gera marker novo; a/y/001.md não tem checkpoint,
+  // roda de ponta a ponta com o runner mockado e deve concluir sem colidir com o id de a/x/001.
+  assert.equal(code, 0, 'a/y/001.md não tem checkpoint; não deve ser pulada por colisão de id com a/x/001.md');
+  const markerY = path.join(stateDirPath, 'a--y--001');
+  assert.ok(fs.existsSync(markerY), 'a/y/001.md deveria gerar seu próprio marker de estado, distinto de a/x/001');
 });
 
 test('queue G-013: exit 3 (fora do escopo) para a fila, lista arquivos e nao marca implementada', async (t) => {

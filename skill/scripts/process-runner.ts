@@ -129,23 +129,24 @@ function run(command: string, args: string[] = [], opts: RunOptions = {}): Promi
     opts.onStderr?.(chunk);
   });
   const killChild = () => { try { child.kill('SIGKILL'); } catch {} };
-  const onInt = () => { interrupted = 130; killTree(child.pid!, killChild); };
-  const onTerm = () => { interrupted = 143; killTree(child.pid!, killChild); };
+  const detach = () => { process.off('SIGINT', onInt); process.off('SIGTERM', onTerm); };
+  const onInt = () => { interrupted = 130; detach(); killTree(child.pid!, killChild).catch(() => {}); };
+  const onTerm = () => { interrupted = 143; detach(); killTree(child.pid!, killChild).catch(() => {}); };
   process.on('SIGINT', onInt);
   process.on('SIGTERM', onTerm);
   let timer: any;
   if (opts.timeout) timer = setTimeout(() => {
     timedOut = true;
     process.stderr.write(`── tree-timeout: ${opts.timeout}s estourados, matando árvore do pid ${child.pid}\n`);
-    killTree(child.pid!, killChild);
+    detach();
+    killTree(child.pid!, killChild).catch(() => {});
   }, opts.timeout * 1000);
   child.on('error', (error: Error) => { stderr += error.message; opts.onData?.(Buffer.from(error.message)); });
   child.on('close', (code: number | null) => {
     if (settled) return;
     settled = true;
     clearTimeout(timer);
-    process.off('SIGINT', onInt);
-    process.off('SIGTERM', onTerm);
+    detach();
     if (registration) fs.rmSync(registration, { force: true });
     if (opts.capture !== false) {
       stdout = (stdout + stdoutDecoder.end()).slice(-(opts.maxCapture || 1048576));
@@ -157,20 +158,44 @@ function run(command: string, args: string[] = [], opts: RunOptions = {}): Promi
   return promise;
 }
 
-/** Terminate a process and its descendants when pid is a valid child PID. */
-function killTree(pid?: number, fallback?: () => void): void {
+/**
+ * List direct child PIDs of a Windows process via PowerShell/CIM (wmic.exe is removed on
+ * current Windows builds). Returns [] on any failure.
+ */
+async function windowsChildren(pid: number): Promise<number[]> {
+  const ps = resolveCommand('powershell.exe');
+  const script = `(Get-CimInstance Win32_Process -Filter "ParentProcessId=${pid}").ProcessId`;
+  const r = await run(ps.command, ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true });
+  if (r.code) return [];
+  return r.stdout.split(/\r?\n/).map(l => Number(l.trim())).filter(n => Number.isInteger(n) && n > 0);
+}
+
+/** Recursively SIGKILL a Windows process and its descendants by walking the CIM process tree. */
+async function windowsKillFallback(pid: number): Promise<void> {
+  const children = await windowsChildren(pid);
+  await Promise.all(children.map(windowsKillFallback));
+  try { process.kill(pid, 'SIGKILL'); } catch {}
+}
+
+/**
+ * Terminate a process and its descendants when pid is a valid child PID.
+ * Resolves only after termination (or best-effort fallback) has completed.
+ */
+async function killTree(pid?: number, fallback?: () => void): Promise<void> {
   if (!pid) return;
   if (process.platform === 'win32') {
     const taskkill = resolveCommand('taskkill.exe');
-    const killer = spawn(taskkill.command, ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
-    let finished = false;
-    const fallbackOnce = () => {
-      if (finished) return;
-      finished = true;
+    const code = await new Promise<number>(resolve => {
+      const killer = spawn(taskkill.command, ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
+      killer.on('error', () => resolve(1));
+      killer.on('close', c => resolve(c ?? 1));
+    });
+    if (code !== 0) {
+      // taskkill /T falhou (ex.: processo já finalizado ou sem permissão sobre um descendente);
+      // tenta matar a árvore por enumeração antes de recorrer ao fallback do processo raiz.
+      await windowsKillFallback(pid);
       fallback?.();
-    };
-    killer.on('error', fallbackOnce);
-    killer.on('close', code => { if (code !== 0) fallbackOnce(); });
+    }
   } else {
     try { (process as any).kill(-pid, 'SIGKILL'); } catch { try { process.kill(pid, 'SIGKILL'); } catch {} }
   }

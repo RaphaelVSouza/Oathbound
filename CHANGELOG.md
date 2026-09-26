@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## 0.23.4 — 2026-09-26
+
+### Corrigido
+
+- **Vazamento de listeners SIGINT/SIGTERM em `run()`:** os handlers de sinal agora são removidos assim que a árvore do processo é mandada matar (interrupção ou timeout), não só quando o processo fecha; antes, um processo que nunca emitisse `close` mantinha os listeners empilhados no processo pai indefinidamente.
+- **`killTree` não aguardava a árvore terminar de fato:** virou assíncrona e só resolve após `taskkill` (ou o fallback) concluir; `kill.ts` agora aguarda cada chamada antes de apagar o registro do PID.
+- **Fallback de encerramento no Windows matava só o processo raiz:** quando `taskkill /T` falha, o fallback agora enumera e mata a árvore inteira via PowerShell/CIM (`Get-CimInstance Win32_Process`), em vez de derrubar somente o PID informado e deixar descendentes órfãos.
+
+### Testes
+
+- `queue G-012` (ids que colidiam no esquema antigo) não depende mais de abrir uma sessão real de runner; usa a fixture `generic` já empregada pelos testes G-002, o que elimina uma trava potencial de minutos presa a rede/autenticação externa.
+
 ## 0.23.3 — 2026-09-26
 
 ### Corrigido

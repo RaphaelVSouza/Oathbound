@@ -22,7 +22,7 @@ async function killRegistered(root: string, mode: string = '-l', quiet: boolean 
     }
     if (mode !== '--all' && mode !== tag && !(mode === '--orphans' && !alive(owner))) continue;
     for (const file of files) {
-      killTree(Number(file));
+      await killTree(Number(file));
       if (!quiet) console.error(`── oathbound kill: ${tag} pid=${file} encerrado`);
       fs.rmSync(path.join(dir, file), { force: true });
     }
