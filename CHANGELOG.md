@@ -1,5 +1,16 @@
 # Histórico de versões
 
+## 0.23.8 — 2026-09-26
+
+### Adicionado
+
+- **Revisão cega no `assayer`:** `skill/SKILL.md` (§2, montagem da chamada) e
+  `guild/assayer.md` agora instruem explicitamente que a chamada de revisão
+  carrega só diff, arquivo ou escopo — nunca o objetivo original da tarefa, o
+  raciocínio de quem implementou ou a identidade do agente autor. Reduz o
+  viés de o revisor validar a implementação pela intenção declarada em vez do
+  resultado entregue.
+
 ## 0.23.7 — 2026-09-26
 
 ### Removido

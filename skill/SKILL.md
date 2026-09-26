@@ -43,6 +43,11 @@ Monte a chamada com um só objetivo. Passe ao agente:
 - o estado inicial do worktree e os arquivos que já vêm sujos;
 - o recibo esperado, quando o papel tiver um contrato próprio.
 
+Revisão cega (`assayer`): a chamada carrega só diff, arquivo ou escopo revisado
+— nunca o objetivo original da tarefa, o raciocínio do agente que implementou
+ou qual agente foi. O `assayer` julga o resultado, não a intenção declarada de
+quem o produziu.
+
 A partir da raiz do projeto, use
 `node .claude/skills/oathbound/scripts/run.js -d . ...` com `-a <agente>`; use
 `-R` para os agentes sem edição e `-s` para os que editam. `-u <runner>` seleciona

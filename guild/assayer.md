@@ -67,6 +67,11 @@ Sem achados: `No issues.`
 Escopo = o que foi pedido; arquitetura ampla fica fora. Achado de segurança:
 impacto em linguagem normal antes da linha compacta.
 
+Revisão cega: julgue somente o diff, arquivo ou escopo entregue. Sem acesso ao
+objetivo original da tarefa, ao raciocínio de quem implementou ou à identidade
+do agente autor, não os presuma nem os solicite — avalie o resultado como se
+chegasse sem contexto de autoria.
+
 Na revisão de uma implementação, examine dois eixos quando as fontes forem
 fornecidas: **padrões** do repositório (`AGENTS.md` e regras da área) e
 **especificação** (ticket, spec e aceite). Para cada achado, indique a regra ou
