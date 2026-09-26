@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { run, alive, resolveCommand } = require('../skill/scripts/process-runner');
+const { run, alive, resolveCommand } = require('../skill/scripts/process-runner.ts');
 
 test('run: executa processo com sucesso e captura stdout', async () => {
   const r = await run('node', ['-e', 'console.log("teste de execucao")']);
@@ -86,7 +86,14 @@ test('resolveCommand: shim npm .cmd vira node + script alvo', t => {
 test('resolveCommand: .exe no PATH tem prioridade sobre .cmd', t => {
   const { dir } = shimDir(t);
   fs.writeFileSync(path.join(dir, 'fakecli.exe'), '');
-  assert.deepEqual(resolveCommand('fakecli', { platform: 'win32', env: { PATH: dir } }), { command: 'fakecli', prefix: [] });
+  assert.deepEqual(resolveCommand('fakecli', { platform: 'win32', env: { PATH: dir } }), { command: path.join(dir, 'fakecli.exe'), prefix: [] });
+});
+
+test('resolveCommand: localiza .exe explicito pelo PATH', t => {
+  const { dir } = shimDir(t);
+  const executable = path.join(dir, 'opencode.exe');
+  fs.writeFileSync(executable, '');
+  assert.deepEqual(resolveCommand('opencode.exe', { platform: 'win32', env: { PATH: dir } }), { command: executable, prefix: [] });
 });
 
 test('resolveCommand: shim que aponta para .exe executa o binario direto', t => {
@@ -123,4 +130,10 @@ test('run: executa shim npm .cmd no Windows sem shell e preserva argumentos', { 
   const r = await run('fakecli', args, { env });
   assert.equal(r.code, 0, r.stderr);
   assert.deepEqual(JSON.parse(r.stdout), args);
+});
+
+test('run: aceita opcao windowsHide explicitamente sem quebrar execucao', async () => {
+  const r1 = await run('node', ['-e', 'console.log("oculto")'], { windowsHide: true });
+  assert.equal(r1.code, 0);
+  assert.ok(r1.stdout.includes('oculto'));
 });

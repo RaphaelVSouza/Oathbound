@@ -146,7 +146,7 @@ Validação:
 - Rode o aceite literalmente; com valor esperado, reporte obtido vs esperado.
 - Falha: corrija na causa, com timeouts, testes e asserções intactos.
 - Saída longa (teste, build, lint, typecheck) sempre via
-  `node .claude/skills/oathbound/scripts/quiet.js [-l <log>] -- <cmd>` a partir da raiz do repositório;
+  `node .claude/skills/oathbound/scripts/quiet.ts [-l <log>] -- <cmd>` a partir da raiz do repositório;
   aprofunde no log com `grep -n -A<N>` ou faixa de linhas.
 - Iteração: só o teste que falha, com `--max-failures=3`/`--bail=3` quando o
   runner aceitar. Veredito: suíte completa sem limite, no fim.

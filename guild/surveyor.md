@@ -28,8 +28,7 @@ permission:
     "**/*.key": deny
   glob: allow
   grep: deny
-  edit:
-    "*": deny
+  edit: deny
   bash: deny
   task: deny
   skill: deny

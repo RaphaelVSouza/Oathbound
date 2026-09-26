@@ -3,51 +3,78 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 const { StringDecoder } = require('node:string_decoder');
 
-/** @typedef {{ code: number, stdout: string, stderr: string }} ProcessResult */
-/** @typedef {{ cwd?: string, env?: Record<string, string|undefined>, shell?: boolean, input?: string|Buffer, output?: 'inherit', capture?: boolean, maxCapture?: number, timeout?: number, onStart?: (pid?: number) => void, onData?: (chunk: Buffer) => void, onClose?: (pid?: number) => void }} RunOptions */
+interface ProcessResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
 
-/** @typedef {{ command: string, prefix: string[] }} ResolvedCommand */
+interface RunOptions {
+  cwd?: string;
+  env?: Record<string, string | undefined>;
+  shell?: boolean;
+  windowsHide?: boolean;
+  input?: string | Buffer;
+  output?: 'inherit';
+  capture?: boolean;
+  maxCapture?: number;
+  timeout?: number;
+  onStart?: (pid?: number) => void;
+  onData?: (chunk: Buffer) => void;
+  onStdout?: (chunk: Buffer) => void;
+  onStderr?: (chunk: Buffer) => void;
+  onClose?: (pid?: number) => void;
+}
+
+interface ResolvedCommand {
+  command: string;
+  prefix: string[];
+}
 
 /**
  * Resolve a Windows command without a shell. Binaries (.exe/.com) are left to libuv's own PATH search;
  * npm shims (.cmd/.bat) are parsed and replaced by the program they call, because spawning a .cmd
  * requires cmd.exe and cmd.exe cannot receive arbitrary arguments (&, |, quotes, %) safely.
- * @param {string} command
- * @param {{ platform?: string, env?: Record<string, string|undefined> }} [opts]
- * @returns {ResolvedCommand}
  */
-function resolveCommand(command, { platform = process.platform, env = process.env } = {}) {
-  const same = { command, prefix: [] };
+function resolveCommand(
+  command: string,
+  { platform = process.platform, env = process.env }: { platform?: string; env?: Record<string, string | undefined> } = {}
+): ResolvedCommand {
+  const same: ResolvedCommand = { command, prefix: [] };
   if (platform !== 'win32') return same;
   const ext = path.extname(command).toLowerCase();
   if (ext === '.cmd' || ext === '.bat') return resolveShim(command);
-  if (ext || /[\\/]/.test(command)) return same;
   const key = Object.keys(env).find(k => k.toUpperCase() === 'PATH');
   const dirs = String((key && env[key]) || '').split(';').map(d => d.trim().replace(/^"|"$/g, '')).filter(Boolean);
-  const hit = suffixes => dirs.flatMap(d => suffixes.map(s => path.join(d, command + s))).find(f => isFile(f));
-  if (hit(['.com', '.exe'])) return same;
+  const hit = (suffixes: string[]) => dirs.flatMap(d => suffixes.map(s => path.join(d, command + s))).find(f => isFile(f));
+  if (ext || /[\\/]/.test(command)) {
+    if (!/[\\/]/.test(command) && ['.com', '.exe'].includes(ext)) {
+      const executable = dirs.map(d => path.join(d, command)).find(isFile);
+      if (executable) return { command: executable, prefix: [] };
+    }
+    return same;
+  }
+  const executable = hit(['.com', '.exe']);
+  if (executable) return { command: executable, prefix: [] };
   const shim = hit(['.cmd', '.bat']);
   return shim ? resolveShim(shim) : same;
 }
 
-/** @param {string} file @returns {boolean} */
-function isFile(file) {
+function isFile(file: string): boolean {
   try { return fs.statSync(file).isFile(); } catch { return false; }
 }
 
 /**
  * Read an npm cmd-shim and return the program it runs: the target itself when it is a binary,
  * or the current Node with the target script as first argument.
- * @param {string} file
- * @returns {ResolvedCommand}
  */
-function resolveShim(file) {
+function resolveShim(file: string): ResolvedCommand {
   const text = fs.readFileSync(file, 'utf8');
   const matches = [...text.matchAll(/"%~?dp0%?\\([^"%]+)"\s+%\*/g)];
   if (!matches.length) {
     throw Error(`${file} não é um shim npm reconhecível; sem shell não há execução segura de .cmd/.bat — aponte o runner para o .exe ou para o script Node real`);
   }
-  const target = path.join(path.dirname(file), ...matches.at(-1)[1].split('\\'));
+  const target = path.join(path.dirname(file), ...matches.at(-1)![1].split('\\'));
   if (!isFile(target)) throw Error(`shim ${file} aponta para arquivo ausente: ${target}`);
   const ext = path.extname(target).toLowerCase();
   if (ext === '.exe' || ext === '.com') return { command: target, prefix: [] };
@@ -59,26 +86,24 @@ function resolveShim(file) {
 /**
  * Run a child process and resolve after it closes. Timeout and signals request process tree termination.
  * Output is captured up to maxCapture unless capture is false or output is inherited.
- * @param {string} command
- * @param {string[]} args
- * @param {RunOptions} opts
- * @returns {Promise<ProcessResult>} Exit code uses 124 for timeout and 130/143 for signals.
  */
-function run(command, args = [], opts = {}) {
+function run(command: string, args: string[] = [], opts: RunOptions = {}): Promise<ProcessResult> {
   if (typeof command !== 'string' || !command) throw Error('comando do processo deve ser uma string não vazia');
   if (!Array.isArray(args) || args.some(arg => typeof arg !== 'string')) throw Error('argumentos do processo devem ser strings');
   if (!opts || typeof opts !== 'object' || Array.isArray(opts)) throw Error('opções do processo devem ser um objeto');
-  const { promise, resolve } = Promise.withResolvers();
+  const { promise, resolve } = Promise.withResolvers<ProcessResult>();
   let stdout = '', stderr = '', settled = false, timedOut = false, interrupted = 0;
   const stdoutDecoder = new StringDecoder('utf8');
   const stderrDecoder = new StringDecoder('utf8');
-  const env = opts.env || process.env;
+  const env: any = opts.env || process.env;
   const autoShell = process.platform === 'win32' && /^(npm|npx|pnpm|yarn)(\.cmd)?$/i.test(command);
   const shell = opts.shell !== undefined ? !!opts.shell : autoShell;
   const resolved = shell ? { command, prefix: [] } : resolveCommand(command, { env });
+  const windowsHide = opts.windowsHide !== undefined ? !!opts.windowsHide : true;
   const child = spawn(resolved.command, [...resolved.prefix, ...args], {
     cwd: opts.cwd, env, shell,
     detached: process.platform !== 'win32',
+    windowsHide,
     stdio: [opts.input === undefined ? 'ignore' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe']
   });
   if (opts.input !== undefined) {
@@ -93,33 +118,35 @@ function run(command, args = [], opts = {}) {
     fs.writeFileSync(registration, [command, ...args.slice(0, 4)].join(' ').slice(0, 160));
   }
   opts.onStart?.(child.pid);
-  child.stdout?.on('data', chunk => {
+  child.stdout?.on('data', (chunk: Buffer) => {
     if (opts.capture !== false) stdout = (stdout + stdoutDecoder.write(chunk)).slice(-(opts.maxCapture || 1048576));
     opts.onData?.(chunk);
     opts.onStdout?.(chunk);
   });
-  child.stderr?.on('data', chunk => {
+  child.stderr?.on('data', (chunk: Buffer) => {
     if (opts.capture !== false) stderr = (stderr + stderrDecoder.write(chunk)).slice(-(opts.maxCapture || 1048576));
     opts.onData?.(chunk);
     opts.onStderr?.(chunk);
   });
-  const onInt = () => { interrupted = 130; killTree(child.pid); };
-  const onTerm = () => { interrupted = 143; killTree(child.pid); };
+  const killChild = () => { try { child.kill('SIGKILL'); } catch {} };
+  const detach = () => { process.off('SIGINT', onInt); process.off('SIGTERM', onTerm); };
+  const onInt = () => { interrupted = 130; detach(); killTree(child.pid!, killChild).catch(() => {}); };
+  const onTerm = () => { interrupted = 143; detach(); killTree(child.pid!, killChild).catch(() => {}); };
   process.on('SIGINT', onInt);
   process.on('SIGTERM', onTerm);
-  let timer;
+  let timer: any;
   if (opts.timeout) timer = setTimeout(() => {
     timedOut = true;
     process.stderr.write(`── tree-timeout: ${opts.timeout}s estourados, matando árvore do pid ${child.pid}\n`);
-    killTree(child.pid);
+    detach();
+    killTree(child.pid!, killChild).catch(() => {});
   }, opts.timeout * 1000);
-  child.on('error', error => { stderr += error.message; opts.onData?.(Buffer.from(error.message)); });
-  child.on('close', code => {
+  child.on('error', (error: Error) => { stderr += error.message; opts.onData?.(Buffer.from(error.message)); });
+  child.on('close', (code: number | null) => {
     if (settled) return;
     settled = true;
     clearTimeout(timer);
-    process.off('SIGINT', onInt);
-    process.off('SIGTERM', onTerm);
+    detach();
     if (registration) fs.rmSync(registration, { force: true });
     if (opts.capture !== false) {
       stdout = (stdout + stdoutDecoder.end()).slice(-(opts.maxCapture || 1048576));
@@ -131,19 +158,54 @@ function run(command, args = [], opts = {}) {
   return promise;
 }
 
-/** Terminate a process and its descendants when pid is a valid child PID. @param {number} pid */
-function killTree(pid) {
+/**
+ * List direct child PIDs of a Windows process via PowerShell/CIM (wmic.exe is removed on
+ * current Windows builds). Returns [] on any failure.
+ */
+async function windowsChildren(pid: number): Promise<number[]> {
+  const ps = resolveCommand('powershell.exe');
+  const script = `(Get-CimInstance Win32_Process -Filter "ParentProcessId=${pid}").ProcessId`;
+  const r = await run(ps.command, ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true });
+  if (r.code) return [];
+  return r.stdout.split(/\r?\n/).map(l => Number(l.trim())).filter(n => Number.isInteger(n) && n > 0);
+}
+
+/** Recursively SIGKILL a Windows process and its descendants by walking the CIM process tree. */
+async function windowsKillFallback(pid: number): Promise<void> {
+  const children = await windowsChildren(pid);
+  await Promise.all(children.map(windowsKillFallback));
+  try { process.kill(pid, 'SIGKILL'); } catch {}
+}
+
+/**
+ * Terminate a process and its descendants when pid is a valid child PID.
+ * Resolves only after termination (or best-effort fallback) has completed.
+ */
+async function killTree(pid?: number, fallback?: () => void): Promise<void> {
   if (!pid) return;
   if (process.platform === 'win32') {
-    const child = spawn('taskkill.exe', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
-    child.on('error', () => {});
+    const taskkill = resolveCommand('taskkill.exe');
+    const code = await new Promise<number>(resolve => {
+      const killer = spawn(taskkill.command, ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
+      killer.on('error', () => resolve(1));
+      killer.on('close', c => resolve(c ?? 1));
+    });
+    // code 128 = "processo não encontrado": árvore já morreu sozinha entre o timeout/sinal
+    // e a chamada do taskkill (race condition normal). Não é falha, então não precisa do
+    // fallback caro de enumeração CIM.
+    if (code !== 0 && code !== 128) {
+      // taskkill /T falhou por outro motivo (ex.: sem permissão sobre um descendente);
+      // tenta matar a árvore por enumeração antes de recorrer ao fallback do processo raiz.
+      await windowsKillFallback(pid);
+      fallback?.();
+    }
   } else {
-    try { process.kill(-pid, 'SIGKILL'); } catch { try { process.kill(pid, 'SIGKILL'); } catch {} }
+    try { (process as any).kill(-pid, 'SIGKILL'); } catch { try { process.kill(pid, 'SIGKILL'); } catch {} }
   }
 }
 
-/** Check whether a positive integer PID appears to be running. @param {number|string} pid @returns {boolean} */
-function alive(pid) {
+/** Check whether a positive integer PID appears to be running. */
+function alive(pid: number | string): boolean {
   if (!Number.isInteger(Number(pid)) || Number(pid) <= 0) return false;
   try { process.kill(Number(pid), 0); return true; } catch { return false; }
 }

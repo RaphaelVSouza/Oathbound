@@ -1,50 +1,90 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { readEnv } = require('./env');
+const { readEnv } = require('./env.ts');
 
-const BUILTIN_RUNNERS = ['opencode', 'claude', 'codex', 'agy', 'generic'];
+const BUILTIN_RUNNERS: string[] = ['opencode', 'claude', 'codex', 'agy', 'generic'];
 
-/**
- * @typedef {{
- *   push(chunk: string): string,
- *   flush(rawStdout: string): string
- * }} RunnerDisplay
- *
- * @typedef {{
- *   name: string,
- *   resolveAgentFile(opts: { root?: string, agent: string, agentDir?: string }): string,
- *   prepareAgent(opts: { agentFile: string, agent: string, others?: any[], feedback?: string, scopes?: string[], readonly?: boolean }): { tempAgent?: string, promptPrefix?: string, cleanup?: () => any },
- *   buildCommand(opts: { root?: string, agent: string, agentFile: string, tempAgent?: string, model?: string, effort?: string, message: string, session?: string, tag: string, promptPrefix?: string, readonly?: boolean, scopes?: string[] }): { command: string, args: string[], env?: object, input?: string },
- *   resolveSession(opts: { root?: string, tag: string, sessionInput?: string, runResult?: any }): Promise<string>,
- *   parseOutput?: (output: any) => { text: string, session: string, usage: any },
- *   createDisplay?: () => RunnerDisplay
- * }} RunnerAdapter
- *
- * `createDisplay()` é opcional. Quando ausente, `validateAdapter` injeta o
- * padrão: `push` devolve o próprio chunk (saída bruta em tempo real) e
- * `flush` devolve string vazia (nada extra ao final). Runners com saída
- * estruturada (JSONL, JSON envelope) devem implementar `createDisplay` para
- * decidir o que exibir no terminal a cada chunk (`push`) e ao final
- * (`flush(rawStdout)`), sem que o motor de execução (`run.js`) precise
- * conhecer o nome do runner.
- */
+interface RunnerDisplay {
+  push(chunk: string): string;
+  flush(rawStdout: string): string;
+}
 
-const feedbackPrompts = {
+interface PrepareAgentOpts {
+  agentFile: string;
+  agent: string;
+  others?: any[];
+  feedback?: string;
+  scopes?: string[];
+  readonly?: boolean;
+}
+
+interface PrepareAgentResult {
+  tempAgent?: string;
+  promptPrefix?: string;
+  cleanup?: () => any;
+}
+
+interface BuildCommandOpts {
+  root?: string;
+  agent: string;
+  agentFile: string;
+  tempAgent?: string;
+  model?: string;
+  effort?: string;
+  message: string;
+  session?: string;
+  tag: string;
+  promptPrefix?: string;
+  readonly?: boolean;
+  scopes?: string[];
+}
+
+interface BuildCommandResult {
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  input?: string;
+}
+
+interface ResolveSessionOpts {
+  root?: string;
+  tag: string;
+  sessionInput?: string;
+  runResult?: any;
+}
+
+interface ParsedOutput {
+  text: string;
+  session: string;
+  usage: any;
+}
+
+interface RunnerAdapter {
+  name: string;
+  resolveAgentFile(opts: { root?: string; agent: string; agentDir?: string }): string;
+  prepareAgent(opts: PrepareAgentOpts): PrepareAgentResult;
+  buildCommand(opts: BuildCommandOpts): BuildCommandResult;
+  resolveSession(opts: ResolveSessionOpts): Promise<string>;
+  parseOutput?: (output: any) => ParsedOutput;
+  createDisplay?: () => RunnerDisplay;
+}
+
+const feedbackPrompts: Record<string, string> = {
   status: 'Responda somente com: etapa atual, progresso observável, próximo passo e estimativa apenas se tiver base factual. Não execute ações.',
   bloqueios: 'Responda somente com: bloqueios atuais, evidência de cada um e decisão necessária do oathkeeper. Se não houver, diga nenhum. Não execute ações.',
   evidencias: 'Responda somente com: comandos ou fontes já consultados nesta sessão, resultados observados e lacunas. Não execute ações.',
   entrega: 'Resuma o trabalho feito nesta sessão, arquivos afetados, evidências de aceite e pendências. Não execute ações.'
 };
 
-const defaultParseOutput = (output) => ({
+const defaultParseOutput = (output: any): ParsedOutput => ({
   text: typeof output === 'object' && output !== null ? output.stdout || '' : String(output || ''),
   session: '',
   usage: null
 });
 
-const defaultCreateDisplay = () => ({
-  push: (chunk) => chunk,
+const defaultCreateDisplay = (): RunnerDisplay => ({
+  push: (chunk: string) => chunk,
   flush: () => ''
 });
 
@@ -53,10 +93,8 @@ const defaultCreateDisplay = () => ({
  *
  * Não altera o objeto recebido: devolve um novo objeto com os padrões de
  * `parseOutput` e `createDisplay` preenchidos quando ausentes.
- * @param {any} adapter
- * @returns {any}
  */
-function validateAdapter(adapter) {
+function validateAdapter(adapter: any): RunnerAdapter {
   if (!adapter || typeof adapter !== 'object') throw Error('adapter inválido: deve ser um objeto');
   if (typeof adapter.name !== 'string' || !adapter.name.trim()) throw Error('adapter inválido: propriedade name obrigatória');
   if (typeof adapter.buildCommand !== 'function') throw Error(`adapter '${adapter.name}' inválido: buildCommand deve ser função`);
@@ -78,16 +116,13 @@ function validateAdapter(adapter) {
 
 /**
  * Resolves a runner adapter by name or file path.
- * @param {string} [nameOrPath='opencode']
- * @param {string} [root=process.cwd()]
- * @returns {any}
  */
-function getRunnerAdapter(nameOrPath = 'opencode', root = process.cwd()) {
+function getRunnerAdapter(nameOrPath: string = 'opencode', root: string = process.cwd()): RunnerAdapter {
   const runnerKey = (nameOrPath || 'opencode').trim();
 
   // 1. Built-in runner by name
   if (BUILTIN_RUNNERS.includes(runnerKey)) {
-    const builtinFile = path.join(__dirname, 'runners', `${runnerKey}.js`);
+    const builtinFile = path.join(__dirname, 'runners', `${runnerKey}.ts`);
     if (fs.existsSync(builtinFile)) {
       const mod = require(builtinFile);
       return validateAdapter(mod.adapter || mod);
@@ -114,10 +149,8 @@ function getRunnerAdapter(nameOrPath = 'opencode', root = process.cwd()) {
 
 /**
  * Extracts pure instructional Markdown from an agent file, stripping YAML frontmatter if present.
- * @param {string} agentFile
- * @returns {string}
  */
-function extractInstructions(agentFile) {
+function extractInstructions(agentFile: string): string {
   if (!agentFile || !fs.existsSync(agentFile)) return '';
   const raw = fs.readFileSync(agentFile, 'utf8');
   if (raw.startsWith('---')) {
@@ -131,15 +164,13 @@ function extractInstructions(agentFile) {
 
 /**
  * Resolves the path to an agent markdown file based on runner conventions and candidate directories.
- * @param {{
- *   root?: string,
- *   agent: string,
- *   agentDir?: string,
- *   runner?: string
- * }} opts
- * @returns {string}
  */
-function resolveAgentPath({ root = process.cwd(), agent, agentDir = '', runner = '' }) {
+function resolveAgentPath({ root = process.cwd(), agent, agentDir = '', runner = '' }: {
+  root?: string;
+  agent: string;
+  agentDir?: string;
+  runner?: string;
+}): string {
   if (!agent) return '';
   const home = process.env.USERPROFILE || process.env.HOME || '';
   const runnerKey = (runner || '').toLowerCase();

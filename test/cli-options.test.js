@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { options, one, parseArgs } = require('../skill/scripts/cli-options');
+const { options, one, parseArgs } = require('../skill/scripts/cli-options.ts');
 
 test('options: faz parse de flags curtas e valores multiplos', () => {
   const parsed = options(['-d', 'repo', '-s', 'src/*', '-s', 'docs/*', '--', 'issue.md'], ['-d', '-s'], ['-R']);

@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 const fs = require('node:fs');
 const path = require('node:path');
-const { options, one } = require('./cli-options');
-const { run, alive } = require('./process-runner');
-const { globMatch, snapshot, changedPaths, head, committedPaths, repoPaths } = require('./git');
-const { killRegistered } = require('./kill');
+const { options, one } = require('./cli-options.ts');
+const { run, alive } = require('./process-runner.ts');
+const { globMatch, snapshot, changedPaths, head, committedPaths, repoPaths } = require('./git.ts');
+const { killRegistered } = require('./kill.ts');
 const { StringDecoder } = require('node:string_decoder');
-const { getRunnerAdapter, validateAdapter, feedbackPrompts } = require('./runner-adapter');
-const { temporaryAgent, feedbackAgent } = require('./runners/opencode');
-const { ROLES, stateDir } = require('./roles');
-const { readEnv } = require('./env');
+const { getRunnerAdapter, validateAdapter, feedbackPrompts } = require('./runner-adapter.ts');
+const { temporaryAgent, feedbackAgent } = require('./runners/opencode.ts');
+const { ROLES, stateDir } = require('./roles.ts');
+const { readEnv } = require('./env.ts');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function overlap(a, b) {

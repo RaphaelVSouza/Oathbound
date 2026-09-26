@@ -1,16 +1,22 @@
 const { parseArgs } = require('node:util');
 
+interface CliOptionConfig {
+  type: 'string' | 'boolean';
+  multiple?: boolean;
+  short?: string;
+}
+
+type ParsedCliOptions = Record<string, string[] | boolean | undefined> & {
+  _: string[];
+};
+
 /**
  * Parse the short and long option names used by the kit's CLI wrappers via node:util.parseArgs.
  * Values are arrays so repeated flags such as -s and -m retain their order.
- * @param {string[]} argv
- * @param {string[]} values Options requiring a value.
- * @param {string[]} [flags] Boolean options.
- * @returns {Record<string, string[]|boolean> & {_: string[]}}
  */
-function options(argv, values, flags = []) {
-  const optionsConfig = {};
-  const mapKey = {};
+function options(argv: string[], values: string[], flags: string[] = []): ParsedCliOptions {
+  const optionsConfig: Record<string, CliOptionConfig> = {};
+  const mapKey: Record<string, string> = {};
 
   for (const v of values) {
     const raw = v.replace(/^-+/, '');
@@ -32,7 +38,7 @@ function options(argv, values, flags = []) {
     mapKey[raw] = f;
   }
 
-  let parsed;
+  let parsed: any;
   try {
     parsed = parseArgs({
       args: argv,
@@ -40,7 +46,7 @@ function options(argv, values, flags = []) {
       allowPositionals: true,
       strict: true
     });
-  } catch (err) {
+  } catch (err: any) {
     if (err.code === 'ERR_PARSE_ARGS_INVALID_OPTION_VALUE') {
       const opt = err.message.match(/Option '([^', ]+)/)?.[1] || 'opção';
       throw Error(`falta valor para ${opt}`);
@@ -52,14 +58,14 @@ function options(argv, values, flags = []) {
     throw err;
   }
 
-  const out = { _: parsed.positionals };
+  const out: ParsedCliOptions = { _: parsed.positionals };
   for (const [key, val] of Object.entries(parsed.values)) {
-    out[mapKey[key] || key] = val;
+    out[mapKey[key] || key] = val as string[] | boolean;
   }
   return out;
 }
 
-/** @param {Record<string, any>} parsed @param {string} key @param {string} [fallback] @returns {string} */
-const one = (parsed, key, fallback = '') => parsed[key]?.at(-1) ?? fallback;
+const one = (parsed: Record<string, any>, key: string, fallback: string = ''): string =>
+  parsed[key]?.at(-1) ?? fallback;
 
 module.exports = { options, one, parseArgs };

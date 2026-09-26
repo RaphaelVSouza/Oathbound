@@ -1,7 +1,15 @@
 const path = require('node:path');
 
+interface Roles {
+  orchestrator: string;
+  documenter: string;
+  implementer: string;
+  reviewer: string;
+  committer: string;
+}
+
 /** Nomes canônicos dos papéis de agente usados pelo pacote. Fonte única para evitar literais espalhados. */
-const ROLES = Object.freeze({
+const ROLES: Readonly<Roles> = Object.freeze({
   orchestrator: 'oathkeeper',
   documenter: 'herald',
   implementer: 'smith',
@@ -17,10 +25,8 @@ const DB_FILE_NAME = 'oathbound.db';
 
 /**
  * Caminho do diretório de estado dentro do gitDir do repositório.
- * @param {string} gitDir
- * @returns {string}
  */
-function stateDir(gitDir) {
+function stateDir(gitDir: string): string {
   return path.join(gitDir, STATE_DIR_NAME);
 }
 

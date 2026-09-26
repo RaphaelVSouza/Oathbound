@@ -2,13 +2,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { options, one } = require('./cli-options');
-const { run } = require('./process-runner');
-const { git, repoPaths } = require('./git');
+const { options, one } = require('./cli-options.ts');
+const { run } = require('./process-runner.ts');
+const { git, repoPaths } = require('./git.ts');
 const { runSession } = require('./run');
-const { openStore } = require('./store');
-const { ROLES, stateDir } = require('./roles');
-const { readEnv } = require('./env');
+const { openStore } = require('./store.ts');
+const { ROLES, stateDir } = require('./roles.ts');
+const { readEnv } = require('./env.ts');
 
 const tail = (value, count) => value.split(/\r?\n/).slice(-count).map(x => x.slice(0, 240)).join('\n');
 

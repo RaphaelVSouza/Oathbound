@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { run } = require('../skill/scripts/process-runner');
+const { run } = require('../skill/scripts/process-runner.ts');
 const {
   git,
   globMatch,
@@ -15,8 +15,8 @@ const {
   committedPaths,
   stage,
   commit
-} = require('../skill/scripts/git');
-const { ROLES } = require('../skill/scripts/roles');
+} = require('../skill/scripts/git.ts');
+const { ROLES } = require('../skill/scripts/roles.ts');
 
 /** Helper to create an isolated git repo in os.tmpdir() */
 async function createIsolatedRepo(t) {

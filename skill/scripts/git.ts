@@ -1,65 +1,84 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { run } = require('./process-runner');
-const { ROLES } = require('./roles');
+const { run } = require('./process-runner.ts');
+const { ROLES } = require('./roles.ts');
 
-/** Run Git in root and return trimmed stdout; throw when Git exits unsuccessfully.
- * @param {string} root
- * @param {...string} args
- * @returns {Promise<string>}
- */
-async function git(root, ...args) {
+interface DiffLine {
+  id: number;
+  text: string;
+}
+
+interface DiffHunk {
+  id: number;
+  header: string;
+  lines: DiffLine[];
+  text?: string;
+}
+
+interface StageOptions {
+  mode: 'all' | 'list' | 'hunks' | 'lines';
+  hunks?: number[];
+  lines?: number[];
+  scopes?: string[];
+  agent?: string;
+}
+
+interface StageResult {
+  file: string;
+  mode: string;
+  hunks?: DiffHunk[];
+  numbers?: number[];
+}
+
+interface CommitOptions {
+  scopes?: string[];
+  agent?: string;
+  timeout?: number;
+}
+
+interface CommitResult {
+  hash: string;
+  title: string;
+  output: string;
+}
+
+/** Run Git in root and return trimmed stdout; throw when Git exits unsuccessfully. */
+async function git(root: string, ...args: string[]): Promise<string> {
   const r = await run('git', ['-C', root, ...args]);
   if (r.code) throw Error(r.stderr.trim() || `git ${args[0]} falhou`);
   return r.stdout.trim();
 }
 
 /** Match a repository path against a glob supporting * and ?.
- * Uses path.matchesGlob when available (Node 22 LTS).
- * @param {string} name
- * @param {string} pattern
- * @returns {boolean}
+ * Uses native path.matchesGlob (Node 24 LTS).
  */
-function globMatch(name, pattern) {
+function globMatch(name: string, pattern: string): boolean {
   const normalized = name.replaceAll('\\', '/');
-  if (typeof path.matchesGlob === 'function') {
-    return path.matchesGlob(normalized, pattern) || (pattern.endsWith('/*') && path.matchesGlob(normalized, pattern + '*'));
-  }
-  const re = '^' + pattern.replace(/[.+^${}()|\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$';
-  return new RegExp(re).test(normalized);
+  return path.matchesGlob(normalized, pattern) || (pattern.endsWith('/*') && path.matchesGlob(normalized, pattern + '*'));
 }
 
-/** Find files matching a glob pattern relative to a directory using fs.globSync.
+/** Find files matching a glob pattern relative to a directory using native fs.globSync.
  * @param {string} dir
  * @param {string} [pattern='**\/*']
  * @returns {string[]}
  */
-function findFiles(dir, pattern = '**/*') {
-  if (typeof fs.globSync === 'function') {
-    return fs.globSync(pattern, { cwd: dir }).map(p => p.replaceAll('\\', '/'));
-  }
-  return [];
+function findFiles(dir: string, pattern: string = '**/*'): string[] {
+  return fs.globSync(pattern, { cwd: dir }).map((p: string) => p.replaceAll('\\', '/'));
 }
 
-/** Resolve a directory to its worktree root and absolute Git directory.
- * @param {string} dir
- * @returns {Promise<{root: string, gitDir: string}>}
- */
-async function repoPaths(dir) {
+/** Resolve a directory to its worktree root and absolute Git directory. */
+async function repoPaths(dir: string): Promise<{ root: string; gitDir: string }> {
   return {
     root: await git(dir, 'rev-parse', '--show-toplevel'),
     gitDir: await git(dir, 'rev-parse', '--absolute-git-dir')
   };
 }
 
-/** Capture opaque worktree hashes and index entries for later comparison.
- * @param {string} root
- * @returns {Promise<Map<string, string>>}
- */
-async function snapshot(root) {
+/** Capture opaque worktree hashes and index entries for later comparison. */
+async function snapshot(root: string): Promise<Map<string, string>> {
   const r = await run('git', ['-C', root, 'status', '--porcelain=v1', '-z', '-uall'], { maxCapture: 67108864 });
   if (r.code) throw Error(r.stderr);
-  const parts = r.stdout.split('\0'), names = [];
+  const parts = r.stdout.split('\0'), names: string[] = [];
   for (let i = 0; i < parts.length; i++) {
     const entry = parts[i];
     if (!entry) continue;
@@ -69,15 +88,12 @@ async function snapshot(root) {
   }
   if (!names.length) return new Map();
 
-  // Um processo para os hashes e um para o índice, em vez de dois por arquivo: o custo de spawn
-  // dominava a auditoria em árvores com muitos arquivos alterados (pior no Windows).
   const files = names.filter(name => {
     try { return fs.statSync(path.join(root, name)).isFile(); } catch { return false; }
   });
-  // --stdin-paths lê um caminho por linha e trata aspas iniciais como C-quoting; esses nomes vão um a um.
   const batch = files.filter(name => !name.includes('\n') && !name.startsWith('"'));
   const single = files.filter(name => !batch.includes(name));
-  const hashes = new Map();
+  const hashes = new Map<string, string>();
   if (batch.length) {
     const h = await run('git', ['-C', root, 'hash-object', '--stdin-paths'], { input: batch.join('\n') + '\n', maxCapture: 67108864 });
     if (h.code) throw Error(h.stderr.trim() || 'git hash-object falhou');
@@ -93,7 +109,7 @@ async function snapshot(root) {
 
   const staged = await run('git', ['-C', root, 'ls-files', '--stage', '-z'], { maxCapture: 67108864 });
   if (staged.code) throw Error(staged.stderr.trim() || 'git ls-files falhou');
-  const index = new Map();
+  const index = new Map<string, string>();
   for (const entry of staged.stdout.split('\0')) {
     const tab = entry.indexOf('\t');
     if (tab < 0) continue;
@@ -101,39 +117,26 @@ async function snapshot(root) {
     index.set(name, `${index.get(name) || ''}${entry.slice(0, tab)};`);
   }
 
-  const result = new Map();
+  const result = new Map<string, string>();
   for (const name of names) result.set(name, `${hashes.get(name) || 'DELETED'}\t${index.get(name) || ''}`);
   return result;
 }
 
-/** Compare two snapshots and include paths touched by commits between them.
- * @param {Map<string, string>} before
- * @param {Map<string, string>} after
- * @param {string[]} committed
- * @returns {string[]}
- */
-function changedPaths(before, after, committed = []) {
+/** Compare two snapshots and include paths touched by commits between them. */
+function changedPaths(before: Map<string, string>, after: Map<string, string>, committed: string[] = []): string[] {
   const committedSet = new Set(committed);
   return [...new Set([...before.keys(), ...after.keys(), ...committedSet])]
     .filter(file => committedSet.has(file) || before.get(file) !== after.get(file)).sort();
 }
 
-/** Return HEAD's object id, or an empty string when the repository has no resolvable HEAD.
- * @param {string} root
- * @returns {Promise<string>}
- */
-async function head(root) {
+/** Return HEAD's object id, or an empty string when the repository has no resolvable HEAD. */
+async function head(root: string): Promise<string> {
   const r = await run('git', ['-C', root, 'rev-parse', '--verify', 'HEAD']);
   return r.code ? '' : r.stdout.trim();
 }
 
-/** List unique paths committed between two HEAD values.
- * @param {string} root
- * @param {string} before
- * @param {string} after
- * @returns {Promise<string[]>}
- */
-async function committedPaths(root, before, after) {
+/** List unique paths committed between two HEAD values. */
+async function committedPaths(root: string, before: string, after: string): Promise<string[]> {
   if (!after || before === after) return [];
   const args = before
     ? ['log', '--format=', '--name-only', '-z', `${before}..${after}`]
@@ -143,20 +146,8 @@ async function committedPaths(root, before, after) {
   return [...new Set(r.stdout.split('\0').map(x => x.trim()).filter(Boolean))];
 }
 
-/**
- * @typedef {{ id: number, text: string }} DiffLine
- * @typedef {{ id: number, header: string, lines: DiffLine[] }} DiffHunk
- * @typedef {{ mode: 'all'|'list'|'hunks'|'lines', hunks?: number[], lines?: number[], scopes?: string[], agent?: string }} StageOptions
- * @typedef {{ file: string, mode: string, hunks?: DiffHunk[], numbers?: number[] }} StageResult
- */
-
-/** Stage an entire file, list hunks, or selectively stage hunks/lines into the Git index.
- * @param {string} dir
- * @param {string} requested
- * @param {StageOptions} opts
- * @returns {Promise<StageResult>}
- */
-async function stage(dir, requested, opts = {}) {
+/** Stage an entire file, list hunks, or selectively stage hunks/lines into the Git index. */
+async function stage(dir: string, requested: string, opts: StageOptions = { mode: 'all' }): Promise<StageResult> {
   const { root } = await repoPaths(dir);
   const absolute = path.resolve(root, requested);
   const relative = path.relative(path.resolve(root), absolute);
@@ -232,13 +223,13 @@ async function stage(dir, requested, opts = {}) {
   if (r.stdout.includes('\\ No newline at end of file')) throw Error('hunk sem newline final: use --hunks ou --all');
 
   const chosen = new Set(numbers);
-  const selected = [];
+  const selected: string[] = [];
   parsedHunks.forEach(h => {
     const [first] = h.text.split('\n').slice(0, -1);
     const match = first.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)$/);
     if (!match) throw Error(`cabeçalho de hunk inválido: ${first}`);
-    const picked = [];
-    let removed = [], added = [];
+    const picked: string[] = [];
+    let removed: DiffLine[] = [], added: DiffLine[] = [];
     const flush = () => {
       for (let j = 0; j < Math.max(removed.length, added.length); j++) {
         const oldLine = removed[j], newLine = added[j];
@@ -265,18 +256,8 @@ async function stage(dir, requested, opts = {}) {
   return { file, mode: 'lines', numbers };
 }
 
-/**
- * @typedef {{ scopes?: string[], agent?: string, timeout?: number }} CommitOptions
- * @typedef {{ hash: string, title: string, output: string }} CommitResult
- */
-
-/** Verify scopes, check staged changes, and create a Git commit.
- * @param {string} dir
- * @param {string[]} messages
- * @param {CommitOptions} opts
- * @returns {Promise<CommitResult>}
- */
-async function commit(dir, messages, opts = {}) {
+/** Verify scopes, check staged changes, and create a Git commit. */
+async function commit(dir: string, messages: string[], opts: CommitOptions = {}): Promise<CommitResult> {
   if (!Array.isArray(messages) || !messages.length) throw Error('título do commit obrigatório');
   const agent = opts.agent !== undefined ? opts.agent : process.env.OATHBOUND_AGENT;
   let scopes = opts.scopes;
@@ -284,7 +265,7 @@ async function commit(dir, messages, opts = {}) {
     scopes = JSON.parse(process.env.OATHBOUND_SCOPES || '[]');
   }
   if (agent === ROLES.committer) {
-    if (!scopes || !scopes.length) throw Error(`git-commit.js exige sessão ${ROLES.committer} com escopo via run.js`);
+    if (!scopes || !scopes.length) throw Error(`git-commit.ts exige sessão ${ROLES.committer} com escopo via run.js`);
   }
 
   const { root } = await repoPaths(dir);
