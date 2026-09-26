@@ -17,27 +17,46 @@ function overlap(a, b) {
   return prefix(a).startsWith(prefix(b)) || prefix(b).startsWith(prefix(a));
 }
 
-async function mutex(dir, action) {
-  const lock = path.join(dir, 'mutex');
-  for (let n = 0; n < 100; n++) {
+/**
+ * Run action while holding a directory lock. A lock whose owner PID is dead, or that never got an
+ * owner PID within ownerlessMs (process died between mkdir and writing the PID), is removed.
+ * @param {string} dir
+ * @param {() => Promise<any>} action
+ * @param {{ attempts?: number, waitMs?: number, ownerlessMs?: number }} [opts]
+ */
+async function mutex(dir, action, { attempts = 100, waitMs = 200, ownerlessMs = 5000 } = {}) {
+  const lock = path.join(dir, 'mutex'), pidFile = path.join(lock, 'pid');
+  let acquired = false, waits = 0, removals = 0;
+  while (!acquired && waits < attempts) {
     try {
       fs.mkdirSync(lock);
-      fs.writeFileSync(path.join(lock, 'pid'), String(process.pid));
-      break;
-    } catch {
-      const owner = Number(fs.existsSync(path.join(lock, 'pid')) ? fs.readFileSync(path.join(lock, 'pid'), 'utf8') : 0);
-      if (owner && !alive(owner)) {
+      acquired = true;
+      fs.writeFileSync(pidFile, String(process.pid));
+    } catch (e) {
+      if (acquired || e.code !== 'EEXIST') {
+        if (acquired) fs.rmSync(lock, { recursive: true, force: true });
+        throw e;
+      }
+      let owner = 0, ageMs = 0;
+      try { owner = Number(fs.readFileSync(pidFile, 'utf8')); } catch {}
+      try { ageMs = Date.now() - fs.statSync(lock).mtimeMs; } catch {}
+      // Remover trava abandonada não gasta tentativa; o limite de remoções evita laço sem espera.
+      if (removals < attempts && ((owner && !alive(owner)) || (!owner && ageMs > ownerlessMs))) {
         fs.rmSync(lock, { recursive: true, force: true });
+        removals++;
         continue;
       }
-      if (n === 99) throw Error(`mutex preso: ${lock}`);
-      await sleep(200);
+      waits++;
+      if (waits < attempts) await sleep(waitMs);
     }
   }
+  if (!acquired) throw Error(`mutex preso: ${lock}`);
   try {
     return await action();
   } finally {
-    fs.rmSync(lock, { recursive: true, force: true });
+    let owner = '';
+    try { owner = fs.readFileSync(pidFile, 'utf8'); } catch {}
+    if (owner === String(process.pid)) fs.rmSync(lock, { recursive: true, force: true });
   }
 }
 

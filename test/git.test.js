@@ -198,3 +198,51 @@ test('snapshot, changedPaths, head, committedPaths state tracking', async t => {
   const committed = await committedPaths(repo, head1, head2);
   assert.deepEqual(committed, ['test.txt']);
 });
+
+test('snapshot: detecta mudança só no índice, no worktree, remoção e renomeação', async t => {
+  const repo = await createIsolatedRepo(t);
+  for (const name of ['a.txt', 'b.txt', 'c.txt', 'd.txt']) fs.writeFileSync(path.join(repo, name), `${name}\n`);
+  await run('git', ['-C', repo, 'add', '.']);
+  await run('git', ['-C', repo, 'commit', '-m', 'base']);
+
+  fs.writeFileSync(path.join(repo, 'a.txt'), 'a2\n');
+  fs.writeFileSync(path.join(repo, 'b.txt'), 'b2\n');
+  await run('git', ['-C', repo, 'add', 'b.txt']);
+  const before = await snapshot(repo);
+
+  // a.txt: só o índice muda (worktree igual); b.txt: só o worktree muda (índice igual).
+  await run('git', ['-C', repo, 'add', 'a.txt']);
+  fs.writeFileSync(path.join(repo, 'b.txt'), 'b3\n');
+  fs.rmSync(path.join(repo, 'c.txt'));
+  await run('git', ['-C', repo, 'mv', 'd.txt', 'e.txt']);
+  const after = await snapshot(repo);
+
+  assert.deepEqual(changedPaths(before, after), ['a.txt', 'b.txt', 'c.txt', 'e.txt']);
+  assert.match(after.get('c.txt'), /^DELETED\t/);
+});
+
+test('snapshot: nomes com espaço, acento e caracteres de glob são tratados literalmente', async t => {
+  const repo = await createIsolatedRepo(t);
+  const names = ['com espaço.txt', 'ação.txt', 'src/a*b?.txt', 'src/[x].txt'];
+  if (process.platform !== 'win32') names.push('"aspas".txt');
+  fs.mkdirSync(path.join(repo, 'src'));
+  for (const name of names) fs.writeFileSync(path.join(repo, name), 'v1\n');
+  const before = await snapshot(repo);
+  assert.deepEqual([...before.keys()].sort(), [...names].sort());
+
+  for (const name of names) fs.writeFileSync(path.join(repo, name), 'v2\n');
+  const after = await snapshot(repo);
+  assert.deepEqual(changedPaths(before, after), [...names].sort());
+  for (const name of names) assert.notEqual(before.get(name), after.get(name));
+});
+
+test('snapshot: hash do worktree bate com git hash-object por arquivo', async t => {
+  const repo = await createIsolatedRepo(t);
+  for (let i = 0; i < 50; i++) fs.writeFileSync(path.join(repo, `f${i}.txt`), `conteudo ${i}\n`);
+  const snap = await snapshot(repo);
+  assert.equal(snap.size, 50);
+  for (const name of ['f0.txt', 'f25.txt', 'f49.txt']) {
+    const single = await git(repo, 'hash-object', '--', name);
+    assert.equal(snap.get(name).split('\t')[0], single);
+  }
+});

@@ -1,5 +1,21 @@
 # Histórico de versões
 
+## 0.21.2 — 2026-09-26
+
+### Corrigido
+
+- **Auditoria de escopo lenta em árvores com muitos arquivos alterados:** `snapshot` (`git.js`) abria
+  dois processos Git por arquivo modificado ou não rastreado (`hash-object` e `ls-files --stage`), e
+  `run.js` tira dois snapshots por chamada. Agora são dois processos no total: `git hash-object
+  --stdin-paths` em lote e um único `git ls-files --stage -z`. Medido em Linux com 650 arquivos
+  alterados: de ~3,6 s para ~16 ms por snapshot. Nomes com quebra de linha ou aspas iniciais seguem
+  pelo caminho de um arquivo por vez.
+- **Trava de posse (`mutex` em `run.js`):** quando a última tentativa removia uma trava abandonada, a
+  execução seguia sem trava e, ao final, apagava a trava de outro processo. Uma trava criada sem PID
+  (processo morto entre criar o diretório e gravar o PID) bloqueava todas as execuções seguintes até
+  remoção manual. Agora a remoção de trava abandonada não gasta tentativa, trava sem PID vira órfã após
+  5 s, a trava só é apagada por quem a detém e erros diferentes de "já existe" são repassados na hora.
+
 ## 0.21.1 — 2026-09-26
 
 ### Corrigido
