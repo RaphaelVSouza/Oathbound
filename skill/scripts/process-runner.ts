@@ -190,8 +190,11 @@ async function killTree(pid?: number, fallback?: () => void): Promise<void> {
       killer.on('error', () => resolve(1));
       killer.on('close', c => resolve(c ?? 1));
     });
-    if (code !== 0) {
-      // taskkill /T falhou (ex.: processo já finalizado ou sem permissão sobre um descendente);
+    // code 128 = "processo não encontrado": árvore já morreu sozinha entre o timeout/sinal
+    // e a chamada do taskkill (race condition normal). Não é falha, então não precisa do
+    // fallback caro de enumeração CIM.
+    if (code !== 0 && code !== 128) {
+      // taskkill /T falhou por outro motivo (ex.: sem permissão sobre um descendente);
       // tenta matar a árvore por enumeração antes de recorrer ao fallback do processo raiz.
       await windowsKillFallback(pid);
       fallback?.();

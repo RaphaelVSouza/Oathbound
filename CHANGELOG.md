@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## 0.23.5 — 2026-09-26
+
+### Corrigido
+
+- **Fallback caro de árvore disparado à toa quando processo já morreu:** `taskkill /T /F` retorna código 128 ("processo não encontrado") quando a árvore já terminou sozinha entre o timeout/sinal e a chamada — uma corrida normal. `killTree` tratava qualquer código diferente de 0 como falha e disparava a enumeração PowerShell/CIM completa, que é lenta em máquinas ocupadas (confirmado por relato equivalente em pnpm/pnpm#12406). Agora código 128 é tratado como sucesso e pula o fallback.
+
 ## 0.23.4 — 2026-09-26
 
 ### Corrigido
