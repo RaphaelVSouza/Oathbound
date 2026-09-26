@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## 0.23.2 — 2026-09-26
+
+### Corrigido
+
+- **Ocultação de janela no Windows:** `run()` em `process-runner.ts` agora adota `windowsHide: true` por padrão no `spawn()`, evitando que processos filhos sem console abram ou pisquem janelas de terminal do Windows Terminal / conhost.
+
 ## 0.23.1 — 2026-09-26
 
 ### Corrigido

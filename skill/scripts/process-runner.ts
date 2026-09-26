@@ -13,6 +13,7 @@ interface RunOptions {
   cwd?: string;
   env?: Record<string, string | undefined>;
   shell?: boolean;
+  windowsHide?: boolean;
   input?: string | Buffer;
   output?: 'inherit';
   capture?: boolean;
@@ -98,9 +99,11 @@ function run(command: string, args: string[] = [], opts: RunOptions = {}): Promi
   const autoShell = process.platform === 'win32' && /^(npm|npx|pnpm|yarn)(\.cmd)?$/i.test(command);
   const shell = opts.shell !== undefined ? !!opts.shell : autoShell;
   const resolved = shell ? { command, prefix: [] } : resolveCommand(command, { env });
+  const windowsHide = opts.windowsHide !== undefined ? !!opts.windowsHide : true;
   const child = spawn(resolved.command, [...resolved.prefix, ...args], {
     cwd: opts.cwd, env, shell,
     detached: process.platform !== 'win32',
+    windowsHide,
     stdio: [opts.input === undefined ? 'ignore' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe']
   });
   if (opts.input !== undefined) {

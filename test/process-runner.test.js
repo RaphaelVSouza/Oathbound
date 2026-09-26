@@ -131,3 +131,9 @@ test('run: executa shim npm .cmd no Windows sem shell e preserva argumentos', { 
   assert.equal(r.code, 0, r.stderr);
   assert.deepEqual(JSON.parse(r.stdout), args);
 });
+
+test('run: aceita opcao windowsHide explicitamente sem quebrar execucao', async () => {
+  const r1 = await run('node', ['-e', 'console.log("oculto")'], { windowsHide: true });
+  assert.equal(r1.code, 0);
+  assert.ok(r1.stdout.includes('oculto'));
+});
