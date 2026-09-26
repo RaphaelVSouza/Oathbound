@@ -9,16 +9,4 @@
 <g fill="#D0503F"><circle cx="22" cy="8" r="5.5"></circle><circle cx="22" cy="56" r="5.5"></circle><circle cx="42" cy="32" r="5.5"></circle></g></g>
   <text x="432" y="330" font-family="Jost, sans-serif" font-weight="500" font-size="112" fill="#F2ECDF">oathbound</text>
   <text x="436" y="398" font-family="Jost, sans-serif" font-weight="500" font-size="38" fill="#C9A46A">Sworn agents. Audited work.</text>
-  <g font-family="IBM Plex Mono, monospace" font-size="15" letter-spacing="0.6" text-anchor="middle" fill="#8F897C">
-    <text x="128.0" y="592" text-anchor="start">oathkeeper</text>
-    <text x="241.8" y="592" text-anchor="middle">surveyor</text>
-    <text x="355.6" y="592" text-anchor="middle">scholar</text>
-    <text x="469.3" y="592" text-anchor="middle">scribe</text>
-    <text x="583.1" y="592" text-anchor="middle">smith</text>
-    <text x="696.9" y="592" text-anchor="middle">assayer</text>
-    <text x="810.7" y="592" text-anchor="middle">warden</text>
-    <text x="924.4" y="592" text-anchor="middle">breaker</text>
-    <text x="1038.2" y="592" text-anchor="middle">herald</text>
-    <text x="1152.0" y="592" text-anchor="end">archivist</text>
-  </g>
 </svg>
