@@ -1,5 +1,21 @@
 # Histórico de versões
 
+## 0.21.1 — 2026-09-26
+
+### Corrigido
+
+- **Runners instalados via npm no Windows (`ENOENT`):** `process-runner.js` acrescentava `.exe` a
+  `opencode`, `claude`, `codex` e `agy`; quando a CLI só existia como shim do npm (`opencode.cmd`), o
+  spawn falhava com `ENOENT`. Agora o comando é resolvido no `PATH` sem shell: `.exe`/`.com` seguem
+  direto; um shim `.cmd`/`.bat` do npm é lido e substituído pelo programa que ele chama (script Node
+  executado com o Node atual, ou o `.exe` alvo). Argumentos com `&`, `|`, aspas e `%` chegam intactos.
+  `shell: true` foi descartado por corromper esses argumentos. Shim fora do formato do npm falha com
+  erro explícito.
+
+### Alterado
+
+- **CI:** a matriz passa a testar Node 24 LTS (antes Node 22) em Ubuntu e Windows.
+
 ## 0.21.0 — 2026-09-25
 
 ### Breaking

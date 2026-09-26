@@ -6,10 +6,54 @@ const { StringDecoder } = require('node:string_decoder');
 /** @typedef {{ code: number, stdout: string, stderr: string }} ProcessResult */
 /** @typedef {{ cwd?: string, env?: Record<string, string|undefined>, shell?: boolean, input?: string|Buffer, output?: 'inherit', capture?: boolean, maxCapture?: number, timeout?: number, onStart?: (pid?: number) => void, onData?: (chunk: Buffer) => void, onClose?: (pid?: number) => void }} RunOptions */
 
-function executable(command) {
-  if (process.platform !== 'win32' || path.extname(command)) return command;
-  if (['git', 'opencode', 'claude', 'codex', 'agy', 'taskkill', 'powershell', 'cmd'].includes(command)) return `${command}.exe`;
-  return command;
+/** @typedef {{ command: string, prefix: string[] }} ResolvedCommand */
+
+/**
+ * Resolve a Windows command without a shell. Binaries (.exe/.com) are left to libuv's own PATH search;
+ * npm shims (.cmd/.bat) are parsed and replaced by the program they call, because spawning a .cmd
+ * requires cmd.exe and cmd.exe cannot receive arbitrary arguments (&, |, quotes, %) safely.
+ * @param {string} command
+ * @param {{ platform?: string, env?: Record<string, string|undefined> }} [opts]
+ * @returns {ResolvedCommand}
+ */
+function resolveCommand(command, { platform = process.platform, env = process.env } = {}) {
+  const same = { command, prefix: [] };
+  if (platform !== 'win32') return same;
+  const ext = path.extname(command).toLowerCase();
+  if (ext === '.cmd' || ext === '.bat') return resolveShim(command);
+  if (ext || /[\\/]/.test(command)) return same;
+  const key = Object.keys(env).find(k => k.toUpperCase() === 'PATH');
+  const dirs = String((key && env[key]) || '').split(';').map(d => d.trim().replace(/^"|"$/g, '')).filter(Boolean);
+  const hit = suffixes => dirs.flatMap(d => suffixes.map(s => path.join(d, command + s))).find(f => isFile(f));
+  if (hit(['.com', '.exe'])) return same;
+  const shim = hit(['.cmd', '.bat']);
+  return shim ? resolveShim(shim) : same;
+}
+
+/** @param {string} file @returns {boolean} */
+function isFile(file) {
+  try { return fs.statSync(file).isFile(); } catch { return false; }
+}
+
+/**
+ * Read an npm cmd-shim and return the program it runs: the target itself when it is a binary,
+ * or the current Node with the target script as first argument.
+ * @param {string} file
+ * @returns {ResolvedCommand}
+ */
+function resolveShim(file) {
+  const text = fs.readFileSync(file, 'utf8');
+  const matches = [...text.matchAll(/"%~?dp0%?\\([^"%]+)"\s+%\*/g)];
+  if (!matches.length) {
+    throw Error(`${file} não é um shim npm reconhecível; sem shell não há execução segura de .cmd/.bat — aponte o runner para o .exe ou para o script Node real`);
+  }
+  const target = path.join(path.dirname(file), ...matches.at(-1)[1].split('\\'));
+  if (!isFile(target)) throw Error(`shim ${file} aponta para arquivo ausente: ${target}`);
+  const ext = path.extname(target).toLowerCase();
+  if (ext === '.exe' || ext === '.com') return { command: target, prefix: [] };
+  const firstLine = fs.readFileSync(target, 'utf8').split('\n', 1)[0];
+  if (['.js', '.cjs', '.mjs'].includes(ext) || /^#!.*\bnode\b/.test(firstLine)) return { command: process.execPath, prefix: [target] };
+  throw Error(`shim ${file} executa ${target}, que não é binário nem script Node; aponte o runner para o executável real`);
 }
 
 /**
@@ -31,7 +75,8 @@ function run(command, args = [], opts = {}) {
   const env = opts.env || process.env;
   const autoShell = process.platform === 'win32' && /^(npm|npx|pnpm|yarn)(\.cmd)?$/i.test(command);
   const shell = opts.shell !== undefined ? !!opts.shell : autoShell;
-  const child = spawn(executable(command), args, {
+  const resolved = shell ? { command, prefix: [] } : resolveCommand(command, { env });
+  const child = spawn(resolved.command, [...resolved.prefix, ...args], {
     cwd: opts.cwd, env, shell,
     detached: process.platform !== 'win32',
     stdio: [opts.input === undefined ? 'ignore' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe', opts.output === 'inherit' ? 'inherit' : 'pipe']
@@ -103,4 +148,4 @@ function alive(pid) {
   try { process.kill(Number(pid), 0); return true; } catch { return false; }
 }
 
-module.exports = { run, killTree, alive };
+module.exports = { run, killTree, alive, resolveCommand };
