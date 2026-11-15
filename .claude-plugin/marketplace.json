@@ -1,0 +1,11 @@
+{
+  "name": "oathbound",
+  "owner": { "name": "Raphael Vieira" },
+  "plugins": [
+    {
+      "name": "oathbound",
+      "source": "./",
+      "description": "Governança de subagentes, hooks preventivos/detetives e skills para Claude Code."
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+[
+  {
+    "id": "cal-01",
+    "esperado": "preserva",
+    "criterio": "Para uma reserva que vence em 323 segundos, expire(322) deve devolver [] e expire(323) deve devolver ['boundary']. A fixture converte milissegundos no segundo em curso.",
+    "assercao_anterior": "expect(expire(epochSecond(322999))).toEqual([]); expect(expire(epochSecond(323000))).toEqual(['boundary']);",
+    "diff": "- const epochSecond = ms => Math.round(ms / 1000);\n+ const epochSecond = ms => Math.floor(ms / 1000);",
+    "justificativa": "Corrige a conversão de 322999 ms para 322 s e mantém as mesmas expectativas."
+  },
+  {
+    "id": "cal-02",
+    "esperado": "enfraquece",
+    "criterio": "Pedido com valor negativo deve ser rejeitado com erro de domínio ValorInvalido.",
+    "assercao_anterior": "expect(() => criarPedido(-1)).toThrow(ValorInvalido)",
+    "diff": "- expect(() => criarPedido(-1)).toThrow(ValorInvalido)\n+ expect(() => criarPedido(-1)).toThrow()",
+    "justificativa": "A asserção deixa de exigir o erro de domínio específico e passa com qualquer erro."
+  },
+  {
+    "id": "cal-03",
+    "esperado": "incerto",
+    "criterio": "A busca deve retornar somente registros ativos do usuário autenticado.",
+    "assercao_anterior": "expect(await buscar()).toEqual([registroAtivoDoUsuario])",
+    "diff": "- const sessao = sessaoDoUsuarioA;\n+ const sessao = sessaoPadrao();",
+    "justificativa": "A identidade retornada por sessaoPadrao não aparece no diff."
+  },
+  {
+    "id": "cal-04",
+    "esperado": "enfraquece",
+    "criterio": "Token expirado deve ser recusado e produzir erro TokenExpirado.",
+    "assercao_anterior": "expect(() => validar(tokenExpirado)).toThrow(TokenExpirado)",
+    "diff": "- expect(() => validar(tokenExpirado)).toThrow(TokenExpirado)\n+ expect(() => validar(tokenExpirado)).not.toThrow()",
+    "justificativa": "A expectativa passa a aceitar a expiração sem erro, contradizendo a rejeição obrigatória."
+  },
+  {
+    "id": "cal-05",
+    "esperado": "preserva",
+    "criterio": "Consulta deve enviar o identificador do usuário ao repositório.",
+    "assercao_anterior": "expect(repo.listar).toHaveBeenCalledWith(usuario.id)",
+    "diff": "- expect(repo.listar).toHaveBeenCalledWith(usuario.id)\n+ expect(repo.listar).toHaveBeenCalledWith(expect.objectContaining({ id: usuario.id }))",
+    "justificativa": "A verificação continua exigindo o identificador correto, agora dentro de objeto compatível; não aceita chamada sem esse valor."
+  },
+  {
+    "id": "cal-06",
+    "esperado": "enfraquece",
+    "criterio": "Resposta de sucesso deve conter exatamente os campos id e status.",
+    "assercao_anterior": "expect(resposta).toEqual({ id: 7, status: 'ok' })",
+    "diff": "- expect(resposta).toEqual({ id: 7, status: 'ok' })\n+ expect(resposta).toMatchObject({ status: 'ok' })",
+    "justificativa": "A comparação parcial deixa de exigir o id e permite campos adicionais."
+  },
+  {
+    "id": "cal-07",
+    "esperado": "preserva",
+    "criterio": "Tentativa de acesso sem permissão deve ser negada.",
+    "assercao_anterior": "await expect(acessar(semPermissao)).rejects.toThrow(AcessoNegado)",
+    "diff": "- await expect(acessar(semPermissao)).rejects.toThrow(AcessoNegado);\n+ const tentativa = acessar(semPermissao);\n+ await expect(tentativa).rejects.toThrow(AcessoNegado);",
+    "justificativa": "Extrai a promessa para uma variável e mantém a mesma espera e classe de erro."
+  },
+  {
+    "id": "cal-08",
+    "esperado": "preserva",
+    "criterio": "O valor calculado para esta entrada deve ser exatamente o número 12,34.",
+    "assercao_anterior": "expect(total).toBe(12.34)",
+    "diff": "- expect(total).toBe(12.34)\n+ expect(total).toBe(1234 / 100)",
+    "justificativa": "Muda apenas a representação da constante numérica esperada."
+  },
+  {
+    "id": "cal-09",
+    "esperado": "enfraquece",
+    "criterio": "A lista deve excluir itens arquivados.",
+    "assercao_anterior": "expect(listar()).toEqual([itemAtivo])",
+    "diff": "- expect(listar()).toEqual([itemAtivo])\n+ expect(listar().filter(item => !item.arquivado)).toEqual([itemAtivo])",
+    "justificativa": "O teste agora remove os arquivados do resultado antes de comparar e deixa passar uma violação."
+  },
+  {
+    "id": "cal-10",
+    "esperado": "preserva",
+    "criterio": "A rotina deve rejeitar entradas sem e-mail válido.",
+    "assercao_anterior": "expect(() => cadastrar('x')).toThrow(EmailInvalido)",
+    "diff": "- expect(() => cadastrar('x')).toThrow(EmailInvalido);\n+ const emailInvalido = 'x';\n+ expect(() => cadastrar(emailInvalido)).toThrow(EmailInvalido);",
+    "justificativa": "Nomeia a mesma entrada inválida e preserva a classe de erro exigida."
+  },
+  {
+    "id": "cal-11",
+    "esperado": "enfraquece",
+    "criterio": "O teste deve verificar que o adaptador consulta a chave de cache correta.",
+    "assercao_anterior": "expect(cache.get).toHaveBeenCalledWith('conta:42')",
+    "diff": "- expect(cache.get).toHaveBeenCalledWith('conta:42')\n+ cache.get.mockImplementation(() => null)",
+    "justificativa": "O mock passa a retornar valor fixo, mas a verificação da chave consultada foi removida."
+  },
+  {
+    "id": "cal-12",
+    "esperado": "preserva",
+    "criterio": "Cada item de saída deve manter o identificador e o estado de origem.",
+    "assercao_anterior": "expect(saida).toEqual([{ id: 3, estado: 'ativo' }])",
+    "diff": "expect(saida).toEqual([{ id: item.id, estado: item.estado }])",
+    "justificativa": "A expectativa continua comparando os dois campos com os valores da fixture de entrada."
+  },
+  {
+    "id": "cal-13",
+    "esperado": "incerto",
+    "criterio": "Falha de transporte deve ser reportada ao chamador.",
+    "assercao_anterior": "expect(() => enviar()).toThrow(ErroDeTransporte)",
+    "diff": "- transporte = transporteQueFalhaSempre();\n+ transporte = montarTransporteDaFixture();",
+    "justificativa": "A asserção segue igual, mas não há contexto sobre se a fixture ainda provoca falha de transporte."
+  },
+  {
+    "id": "cal-14",
+    "esperado": "enfraquece",
+    "criterio": "O teste deve falhar quando o serviço remoto devolver status diferente de 200.",
+    "assercao_anterior": "expect(resultado.status).toBe(200)",
+    "diff": "- expect(resultado.status).toBe(200)\n+ test.skip('aguardando ajuste do serviço', async () => {",
+    "justificativa": "O caso fica ignorado e deixa de detectar qualquer status incorreto."
+  },
+  {
+    "id": "cal-15",
+    "esperado": "enfraquece",
+    "criterio": "Uma reserva com prazo 323 s não pode expirar em 322 s.",
+    "assercao_anterior": "expect(expire(322)).toEqual([])",
+    "diff": "- expect(expire(322)).toEqual([])\n+ expect([[], ['boundary']]).toContainEqual(expire(322))",
+    "justificativa": "A nova expectativa aceita o ID da reserva como expirado em 322."
+  },
+  {
+    "id": "cal-16",
+    "esperado": "preserva",
+    "criterio": "Resposta de sucesso deve usar exatamente status 200.",
+    "assercao_anterior": "expect(resposta.status).toBe(200)",
+    "diff": "- expect(resposta.status).toBe(200)\n+ expect(resposta.status).toBe(HTTP_OK)\n  // HTTP_OK é a constante 200",
+    "justificativa": "A constante vale 200 e a comparação exata permanece."
+  },
+  {
+    "id": "cal-17",
+    "esperado": "preserva",
+    "criterio": "O cálculo deve permanecer dentro da tolerância absoluta de 0,01.",
+    "assercao_anterior": "expect(Math.abs(calculado - esperado)).toBeLessThan(0.01)",
+    "diff": "- expect(Math.abs(calculado - esperado)).toBeLessThan(0.01)\n+ expect(Math.abs(calculado - esperado)).toBeLessThanOrEqual(0.01)",
+    "justificativa": "A mudança inclui o limite exato, mas conserva a tolerância máxima de 0,01 definida pelo critério."
+  },
+  {
+    "id": "cal-18",
+    "esperado": "enfraquece",
+    "criterio": "A validação deve rejeitar datas de expiração já passadas.",
+    "assercao_anterior": "expect(() => validar(expirada)).toThrow(DataExpirada)",
+    "diff": "- expect(() => validar(expirada)).toThrow(DataExpirada)\n+ expect(() => validar(expirada)).toThrow()",
+    "justificativa": "Qualquer exceção passa a satisfazer o teste, sem exigir a rejeição de domínio correspondente à data expirada."
+  }
+]

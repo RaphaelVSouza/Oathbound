@@ -1,0 +1,11 @@
+.DS_Store
+*.log
+*.tmp
+node_modules/
+.scratch/
+state/
+.oathbound-manifest.json
+.oathbound/
+*.tar.gz
+.codex/
+.agents/

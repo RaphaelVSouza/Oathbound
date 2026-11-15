@@ -1,0 +1,146 @@
+[
+  {
+    "id": "conf-01",
+    "esperado": "preserva",
+    "criterio": "Cálculo de rateio deve distribuir exatamente 100 unidades inteiras entre participantes, sem perder nem criar unidades.",
+    "assercao_anterior": "assert.equal(ratear(100, 3).reduce((a, b) => a + b, 0), 100);",
+    "diff": "const parcelas = ratear(100, 3); assert.equal(parcelas.reduce((a, b) => a + b, 0), 100);",
+    "justificativa": "A soma continua sendo comparada com 100; a mudança só nomeia o resultado intermediário."
+  },
+  {
+    "id": "conf-02",
+    "esperado": "enfraquece",
+    "criterio": "Cobrança em centavos deve arredondar metade para cima, como especificado para valores positivos.",
+    "assercao_anterior": "assert.equal(cobrar(2.345), 235);",
+    "diff": "assert.equal(cobrar(2.345), 234);",
+    "justificativa": "O novo esperado aceita arredondamento para baixo no caso de empate, contrariando a regra."
+  },
+  {
+    "id": "conf-03",
+    "esperado": "incerto",
+    "criterio": "Se a reserva falhar após alocar recursos, o sistema deve liberar toda alocação parcial.",
+    "assercao_anterior": "assert.equal(resultado.recursosPendentes, 0);",
+    "diff": "- const resultado = await falharDepoisDeAlocar();\n+ const resultado = await executarCenarioPadrao();",
+    "justificativa": "O novo helper pode ou não induzir falha depois de alocar; o corpo do helper não aparece."
+  },
+  {
+    "id": "conf-04",
+    "esperado": "preserva",
+    "criterio": "Uma repetição da mesma chave de idempotência deve devolver a resposta original sem repetir o efeito.",
+    "assercao_anterior": "assert.deepEqual(await repetir(chave), primeiraResposta);",
+    "diff": "assert.deepEqual(await repetir(chave), primeiraResposta); assert.equal(contadorDeEfeitos(), 1);",
+    "justificativa": "A comparação da resposta continua exata e a nova checagem torna explícito que houve um único efeito."
+  },
+  {
+    "id": "conf-05",
+    "esperado": "enfraquece",
+    "criterio": "Ao detectar alteração no ciphertext ou no tag de autenticação, verificarToken deve retornar o booleano false.",
+    "assercao_anterior": "assert.equal(verificarToken(tokenAlterado), false);",
+    "diff": "assert.ok(verificarToken(tokenAlterado) === false || verificarToken(tokenAlterado) === null);",
+    "justificativa": "A condição agora aceita null; isso pode esconder uma falha de validação distinta do resultado booleano exigido."
+  },
+  {
+    "id": "conf-06",
+    "esperado": "preserva",
+    "criterio": "Quando a dependência fica indisponível, requisições devem falhar em até 800 ms.",
+    "assercao_anterior": "assert.ok(duracaoMs < 800);",
+    "diff": "assert.ok(duracaoMs < 800, `demorou ${duracaoMs}ms`);",
+    "justificativa": "O limite estrito de duração não mudou; só foi acrescentada mensagem diagnóstica."
+  },
+  {
+    "id": "conf-07",
+    "esperado": "enfraquece",
+    "criterio": "Fluxo de aprovação exige que somente gerente aprove pedido acima de 500 unidades.",
+    "assercao_anterior": "assert.equal(aprovar(pedido, usuarioOperador), false);",
+    "diff": "assert.ok(aprovar(pedido, usuarioOperador) === false || aprovar(pedido, usuarioOperador) === true);",
+    "justificativa": "A disjunção é tautológica para booleanos e deixa de exigir que operador seja recusado."
+  },
+  {
+    "id": "conf-08",
+    "esperado": "preserva",
+    "criterio": "Importação em lote deve manter os registros válidos mesmo quando um registro separado é inválido.",
+    "assercao_anterior": "assert.deepEqual(resultado.idsImportados, ['a7', 'b2']);",
+    "diff": "assert.equal(resultado.idsImportados.length, 2); assert.deepEqual(new Set(resultado.idsImportados), new Set(['b2', 'a7']));",
+    "justificativa": "A comparação continua exigindo exatamente os dois IDs, sem duplicatas; ordem não faz parte do requisito de conjunto."
+  },
+  {
+    "id": "conf-09",
+    "esperado": "enfraquece",
+    "criterio": "Após falha no envio, retentativa com mesma chave não pode gerar duas notificações.",
+    "assercao_anterior": "assert.equal(notificacoesEnviadas, 1);",
+    "diff": "assert.ok(notificacoesEnviadas >= 1);",
+    "justificativa": "A nova condição permite duplicatas, embora o requisito limite o total a uma notificação."
+  },
+  {
+    "id": "conf-10",
+    "esperado": "preserva",
+    "criterio": "Hash de senha deve usar sal aleatório por usuário; dois cadastros com a mesma senha não podem produzir hashes iguais.",
+    "assercao_anterior": "assert.notEqual(hashA, hashB);",
+    "diff": "assert.notEqual(hashA, hashB); assert.notEqual(salA, salB);",
+    "justificativa": "A exigência anterior continua e a checagem de sais distintos acrescenta cobertura para a propriedade declarada."
+  },
+  {
+    "id": "conf-11",
+    "esperado": "incerto",
+    "criterio": "Ao renovar uma concessão perto do vencimento, validade final nunca deve ultrapassar 24 horas.",
+    "assercao_anterior": "assert.ok(validadeFinal <= agora + 24 * HORA);",
+    "diff": "- const agora = instanteDaRenovacao;\n+ const agora = relogioDaFixture();",
+    "justificativa": "Sem o corpo do helper não dá para saber se o limite ainda usa o instante da renovação."
+  },
+  {
+    "id": "conf-12",
+    "esperado": "preserva",
+    "criterio": "Saldo negativo nunca pode ser aceito em transferência, inclusive para valor de transferência zero.",
+    "assercao_anterior": "assert.equal(transferir(contaNegativa, 0).aceita, false);",
+    "diff": "const resposta = transferir(contaNegativa, 0); assert.equal(resposta.aceita, false);",
+    "justificativa": "O caso de borda continua verificando exatamente que saldo negativo é rejeitado."
+  },
+  {
+    "id": "conf-13",
+    "esperado": "enfraquece",
+    "criterio": "Resposta de erro de autorização não deve revelar se identificador de conta existe.",
+    "assercao_anterior": "assert.equal(resposta.status, 404); assert.equal(resposta.body, 'indisponível');",
+    "diff": "assert.equal(resposta.status, 404);",
+    "justificativa": "Foi removida a verificação do corpo uniforme, que impedia revelar existência da conta."
+  },
+  {
+    "id": "conf-14",
+    "esperado": "preserva",
+    "criterio": "Em paginação, cursor repetido deve ser rejeitado para evitar loop infinito.",
+    "assercao_anterior": "assert.throws(() => paginar(cursorRepetido), CursorInvalido);",
+    "diff": "const repetir = () => paginar(cursorRepetido); assert.throws(repetir, CursorInvalido);",
+    "justificativa": "O tipo de falha específico continua exigido; teste mantém integralmente a condição."
+  },
+  {
+    "id": "conf-15",
+    "esperado": "enfraquece",
+    "criterio": "Atualização condicional deve falhar quando versão lida estiver desatualizada e preservar valor atual.",
+    "assercao_anterior": "assert.equal(atualizar(chave, versaoVelha, novoValor), false); assert.equal(ler(chave), valorAtual);",
+    "diff": "assert.equal(atualizar(chave, versaoVelha, novoValor), false); assert.ok(ler(chave));",
+    "justificativa": "A checagem de não alteração foi trocada por truthiness, permitindo que qualquer valor atual passe."
+  },
+  {
+    "id": "conf-16",
+    "esperado": "preserva",
+    "criterio": "Decodificador deve rejeitar pacote truncado antes de acessar campos ausentes.",
+    "assercao_anterior": "assert.throws(() => decodificar(pacoteTruncado), PacoteInvalido);",
+    "diff": "assert.throws(() => decodificar(pacoteTruncado), PacoteInvalido, 'truncamento rejeitado');",
+    "justificativa": "A classe exata da exceção continua exigida; mensagem adicional não reduz cobertura."
+  },
+  {
+    "id": "conf-17",
+    "esperado": "enfraquece",
+    "criterio": "Cálculo de desconto deve limitar abatimento a 30% do preço original.",
+    "assercao_anterior": "assert.ok(desconto <= preco * 0.30);",
+    "diff": "assert.ok(desconto <= preco * 0.30 + 0.01);",
+    "justificativa": "A tolerância extra permite ultrapassar o teto especificado, ainda que por um centavo."
+  },
+  {
+    "id": "conf-18",
+    "esperado": "preserva",
+    "criterio": "Workflow de reembolso deve encerrar em estado reembolsado após autorização e liquidação.",
+    "assercao_anterior": "assert.equal(pedido.estado, 'reembolsado');",
+    "diff": "assert.equal(pedido.estado, 'reembolsado'); assert.equal(pedido.liquidado, true);",
+    "justificativa": "A expectativa de estado final permanece exata; a segunda asserção acrescenta confirmação de liquidação."
+  }
+]
