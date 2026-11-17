@@ -2,7 +2,7 @@
 
 Conjunto portátil de governança, regras de execução, subagentes especializados, guardrails determinísticos em hooks, trilha de auditoria e skills de engenharia para assistentes de IA baseados em CLI.
 
-- **Versão atual:** `0.50.0-alpha.2` (alpha / incompleto, com protótipos em calibração).
+- **Versão atual:** `0.50.0-alpha.3` (alpha / incompleto, com protótipos em calibração).
 - **Stack:** TypeScript e JavaScript nativos em **Node.js 24+** (type stripping nativo, sem etapa de build e sem dependências externas).
 - **Alvos suportados:** **Claude Code** (`claude`) e **Antigravity CLI** (`agy` — nota: ferramenta independente, não se refere ao Gemini CLI do Google). O suporte ao **Codex** encontra-se planejado para entregas futuras.
 
@@ -23,7 +23,16 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 O Oathbound pode ser instalado como plugin nativo ou através do instalador em Node.js.
 
 ### 1. Plugin Nativo
-Os manifestos nativos ([.claude-plugin/plugin.json](.claude-plugin/plugin.json), [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json) e [plugin.json](plugin.json)) estão em estado **alpha**: expõem metadados, skills e definições de subagentes, enquanto a resolução de `__HOME__` nos hooks e o merge em `settings.json` / `hooks.json` ainda exigem `node tools/install.ts`.
+Os manifestos de origem ficam separados por harness: [Claude Code](.claude-plugin/plugin.json), com seu [marketplace](.claude-plugin/marketplace.json), e [Antigravity](.antigravity-plugin/plugin.json). Para gerar pacotes nativos independentes, informe diretórios novos dentro do repositório:
+
+```sh
+node tools/build-plugin.cjs claude dist/claude
+node tools/build-plugin.cjs agy dist/agy
+claude plugin validate dist/claude
+agy plugin validate dist/agy
+```
+
+Crie `dist/` antes de gerar os pacotes. O gerador não sobrescreve destinos existentes. Cada pacote contém seis skills, oito agentes e seus hooks. Os hooks requerem Node.js e RTK disponíveis no ambiente. O instalador abaixo configura também permissões e configurações globais ou de projeto, fora do escopo dos plugins nativos.
 
 ### 2. Instalador de Projeto e Ambiente (`install.ts`)
 Para gerenciar a instalação e atualização em ambientes globais ou diretórios de projeto específicos, execute:

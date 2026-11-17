@@ -1,12 +1,9 @@
 {
   "name": "oathbound",
   "displayName": "Oathbound",
-  "version": "0.50.0-alpha.2",
+  "version": "0.50.0-alpha.3",
   "description": "Governança de subagentes, hooks RTK/idle, statusline e skills de engenharia para Antigravity CLI (agy).",
   "author": { "name": "Raphael Vieira" },
   "repository": "https://github.com/RaphaelVSouza/Oathbound",
-  "license": "MIT",
-  "skills": "./skills/",
-  "agents": "./agy/config/agents/",
-  "hooks": "./agy/config/hooks.json"
+  "license": "MIT"
 }

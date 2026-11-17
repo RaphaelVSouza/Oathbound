@@ -36,3 +36,7 @@ Opções suportadas:
 
 O instalador valida manifestos SHA-256 e desativa skills duplicadas sem utilizar symlinks.
 As instruções globais do Antigravity ficam em `~/.gemini/GEMINI.md`. O instalador preserva arquivos existentes nesse destino e no antigo `~/.gemini/config/GEMINI.md`; alterações no caminho antigo devem ser migradas manualmente, se necessário.
+
+## Pacotes de plugin (`build-plugin.cjs`)
+
+Crie o diretório pai e execute `node tools/build-plugin.cjs claude <destino>` ou `node tools/build-plugin.cjs agy <destino>`. O destino deve ser novo e estar dentro do repositório. O gerador não sobrescreve arquivos existentes. Valide com `claude plugin validate <destino>` ou `agy plugin validate <destino>`.

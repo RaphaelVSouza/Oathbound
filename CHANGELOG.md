@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.3] - 2026-11-17
+- Separado o manifesto nativo do Antigravity em `.antigravity-plugin/plugin.json`, ao lado do manifesto próprio do Claude em `.claude-plugin/`.
+- Gerados pacotes independentes por harness, com agentes, skills e hooks portáteis, sem sobrescrever diretórios existentes.
+
 ## [0.50.0-alpha.2] - 2026-11-17
 - Corrigido o destino global das instruções Antigravity para `~/.gemini/GEMINI.md`, preservando arquivos existentes no destino e no caminho antigo.
 

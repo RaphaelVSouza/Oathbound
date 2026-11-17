@@ -1,10 +1,10 @@
 {
   "name": "oathbound",
-  "version": "0.50.0-alpha.2",
+  "version": "0.50.0-alpha.3",
   "description": "Governança enxuta de agentes, guardrails preventivos em hooks, trilha de auditoria e skills de engenharia para Claude Code e Antigravity CLI.",
   "author": { "name": "Raphael Vieira" },
   "repository": "https://github.com/RaphaelVSouza/Oathbound",
   "license": "MIT",
   "skills": "./skills/",
-  "agents": "./claude/agents/"
+  "agents": ["./claude/agents/assayer.md", "./claude/agents/orquestrador.md", "./claude/agents/scholar.md", "./claude/agents/scout.md", "./claude/agents/scribe.md", "./claude/agents/sentinel.md", "./claude/agents/smith.md", "./claude/agents/tester.md"]
 }
