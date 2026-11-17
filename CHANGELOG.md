@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.50.0-alpha.5] - 2026-11-17
+- Adicionados índices de documentação oficial para Claude Code e Antigravity CLI em `docs/`.
+
 ## [0.50.0-alpha.4] - 2026-11-17
 - Removido o hook `Stop` do Antigravity para evitar loops de encerramento com `fullyIdle=false`; mantido o hook `PreToolUse`.
 

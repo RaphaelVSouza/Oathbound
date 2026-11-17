@@ -72,6 +72,7 @@ node tools/audit-docs.ts --staged
 ```
 
 Consulte também os documentos de referência:
+- [Referências oficiais por harness](docs/README.md)
 - [Como Contribuir](CONTRIBUTING.md)
 - [Instruções do Pacote](AGENTS.md)
 - [Changelog](CHANGELOG.md)
