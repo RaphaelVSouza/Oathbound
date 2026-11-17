@@ -23,23 +23,6 @@ process.stdin.on('end', () => {
   try {
     const payload = JSON.parse(raw);
 
-    // Gate Stop: impede que subagentes encerrem o turno com tasks órfãs em background (waiting_for_dependents)
-    if (payload.hookEventName === 'Stop') {
-      if (
-        payload.terminationReason === 'NO_TOOL_CALL' &&
-        payload.fullyIdle === false &&
-        !payload.continuationActive
-      ) {
-        process.stdout.write(JSON.stringify({
-          decision: 'continue',
-          reason: 'Há background tasks ou subagentes ativos impedindo o encerramento limpo (fullyIdle=false). Se você iniciou um comando que sofreu timeout e virou task órfã, chame `manage_task(Action: "list")` e encerre-a com `manage_task(Action: "kill", TaskId: ...)` antes de finalizar sua resposta.',
-        }));
-        return;
-      }
-      process.stdout.write(JSON.stringify({ decision: 'allow' }));
-      return;
-    }
-
     const args = (payload.toolCall && payload.toolCall.args) || {};
     const cmd = typeof args.CommandLine === 'string' ? args.CommandLine.trim() : '';
 

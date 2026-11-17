@@ -4,7 +4,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
 const { buildPlugin } = require('../tools/build-plugin.cjs');
 
 test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever destino', t => {
@@ -27,11 +26,7 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
     } else {
       const hooks = JSON.parse(fs.readFileSync(path.join(out, 'hooks.json'), 'utf8'));
       assert.equal(hooks['rtk-rewrite'].PreToolUse[0].hooks[0].command, 'node ./scripts/rtk-hook.js');
-      const result = spawnSync(process.execPath, [path.join(out, 'scripts', 'rtk-hook.js')], {
-        input: JSON.stringify({ hookEventName: 'Stop', fullyIdle: true }), encoding: 'utf8'
-      });
-      assert.equal(result.status, 0);
-      assert.equal(JSON.parse(result.stdout).decision, 'allow');
+      assert.equal(Object.hasOwn(hooks['rtk-rewrite'], 'Stop'), false);
     }
   }
   assert.throws(() => buildPlugin('agy', path.resolve(tmp, '..', '..', '..', 'outside')), /dentro do repositório/);

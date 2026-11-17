@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.50.0-alpha.4] - 2026-11-17
+- Removido o hook `Stop` do Antigravity para evitar loops de encerramento com `fullyIdle=false`; mantido o hook `PreToolUse`.
+
 ## [0.50.0-alpha.3] - 2026-11-17
 - Separado o manifesto nativo do Antigravity em `.antigravity-plugin/plugin.json`, ao lado do manifesto próprio do Claude em `.claude-plugin/`.
 - Gerados pacotes independentes por harness, com agentes, skills e hooks portáteis, sem sobrescrever diretórios existentes.

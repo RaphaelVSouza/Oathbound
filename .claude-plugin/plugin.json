@@ -1,6 +1,6 @@
 {
   "name": "oathbound",
-  "version": "0.50.0-alpha.3",
+  "version": "0.50.0-alpha.4",
   "description": "Governança enxuta de agentes, guardrails preventivos em hooks, trilha de auditoria e skills de engenharia para Claude Code e Antigravity CLI.",
   "author": { "name": "Raphael Vieira" },
   "repository": "https://github.com/RaphaelVSouza/Oathbound",

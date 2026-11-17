@@ -2,7 +2,7 @@
 
 Conjunto portátil de governança, regras de execução, subagentes especializados, guardrails determinísticos em hooks, trilha de auditoria e skills de engenharia para assistentes de IA baseados em CLI.
 
-- **Versão atual:** `0.50.0-alpha.3` (alpha / incompleto, com protótipos em calibração).
+- **Versão atual:** `0.50.0-alpha.4` (alpha / incompleto, com protótipos em calibração).
 - **Stack:** TypeScript e JavaScript nativos em **Node.js 24+** (type stripping nativo, sem etapa de build e sem dependências externas).
 - **Alvos suportados:** **Claude Code** (`claude`) e **Antigravity CLI** (`agy` — nota: ferramenta independente, não se refere ao Gemini CLI do Google). O suporte ao **Codex** encontra-se planejado para entregas futuras.
 
@@ -53,6 +53,8 @@ node tools/install.ts [opções]
 O instalador valida manifestos SHA-256 (`.oathbound/manifest.json`), preserva alterações locais e desativa skills duplicadas sem utilizar symlinks (através de marcação e mapeamento em `_disabled` / `skills.json`).
 
 No Antigravity, as instruções globais são instaladas em `~/.gemini/GEMINI.md`. Arquivos existentes nesse destino e no antigo `~/.gemini/config/GEMINI.md` são preservados; compare-os e migre suas alterações manualmente, se necessário.
+
+O hook RTK usa apenas `PreToolUse`. Remova manualmente registros `Stop` antigos do `rtk-hook.js` em instalações existentes para evitar loops de encerramento.
 
 ---
 

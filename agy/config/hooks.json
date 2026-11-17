@@ -12,13 +12,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "type": "command",
-        "command": "node __HOME__/.gemini/antigravity-cli/rtk-hook.js",
-        "timeout": 5
-      }
     ]
   }
 }
