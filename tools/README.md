@@ -35,3 +35,4 @@ Opções suportadas:
 - `--no-dedupe-skills`: Desativa a desduplicação automática de skills duplicadas.
 
 O instalador valida manifestos SHA-256 e desativa skills duplicadas sem utilizar symlinks.
+As instruções globais do Antigravity ficam em `~/.gemini/GEMINI.md`. O instalador preserva arquivos existentes nesse destino e no antigo `~/.gemini/config/GEMINI.md`; alterações no caminho antigo devem ser migradas manualmente, se necessário.

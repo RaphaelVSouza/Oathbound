@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.50.0-alpha.2] - 2026-11-17
+- Corrigido o destino global das instruções Antigravity para `~/.gemini/GEMINI.md`, preservando arquivos existentes no destino e no caminho antigo.
+
 ## [0.50.0-alpha.1] - 2026-11-15
 - Reconstrução pública do Oathbound para Claude Code e Antigravity CLI (`agy`), remoção do legado, empacotamento como plugin nativo e novo instalador com desativação de skills duplicadas.
 

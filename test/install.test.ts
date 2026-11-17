@@ -86,6 +86,9 @@ test('instalação --global para runner all configura claude e agy sem symlinks 
   assert.equal(updatedClaudeSettings.statusLine.padding, 0);
 
   // Verifica arquivos Gemini / Agy
+  assert.equal(fs.readFileSync(path.join(globalRoot, '.gemini', 'GEMINI.md'), 'utf8'),
+    fs.readFileSync(path.join(__dirname, '..', 'agy', 'config', 'GEMINI.md'), 'utf8'));
+  assert.equal(fs.existsSync(path.join(globalRoot, '.gemini', 'config', 'GEMINI.md')), false);
   assert.ok(fs.existsSync(path.join(globalRoot, '.gemini', 'antigravity-cli', 'rtk-hook.js')));
   assert.ok(fs.existsSync(path.join(globalRoot, '.gemini', 'antigravity-cli', 'statusline.js')));
   assert.ok(fs.existsSync(path.join(globalRoot, '.gemini', 'config', 'skills.json')));
@@ -117,6 +120,19 @@ test('instalação --global para runner all configura claude e agy sem symlinks 
     assert.ok(fs.existsSync(full), `Arquivo do manifesto deve existir: ${full}`);
     assert.equal(sha256(fs.readFileSync(full)), fileRecord.sha256, `SHA-256 deve bater para: ${fileRecord.path}`);
   }
+});
+
+test('instalação global preserva GEMINI.md existente e arquivo no caminho antigo', t => {
+  const globalRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-gemini-test-'));
+  t.after(() => fs.rmSync(globalRoot, { recursive: true, force: true }));
+  const current = path.join(globalRoot, '.gemini', 'GEMINI.md');
+  const old = path.join(globalRoot, '.gemini', 'config', 'GEMINI.md');
+  fs.mkdirSync(path.dirname(old), { recursive: true });
+  fs.writeFileSync(current, 'instruções existentes\n');
+  fs.writeFileSync(old, 'edições no caminho antigo\n');
+  install({ root: globalRoot, homeDir: globalRoot, global: true, runner: 'agy', upgrade: true });
+  assert.equal(fs.readFileSync(current, 'utf8'), 'instruções existentes\n');
+  assert.equal(fs.readFileSync(old, 'utf8'), 'edições no caminho antigo\n');
 });
 
 test('instalação --project cria estrutura do projeto e audit-docs sem symlinks', t => {

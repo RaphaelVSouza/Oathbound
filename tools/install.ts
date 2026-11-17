@@ -587,7 +587,7 @@ function install(options: InstallOptions) {
     if (isGlobal) {
       const geminiMd = path.join(sourceRoot, 'agy', 'config', 'GEMINI.md');
       if (fs.existsSync(geminiMd)) {
-        plannedFiles.set('.gemini/config/GEMINI.md', { content: fs.readFileSync(geminiMd) });
+        plannedFiles.set('.gemini/GEMINI.md', { content: fs.readFileSync(geminiMd) });
       }
       const mcpConfig = path.join(sourceRoot, 'agy', 'config', 'mcp_config.json');
       if (fs.existsSync(mcpConfig)) {
