@@ -242,8 +242,32 @@ function escapeClaudeHookPath(value: string): string {
   return value.replace(/["`$\\]/g, '\\$&');
 }
 
+const reviewAgentGuards = {
+  Bash: ['readonly-guard.js', 'read-size-guard.js'],
+  Read: ['read-size-guard.js']
+};
+const claudeAgentGuards: Record<string, Record<string, string[]>> = {
+  'assayer.md': reviewAgentGuards,
+  'sentinel.md': reviewAgentGuards,
+  'scout.md': { Read: ['read-size-guard.js'] },
+  'scribe.md': { Bash: ['destructive-guard.js'] },
+  'smith.md': { 'Bash|PowerShell': ['destructive-guard.js'] }
+};
+
 function renderClaudeAgent(raw: string, file: string, hookPath: string): string {
-  const content = raw.replaceAll('__HOME__', () => hookPath.replaceAll("'", "''"));
+  let content = raw;
+  if (Object.hasOwn(claudeAgentGuards, file)) {
+    const groups = Object.entries(claudeAgentGuards[file]).flatMap(([matcher, scripts]) => [
+      `    - matcher: "${matcher}"`,
+      '      hooks:',
+      ...scripts.flatMap(script => [
+        '        - type: command',
+        `          command: 'node "${hookPath.replaceAll("'", "''")}/${script}"'`
+      ])
+    ]);
+    const hooks = ['hooks:', '  PreToolUse:', ...groups].join('\n');
+    content = raw.replace(/^(---\r?\n[\s\S]*?)(?=^---\r?$)/m, (_, header) => `${header}${hooks}\n`);
+  }
   return file === 'orquestrador.md' ? content.replaceAll('oathbound:', '') : content;
 }
 
@@ -440,8 +464,7 @@ function install(options: InstallOptions) {
       for (const file of fs.readdirSync(agentsDir)) {
         if (file.endsWith('.md')) {
           const raw = fs.readFileSync(path.join(agentsDir, file), 'utf8');
-          const agent = raw.replaceAll('__HOME__/.claude/hooks/', `__HOME__/${hookDir}/`);
-          const processed = renderClaudeAgent(agent, file, claudeHookPath);
+          const processed = renderClaudeAgent(raw, file, `${claudeHookPath}/${hookDir}`);
           plannedFiles.set(`.claude/agents/${file}`, { content: processed });
         }
       }

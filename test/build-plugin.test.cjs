@@ -42,7 +42,8 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
       const manifest = JSON.parse(fs.readFileSync(path.join(out, '.claude-plugin', 'plugin.json'), 'utf8'));
       assert.equal(manifest.version, version);
       const agent = fs.readFileSync(path.join(out, 'agents', 'assayer.md'), 'utf8');
-      assert.match(agent, /\$\{CLAUDE_PLUGIN_ROOT\}\/claude\/hooks\/readonly-guard\.js/);
+      assert.doesNotMatch(agent, /^hooks:/m);
+      assert.equal(agent, fs.readFileSync(path.join(ROOT, 'claude', 'agents', 'assayer.md'), 'utf8'));
       assert.doesNotMatch(agent, /__HOME__/);
       const orchestrator = fs.readFileSync(path.join(out, 'agents', 'orquestrador.md'), 'utf8');
       assert.match(orchestrator, /^tools: Agent\(oathbound:scout,/m);

@@ -34,13 +34,7 @@ function buildPlugin(runner, destination) {
   if (runner === 'claude') {
     const manifest = loadManifest('.claude-plugin/plugin.json');
     write('.claude-plugin/plugin.json', manifest);
-    fs.mkdirSync(path.join(out, 'agents'));
-    for (const name of fs.readdirSync(path.join(source, 'claude/agents')).filter(name => name.endsWith('.md'))) {
-      const content = fs.readFileSync(path.join(source, 'claude/agents', name), 'utf8')
-        .replace(/command: 'node "__HOME__\/\.claude\/hooks\/([^"/]+)"'/g, (_, script) => `command: 'node "\${CLAUDE_PLUGIN_ROOT}/claude/hooks/${script}"'`);
-      if (content.includes('__HOME__')) throw new Error(`Placeholder não resolvido: ${name}`);
-      fs.writeFileSync(path.join(out, 'agents', name), content, { flag: 'wx' });
-    }
+    copy('claude/agents', 'agents');
     copy('claude/hooks', 'claude/hooks');
     copy('hooks', 'hooks');
   } else {

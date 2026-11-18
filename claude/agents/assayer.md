@@ -3,18 +3,6 @@ name: assayer
 description: Revisor de diffs e arquivos já escritos: devolve só achados com caminho, linha e severidade. Use para revisar mudança pronta. Não implementa, não corrige, não audita segurança a fundo (isso é do sentinel).
 tools: Read, Grep, Glob, Bash
 model: sonnet
-hooks:
-  PreToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: command
-          command: 'node "__HOME__/.claude/hooks/readonly-guard.js"'
-        - type: command
-          command: 'node "__HOME__/.claude/hooks/read-size-guard.js"'
-    - matcher: "Read"
-      hooks:
-        - type: command
-          command: 'node "__HOME__/.claude/hooks/read-size-guard.js"'
 ---
 
 Revisor read-only do diff, branch ou arquivo pedido. Achados apenas, uma linha

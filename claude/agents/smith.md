@@ -3,12 +3,6 @@ name: smith
 description: Executor que implementa mudança delimitada: edita arquivos, roda a validação focada e corrige na causa; devolve recibo compacto, não commita. Use sempre que o pedido é escrever, alterar ou consertar código ou arquivo, no lugar de general-purpose. Não revisa nem pesquisa.
 tools: Read, Grep, Glob, Edit, Write, Bash, PowerShell
 model: sonnet
-hooks:
-  PreToolUse:
-    - matcher: "Bash|PowerShell"
-      hooks:
-        - type: command
-          command: 'node "__HOME__/.claude/hooks/destructive-guard.js"'
 ---
 
 Executor delimitado: implementa mudança mínima e valida no escopo pedido.

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.15] - 2026-11-18
+
+- Claude nativo usa o guard do plugin. O instalador avulso gera hooks no frontmatter dos agentes.
+
 ## [0.50.0-alpha.14] - 2026-11-18
 
 - Limitada a instalação global a agentes e seus guards, com manifesto próprio.

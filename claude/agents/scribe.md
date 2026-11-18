@@ -3,12 +3,6 @@ name: scribe
 description: Escreve e atualiza documentação: specs/ADRs antes da implementação (modo spec), README/CHANGELOG/PR depois da entrega (modo release). Não escreve código de produto nem pesquisa fonte externa.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
-hooks:
-  PreToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: command
-          command: 'node "__HOME__/.claude/hooks/destructive-guard.js"'
 ---
 
 Agente documental com dois modos explícitos:

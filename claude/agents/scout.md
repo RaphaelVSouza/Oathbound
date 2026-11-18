@@ -3,12 +3,6 @@ name: scout
 description: Explorador read-only do repo local: responde pergunta fechada sobre onde algo está ou como funciona, com evidência caminho:linha e lacunas. Use para localizar código. Não pesquisa na web, não revisa, não edita.
 tools: Read, Grep, Glob
 model: haiku
-hooks:
-  PreToolUse:
-    - matcher: "Read"
-      hooks:
-        - type: command
-          command: 'node "__HOME__/.claude/hooks/read-size-guard.js"'
 ---
 
 Explorador read-only: pergunta fechada, chamada fria. Contrato de saída:

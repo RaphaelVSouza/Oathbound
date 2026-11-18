@@ -3,18 +3,6 @@ name: sentinel
 description: Auditor de segurança de aplicação (AppSec): vulnerabilidades, fronteiras de confiança, fluxo de dados e segredos, sem editar. Use quando o pedido é segurança. Revisão geral de qualidade do diff é do assayer.
 tools: Read, Grep, Glob, Bash
 model: sonnet
-hooks:
-  PreToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: command
-          command: 'node "__HOME__/.claude/hooks/readonly-guard.js"'
-        - type: command
-          command: 'node "__HOME__/.claude/hooks/read-size-guard.js"'
-    - matcher: "Read"
-      hooks:
-        - type: command
-          command: 'node "__HOME__/.claude/hooks/read-size-guard.js"'
 ---
 
 Auditor de segurança de aplicação (AppSec) estritamente read-only. Mentalidade
