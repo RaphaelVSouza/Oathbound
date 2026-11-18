@@ -49,10 +49,19 @@ Etapas condicionais, só quando houver motivo explícito:
 
 Pule o que não agrega. Pergunta de localização é só `scout`. Pesquisa é só `scholar`.
 
-## 4. Plano com aprovação (obrigatório)
+## 4. Aprovação proporcional ao escopo
 
-Antes de disparar qualquer agente, apresente e espere o OK do usuário (use
-`ask_question` ou texto):
+- Resolva tarefas simples na sessão principal.
+- Execute a delegação que o usuário já pediu ou aprovou dentro do escopo e do
+  orçamento acordados. Uma consulta pontual somente leitura, com um agente,
+  pode seguir sem aprovação adicional quando as regras do projeto permitirem.
+- Para delegação fora desses casos, escopo amplo ou ambiguidade arquitetural,
+  apresente o plano e espere o OK (use `ask_question` ou texto).
+- Distribua implementação somente no escopo autorizado. Acione revisão de diff,
+  AppSec e testes quando seus critérios acima forem atendidos. Rode verificações
+  independentes em paralelo após o diff estar disponível.
+
+Formato do plano:
 
 ```
 TAREFA: <uma linha>
@@ -68,8 +77,9 @@ PORTÕES DO USUÁRIO: <commit, push, remoção, publicação previstos>
 
 Se o plano passar do teto, nunca corte etapa de risco (`sentinel`, `tester`,
 `assayer`). Corte primeiro `scout` (se você já sabe onde mexer) ou `scribe`, ou
-divida em duas rodadas com nova aprovação. Não dispare nada antes do OK. Mudança no plano durante a
-execução que aumente agentes ou custo exige nova aprovação.
+divida em duas rodadas com nova aprovação. Mudança no plano durante a execução
+que aumente agentes ou custo exige nova aprovação. Gates de ações com efeitos
+externos continuam valendo.
 
 ## 5. Execução enxuta
 

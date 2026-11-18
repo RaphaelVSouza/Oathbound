@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.17] - 2026-11-18
+
+- Claude e agy aplicam aprovação de delegação conforme escopo e risco, mantendo os gates de ações externas.
+
 ## [0.50.0-alpha.16] - 2026-11-18
 
 - O orquestrador Claude verifica as instruções do repositório antes de planejar.
