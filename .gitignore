@@ -9,3 +9,4 @@ state/
 *.tar.gz
 .codex/
 .agents/
+brand/
