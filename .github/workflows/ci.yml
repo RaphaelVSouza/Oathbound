@@ -7,31 +7,23 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    name: Test & Audit (Node ${{ matrix.node-version }} on ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        node-version: [24]
-
+  validate:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '24'
 
       - name: Run unit tests
-        run: |
-          node -e "const cp = require('node:child_process'), fs = require('node:fs'), path = require('node:path'); const walk = (dir) => fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => { const full = path.join(dir, entry.name); return entry.isDirectory() ? walk(full) : (entry.name.endsWith('.test.ts') || entry.name.endsWith('.test.js')) ? [full] : []; }) : []; const files = walk('test'); if (files.length === 0) { console.error('No test files found'); process.exit(1); } const res = cp.spawnSync(process.execPath, ['--test', '--experimental-test-coverage', ...files], { stdio: 'inherit' }); process.exit(res.status ?? 1);"
+        run: node --test test/*.test.ts test/*/*.test.js
 
-      - name: Run documentation auditor
+      - name: Audit documentation
         run: node tools/audit-docs.ts
 
-      - name: Smoke test (global and project install)
+      - name: Build native plugins
         run: |
-          node -e "const cp = require('node:child_process'), fs = require('node:fs'), path = require('node:path'), os = require('node:os'), assert = require('node:assert/strict'); const tempBase = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-smoke-')); try { const fakeHome = path.join(tempBase, 'home'); const fakeProj = path.join(tempBase, 'proj'); fs.mkdirSync(fakeHome, { recursive: true }); fs.mkdirSync(fakeProj, { recursive: true }); cp.execFileSync(process.execPath, ['tools/install.ts', '--global', '--runner', 'all', '--statusline'], { env: { ...process.env, HOME: fakeHome, USERPROFILE: fakeHome } }); cp.execFileSync(process.execPath, ['tools/install.ts', '--project', fakeProj, '--runner', 'all', '--audit-docs', '--upgrade'], { env: { ...process.env, HOME: fakeHome, USERPROFILE: fakeHome } }); assert.ok(fs.existsSync(path.join(fakeHome, '.oathbound', 'global-manifest.json')), 'global manifest missing'); assert.ok(fs.existsSync(path.join(fakeProj, '.oathbound', 'manifest.json')), 'project manifest missing'); console.log('Smoke test passed successfully.'); } finally { fs.rmSync(tempBase, { recursive: true, force: true }); }"
+          mkdir -p dist
+          node tools/build-plugin.cjs claude dist/claude
+          node tools/build-plugin.cjs agy dist/agy

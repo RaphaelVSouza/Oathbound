@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+
+node --test test/build-plugin.test.cjs
+node tools/audit-docs.ts --staged

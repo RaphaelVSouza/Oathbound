@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Verify tag matches VERSION
+        run: |
+          TAG_VER="${GITHUB_REF_NAME#v}"
+          FILE_VER="$(tr -d '[:space:]' < VERSION)"
+          if [ "$TAG_VER" != "$FILE_VER" ]; then
+            echo "Tag ($TAG_VER) diverge de VERSION ($FILE_VER)" >&2
+            exit 1
+          fi
+
+      - name: Run unit tests
+        run: node --test test/*.test.ts test/*/*.test.js
+
+      - name: Audit documentation
+        run: node tools/audit-docs.ts
+
+      - name: Build and archive plugins
+        run: |
+          TAG_VER="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+          node tools/build-plugin.cjs claude dist/claude
+          node tools/build-plugin.cjs agy dist/agy
+          tar -czf "dist/oathbound-claude-${TAG_VER}.tar.gz" -C dist/claude .
+          tar -czf "dist/oathbound-agy-${TAG_VER}.tar.gz" -C dist/agy .
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_VER="${GITHUB_REF_NAME#v}"
+          PRERELEASE_FLAG=""
+          case "$TAG_VER" in
+            *-*) PRERELEASE_FLAG="--prerelease" ;;
+          esac
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/oathbound-claude-${TAG_VER}.tar.gz" \
+            "dist/oathbound-agy-${TAG_VER}.tar.gz" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            $PRERELEASE_FLAG
