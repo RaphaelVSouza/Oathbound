@@ -37,16 +37,12 @@ function buildPlugin(runner, destination) {
     fs.mkdirSync(path.join(out, 'agents'));
     for (const name of fs.readdirSync(path.join(source, 'claude/agents')).filter(name => name.endsWith('.md'))) {
       const content = fs.readFileSync(path.join(source, 'claude/agents', name), 'utf8')
-        .replace(/command: "node __HOME__\/\.claude\/hooks\/([^"/]+)"/g, (_, script) => `command: 'node "\${CLAUDE_PLUGIN_ROOT}/hooks/${script}"'`);
+        .replace(/command: "node __HOME__\/\.claude\/hooks\/([^"/]+)"/g, (_, script) => `command: 'node "\${CLAUDE_PLUGIN_ROOT}/claude/hooks/${script}"'`);
       if (content.includes('__HOME__')) throw new Error(`Placeholder não resolvido: ${name}`);
       fs.writeFileSync(path.join(out, 'agents', name), content, { flag: 'wx' });
     }
-    copy('claude/hooks', 'hooks');
-    const hooks = JSON.parse(fs.readFileSync(path.join(source, 'claude/settings.json'), 'utf8')).hooks;
-    for (const group of hooks.PreToolUse) for (const hook of group.hooks) {
-      hook.command = hook.command.replace('node __HOME__/.claude/hooks/agent-audit.js', 'node "${CLAUDE_PLUGIN_ROOT}/hooks/agent-audit.js"');
-    }
-    write('hooks/hooks.json', { hooks });
+    copy('claude/hooks', 'claude/hooks');
+    copy('hooks', 'hooks');
   } else {
     const manifest = loadManifest('.antigravity-plugin/plugin.json');
     delete manifest.hooks;

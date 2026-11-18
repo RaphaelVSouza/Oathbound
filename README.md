@@ -23,6 +23,8 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 O Oathbound pode ser instalado como plugin nativo ou através do instalador em Node.js.
 
 ### 1. Plugin Nativo
+
+No Claude Code, instale pelo marketplace com `/plugin install oathbound --marketplace RaphaelVSouza/Oathbound`.
 Os manifestos de origem ficam separados por harness: [Claude Code](.claude-plugin/plugin.json), com seu [marketplace](.claude-plugin/marketplace.json), e [Antigravity](.antigravity-plugin/plugin.json). Para gerar pacotes nativos independentes, informe diretórios novos dentro do repositório:
 
 ```sh

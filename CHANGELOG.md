@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.7] - 2026-11-18
+
+- Claude Code: marketplace e pacote de release compartilham o registro dos hooks globais.
+
 ## [0.50.0-alpha.6] - 2026-11-18
 - Empacotado `agy/config/GEMINI.md` como `rules/AGENTS.md` no build do plugin nativo Antigravity (`tools/build-plugin.cjs`).
 - Adicionado logo SVG com `<mask>` transparente em `assets/logo.svg`, referenciado em `.antigravity-plugin/plugin.json` e copiado no build do plugin Antigravity.

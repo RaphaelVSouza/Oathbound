@@ -38,10 +38,12 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
       const manifest = JSON.parse(fs.readFileSync(path.join(out, '.claude-plugin', 'plugin.json'), 'utf8'));
       assert.equal(manifest.version, version);
       const agent = fs.readFileSync(path.join(out, 'agents', 'assayer.md'), 'utf8');
-      assert.match(agent, /\$\{CLAUDE_PLUGIN_ROOT\}\/hooks\/readonly-guard\.js/);
+      assert.match(agent, /\$\{CLAUDE_PLUGIN_ROOT\}\/claude\/hooks\/readonly-guard\.js/);
       assert.doesNotMatch(agent, /__HOME__/);
       const hooks = JSON.parse(fs.readFileSync(path.join(out, 'hooks', 'hooks.json'), 'utf8'));
-      assert.match(JSON.stringify(hooks), /CLAUDE_PLUGIN_ROOT/);
+      const sourceHooks = JSON.parse(fs.readFileSync(path.join(ROOT, 'hooks', 'hooks.json'), 'utf8'));
+      assert.deepEqual(hooks, sourceHooks);
+      assert.equal(fs.existsSync(path.join(out, 'claude/hooks/agent-audit.js')), true);
     } else {
       const manifest = JSON.parse(fs.readFileSync(path.join(out, '.antigravity-plugin', 'plugin.json'), 'utf8'));
       assert.equal(manifest.version, version);
