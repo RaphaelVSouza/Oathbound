@@ -166,6 +166,8 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
   assert.ok(fs.existsSync(path.join(projectRoot, 'tools', 'audit-docs.core.ts')));
   const smith = fs.readFileSync(path.join(projectRoot, '.claude', 'agents', 'smith.md'), 'utf8');
   assert.ok(smith.includes(`command: 'node "${projectRoot.split(path.sep).join('/')}/.claude/hooks/destructive-guard.js"'`));
+  const orchestrator = fs.readFileSync(path.join(projectRoot, '.claude', 'agents', 'orquestrador.md'), 'utf8');
+  assert.match(orchestrator, /^tools: Agent\(scout,/m);
   const auditDocsConfigPath = path.join(projectRoot, 'tools', 'audit-docs.config.js');
   assert.ok(fs.existsSync(auditDocsConfigPath));
   const auditDocsConfigContent = fs.readFileSync(auditDocsConfigPath, 'utf8');

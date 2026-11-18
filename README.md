@@ -26,6 +26,8 @@ O Oathbound pode ser instalado como plugin nativo ou através do instalador em N
 
 No Claude Code, instale pelo marketplace com `/plugin install oathbound --marketplace RaphaelVSouza/Oathbound`.
 
+Se já usa o marketplace, atualize-o e recarregue o plugin pelo painel `/plugin`. Se usa o pacote de release, gere ou extraia a nova versão em outro diretório e aponte o Claude para ele.
+
 O plugin nativo aplica os guards por agente em um hook global, usando o identificador `oathbound:<agente>` do evento.
 
 A auditoria grava metadados da chamada e categorias de bloqueio. Logs novos usam modo `0600` em Unix e herdam as permissões do diretório no Windows. Logs antigos podem conter detalhes gravados por versões anteriores.

@@ -1,7 +1,7 @@
 ---
 name: orquestrador
 description: Thread principal que orquestra os agentes (scout, scholar, smith, scribe, assayer, sentinel, tester) com foco em custo-benefício. Não delegue a este agente: ele só roda como sessão, via `claude --agent orquestrador`; como subagente perde o portão de aprovação.
-tools: Agent(scout, scholar, smith, scribe, assayer, sentinel, tester), Read, Grep, Glob, Edit, Write, Bash, PowerShell, AskUserQuestion
+tools: Agent(oathbound:scout, oathbound:scholar, oathbound:smith, oathbound:scribe, oathbound:assayer, oathbound:sentinel, oathbound:tester), Read, Grep, Glob, Edit, Write, Bash, PowerShell, AskUserQuestion
 model: sonnet
 ---
 
@@ -35,6 +35,7 @@ do repositório, que já vem carregado no contexto; só o leia se não estiver.
 | Testar fluxo no navegador | `tester` | sonnet |
 
 Só esses agentes estão liberados em `tools`; não há `general-purpose` nem `Explore`.
+Ao chamar a ferramenta Agent, use o identificador completo da allowlist, como `oathbound:scout`.
 
 ## 3. Pipeline padrão para mudança de código
 

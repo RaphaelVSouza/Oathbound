@@ -239,6 +239,11 @@ function escapeClaudeHookPath(value: string): string {
   return value.replace(/["`$\\]/g, '\\$&');
 }
 
+function renderClaudeAgent(raw: string, file: string, hookPath: string): string {
+  const content = raw.replaceAll('__HOME__', () => hookPath.replaceAll("'", "''"));
+  return file === 'orquestrador.md' ? content.replaceAll('oathbound:', '') : content;
+}
+
 function readExistingJson(filePath: string, fallback: any): any {
   if (!fs.existsSync(filePath)) return fallback;
   const raw = fs.readFileSync(filePath, 'utf8').trim();
@@ -434,7 +439,7 @@ function install(options: InstallOptions) {
         for (const file of fs.readdirSync(agentsDir)) {
           if (file.endsWith('.md')) {
             const raw = fs.readFileSync(path.join(agentsDir, file), 'utf8');
-            const processed = raw.replaceAll('__HOME__', () => claudeHookPath.replaceAll("'", "''"));
+            const processed = renderClaudeAgent(raw, file, claudeHookPath);
             plannedFiles.set(`.claude/agents/${file}`, { content: processed });
           }
         }
@@ -477,7 +482,7 @@ function install(options: InstallOptions) {
         for (const file of fs.readdirSync(agentsDir)) {
           if (file.endsWith('.md')) {
             const raw = fs.readFileSync(path.join(agentsDir, file), 'utf8');
-            const processed = raw.replaceAll('__HOME__', () => claudeHookPath.replaceAll("'", "''"));
+            const processed = renderClaudeAgent(raw, file, claudeHookPath);
             plannedFiles.set(`.claude/agents/${file}`, { content: processed });
           }
         }

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.50.0-alpha.13] - 2026-11-18
+
+- CI: roda testes e valida o manifesto e artefato do Claude em Linux e Windows.
+- Claude Code: qualifica o nome dos agentes na delegação nativa.
+
 ## [0.50.0-alpha.12] - 2026-11-18
 
 - Claude Code: minimiza os dados persistidos pela auditoria e restringe permissões de logs novos.
