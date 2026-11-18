@@ -23,10 +23,16 @@ function buildPlugin(runner, destination) {
     fs.writeFileSync(full, JSON.stringify(value, null, 2) + '\n', { flag: 'wx' });
   };
   copy('skills', 'skills');
-  if (runner === 'claude') {
-    const manifest = JSON.parse(fs.readFileSync(path.join(source, '.claude-plugin/plugin.json'), 'utf8'));
+  const version = fs.readFileSync(path.join(source, 'VERSION'), 'utf8').trim();
+  const loadManifest = (relPath) => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(source, relPath), 'utf8'));
+    manifest.version = version;
     delete manifest.agents;
     delete manifest.skills;
+    return manifest;
+  };
+  if (runner === 'claude') {
+    const manifest = loadManifest('.claude-plugin/plugin.json');
     write('.claude-plugin/plugin.json', manifest);
     fs.mkdirSync(path.join(out, 'agents'));
     for (const name of fs.readdirSync(path.join(source, 'claude/agents')).filter(name => name.endsWith('.md'))) {
@@ -42,10 +48,8 @@ function buildPlugin(runner, destination) {
     }
     write('hooks/hooks.json', { hooks });
   } else {
-    const manifest = JSON.parse(fs.readFileSync(path.join(source, '.antigravity-plugin/plugin.json'), 'utf8'));
-    delete manifest.agents;
+    const manifest = loadManifest('.antigravity-plugin/plugin.json');
     delete manifest.hooks;
-    delete manifest.skills;
     write('.antigravity-plugin/plugin.json', manifest);
     copy('agy/config/agents', 'agents');
     fs.mkdirSync(path.join(out, 'scripts'));

@@ -39,4 +39,13 @@ As instruções globais do Antigravity ficam em `~/.gemini/GEMINI.md`. O instala
 
 ## Pacotes de plugin (`build-plugin.cjs`)
 
-Crie o diretório pai e execute `node tools/build-plugin.cjs claude <destino>` ou `node tools/build-plugin.cjs agy <destino>`. O destino deve ser novo e estar dentro do repositório. O gerador não sobrescreve arquivos existentes. Valide com `claude plugin validate <destino>` ou `agy plugin validate <destino>`.
+Crie o diretório pai e execute `node tools/build-plugin.cjs claude <destino>` ou `node tools/build-plugin.cjs agy <destino>`. O destino deve ser novo e estar dentro do repositório. O gerador não sobrescreve arquivos existentes e injeta a versão de `VERSION` nos manifestos gerados. Valide com `claude plugin validate <destino>` ou `agy plugin validate <destino>`.
+
+## Atualização de versão (`bump-version.cjs`)
+
+Execute `node tools/bump-version.cjs <semver>` para atualizar `VERSION`, `.antigravity-plugin/plugin.json` e `.claude-plugin/plugin.json` juntos. Use `--commit` para criar o commit de release e `--tag` para criar também a tag anotada `v<semver>`.
+
+Para ativar a validação automática local antes de cada commit, configure os hooks versionados:
+```sh
+git config core.hooksPath .githooks
+```
