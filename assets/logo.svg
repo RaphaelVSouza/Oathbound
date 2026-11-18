@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 72 72" width="128" height="128" role="img" aria-label="Oathbound">
+  <defs>
+    <mask id="cut-circle" maskUnits="userSpaceOnUse">
+      <rect x="-4" y="-4" width="72" height="72" fill="#fff"/>
+      <path d="M22 13.5V25.2" fill="none" stroke="#000" stroke-width="9"/>
+    </mask>
+    <mask id="cut-line" maskUnits="userSpaceOnUse">
+      <rect x="-4" y="-4" width="72" height="72" fill="#fff"/>
+      <path d="M26.68 45.94A14 14 0 0 1 18.03 41.83" fill="none" stroke="#000" stroke-width="9"/>
+    </mask>
+  </defs>
+  <g fill="none" stroke-width="5" stroke="#C9A46A">
+    <path d="M22 8V56" mask="url(#cut-line)"/>
+    <circle cx="28" cy="32" r="14" mask="url(#cut-circle)"/>
+  </g>
+  <g fill="#D0503F">
+    <circle cx="22" cy="8" r="5.5"/>
+    <circle cx="22" cy="56" r="5.5"/>
+    <circle cx="42" cy="32" r="5.5"/>
+  </g>
+</svg>

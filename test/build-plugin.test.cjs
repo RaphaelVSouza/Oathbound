@@ -48,6 +48,14 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
       const hooks = JSON.parse(fs.readFileSync(path.join(out, 'hooks.json'), 'utf8'));
       assert.equal(hooks['rtk-rewrite'].PreToolUse[0].hooks[0].command, 'node ./scripts/rtk-hook.js');
       assert.equal(Object.hasOwn(hooks['rtk-rewrite'], 'Stop'), false);
+      assert.equal(
+        fs.readFileSync(path.join(out, 'rules', 'AGENTS.md'), 'utf8'),
+        fs.readFileSync(path.join(ROOT, 'agy', 'config', 'GEMINI.md'), 'utf8')
+      );
+      assert.equal(
+        fs.readFileSync(path.join(out, 'assets', 'logo.svg'), 'utf8'),
+        fs.readFileSync(path.join(ROOT, 'assets', 'logo.svg'), 'utf8')
+      );
     }
   }
   assert.throws(() => buildPlugin('agy', path.resolve(tmp, '..', '..', '..', 'outside')), /dentro do repositório/);

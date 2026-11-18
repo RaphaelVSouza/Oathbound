@@ -52,6 +52,8 @@ function buildPlugin(runner, destination) {
     delete manifest.hooks;
     write('.antigravity-plugin/plugin.json', manifest);
     copy('agy/config/agents', 'agents');
+    copy('agy/config/GEMINI.md', 'rules/AGENTS.md');
+    copy('assets', 'assets');
     fs.mkdirSync(path.join(out, 'scripts'));
     copy('agy/antigravity-cli/rtk-hook.js', 'scripts/rtk-hook.js');
     const hooks = JSON.parse(fs.readFileSync(path.join(source, 'agy/config/hooks.json'), 'utf8'));

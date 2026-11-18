@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.6] - 2026-11-18
+- Empacotado `agy/config/GEMINI.md` como `rules/AGENTS.md` no build do plugin nativo Antigravity (`tools/build-plugin.cjs`).
+- Adicionado logo SVG com `<mask>` transparente em `assets/logo.svg`, referenciado em `.antigravity-plugin/plugin.json` e copiado no build do plugin Antigravity.
+
 ## [0.50.0-alpha.5] - 2026-11-17
 - Adicionados índices de documentação oficial para Claude Code e Antigravity CLI em `docs/`.
 
