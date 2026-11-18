@@ -37,7 +37,7 @@ function buildPlugin(runner, destination) {
     fs.mkdirSync(path.join(out, 'agents'));
     for (const name of fs.readdirSync(path.join(source, 'claude/agents')).filter(name => name.endsWith('.md'))) {
       const content = fs.readFileSync(path.join(source, 'claude/agents', name), 'utf8')
-        .replace(/command: "node __HOME__\/\.claude\/hooks\/([^"/]+)"/g, (_, script) => `command: 'node "\${CLAUDE_PLUGIN_ROOT}/claude/hooks/${script}"'`);
+        .replace(/command: 'node "__HOME__\/\.claude\/hooks\/([^"/]+)"'/g, (_, script) => `command: 'node "\${CLAUDE_PLUGIN_ROOT}/claude/hooks/${script}"'`);
       if (content.includes('__HOME__')) throw new Error(`Placeholder não resolvido: ${name}`);
       fs.writeFileSync(path.join(out, 'agents', name), content, { flag: 'wx' });
     }

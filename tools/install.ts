@@ -158,7 +158,14 @@ function mergeClaudeSettings(existing: any, incoming: any, enableStatusline: boo
   result.hooks = { ...(result.hooks || {}) };
   const incomingHooks = incoming?.hooks || {};
   for (const event of Object.keys(incomingHooks)) {
-    const existingEventHooks = Array.isArray(result.hooks[event]) ? [...result.hooks[event]] : [];
+    const oldAudit = `node ${homePosix}/.claude/hooks/agent-audit.js`;
+    const newAudit = `node "${escapeClaudeHookPath(homePosix)}/.claude/hooks/agent-audit.js"`;
+    const existingEventHooks = Array.isArray(result.hooks[event]) ? result.hooks[event].map((group: any) => ({
+      ...group,
+      hooks: Array.isArray(group.hooks) ? group.hooks.map((hook: any) =>
+        hook.command === oldAudit ? { ...hook, command: newAudit } : hook
+      ) : group.hooks
+    })) : [];
     const incomingEventHooks = Array.isArray(incomingHooks[event]) ? incomingHooks[event] : [];
 
     for (const inHookItem of incomingEventHooks) {
@@ -226,6 +233,10 @@ function rewriteHookCommands(obj: any, replacementCommand?: string, homePosix?: 
 
 function escapeJsonString(val: string): string {
   return JSON.stringify(val).slice(1, -1);
+}
+
+function escapeClaudeHookPath(value: string): string {
+  return value.replace(/["`$\\]/g, '\\$&');
 }
 
 function readExistingJson(filePath: string, fallback: any): any {
@@ -309,6 +320,7 @@ function install(options: InstallOptions) {
   const targetPosix = targetRoot.split(path.sep).join('/');
   const homePosix = userHome.split(path.sep).join('/');
   const claudeHomePosix = targetPosix;
+  const claudeHookPath = escapeClaudeHookPath(claudeHomePosix);
 
   const manifestRelPath = isGlobal ? '.oathbound/global-manifest.json' : '.oathbound/manifest.json';
   const manifestFullPath = path.join(targetRoot, manifestRelPath);
@@ -422,7 +434,7 @@ function install(options: InstallOptions) {
         for (const file of fs.readdirSync(agentsDir)) {
           if (file.endsWith('.md')) {
             const raw = fs.readFileSync(path.join(agentsDir, file), 'utf8');
-            const processed = raw.replaceAll('__HOME__', claudeHomePosix);
+            const processed = raw.replaceAll('__HOME__', () => claudeHookPath.replaceAll("'", "''"));
             plannedFiles.set(`.claude/agents/${file}`, { content: processed });
           }
         }
@@ -447,7 +459,7 @@ function install(options: InstallOptions) {
       const incomingSettingsPath = path.join(sourceRoot, 'claude', 'settings.json');
       let incomingSettings: any = {};
       if (fs.existsSync(incomingSettingsPath)) {
-        const raw = fs.readFileSync(incomingSettingsPath, 'utf8').replaceAll('__HOME__', escapeJsonString(claudeHomePosix));
+        const raw = fs.readFileSync(incomingSettingsPath, 'utf8').replaceAll('__HOME__', () => escapeJsonString(claudeHookPath));
         try { incomingSettings = JSON.parse(raw); } catch (_) {}
       }
       const destSettingsPath = path.join(targetRoot, '.claude', 'settings.json');
@@ -465,7 +477,7 @@ function install(options: InstallOptions) {
         for (const file of fs.readdirSync(agentsDir)) {
           if (file.endsWith('.md')) {
             const raw = fs.readFileSync(path.join(agentsDir, file), 'utf8');
-            const processed = raw.replaceAll('__HOME__', claudeHomePosix);
+            const processed = raw.replaceAll('__HOME__', () => claudeHookPath.replaceAll("'", "''"));
             plannedFiles.set(`.claude/agents/${file}`, { content: processed });
           }
         }
@@ -490,7 +502,7 @@ function install(options: InstallOptions) {
       const incomingSettingsPath = path.join(sourceRoot, 'claude', 'settings.json');
       let incomingSettings: any = {};
       if (fs.existsSync(incomingSettingsPath)) {
-        const raw = fs.readFileSync(incomingSettingsPath, 'utf8').replaceAll('__HOME__', escapeJsonString(claudeHomePosix));
+        const raw = fs.readFileSync(incomingSettingsPath, 'utf8').replaceAll('__HOME__', () => escapeJsonString(claudeHookPath));
         try { incomingSettings = JSON.parse(raw); } catch (_) {}
       }
       const destSettingsPath = path.join(targetRoot, '.claude', 'settings.json');

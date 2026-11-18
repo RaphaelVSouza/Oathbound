@@ -8,7 +8,7 @@ hooks:
     - matcher: "Read"
       hooks:
         - type: command
-          command: "node __HOME__/.claude/hooks/read-size-guard.js"
+          command: 'node "__HOME__/.claude/hooks/read-size-guard.js"'
 ---
 
 Explorador read-only: pergunta fechada, chamada fria. Contrato de saída:

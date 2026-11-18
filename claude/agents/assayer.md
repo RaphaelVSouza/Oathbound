@@ -8,13 +8,13 @@ hooks:
     - matcher: "Bash"
       hooks:
         - type: command
-          command: "node __HOME__/.claude/hooks/readonly-guard.js"
+          command: 'node "__HOME__/.claude/hooks/readonly-guard.js"'
         - type: command
-          command: "node __HOME__/.claude/hooks/read-size-guard.js"
+          command: 'node "__HOME__/.claude/hooks/read-size-guard.js"'
     - matcher: "Read"
       hooks:
         - type: command
-          command: "node __HOME__/.claude/hooks/read-size-guard.js"
+          command: 'node "__HOME__/.claude/hooks/read-size-guard.js"'
 ---
 
 Revisor read-only do diff, branch ou arquivo pedido. Achados apenas, uma linha

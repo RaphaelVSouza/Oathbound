@@ -8,7 +8,7 @@ hooks:
     - matcher: "Bash"
       hooks:
         - type: command
-          command: "node __HOME__/.claude/hooks/destructive-guard.js"
+          command: 'node "__HOME__/.claude/hooks/destructive-guard.js"'
 ---
 
 Agente documental com dois modos explícitos:

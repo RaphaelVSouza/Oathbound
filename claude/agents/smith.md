@@ -8,7 +8,7 @@ hooks:
     - matcher: "Bash|PowerShell"
       hooks:
         - type: command
-          command: "node __HOME__/.claude/hooks/destructive-guard.js"
+          command: 'node "__HOME__/.claude/hooks/destructive-guard.js"'
 ---
 
 Executor delimitado: implementa mudança mínima e valida no escopo pedido.

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.11] - 2026-11-18
+
+- Instalador: protege caminhos de hooks do Claude que contêm espaços.
+
 ## [0.50.0-alpha.10] - 2026-11-18
 
 - Instalador: valida configurações antes da deduplicação, preserva pastas em colisões e limita a operação ao runner selecionado.

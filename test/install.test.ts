@@ -37,7 +37,7 @@ test('parseArgs valida runners permitidos e rejeita opções inválidas ou confl
 });
 
 test('instalação --global para runner all configura claude e agy sem symlinks e sem __HOME__', t => {
-  const globalRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-global-test-'));
+  const globalRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound global test-'));
   t.after(() => fs.rmSync(globalRoot, { recursive: true, force: true }));
 
   // Pré-popula configurações de usuário para testar merge não-destrutivo
@@ -79,6 +79,8 @@ test('instalação --global para runner all configura claude e agy sem symlinks 
 
   // Merge não-destrutivo em .claude/settings.json
   const updatedClaudeSettings = JSON.parse(fs.readFileSync(claudeSettings, 'utf8'));
+  const auditCommand = updatedClaudeSettings.hooks.PreToolUse.find((hook: any) => hook.matcher === '*').hooks[0].command;
+  assert.equal(auditCommand, `node "${globalRoot.split(path.sep).join('/')}/.claude/hooks/agent-audit.js"`);
   assert.equal(updatedClaudeSettings.userCustomKey, 'keep-me');
   assert.ok(updatedClaudeSettings.permissions.allow.includes('custom_tool'));
   assert.ok(updatedClaudeSettings.statusLine);
@@ -136,7 +138,7 @@ test('instalação global preserva GEMINI.md existente e arquivo no caminho anti
 });
 
 test('instalação --project cria estrutura do projeto e audit-docs sem symlinks', t => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-proj-test-'));
+  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound project test-'));
   const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-home-test-'));
   t.after(() => {
     fs.rmSync(projectRoot, { recursive: true, force: true });
@@ -162,6 +164,8 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
   // Audit docs copiado
   assert.ok(fs.existsSync(path.join(projectRoot, 'tools', 'audit-docs.ts')));
   assert.ok(fs.existsSync(path.join(projectRoot, 'tools', 'audit-docs.core.ts')));
+  const smith = fs.readFileSync(path.join(projectRoot, '.claude', 'agents', 'smith.md'), 'utf8');
+  assert.ok(smith.includes(`command: 'node "${projectRoot.split(path.sep).join('/')}/.claude/hooks/destructive-guard.js"'`));
   const auditDocsConfigPath = path.join(projectRoot, 'tools', 'audit-docs.config.js');
   assert.ok(fs.existsSync(auditDocsConfigPath));
   const auditDocsConfigContent = fs.readFileSync(auditDocsConfigPath, 'utf8');
