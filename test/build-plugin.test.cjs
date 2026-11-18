@@ -41,6 +41,10 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
     if (runner === 'claude') {
       const manifest = JSON.parse(fs.readFileSync(path.join(out, '.claude-plugin', 'plugin.json'), 'utf8'));
       assert.equal(manifest.version, version);
+      assert.equal(
+        fs.readFileSync(path.join(out, 'workflows', 'revisao-arquitetura.js'), 'utf8'),
+        fs.readFileSync(path.join(ROOT, 'workflows', 'revisao-arquitetura.js'), 'utf8')
+      );
       const agent = fs.readFileSync(path.join(out, 'agents', 'assayer.md'), 'utf8');
       assert.doesNotMatch(agent, /^hooks:/m);
       assert.equal(agent, fs.readFileSync(path.join(ROOT, 'claude', 'agents', 'assayer.md'), 'utf8'));
@@ -58,6 +62,7 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
       assert.equal(manifest.version, version);
       assert.equal(fs.existsSync(path.join(out, 'hooks.json')), false);
       assert.equal(fs.existsSync(path.join(out, 'rules')), false);
+      assert.equal(fs.existsSync(path.join(out, 'workflows')), false);
       const orchestrator = fs.readFileSync(path.join(out, 'agents', 'orquestrador.md'), 'utf8');
       assert.match(orchestrator, /^mainAgent: true$/m);
       assert.match(orchestrator, /^subagent: false$/m);
@@ -79,6 +84,28 @@ test('manifestos de plugin sincronizados com VERSION e apenas campos suportados 
   for (const key of Object.keys(agyManifest)) {
     assert.equal(AGY_ALLOWED_FIELDS.has(key), true, `Campo não suportado no .antigravity-plugin/plugin.json: ${key}`);
   }
+});
+
+test('revisão de arquitetura limita a execução a quatro agentes de leitura', async () => {
+  const source = fs.readFileSync(path.join(ROOT, 'workflows', 'revisao-arquitetura.js'), 'utf8');
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  const run = new AsyncFunction('args', 'phase', 'pipeline', 'agent', source.replace('export const meta', 'const meta'));
+  const calls = [];
+  const phases = [];
+  const pipeline = (items, task) => Promise.all(items.map(task));
+  const agent = async (prompt, options) => {
+    calls.push({ prompt, ...options });
+    return options.label;
+  };
+
+  assert.match(await run(undefined, () => {}, pipeline, agent), /Informe a decisão/);
+  assert.equal(calls.length, 0);
+  const result = await run({ modulos: ['src'] }, title => phases.push(title), pipeline, agent);
+  assert.equal(result, 'Verificação e síntese');
+  assert.equal(phases.length, 2);
+  assert.equal(calls.length, 4);
+  for (const call of calls) assert.deepEqual(call.tools, ['Read', 'Glob', 'Grep']);
+  assert.match(calls[3].prompt, /Contratos.*Operação.*Migração/);
 });
 
 test('bumpVersion atualiza VERSION e ambos os manifestos e rejeita versão inválida', t => {

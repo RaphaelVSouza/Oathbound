@@ -35,6 +35,7 @@ function buildPlugin(runner, destination) {
     const manifest = loadManifest('.claude-plugin/plugin.json');
     write('.claude-plugin/plugin.json', manifest);
     copy('claude/agents', 'agents');
+    copy('workflows', 'workflows');
     copy('claude/hooks', 'claude/hooks');
     copy('hooks', 'hooks');
   } else {

@@ -33,6 +33,8 @@ Para iniciar uma sessão Oathbound no Claude, use `claude --agent oathbound:orqu
 Inicie a CLI normalmente para manter o agente padrão. Na sessão, peça pelo subagente desejado, por exemplo, `oathbound:scout` no plugin Claude ou `scout` no agy.
 
 No plugin Claude, o hook aplica guards pelo identificador `oathbound:<agente>` e registra bloqueios. Logs novos usam modo `0600` em Unix e herdam as permissões do diretório no Windows. Logs antigos podem conter detalhes gravados por versões anteriores.
+
+Com Dynamic Workflows habilitado no Claude, execute `/oathbound:revisao-arquitetura` e informe a decisão, os módulos e as restrições. O workflow compara contratos, operação e migração. A quarta chamada verifica referências e reúne subsídios para um ADR. Aprove a decisão antes de pedir implementação ou registro do ADR.
 Os manifestos de origem ficam separados por harness: [Claude Code](.claude-plugin/plugin.json), com seu [marketplace](.claude-plugin/marketplace.json), e [Antigravity](.antigravity-plugin/plugin.json). Para gerar pacotes nativos independentes, informe diretórios novos dentro do repositório:
 
 ```sh
