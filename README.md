@@ -2,7 +2,7 @@
 
 Conjunto portátil de governança, regras de execução, subagentes especializados, guardrails determinísticos em hooks, trilha de auditoria e skills de engenharia para assistentes de IA baseados em CLI.
 
-- **Versão atual:** `0.50.0-alpha.4` (alpha / incompleto, com protótipos em calibração).
+- **Estágio:** alpha / incompleto, com protótipos em calibração (versão em [VERSION](VERSION) e histórico em [CHANGELOG.md](CHANGELOG.md)).
 - **Stack:** TypeScript e JavaScript nativos em **Node.js 24+** (type stripping nativo, sem etapa de build e sem dependências externas).
 - **Alvos suportados:** **Claude Code** (`claude`) e **Antigravity CLI** (`agy` — nota: ferramenta independente, não se refere ao Gemini CLI do Google). O suporte ao **Codex** encontra-se planejado para entregas futuras.
 
