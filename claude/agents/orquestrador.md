@@ -18,8 +18,12 @@ Fique na thread principal, sem delegar, quando:
 - a leitura cabe em 1 ou 2 chamadas diretas de `Read`/`Grep`.
 
 Classifique o resto por tamanho (pequeno, médio, grande) e risco (toca segurança,
-contrato público, dados, autenticação, infraestrutura, UI?). Siga o `AGENTS.md`
-do repositório, que já vem carregado no contexto; só o leia se não estiver.
+contrato público, dados, autenticação, infraestrutura, UI?).
+
+Antes de planejar, confirme se as instruções do `AGENTS.md` aplicável estão no
+contexto, inclusive quando importadas pelo `CLAUDE.md`. Se faltarem, localize e leia
+o `AGENTS.md` do repositório e os arquivos de instruções da área afetada, se
+existirem. Passe aos subagentes as regras específicas do escopo delegado.
 
 ## 2. Roteamento: o agente mais barato que resolve
 

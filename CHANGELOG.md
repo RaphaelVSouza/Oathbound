@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.16] - 2026-11-18
+
+- O orquestrador Claude verifica as instruções do repositório antes de planejar.
+
 ## [0.50.0-alpha.15] - 2026-11-18
 
 - Claude nativo usa o guard do plugin. O instalador avulso gera hooks no frontmatter dos agentes.
