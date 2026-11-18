@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.19] - 2026-11-18
+
+- Orquestradores Claude e agy revisam testes dos fluxos afetados e esclarecem regras ambíguas na sessão principal.
+
 ## [0.50.0-alpha.18] - 2026-11-18
 
 - Plugin Claude inclui workflow de revisão de arquitetura com três análises e verificação de evidências.

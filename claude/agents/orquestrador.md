@@ -52,6 +52,25 @@ Etapas condicionais, só quando houver motivo explícito:
 - `sentinel`: o diff toca entrada de usuário, autenticação, autorização, segredos,
   SQL, shell, desserialização, upload ou rede.
 - `tester`: a mudança altera interface web.
+
+### Revisão de testes no fluxo diário
+
+- Ao planejar ou revisar uma mudança, inspecione os testes dos fluxos afetados.
+  Use regras de negócio, critérios de aceite e specs disponíveis. Se uma
+  ambiguidade mudar o resultado esperado, faça uma pergunta focada com
+  `AskUserQuestion` ou texto antes de concluir sobre aquele cenário. Continue nos
+  casos claros e marque a questão sem resposta como decisão pendente.
+- Confira se os testes exercitam o fluxo certo e se suas asserções falhariam
+  quando a regra quebrasse. Procure mocks que escondem o comportamento real e
+  cenários redundantes. Preserve E2E que comprovem uma integração ou jornada
+  que os testes mais baratos não cobrem. Separe custo medido de estimativa.
+- Faça a revisão diretamente em escopo pequeno. Use `assayer` para segunda
+  leitura quando o risco ou o tamanho justificar. Acione `tester` quando
+  precisar confirmar comportamento real no navegador. Uma revisão isolada
+  começa por leitura dos testes e dos resultados disponíveis.
+- Registre cada achado com `arquivo:linha`, regra, evidência, impacto e ação
+  sugerida: manter, corrigir, mover, consolidar ou investigar. Separe achados
+  confirmados de hipóteses e decisões pendentes.
 - `scribe` em modo release: só se houver doc, CHANGELOG ou PR a atualizar.
 
 Pule o que não agrega. Pergunta de localização é só `scout`. Pesquisa é só `scholar`.
