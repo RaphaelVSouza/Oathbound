@@ -134,6 +134,9 @@ function parseArgs(args: string[]): InstallOptions {
   if (options.global && options.auditDocs) {
     throw new Error('--audit-docs is only available for project installations.');
   }
+  if (options.global && options.statusline) {
+    throw new Error('--statusline is only available for project installations.');
+  }
 
   if (!projectSpecified && !options.global) {
     options.project = process.cwd();
@@ -316,6 +319,9 @@ function install(options: InstallOptions) {
   if (isGlobal && options.auditDocs) {
     throw new Error('--audit-docs is only available for project installations.');
   }
+  if (isGlobal && options.statusline) {
+    throw new Error('--statusline is only available for project installations.');
+  }
 
   const sourceRoot = path.resolve(options.sourceRoot || path.join(__dirname, '..'));
   const targetRoot = path.resolve(
@@ -323,7 +329,7 @@ function install(options: InstallOptions) {
   );
   const userHome = path.resolve(options.homeDir || (isGlobal ? targetRoot : os.homedir()));
   const targetPosix = targetRoot.split(path.sep).join('/');
-  const homePosix = userHome.split(path.sep).join('/');
+
   const claudeHomePosix = targetPosix;
   const claudeHookPath = escapeClaudeHookPath(claudeHomePosix);
 
@@ -350,7 +356,10 @@ function install(options: InstallOptions) {
   const legacyRemovals: string[] = [];
   // Planeja a limpeza de agentes legados em --upgrade.
   if (options.upgrade) {
-    const legacyDirs = [
+    const legacyDirs = isGlobal ? [
+      ...(runner !== 'agy' ? [path.join(targetRoot, '.claude', 'agents')] : []),
+      ...(runner !== 'claude' ? [path.join(targetRoot, '.gemini', 'config', 'agents')] : [])
+    ] : [
       path.join(targetRoot, '.claude', 'agents'),
       path.join(targetRoot, '.agents', 'agents'),
       path.join(targetRoot, '.gemini', 'config', 'agents'),
@@ -425,76 +434,28 @@ function install(options: InstallOptions) {
 
   // --- Runner Claude ---
   if (runner === 'all' || runner === 'claude') {
-    if (isGlobal) {
-      const claudeMd = path.join(sourceRoot, 'claude', 'CLAUDE.md');
-      if (fs.existsSync(claudeMd)) {
-        plannedFiles.set('.claude/CLAUDE.md', { content: fs.readFileSync(claudeMd) });
-      }
-      const rtkMd = path.join(sourceRoot, 'claude', 'RTK.md');
-      if (fs.existsSync(rtkMd)) {
-        plannedFiles.set('.claude/RTK.md', { content: fs.readFileSync(rtkMd) });
-      }
-      const agentsDir = path.join(sourceRoot, 'claude', 'agents');
-      if (fs.existsSync(agentsDir)) {
-        for (const file of fs.readdirSync(agentsDir)) {
-          if (file.endsWith('.md')) {
-            const raw = fs.readFileSync(path.join(agentsDir, file), 'utf8');
-            const processed = renderClaudeAgent(raw, file, claudeHookPath);
-            plannedFiles.set(`.claude/agents/${file}`, { content: processed });
-          }
+    const hookDir = isGlobal ? '.oathbound/claude-hooks' : '.claude/hooks';
+    const agentsDir = path.join(sourceRoot, 'claude', 'agents');
+    if (fs.existsSync(agentsDir)) {
+      for (const file of fs.readdirSync(agentsDir)) {
+        if (file.endsWith('.md')) {
+          const raw = fs.readFileSync(path.join(agentsDir, file), 'utf8');
+          const agent = raw.replaceAll('__HOME__/.claude/hooks/', `__HOME__/${hookDir}/`);
+          const processed = renderClaudeAgent(agent, file, claudeHookPath);
+          plannedFiles.set(`.claude/agents/${file}`, { content: processed });
         }
       }
-      const hooksDir = path.join(sourceRoot, 'claude', 'hooks');
-      if (fs.existsSync(hooksDir)) {
-        for (const file of fs.readdirSync(hooksDir)) {
-          if (file.endsWith('.js')) {
-            plannedFiles.set(`.claude/hooks/${file}`, { content: fs.readFileSync(path.join(hooksDir, file)) });
-          }
+    }
+    const hooksDir = path.join(sourceRoot, 'claude', 'hooks');
+    const agentHookScripts = ['agent-audit.js', 'destructive-guard.js', 'read-size-guard.js', 'readonly-guard.js', 'redigir.js'];
+    if (fs.existsSync(hooksDir)) {
+      for (const file of fs.readdirSync(hooksDir)) {
+        if (isGlobal ? agentHookScripts.includes(file) : file.endsWith('.js')) {
+          plannedFiles.set(`${hookDir}/${file}`, { content: fs.readFileSync(path.join(hooksDir, file)) });
         }
       }
-      for (const skill of availableSkills) {
-        const skillDir = path.join(skillsSourceDir, skill);
-        for (const full of walkFiles(skillDir)) {
-          const relInside = path.relative(skillDir, full).split(path.sep).join('/');
-          plannedFiles.set(`.claude/skills/${skill}/${relInside}`, { content: fs.readFileSync(full) });
-        }
-      }
-
-      // Settings.json Claude
-      const incomingSettingsPath = path.join(sourceRoot, 'claude', 'settings.json');
-      let incomingSettings: any = {};
-      if (fs.existsSync(incomingSettingsPath)) {
-        const raw = fs.readFileSync(incomingSettingsPath, 'utf8').replaceAll('__HOME__', () => escapeJsonString(claudeHookPath));
-        try { incomingSettings = JSON.parse(raw); } catch (_) {}
-      }
-      const destSettingsPath = path.join(targetRoot, '.claude', 'settings.json');
-      const existingSettings: any = readExistingJson(destSettingsPath, {});
-      const mergedClaude = mergeClaudeSettings(existingSettings, incomingSettings, Boolean(options.statusline), claudeHomePosix);
-
-      plannedFiles.set('.claude/settings.json', {
-        content: JSON.stringify(mergedClaude, null, 2) + '\n',
-        isMerge: true
-      });
-    } else {
-      // Projeto Claude
-      const agentsDir = path.join(sourceRoot, 'claude', 'agents');
-      if (fs.existsSync(agentsDir)) {
-        for (const file of fs.readdirSync(agentsDir)) {
-          if (file.endsWith('.md')) {
-            const raw = fs.readFileSync(path.join(agentsDir, file), 'utf8');
-            const processed = renderClaudeAgent(raw, file, claudeHookPath);
-            plannedFiles.set(`.claude/agents/${file}`, { content: processed });
-          }
-        }
-      }
-      const hooksDir = path.join(sourceRoot, 'claude', 'hooks');
-      if (fs.existsSync(hooksDir)) {
-        for (const file of fs.readdirSync(hooksDir)) {
-          if (file.endsWith('.js')) {
-            plannedFiles.set(`.claude/hooks/${file}`, { content: fs.readFileSync(path.join(hooksDir, file)) });
-          }
-        }
-      }
+    }
+    if (!isGlobal) {
       for (const skill of availableSkills) {
         if (skipProjectClaudeSkills.has(skill)) continue;
         const skillDir = path.join(skillsSourceDir, skill);
@@ -523,112 +484,18 @@ function install(options: InstallOptions) {
 
   // --- Runner Agy ---
   if (runner === 'all' || runner === 'agy') {
-    if (isGlobal) {
-      const geminiMd = path.join(sourceRoot, 'agy', 'config', 'GEMINI.md');
-      if (fs.existsSync(geminiMd)) {
-        plannedFiles.set('.gemini/GEMINI.md', { content: fs.readFileSync(geminiMd) });
-      }
-      const mcpConfig = path.join(sourceRoot, 'agy', 'config', 'mcp_config.json');
-      if (fs.existsSync(mcpConfig)) {
-        plannedFiles.set('.gemini/config/mcp_config.json', { content: fs.readFileSync(mcpConfig) });
-      }
-      const agyAgentsDir = path.join(sourceRoot, 'agy', 'config', 'agents');
-      if (fs.existsSync(agyAgentsDir)) {
-        for (const file of fs.readdirSync(agyAgentsDir)) {
-          if (file.endsWith('.md')) {
-            const raw = fs.readFileSync(path.join(agyAgentsDir, file), 'utf8');
-            const processed = raw.replaceAll('__HOME__', homePosix);
-            plannedFiles.set(`.gemini/config/agents/${file}`, { content: processed });
-          }
+    const agentDir = isGlobal ? '.gemini/config/agents' : '.agents/agents';
+    const agyAgentsDir = path.join(sourceRoot, 'agy', 'config', 'agents');
+    if (fs.existsSync(agyAgentsDir)) {
+      for (const file of fs.readdirSync(agyAgentsDir)) {
+        if (file.endsWith('.md')) {
+          const raw = fs.readFileSync(path.join(agyAgentsDir, file), 'utf8');
+          const processed = raw.replaceAll('__HOME__', targetPosix);
+          plannedFiles.set(`${agentDir}/${file}`, { content: processed });
         }
       }
-      for (const skill of availableSkills) {
-        const skillDir = path.join(skillsSourceDir, skill);
-        for (const full of walkFiles(skillDir)) {
-          const relInside = path.relative(skillDir, full).split(path.sep).join('/');
-          plannedFiles.set(`.gemini/config/skills/${skill}/${relInside}`, { content: fs.readFileSync(full) });
-        }
-      }
-
-      // Hooks.json global
-      const incomingHooksPath = path.join(sourceRoot, 'agy', 'config', 'hooks.json');
-      let incomingHooks: any = {
-        hooks: {
-          PreToolUse: [
-            { matcher: 'Bash|PowerShell', hooks: [{ type: 'command', command: 'rtk hook agy' }] },
-            { matcher: '*', hooks: [{ type: 'command', command: `node ${homePosix}/.gemini/antigravity-cli/rtk-hook.js` }] }
-          ]
-        }
-      };
-      if (fs.existsSync(incomingHooksPath)) {
-        const raw = fs.readFileSync(incomingHooksPath, 'utf8').replaceAll('__HOME__', escapeJsonString(homePosix));
-        try { incomingHooks = JSON.parse(raw); } catch (_) {}
-      }
-      const destHooksPath = path.join(targetRoot, '.gemini', 'config', 'hooks.json');
-      const existingHooks: any = readExistingJson(destHooksPath, {});
-      const mergedHooks = mergeHooksJson(existingHooks, incomingHooks, undefined, homePosix);
-      plannedFiles.set('.gemini/config/hooks.json', {
-        content: JSON.stringify(mergedHooks, null, 2) + '\n',
-        isMerge: true
-      });
-
-      // Scripts agy
-      const rtkHookSrc = path.join(sourceRoot, 'agy', 'antigravity-cli', 'rtk-hook.js');
-      const rtkHookContent = fs.existsSync(rtkHookSrc) ? fs.readFileSync(rtkHookSrc) : '// rtk-hook.js\n';
-      plannedFiles.set('.gemini/antigravity-cli/rtk-hook.js', { content: rtkHookContent });
-
-      const statuslineSrc = path.join(sourceRoot, 'agy', 'antigravity-cli', 'statusline.js');
-      const statuslineContent = fs.existsSync(statuslineSrc) ? fs.readFileSync(statuslineSrc) : '// statusline.js\n';
-      plannedFiles.set('.gemini/antigravity-cli/statusline.js', { content: statuslineContent });
-
-      // Settings.json Agy global
-      const agySettingsPath = path.join(targetRoot, '.gemini', 'antigravity-cli', 'settings.json');
-      const existingAgySettings: any = readExistingJson(agySettingsPath, {});
-      const mergedAgySettings = { ...existingAgySettings };
-      if (options.statusline && !mergedAgySettings.statusLine) {
-        const agySettingsSrc = path.join(sourceRoot, 'agy', 'antigravity-cli', 'settings.json');
-        let incomingAgySettings: any = null;
-        if (fs.existsSync(agySettingsSrc)) {
-          try {
-            const raw = fs.readFileSync(agySettingsSrc, 'utf8').replaceAll('__HOME__', escapeJsonString(homePosix));
-            incomingAgySettings = JSON.parse(raw);
-          } catch (_) {}
-        }
-        if (incomingAgySettings?.statusLine) {
-          mergedAgySettings.statusLine = incomingAgySettings.statusLine;
-        } else {
-          mergedAgySettings.statusLine = {
-            type: 'command',
-            command: `node ${homePosix}/.gemini/antigravity-cli/statusline.js`
-          };
-        }
-      }
-      plannedFiles.set('.gemini/antigravity-cli/settings.json', {
-        content: JSON.stringify(mergedAgySettings, null, 2) + '\n',
-        isMerge: true
-      });
-
-      // skills.json global
-      const geminiSkillsJsonPath = path.join(targetRoot, '.gemini', 'config', 'skills.json');
-      const existingGeminiSkills: any = readExistingJson(geminiSkillsJsonPath, { exclude: ['_disabled'] });
-      const existingGeminiExclude = Array.isArray(existingGeminiSkills.exclude) ? existingGeminiSkills.exclude : [];
-      existingGeminiSkills.exclude = Array.from(new Set([...existingGeminiExclude, '_disabled']));
-      plannedFiles.set('.gemini/config/skills.json', {
-        content: JSON.stringify(existingGeminiSkills, null, 2) + '\n',
-        isMerge: true
-      });
-    } else {
-      // Projeto Agy
-      const agyAgentsDir = path.join(sourceRoot, 'agy', 'config', 'agents');
-      if (fs.existsSync(agyAgentsDir)) {
-        for (const file of fs.readdirSync(agyAgentsDir)) {
-          if (file.endsWith('.md')) {
-            const raw = fs.readFileSync(path.join(agyAgentsDir, file), 'utf8');
-            const processed = raw.replaceAll('__HOME__', targetPosix);
-            plannedFiles.set(`.agents/agents/${file}`, { content: processed });
-          }
-        }
-      }
+    }
+    if (!isGlobal) {
       const rtkHookSrc = path.join(sourceRoot, 'agy', 'antigravity-cli', 'rtk-hook.js');
       const rtkHookContent = fs.existsSync(rtkHookSrc) ? fs.readFileSync(rtkHookSrc) : '// rtk-hook.js\n';
       plannedFiles.set('.agents/rtk-hook.js', { content: rtkHookContent });

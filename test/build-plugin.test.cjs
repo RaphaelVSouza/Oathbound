@@ -7,8 +7,14 @@ const path = require('node:path');
 const { buildPlugin } = require('../tools/build-plugin.cjs');
 const { bumpVersion, parseCliArgs } = require('../tools/bump-version.cjs');
 const { execFileSync } = require('node:child_process');
+const { randomUUID } = require('node:crypto');
 
 const ROOT = path.resolve(__dirname, '..');
+function fixtureDir(label) {
+  const dir = path.join(ROOT, '.scratch', label + randomUUID());
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
 const AGY_ALLOWED_FIELDS = new Set([
   'name',
   'description',
@@ -24,9 +30,7 @@ const AGY_ALLOWED_FIELDS = new Set([
 
 test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever destino', t => {
   const version = fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim();
-  const base = path.join(ROOT, '.scratch');
-  fs.mkdirSync(base, { recursive: true });
-  const tmp = fs.mkdtempSync(path.join(base, 'plugin-test-'));
+  const tmp = fixtureDir('plugin-test-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
   for (const runner of ['claude', 'agy']) {
     const out = buildPlugin(runner, path.join(tmp, runner));
@@ -45,17 +49,17 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
       const hooks = JSON.parse(fs.readFileSync(path.join(out, 'hooks', 'hooks.json'), 'utf8'));
       const sourceHooks = JSON.parse(fs.readFileSync(path.join(ROOT, 'hooks', 'hooks.json'), 'utf8'));
       assert.deepEqual(hooks, sourceHooks);
+      assert.equal(hooks.hooks.PreToolUse.length, 1);
+      assert.match(hooks.hooks.PreToolUse[0].hooks[0].command, /plugin-agent-guard\.js/);
       assert.equal(fs.existsSync(path.join(out, 'claude/hooks/agent-audit.js')), true);
     } else {
       const manifest = JSON.parse(fs.readFileSync(path.join(out, '.antigravity-plugin', 'plugin.json'), 'utf8'));
       assert.equal(manifest.version, version);
-      const hooks = JSON.parse(fs.readFileSync(path.join(out, 'hooks.json'), 'utf8'));
-      assert.equal(hooks['rtk-rewrite'].PreToolUse[0].hooks[0].command, 'node ./scripts/rtk-hook.js');
-      assert.equal(Object.hasOwn(hooks['rtk-rewrite'], 'Stop'), false);
-      assert.equal(
-        fs.readFileSync(path.join(out, 'rules', 'AGENTS.md'), 'utf8'),
-        fs.readFileSync(path.join(ROOT, 'agy', 'config', 'GEMINI.md'), 'utf8')
-      );
+      assert.equal(fs.existsSync(path.join(out, 'hooks.json')), false);
+      assert.equal(fs.existsSync(path.join(out, 'rules')), false);
+      const orchestrator = fs.readFileSync(path.join(out, 'agents', 'orquestrador.md'), 'utf8');
+      assert.match(orchestrator, /^mainAgent: true$/m);
+      assert.match(orchestrator, /^subagent: false$/m);
       assert.equal(
         fs.readFileSync(path.join(out, 'assets', 'logo.svg'), 'utf8'),
         fs.readFileSync(path.join(ROOT, 'assets', 'logo.svg'), 'utf8')
@@ -77,9 +81,7 @@ test('manifestos de plugin sincronizados com VERSION e apenas campos suportados 
 });
 
 test('bumpVersion atualiza VERSION e ambos os manifestos e rejeita versão inválida', t => {
-  const base = path.join(ROOT, '.scratch');
-  fs.mkdirSync(base, { recursive: true });
-  const tmp = fs.mkdtempSync(path.join(base, 'bump-test-'));
+  const tmp = fixtureDir('bump-test-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
   fs.mkdirSync(path.join(tmp, '.antigravity-plugin'));
@@ -97,9 +99,7 @@ test('bumpVersion atualiza VERSION e ambos os manifestos e rejeita versão invá
 });
 
 test('bumpVersion --commit e --tag cria commit e tag no Git e rejeita tag duplicada', t => {
-  const base = path.join(ROOT, '.scratch');
-  fs.mkdirSync(base, { recursive: true });
-  const tmp = fs.mkdtempSync(path.join(base, 'bump-git-test-'));
+  const tmp = fixtureDir('bump-git-test-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
   const git = (args) => execFileSync('git', args, { cwd: tmp, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();

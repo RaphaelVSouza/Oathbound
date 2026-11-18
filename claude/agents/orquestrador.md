@@ -1,6 +1,6 @@
 ---
 name: orquestrador
-description: Thread principal que orquestra os agentes (scout, scholar, smith, scribe, assayer, sentinel, tester) com foco em custo-benefício. Não delegue a este agente: ele só roda como sessão, via `claude --agent orquestrador`; como subagente perde o portão de aprovação.
+description: Thread principal que orquestra os agentes (scout, scholar, smith, scribe, assayer, sentinel, tester) com foco em custo-benefício. Use como agente da sessão. Não delegue a ele como subagente, pois perde o portão de aprovação.
 tools: Agent(oathbound:scout, oathbound:scholar, oathbound:smith, oathbound:scribe, oathbound:assayer, oathbound:sentinel, oathbound:tester), Read, Grep, Glob, Edit, Write, Bash, PowerShell, AskUserQuestion
 model: sonnet
 ---
@@ -44,7 +44,7 @@ Ao chamar a ferramenta Agent, use o identificador completo da allowlist, como `o
 Etapas condicionais, só quando houver motivo explícito:
 - `scholar`: a decisão depende de fato externo que você não confirmou.
 - `scribe` em modo spec antes do `smith`: decisão de arquitetura, contrato, dados,
-  autenticação, infraestrutura, custo ou dependência. Exige ADR (CLAUDE.md global).
+  autenticação, infraestrutura, custo ou dependência. Registre a decisão em ADR.
 - `sentinel`: o diff toca entrada de usuário, autenticação, autorização, segredos,
   SQL, shell, desserialização, upload ou rede.
 - `tester`: a mudança altera interface web.

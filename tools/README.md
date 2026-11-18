@@ -26,7 +26,7 @@ node tools/install.ts [opções]
 ```
 
 Opções suportadas:
-- `--global`: Instala globalmente (`~/.claude` e `~/.gemini`).
+- `--global`: Instala agentes do Claude e do agy e guarda o manifesto e os guards dos agentes Claude em `~/.oathbound/`.
 - `--project <dir>`: Instala em um diretório de projeto específico.
 - `--runner all|claude|agy`: Seleciona o runner alvo.
 - `--upgrade`: Atualiza uma instalação existente apresentando o diff.
@@ -35,7 +35,7 @@ Opções suportadas:
 - `--no-dedupe-skills`: Desativa a desduplicação automática de skills duplicadas.
 
 O instalador valida manifestos SHA-256 e desativa skills duplicadas sem utilizar symlinks.
-As instruções globais do Antigravity ficam em `~/.gemini/GEMINI.md`. O instalador preserva arquivos existentes nesse destino e no antigo `~/.gemini/config/GEMINI.md`; alterações no caminho antigo devem ser migradas manualmente, se necessário.
+O instalador global preserva instruções, configurações, hooks compartilhados e skills existentes. Use `--statusline` na instalação local do Claude.
 
 ## Pacotes de plugin (`build-plugin.cjs`)
 

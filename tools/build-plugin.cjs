@@ -45,18 +45,9 @@ function buildPlugin(runner, destination) {
     copy('hooks', 'hooks');
   } else {
     const manifest = loadManifest('.antigravity-plugin/plugin.json');
-    delete manifest.hooks;
     write('.antigravity-plugin/plugin.json', manifest);
     copy('agy/config/agents', 'agents');
-    copy('agy/config/GEMINI.md', 'rules/AGENTS.md');
     copy('assets', 'assets');
-    fs.mkdirSync(path.join(out, 'scripts'));
-    copy('agy/antigravity-cli/rtk-hook.js', 'scripts/rtk-hook.js');
-    const hooks = JSON.parse(fs.readFileSync(path.join(source, 'agy/config/hooks.json'), 'utf8'));
-    for (const handler of hooks['rtk-rewrite'].PreToolUse.flatMap(group => group.hooks)) {
-      handler.command = 'node ./scripts/rtk-hook.js';
-    }
-    write('hooks.json', hooks);
   }
   return out;
 }

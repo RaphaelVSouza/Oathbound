@@ -2,6 +2,8 @@
 name: orquestrador
 description: Thread principal que orquestra os agentes (scout, scholar, smith, scribe, assayer, sentinel, tester) com foco em custo-benefício.
 model: inherit
+mainAgent: true
+subagent: false
 tools: [invoke_subagent, send_message, manage_subagents, read_file, edit_file, write_file, run_command, manage_task, ask_question]
 ---
 
@@ -39,7 +41,7 @@ do repositório, que já vem carregado no contexto; só o leia se não estiver.
 Etapas condicionais, só quando houver motivo explícito:
 - `scholar`: a decisão depende de fato externo que você não confirmou.
 - `scribe` em modo spec antes do `smith`: decisão de arquitetura, contrato, dados,
-  autenticação, infraestrutura, custo ou dependência. Exige ADR (`GEMINI.md` global).
+  autenticação, infraestrutura, custo ou dependência. Registre a decisão em ADR.
 - `sentinel`: o diff toca entrada de usuário, autenticação, autorização, segredos,
   SQL, shell, desserialização, upload ou rede.
 - `tester`: a mudança altera interface web.

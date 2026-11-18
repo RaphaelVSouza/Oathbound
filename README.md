@@ -10,7 +10,7 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 
 ## O que o projeto faz
 
-1. **Regras de Governança:** Configurações padronizadas para `CLAUDE.md` e `GEMINI.md`, mantendo separação entre o fluxo comum do pacote e as exceções locais dos projetos consumidores.
+1. **Regras de Governança:** O orquestrador aplica o fluxo comum do pacote. Cada projeto define suas exceções locais.
 2. **Subagentes Especializados:** Orquestrador principal complementado por 7 papéis: `scout`, `scholar`, `scribe`, `smith`, `assayer`, `sentinel` e `tester`.
 3. **Skills de Engenharia:** Conjunto de 6 skills genéricas: `diagnosing-bugs`, `grill-me`, `migration`, `safe-refactor`, `surgical-patch` e `verify-and-stop`.
 4. **Hooks Determinísticos:** Mecanismos de proteção em tempo de execução incluindo `agent-audit`, `readonly-guard`, `read-size-guard`, `destructive-guard` e `rtk-hook`.
@@ -28,9 +28,11 @@ No Claude Code, instale pelo marketplace com `/plugin install oathbound --market
 
 Se já usa o marketplace, atualize-o e recarregue o plugin pelo painel `/plugin`. Se usa o pacote de release, gere ou extraia a nova versão em outro diretório e aponte o Claude para ele.
 
-O plugin nativo aplica os guards por agente em um hook global, usando o identificador `oathbound:<agente>` do evento.
+Para iniciar uma sessão Oathbound no Claude, use `claude --agent oathbound:orquestrador`. No agy, use `agy agents` para conferir os agentes disponíveis e selecione o orquestrador com `agy --agent orquestrador`.
 
-A auditoria grava metadados da chamada e categorias de bloqueio. Logs novos usam modo `0600` em Unix e herdam as permissões do diretório no Windows. Logs antigos podem conter detalhes gravados por versões anteriores.
+Inicie a CLI normalmente para manter o agente padrão. Na sessão, peça pelo subagente desejado, por exemplo, `oathbound:scout` no plugin Claude ou `scout` no agy.
+
+No plugin Claude, o hook aplica guards pelo identificador `oathbound:<agente>` e registra bloqueios. Logs novos usam modo `0600` em Unix e herdam as permissões do diretório no Windows. Logs antigos podem conter detalhes gravados por versões anteriores.
 Os manifestos de origem ficam separados por harness: [Claude Code](.claude-plugin/plugin.json), com seu [marketplace](.claude-plugin/marketplace.json), e [Antigravity](.antigravity-plugin/plugin.json). Para gerar pacotes nativos independentes, informe diretórios novos dentro do repositório:
 
 ```sh
@@ -40,7 +42,7 @@ claude plugin validate dist/claude
 agy plugin validate dist/agy
 ```
 
-Crie `dist/` antes de gerar os pacotes. O gerador não sobrescreve destinos existentes. Cada pacote contém seis skills, oito agentes e seus hooks (e `rules/AGENTS.md` no pacote Antigravity). Os hooks requerem Node.js e RTK disponíveis no ambiente. O instalador abaixo configura também permissões e configurações globais ou de projeto, fora do escopo dos plugins nativos.
+Crie `dist/` antes de gerar os pacotes. O gerador exige destinos novos. Cada pacote contém seis skills e oito agentes. O pacote Claude inclui os guards por agente, que requerem Node.js.
 
 ### 2. Instalador de Projeto e Ambiente (`install.ts`)
 
@@ -56,17 +58,17 @@ node tools/install.ts [opções]
 ```
 
 **Opções suportadas:**
-- `--global`: Instala globalmente em `~/.claude/`, `~/.gemini/`, `.oathbound/global-manifest.json` e `skillOverrides`.
+- `--global`: Instala agentes em `~/.claude/agents/` e `~/.gemini/config/agents/`. O manifesto e os scripts usados pelos guards dos agentes Claude ficam em `~/.oathbound/`.
 - `--project <dir>`: Instala em diretório específico gerando `.claude/`, `.agents/`, `.oathbound/manifest.json`, `.agents/skills.json` e `_disabled/`.
 - `--runner all|claude|agy`: Seleciona o runner alvo.
 - `--upgrade`: Atualiza uma instalação existente apresentando o diff de alterações.
-- `--statusline`: Configura a barra de status.
+- `--statusline`: Configura a barra de status do Claude em instalações de projeto.
 - `--audit-docs`: Instala a configuração de auditoria de documentação (exclusivo para projetos).
 - `--no-dedupe-skills`: Desativa a desduplicação automática de skills duplicadas.
 
 O instalador valida manifestos SHA-256 (`.oathbound/manifest.json`), preserva alterações locais e desativa skills duplicadas sem utilizar symlinks (através de marcação e mapeamento em `_disabled` / `skills.json`).
 
-No Antigravity, as instruções globais são instaladas em `~/.gemini/GEMINI.md`. Arquivos existentes nesse destino e no antigo `~/.gemini/config/GEMINI.md` são preservados; compare-os e migre suas alterações manualmente, se necessário.
+Na instalação avulsa do Claude, use `claude --agent orquestrador`. O instalador global preserva instruções, configurações, hooks compartilhados e skills existentes. Se uma versão anterior registrou regras ou hooks globais do Oathbound, revise esses registros antes de removê-los manualmente.
 
 O hook RTK usa apenas `PreToolUse`. Remova manualmente registros `Stop` antigos do `rtk-hook.js` em instalações existentes para evitar loops de encerramento.
 

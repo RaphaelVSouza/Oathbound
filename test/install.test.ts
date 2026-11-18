@@ -2,7 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
+const { randomUUID } = require('node:crypto');
+function fixtureDir(label: string): string {
+  const dir = path.join(__dirname, '..', '.scratch', label + randomUUID());
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
 const { install, parseArgs, sha256, LEGACY_IDS } = require('../tools/install.ts');
 
 function walkAllFiles(dir: string): string[] {
@@ -36,110 +41,51 @@ test('parseArgs valida runners permitidos e rejeita opções inválidas ou confl
   assert.equal(parsedNoDedupe.dedupeSkills, false);
 });
 
-test('instalação --global para runner all configura claude e agy sem symlinks e sem __HOME__', t => {
-  const globalRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound global test-'));
-  t.after(() => fs.rmSync(globalRoot, { recursive: true, force: true }));
+test('instalação global limita os arquivos a agentes, guards e manifesto', t => {
+  const root = fixtureDir('global-');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const settings = [
+    '.claude/CLAUDE.md', '.claude/settings.json', '.gemini/GEMINI.md',
+    '.gemini/config/GEMINI.md', '.gemini/config/hooks.json',
+    '.gemini/config/skills.json', '.gemini/antigravity-cli/settings.json'
+  ];
+  for (const file of settings) {
+    const full = path.join(root, file);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, 'conteúdo local\n');
+  }
 
-  // Pré-popula configurações de usuário para testar merge não-destrutivo
-  const claudeSettings = path.join(globalRoot, '.claude', 'settings.json');
-  fs.mkdirSync(path.dirname(claudeSettings), { recursive: true });
-  fs.writeFileSync(claudeSettings, JSON.stringify({
-    userCustomKey: 'keep-me',
-    permissions: { allow: ['custom_tool'] }
-  }, null, 2));
-
-  const agyHooks = path.join(globalRoot, '.gemini', 'config', 'hooks.json');
-  fs.mkdirSync(path.dirname(agyHooks), { recursive: true });
-  fs.writeFileSync(agyHooks, JSON.stringify({
-    customUserHook: true
-  }, null, 2));
-
-  const agySettings = path.join(globalRoot, '.gemini', 'antigravity-cli', 'settings.json');
-  fs.mkdirSync(path.dirname(agySettings), { recursive: true });
-  fs.writeFileSync(agySettings, JSON.stringify({
-    trustedWorkspaces: ['/workspace/project-demo']
-  }, null, 2));
-
-  const res = install({
-    root: globalRoot,
-    homeDir: globalRoot,
-    global: true,
-    runner: 'all',
-    statusline: true
-  });
-
-  assert.ok(fs.existsSync(res.manifestPath));
-  assert.equal(res.manifestPath.endsWith('global-manifest.json'), true);
-
-  // Verifica arquivos Claude
-  assert.ok(fs.existsSync(path.join(globalRoot, '.claude', 'CLAUDE.md')));
-  assert.ok(fs.existsSync(path.join(globalRoot, '.claude', 'RTK.md')));
-  assert.ok(fs.existsSync(path.join(globalRoot, '.claude', 'agents', 'assayer.md')));
-  assert.ok(fs.existsSync(path.join(globalRoot, '.claude', 'skills', 'surgical-patch', 'SKILL.md')));
-
-  // Merge não-destrutivo em .claude/settings.json
-  const updatedClaudeSettings = JSON.parse(fs.readFileSync(claudeSettings, 'utf8'));
-  const auditCommand = updatedClaudeSettings.hooks.PreToolUse.find((hook: any) => hook.matcher === '*').hooks[0].command;
-  assert.equal(auditCommand, `node "${globalRoot.split(path.sep).join('/')}/.claude/hooks/agent-audit.js"`);
-  assert.equal(updatedClaudeSettings.userCustomKey, 'keep-me');
-  assert.ok(updatedClaudeSettings.permissions.allow.includes('custom_tool'));
-  assert.ok(updatedClaudeSettings.statusLine);
-  assert.equal(updatedClaudeSettings.statusLine.command, 'npx -y ccstatusline@latest');
-  assert.equal(updatedClaudeSettings.statusLine.padding, 0);
-
-  // Verifica arquivos Gemini / Agy
-  assert.equal(fs.readFileSync(path.join(globalRoot, '.gemini', 'GEMINI.md'), 'utf8'),
-    fs.readFileSync(path.join(__dirname, '..', 'agy', 'config', 'GEMINI.md'), 'utf8'));
-  assert.equal(fs.existsSync(path.join(globalRoot, '.gemini', 'config', 'GEMINI.md')), false);
-  assert.ok(fs.existsSync(path.join(globalRoot, '.gemini', 'antigravity-cli', 'rtk-hook.js')));
-  assert.ok(fs.existsSync(path.join(globalRoot, '.gemini', 'antigravity-cli', 'statusline.js')));
-  assert.ok(fs.existsSync(path.join(globalRoot, '.gemini', 'config', 'skills.json')));
-
-  // Merge não-destrutivo em hooks e settings agy
-  const updatedAgyHooks = JSON.parse(fs.readFileSync(agyHooks, 'utf8'));
-  assert.equal(updatedAgyHooks.customUserHook, true);
-
-  const updatedAgySettings = JSON.parse(fs.readFileSync(agySettings, 'utf8'));
-  assert.deepEqual(updatedAgySettings.trustedWorkspaces, ['/workspace/project-demo']);
-  assert.ok(updatedAgySettings.statusLine);
-
-  // Nenhuma ocorrência de __HOME__ em arquivos texto e zero symlinks
-  const allFiles = walkAllFiles(globalRoot);
-  for (const f of allFiles) {
-    const stat = fs.lstatSync(f);
-    assert.equal(stat.isSymbolicLink(), false, `Não pode ser symlink: ${f}`);
-
-    if (f.endsWith('.md') || f.endsWith('.json') || f.endsWith('.js')) {
-      const content = fs.readFileSync(f, 'utf8');
-      assert.equal(content.includes('__HOME__'), false, `__HOME__ não substituído em: ${f}`);
+  for (const runner of ['claude', 'agy', 'all']) {
+    const result = install({ root, global: true, runner, upgrade: true });
+    const prefixes = [
+      ...(runner === 'agy' ? [] : ['.claude/agents/', '.oathbound/claude-hooks/']),
+      ...(runner === 'claude' ? [] : ['.gemini/config/agents/'])
+    ];
+    for (const prefix of prefixes) {
+      assert.ok(result.manifest.files.some((file: any) => file.path.startsWith(prefix)));
+    }
+    for (const file of result.manifest.files) {
+      assert.ok(prefixes.some(prefix => file.path.startsWith(prefix)), file.path);
+      const full = path.join(root, file.path);
+      assert.equal(fs.lstatSync(full).isSymbolicLink(), false);
+      assert.equal(sha256(fs.readFileSync(full)), file.sha256);
+      assert.doesNotMatch(fs.readFileSync(full, 'utf8'), /__HOME__/);
     }
   }
-
-  // Validação do manifesto SHA-256
-  const manifest = JSON.parse(fs.readFileSync(res.manifestPath, 'utf8'));
-  for (const fileRecord of manifest.files) {
-    const full = path.join(globalRoot, ...fileRecord.path.split('/'));
-    assert.ok(fs.existsSync(full), `Arquivo do manifesto deve existir: ${full}`);
-    assert.equal(sha256(fs.readFileSync(full)), fileRecord.sha256, `SHA-256 deve bater para: ${fileRecord.path}`);
+  for (const file of settings) {
+    assert.equal(fs.readFileSync(path.join(root, file), 'utf8'), 'conteúdo local\n');
   }
-});
-
-test('instalação global preserva GEMINI.md existente e arquivo no caminho antigo', t => {
-  const globalRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-gemini-test-'));
-  t.after(() => fs.rmSync(globalRoot, { recursive: true, force: true }));
-  const current = path.join(globalRoot, '.gemini', 'GEMINI.md');
-  const old = path.join(globalRoot, '.gemini', 'config', 'GEMINI.md');
-  fs.mkdirSync(path.dirname(old), { recursive: true });
-  fs.writeFileSync(current, 'instruções existentes\n');
-  fs.writeFileSync(old, 'edições no caminho antigo\n');
-  install({ root: globalRoot, homeDir: globalRoot, global: true, runner: 'agy', upgrade: true });
-  assert.equal(fs.readFileSync(current, 'utf8'), 'instruções existentes\n');
-  assert.equal(fs.readFileSync(old, 'utf8'), 'edições no caminho antigo\n');
+  assert.equal(walkAllFiles(root).length, settings.length + 16 + 5 + 1);
+  const smith = fs.readFileSync(path.join(root, '.claude/agents/smith.md'), 'utf8');
+  const guard = path.join(root, '.oathbound/claude-hooks/destructive-guard.js');
+  assert.ok(smith.includes(`command: 'node "${guard.split(path.sep).join('/')}"'`));
+  assert.ok(fs.existsSync(guard));
+  assert.throws(() => install({ root, global: true, statusline: true }), /--statusline/);
 });
 
 test('instalação --project cria estrutura do projeto e audit-docs sem symlinks', t => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound project test-'));
-  const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-home-test-'));
+  const projectRoot = fixtureDir('oathbound project test-');
+  const fakeHome = fixtureDir('oathbound-home-test-');
   t.after(() => {
     fs.rmSync(projectRoot, { recursive: true, force: true });
     fs.rmSync(fakeHome, { recursive: true, force: true });
@@ -190,8 +136,8 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
 });
 
 test('--upgrade preserva edições locais e limpa agentes legados não modificados', t => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-upgrade-test-'));
-  const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-home-test-'));
+  const projectRoot = fixtureDir('oathbound-upgrade-test-');
+  const fakeHome = fixtureDir('oathbound-home-test-');
   t.after(() => {
     fs.rmSync(projectRoot, { recursive: true, force: true });
     fs.rmSync(fakeHome, { recursive: true, force: true });
@@ -238,8 +184,8 @@ test('--upgrade preserva edições locais e limpa agentes legados não modificad
 });
 
 test('deduplicação de skills no --project move cópias soltas pré-existentes para _disabled e atualiza skills.json', t => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-dedupe-proj-'));
-  const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-dedupe-home-'));
+  const projectRoot = fixtureDir('oathbound-dedupe-proj-');
+  const fakeHome = fixtureDir('oathbound-dedupe-home-');
   t.after(() => {
     fs.rmSync(projectRoot, { recursive: true, force: true });
     fs.rmSync(fakeHome, { recursive: true, force: true });
@@ -274,56 +220,9 @@ test('deduplicação de skills no --project move cópias soltas pré-existentes 
   assert.ok(skillsConfig.exclude.includes('surgical-patch'));
 });
 
-test('deduplicação global preserva escolhas de visibilidade do Claude', t => {
-  const globalRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-dedupe-global-'));
-  t.after(() => fs.rmSync(globalRoot, { recursive: true, force: true }));
-
-  // Claude settings com plugin habilitado como objeto (formato real do Claude Code)
-  const claudeSettings = path.join(globalRoot, '.claude', 'settings.json');
-  fs.mkdirSync(path.dirname(claudeSettings), { recursive: true });
-  fs.writeFileSync(claudeSettings, JSON.stringify({
-    enabledPlugins: { 'oathbound@oathbound': true }
-  }, null, 2));
-
-  install({
-    root: globalRoot,
-    homeDir: globalRoot,
-    global: true,
-    runner: 'all'
-  });
-
-  const updatedSettings = JSON.parse(fs.readFileSync(claudeSettings, 'utf8'));
-  assert.ok(updatedSettings.skillOverrides);
-  assert.deepEqual(updatedSettings.skillOverrides, {});
-
-  const geminiSkills = JSON.parse(fs.readFileSync(path.join(globalRoot, '.gemini', 'config', 'skills.json'), 'utf8'));
-  assert.ok(geminiSkills.exclude.includes('_disabled'));
-
-  // Claude settings com plugin habilitado como array
-  const globalRootArray = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-dedupe-array-'));
-  t.after(() => fs.rmSync(globalRootArray, { recursive: true, force: true }));
-
-  const claudeSettingsArray = path.join(globalRootArray, '.claude', 'settings.json');
-  fs.mkdirSync(path.dirname(claudeSettingsArray), { recursive: true });
-  fs.writeFileSync(claudeSettingsArray, JSON.stringify({
-    enabledPlugins: ['oathbound@oathbound']
-  }, null, 2));
-
-  install({
-    root: globalRootArray,
-    homeDir: globalRootArray,
-    global: true,
-    runner: 'all'
-  });
-
-  const updatedSettingsArray = JSON.parse(fs.readFileSync(claudeSettingsArray, 'utf8'));
-  assert.ok(updatedSettingsArray.skillOverrides);
-  assert.deepEqual(updatedSettingsArray.skillOverrides, {});
-});
-
 test('preservação: preserva arquivo pré-existente antes do manifesto que difere do template', t => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-preexist-test-'));
-  const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-home-test-'));
+  const projectRoot = fixtureDir('oathbound-preexist-test-');
+  const fakeHome = fixtureDir('oathbound-home-test-');
   t.after(() => {
     fs.rmSync(projectRoot, { recursive: true, force: true });
     fs.rmSync(fakeHome, { recursive: true, force: true });
@@ -355,8 +254,8 @@ test('preservação: preserva arquivo pré-existente antes do manifesto que dife
 });
 
 test('deduplicação preserva a pasta inteira em caso de colisão', t => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-collision-proj-'));
-  const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-collision-home-'));
+  const projectRoot = fixtureDir('oathbound-collision-proj-');
+  const fakeHome = fixtureDir('oathbound-collision-home-');
   t.after(() => {
     fs.rmSync(projectRoot, { recursive: true, force: true });
     fs.rmSync(fakeHome, { recursive: true, force: true });
@@ -390,8 +289,8 @@ test('deduplicação preserva a pasta inteira em caso de colisão', t => {
 });
 
 test('readExistingJson lança erro claro quando settings.json existente contém JSON inválido, preservando o arquivo sem sobrescrever', t => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-invalid-json-'));
-  const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-invalid-home-'));
+  const projectRoot = fixtureDir('oathbound-invalid-json-');
+  const fakeHome = fixtureDir('oathbound-invalid-home-');
   t.after(() => {
     fs.rmSync(projectRoot, { recursive: true, force: true });
     fs.rmSync(fakeHome, { recursive: true, force: true });

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.50.0-alpha.14] - 2026-11-18
+
+- Limitada a instalação global a agentes e seus guards, com manifesto próprio.
+- Retirados os hooks gerais do plugin Claude e as regras e o hook RTK do pacote agy. Documentada a entrada explícita pelo orquestrador.
+
 ## [0.50.0-alpha.13] - 2026-11-18
 
 - CI: roda testes e valida o manifesto e artefato do Claude em Linux e Windows.
