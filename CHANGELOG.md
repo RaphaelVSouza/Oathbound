@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.9] - 2026-11-18
+
+- Instalador: preserva arquivos locais em atualizações repetidas e limita a limpeza de agentes legados a arquivos gerenciados.
+
 ## [0.50.0-alpha.8] - 2026-11-18
 
 - Claude Code: aplica os guards de agentes do plugin pelo hook global.

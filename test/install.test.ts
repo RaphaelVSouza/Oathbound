@@ -204,9 +204,15 @@ test('--upgrade preserva edições locais e limpa agentes legados não modificad
   const userEdit = '# Custom Assayer Content\n';
   fs.writeFileSync(agentPath, userEdit);
 
-  // Cria um agente legado
+  // Registra um legado gerenciado e deixa outro sob controle local.
   const legacyPath = path.join(projectRoot, '.claude', 'agents', 'oathkeeper.md');
   fs.writeFileSync(legacyPath, '# Legacy Oathkeeper\n');
+  const localLegacy = path.join(projectRoot, '.claude', 'agents', 'qa.md');
+  fs.writeFileSync(localLegacy, '# Local QA\n');
+  const manifestPath = path.join(projectRoot, '.oathbound', 'manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  manifest.files.push({ path: '.claude/agents/oathkeeper.md', sha256: sha256(fs.readFileSync(legacyPath)) });
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest));
 
   // Segunda instalação com --upgrade
   install({
@@ -222,6 +228,7 @@ test('--upgrade preserva edições locais e limpa agentes legados não modificad
 
   // Verifica que o agente legado não modificado foi limpo
   assert.equal(fs.existsSync(legacyPath), false);
+  assert.equal(fs.readFileSync(localLegacy, 'utf8'), '# Local QA\n');
 });
 
 test('deduplicação de skills no --project move cópias soltas pré-existentes para _disabled e atualiza skills.json', t => {
@@ -334,11 +341,13 @@ test('preservação: preserva arquivo pré-existente antes do manifesto que dife
   // Deve ter preservado o conteúdo pré-existente
   assert.equal(fs.readFileSync(agentPath, 'utf8'), preExistingContent);
 
-  // E o manifesto gerado deve conter o hash do arquivo pré-existente
+  // A personalização não entra na lista de arquivos gerenciados.
   const manifest = JSON.parse(fs.readFileSync(res.manifestPath, 'utf8'));
   const record = manifest.files.find((f: any) => f.path === '.claude/agents/assayer.md');
-  assert.ok(record);
-  assert.equal(record.sha256, sha256(preExistingContent));
+  assert.equal(record, undefined);
+  assert.ok(manifest.preservedFiles.includes('.claude/agents/assayer.md'));
+  install({ root: projectRoot, homeDir: fakeHome, runner: 'claude', upgrade: true });
+  assert.equal(fs.readFileSync(agentPath, 'utf8'), preExistingContent);
 });
 
 test('moveFolderSafely preserva cópia local como SKILL.md.local-backup em colisão com conteúdo diferente', t => {

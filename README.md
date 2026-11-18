@@ -39,6 +39,8 @@ agy plugin validate dist/agy
 Crie `dist/` antes de gerar os pacotes. O gerador não sobrescreve destinos existentes. Cada pacote contém seis skills, oito agentes e seus hooks (e `rules/AGENTS.md` no pacote Antigravity). Os hooks requerem Node.js e RTK disponíveis no ambiente. O instalador abaixo configura também permissões e configurações globais ou de projeto, fora do escopo dos plugins nativos.
 
 ### 2. Instalador de Projeto e Ambiente (`install.ts`)
+
+Na migração de manifestos antigos, o instalador conserva arquivos divergentes e mostra o diff para revisão. A limpeza automática exige registro de origem no manifesto atual.
 Para gerenciar a instalação e atualização em ambientes globais ou diretórios de projeto específicos, execute:
 
 ```sh

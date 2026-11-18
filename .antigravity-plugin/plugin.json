@@ -1,7 +1,7 @@
 {
   "name": "oathbound",
   "displayName": "Oathbound",
-  "version": "0.50.0-alpha.8",
+  "version": "0.50.0-alpha.9",
   "logo": "assets/logo.svg",
   "description": "Governança de subagentes, hook RTK e skills de engenharia para Antigravity CLI (agy).",
   "author": {

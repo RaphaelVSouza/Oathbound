@@ -354,7 +354,7 @@ function install(options: InstallOptions) {
   const manifestRelPath = isGlobal ? '.oathbound/global-manifest.json' : '.oathbound/manifest.json';
   const manifestFullPath = path.join(targetRoot, manifestRelPath);
 
-  let oldManifest: { version?: string; files?: Array<{ path: string; sha256: string }> } | null = null;
+  let oldManifest: { schema?: number; files?: Array<{ path: string; sha256: string }> } | null = null;
   if (fs.existsSync(manifestFullPath)) {
     try {
       oldManifest = JSON.parse(fs.readFileSync(manifestFullPath, 'utf8'));
@@ -364,7 +364,8 @@ function install(options: InstallOptions) {
   }
 
   const oldFilesMap = new Map<string, string>();
-  if (oldManifest && Array.isArray(oldManifest.files)) {
+  // Manifests anteriores podiam atribuir ao pacote arquivos locais preservados.
+  if (oldManifest?.schema === 2 && Array.isArray(oldManifest.files)) {
     for (const f of oldManifest.files) {
       oldFilesMap.set(f.path, f.sha256);
     }
@@ -388,7 +389,7 @@ function install(options: InstallOptions) {
           const currentBuf = fs.readFileSync(legacyFile);
           const currentHash = sha256(currentBuf);
           const oldHash = oldFilesMap.get(rel);
-          if (!oldHash || oldHash === currentHash) {
+          if (oldHash === currentHash) {
             try {
               fs.unlinkSync(legacyFile);
             } catch (_) {}
@@ -756,6 +757,7 @@ function install(options: InstallOptions) {
 
   // Aplicação das mudanças e construção do novo manifesto
   const newManifestFiles: Array<{ path: string; sha256: string }> = [];
+  const preservedFiles: string[] = [];
   const installedFiles: string[] = [];
 
   for (const [relPath, item] of plannedFiles) {
@@ -769,11 +771,13 @@ function install(options: InstallOptions) {
       const oldRecordedHash = oldFilesMap.get(relPath);
 
       if (currentHash !== newHash) {
-        if (!oldRecordedHash || currentHash !== oldRecordedHash) {
-          // Preserva customização do usuário ou arquivo pré-existente antes do manifesto
-          printContentDiff(relPath, currentBuf, newContentBuf);
+        printContentDiff(relPath, currentBuf, newContentBuf);
+        if (currentHash !== oldRecordedHash) {
+          preservedFiles.push(relPath);
+          continue;
+        }
+        if (!options.upgrade) {
           newManifestFiles.push({ path: relPath, sha256: currentHash });
-          installedFiles.push(fullPath);
           continue;
         }
       }
@@ -793,9 +797,11 @@ function install(options: InstallOptions) {
   }
 
   const manifestData = {
-    version: '1.0.0',
+    schema: 2,
+    version: fs.readFileSync(path.join(sourceRoot, 'VERSION'), 'utf8').trim(),
     timestamp: new Date().toISOString(),
-    files: newManifestFiles.sort((a, b) => a.path.localeCompare(b.path))
+    files: newManifestFiles.sort((a, b) => a.path.localeCompare(b.path)),
+    preservedFiles: preservedFiles.sort()
   };
 
   fs.mkdirSync(path.dirname(manifestFullPath), { recursive: true });
