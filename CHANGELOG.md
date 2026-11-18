@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.10] - 2026-11-18
+
+- Instalador: valida configurações antes da deduplicação, preserva pastas em colisões e limita a operação ao runner selecionado.
+
 ## [0.50.0-alpha.9] - 2026-11-18
 
 - Instalador: preserva arquivos locais em atualizações repetidas e limita a limpeza de agentes legados a arquivos gerenciados.

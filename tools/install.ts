@@ -202,31 +202,6 @@ function mergeClaudeSettings(existing: any, incoming: any, enableStatusline: boo
   return result;
 }
 
-function getEnabledPluginKeys(ep: any): string[] {
-  if (!ep) return [];
-  if (Array.isArray(ep)) {
-    return ep.filter((item: any) => typeof item === 'string');
-  }
-  if (typeof ep === 'object') {
-    return Object.keys(ep).filter(key => Boolean(ep[key]));
-  }
-  return [];
-}
-
-function applySkillOverrides(skillOverrides: Record<string, string>, plugins: string[], skills: Iterable<string>): void {
-  for (const plug of plugins) {
-    for (const s of skills) {
-      skillOverrides[`${plug}:${s}`] = 'off';
-      if (plug.includes('@')) {
-        const prefix = plug.split('@')[0];
-        if (prefix) {
-          skillOverrides[`${prefix}:${s}`] = 'off';
-        }
-      }
-    }
-  }
-}
-
 function rewriteHookCommands(obj: any, replacementCommand?: string, homePosix?: string): any {
   if (!obj || typeof obj !== 'object') return obj;
   if (Array.isArray(obj)) {
@@ -306,30 +281,14 @@ function mergeHooksJson(existing: any, incoming: any, hookCommandOverride?: stri
 }
 
 function moveFolderSafely(srcDir: string, destDir: string): void {
-  if (!fs.existsSync(srcDir)) return;
-  fs.mkdirSync(path.dirname(destDir), { recursive: true });
-  if (fs.existsSync(destDir)) {
-    const files = walkFiles(srcDir);
-    for (const file of files) {
-      const rel = path.relative(srcDir, file);
-      const target = path.join(destDir, rel);
-      fs.mkdirSync(path.dirname(target), { recursive: true });
-      if (!fs.existsSync(target)) {
-        fs.renameSync(file, target);
-      } else if (sha256(fs.readFileSync(file)) !== sha256(fs.readFileSync(target))) {
-        let backupTarget = `${target}.local-backup`;
-        if (fs.existsSync(backupTarget)) {
-          backupTarget = `${target}.local-backup-${Date.now()}`;
-        }
-        fs.renameSync(file, backupTarget);
-      }
-    }
-    try {
-      fs.rmSync(srcDir, { recursive: true, force: true });
-    } catch (_) {}
-  } else {
-    fs.renameSync(srcDir, destDir);
-  }
+  if (!fs.lstatSync(srcDir, { throwIfNoEntry: false })) return;
+  const parent = path.dirname(destDir);
+  fs.mkdirSync(parent, { recursive: true });
+  if (!fs.lstatSync(parent).isDirectory()) throw new Error(`Invalid skill backup directory: ${parent}`);
+  const destination = fs.lstatSync(destDir, { throwIfNoEntry: false })
+    ? path.join(fs.mkdtempSync(path.join(parent, '.local-backup-')), path.basename(destDir))
+    : destDir;
+  fs.renameSync(srcDir, destination);
 }
 
 function install(options: InstallOptions) {
@@ -371,7 +330,8 @@ function install(options: InstallOptions) {
     }
   }
 
-  // Limpeza de agentes legados em --upgrade
+  const legacyRemovals: string[] = [];
+  // Planeja a limpeza de agentes legados em --upgrade.
   if (options.upgrade) {
     const legacyDirs = [
       path.join(targetRoot, '.claude', 'agents'),
@@ -390,9 +350,7 @@ function install(options: InstallOptions) {
           const currentHash = sha256(currentBuf);
           const oldHash = oldFilesMap.get(rel);
           if (oldHash === currentHash) {
-            try {
-              fs.unlinkSync(legacyFile);
-            } catch (_) {}
+            legacyRemovals.push(legacyFile);
           }
         }
       }
@@ -411,7 +369,7 @@ function install(options: InstallOptions) {
   const skipProjectClaudeSkills = new Set<string>();
   const skipProjectAgySkills = new Set<string>();
   const disabledSkillsForAgy = new Set<string>(['_disabled']);
-  const claudeOverridesToDisable: string[] = [];
+  const skillMoves: Array<[string, string]> = [];
 
   if (dedupeActive) {
     if (!isGlobal) {
@@ -420,20 +378,15 @@ function install(options: InstallOptions) {
         const inAgyGlobal = fs.existsSync(path.join(userHome, '.gemini', 'config', 'skills', skill));
 
         if (inClaudeGlobal || inAgyGlobal) {
-          if (inClaudeGlobal) {
+          if (inClaudeGlobal && runner !== 'agy') {
             skipProjectClaudeSkills.add(skill);
             const looseClaude = path.join(targetRoot, '.claude', 'skills', skill);
-            if (fs.existsSync(looseClaude)) {
-              moveFolderSafely(looseClaude, path.join(targetRoot, '.claude', 'skills', '_disabled', skill));
-            }
-            claudeOverridesToDisable.push(skill);
+            skillMoves.push([looseClaude, path.join(targetRoot, '.claude', 'skills', '_disabled', skill)]);
           }
-          if (inAgyGlobal) {
+          if (inAgyGlobal && runner === 'agy') {
             skipProjectAgySkills.add(skill);
             const looseAgy = path.join(targetRoot, '.agents', 'skills', skill);
-            if (fs.existsSync(looseAgy)) {
-              moveFolderSafely(looseAgy, path.join(targetRoot, '.agents', 'skills', '_disabled', skill));
-            }
+            skillMoves.push([looseAgy, path.join(targetRoot, '.agents', 'skills', '_disabled', skill)]);
             disabledSkillsForAgy.add(skill);
           }
         }
@@ -445,24 +398,8 @@ function install(options: InstallOptions) {
           skipProjectAgySkills.add(skill);
           disabledSkillsForAgy.add(skill);
           const looseAgy = path.join(targetRoot, '.agents', 'skills', skill);
-          if (fs.existsSync(looseAgy)) {
-            moveFolderSafely(looseAgy, path.join(targetRoot, '.agents', 'skills', '_disabled', skill));
-          }
+          skillMoves.push([looseAgy, path.join(targetRoot, '.agents', 'skills', '_disabled', skill)]);
         }
-      }
-    } else {
-      // Global dedupe: se enabledPlugins existir no claude, desativa em skillOverrides
-      const claudeSettingsPath = path.join(targetRoot, '.claude', 'settings.json');
-      if (fs.existsSync(claudeSettingsPath)) {
-        try {
-          const parsed = JSON.parse(fs.readFileSync(claudeSettingsPath, 'utf8'));
-          const plugs = getEnabledPluginKeys(parsed.enabledPlugins);
-          if (plugs.length > 0) {
-            for (const skill of availableSkills) {
-              claudeOverridesToDisable.push(skill);
-            }
-          }
-        } catch (_) {}
       }
     }
   }
@@ -517,12 +454,6 @@ function install(options: InstallOptions) {
       const existingSettings: any = readExistingJson(destSettingsPath, {});
       const mergedClaude = mergeClaudeSettings(existingSettings, incomingSettings, Boolean(options.statusline), claudeHomePosix);
 
-      const existingPlugs = getEnabledPluginKeys(existingSettings.enabledPlugins);
-      if (claudeOverridesToDisable.length > 0 && existingPlugs.length > 0) {
-        mergedClaude.skillOverrides = mergedClaude.skillOverrides || {};
-        applySkillOverrides(mergedClaude.skillOverrides, existingPlugs, claudeOverridesToDisable);
-      }
-
       plannedFiles.set('.claude/settings.json', {
         content: JSON.stringify(mergedClaude, null, 2) + '\n',
         isMerge: true
@@ -565,16 +496,6 @@ function install(options: InstallOptions) {
       const destSettingsPath = path.join(targetRoot, '.claude', 'settings.json');
       const existingSettings: any = readExistingJson(destSettingsPath, {});
       const mergedClaude = mergeClaudeSettings(existingSettings, incomingSettings, Boolean(options.statusline), claudeHomePosix);
-
-      // Atualiza skillOverrides se plugins habilitados
-      const pluginsList = getEnabledPluginKeys(existingSettings.enabledPlugins);
-      const incomingPlugs = getEnabledPluginKeys(incomingSettings.enabledPlugins);
-      const effectivePlugins = pluginsList.length > 0 ? pluginsList : incomingPlugs;
-
-      if (claudeOverridesToDisable.length > 0 && effectivePlugins.length > 0) {
-        mergedClaude.skillOverrides = mergedClaude.skillOverrides || {};
-        applySkillOverrides(mergedClaude.skillOverrides, effectivePlugins, claudeOverridesToDisable);
-      }
 
       plannedFiles.set('.claude/settings.json', {
         content: JSON.stringify(mergedClaude, null, 2) + '\n',
@@ -756,6 +677,8 @@ function install(options: InstallOptions) {
   }
 
   // Aplicação das mudanças e construção do novo manifesto
+  for (const [from, to] of skillMoves) moveFolderSafely(from, to);
+  for (const file of legacyRemovals) fs.unlinkSync(file);
   const newManifestFiles: Array<{ path: string; sha256: string }> = [];
   const preservedFiles: string[] = [];
   const installedFiles: string[] = [];

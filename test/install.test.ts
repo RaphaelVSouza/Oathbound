@@ -268,7 +268,7 @@ test('deduplicação de skills no --project move cópias soltas pré-existentes 
   assert.ok(skillsConfig.exclude.includes('surgical-patch'));
 });
 
-test('deduplicação no --global desativa conflito em skillOverrides quando plugin habilitado como array ou objeto', t => {
+test('deduplicação global preserva escolhas de visibilidade do Claude', t => {
   const globalRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-dedupe-global-'));
   t.after(() => fs.rmSync(globalRoot, { recursive: true, force: true }));
 
@@ -288,8 +288,7 @@ test('deduplicação no --global desativa conflito em skillOverrides quando plug
 
   const updatedSettings = JSON.parse(fs.readFileSync(claudeSettings, 'utf8'));
   assert.ok(updatedSettings.skillOverrides);
-  assert.equal(updatedSettings.skillOverrides['oathbound@oathbound:surgical-patch'], 'off');
-  assert.equal(updatedSettings.skillOverrides['oathbound:surgical-patch'], 'off');
+  assert.deepEqual(updatedSettings.skillOverrides, {});
 
   const geminiSkills = JSON.parse(fs.readFileSync(path.join(globalRoot, '.gemini', 'config', 'skills.json'), 'utf8'));
   assert.ok(geminiSkills.exclude.includes('_disabled'));
@@ -313,8 +312,7 @@ test('deduplicação no --global desativa conflito em skillOverrides quando plug
 
   const updatedSettingsArray = JSON.parse(fs.readFileSync(claudeSettingsArray, 'utf8'));
   assert.ok(updatedSettingsArray.skillOverrides);
-  assert.equal(updatedSettingsArray.skillOverrides['oathbound@oathbound:surgical-patch'], 'off');
-  assert.equal(updatedSettingsArray.skillOverrides['oathbound:surgical-patch'], 'off');
+  assert.deepEqual(updatedSettingsArray.skillOverrides, {});
 });
 
 test('preservação: preserva arquivo pré-existente antes do manifesto que difere do template', t => {
@@ -350,7 +348,7 @@ test('preservação: preserva arquivo pré-existente antes do manifesto que dife
   assert.equal(fs.readFileSync(agentPath, 'utf8'), preExistingContent);
 });
 
-test('moveFolderSafely preserva cópia local como SKILL.md.local-backup em colisão com conteúdo diferente', t => {
+test('deduplicação preserva a pasta inteira em caso de colisão', t => {
   const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-collision-proj-'));
   const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-collision-home-'));
   t.after(() => {
@@ -378,8 +376,10 @@ test('moveFolderSafely preserva cópia local como SKILL.md.local-backup em colis
   });
 
   assert.equal(fs.readFileSync(disabledSkill, 'utf8'), '# Previous disabled content\n');
-  const backupSkill = path.join(projectRoot, '.claude', 'skills', '_disabled', 'surgical-patch', 'SKILL.md.local-backup');
-  assert.ok(fs.existsSync(backupSkill), 'SKILL.md.local-backup deve existir');
+  const disabledDir = path.dirname(path.dirname(disabledSkill));
+  const backupDir = fs.readdirSync(disabledDir).find((name: string) => name.startsWith('.local-backup-'));
+  assert.ok(backupDir);
+  const backupSkill = path.join(disabledDir, backupDir, 'surgical-patch', 'SKILL.md');
   assert.equal(fs.readFileSync(backupSkill, 'utf8'), '# New local loose content\n');
 });
 
@@ -395,6 +395,13 @@ test('readExistingJson lança erro claro quando settings.json existente contém 
   fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
   const corruptContent = '{\n  "broken": unquoted_value\n';
   fs.writeFileSync(settingsPath, corruptContent);
+  const relativeSkill = path.join('.claude', 'skills', 'surgical-patch', 'SKILL.md');
+  const localSkill = path.join(projectRoot, relativeSkill);
+  const globalSkill = path.join(fakeHome, relativeSkill);
+  for (const file of [localSkill, globalSkill]) {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, 'fixture');
+  }
 
   assert.throws(
     () => {
@@ -413,4 +420,5 @@ test('readExistingJson lança erro claro quando settings.json existente contém 
   );
 
   assert.equal(fs.readFileSync(settingsPath, 'utf8'), corruptContent);
+  assert.equal(fs.readFileSync(localSkill, 'utf8'), 'fixture');
 });

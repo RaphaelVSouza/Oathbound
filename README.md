@@ -41,6 +41,8 @@ Crie `dist/` antes de gerar os pacotes. O gerador não sobrescreve destinos exis
 ### 2. Instalador de Projeto e Ambiente (`install.ts`)
 
 Na migração de manifestos antigos, o instalador conserva arquivos divergentes e mostra o diff para revisão. A limpeza automática exige registro de origem no manifesto atual.
+
+Gerencie skills do plugin pelo comando `/plugin` do Claude Code. Use `--no-dedupe-skills` para conservar as cópias locais durante a instalação.
 Para gerenciar a instalação e atualização em ambientes globais ou diretórios de projeto específicos, execute:
 
 ```sh
