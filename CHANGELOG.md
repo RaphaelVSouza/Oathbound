@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.8] - 2026-11-18
+
+- Claude Code: aplica os guards de agentes do plugin pelo hook global.
+
 ## [0.50.0-alpha.7] - 2026-11-18
 
 - Claude Code: marketplace e pacote de release compartilham o registro dos hooks globais.
