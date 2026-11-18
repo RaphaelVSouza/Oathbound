@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.20] - 2026-11-18
+
+- Adiciona smoke tests pagos e explícitos para revisão diária, delegação e guard do orquestrador Claude em Haiku.
+
 ## [0.50.0-alpha.19] - 2026-11-18
 
 - Orquestradores Claude e agy revisam testes dos fluxos afetados e esclarecem regras ambíguas na sessão principal.

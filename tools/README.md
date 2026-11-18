@@ -41,6 +41,34 @@ O instalador global preserva instruções, configurações, hooks compartilhados
 
 Crie o diretório pai e execute `node tools/build-plugin.cjs claude <destino>` ou `node tools/build-plugin.cjs agy <destino>`. O destino deve ser novo e estar dentro do repositório. O gerador não sobrescreve arquivos existentes e injeta a versão de `VERSION` nos manifestos gerados. Valide com `claude plugin validate <destino>` ou `agy plugin validate <destino>`.
 
+## Smoke tests pagos do orquestrador Claude
+
+Execute apenas o caso necessário após mudanças relevantes no orquestrador,
+na delegação ou no guard do plugin. Estes testes usam a conta autenticada
+da CLI e consomem cota. A suíte principal e o CI seguem com validações locais.
+
+```sh
+node tools/smoke-orquestrador.cjs --listar
+node tools/smoke-orquestrador.cjs --caso guard --pago
+```
+
+`--listar` roda offline. Uma execução paga exige um caso explícito e
+`--pago`. A CLI usa Haiku na sessão e nos subagentes, com até oito turnos,
+60 segundos e limite de US$ 0,05 informado à CLI por execução. O runner
+imprime o custo reportado e usa o plugin gerado em projeto sintético temporário.
+
+Casos disponíveis:
+
+- `falso-positivo` confere o achado e a linha da asserção.
+- `ambiguidade` confere a pergunta pendente e a revisão do caso claro.
+- `delegacao` confere a chamada e o resultado de `oathbound:assayer`.
+- `guard` confere o bloqueio de uma leitura com limite acima de 150 linhas
+  pela trilha de auditoria temporária do hook.
+
+O runner usa eventos `stream-json` e evidências no texto final. A interação
+com `AskUserQuestion` exige um teste interativo. Estes casos executam no
+Claude. Uma futura execução no agy precisa de executor próprio.
+
 ## Atualização de versão (`bump-version.cjs`)
 
 Execute `node tools/bump-version.cjs <semver>` para atualizar `VERSION`, `.antigravity-plugin/plugin.json` e `.claude-plugin/plugin.json` juntos. Use `--commit` para criar o commit de release e `--tag` para criar também a tag anotada `v<semver>`.
