@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.12] - 2026-11-18
+
+- Claude Code: minimiza os dados persistidos pela auditoria e restringe permissões de logs novos.
+
 ## [0.50.0-alpha.11] - 2026-11-18
 
 - Instalador: protege caminhos de hooks do Claude que contêm espaços.

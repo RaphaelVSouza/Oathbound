@@ -123,7 +123,7 @@ if (require.main === module) {
       motivo = 'entrada do hook inválida';
     }
     if (motivo) {
-      try { require('./agent-audit.js').registrar(payload, { bloqueado: true, motivo }); } catch { /* auditoria nunca impede a negação */ }
+      try { require('./agent-audit.js').registrar(payload, { bloqueado: true, motivo: 'limite_de_leitura' }); } catch { /* auditoria nunca impede a negação */ }
       negar(motivo);
     }
   });

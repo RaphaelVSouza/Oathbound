@@ -40,7 +40,7 @@ if (require.main === module) {
       motivo = 'entrada do hook inválida';
     }
     if (!motivo) return;
-    audit.registrar(payload, { bloqueado: true, motivo });
+    audit.registrar(payload, { bloqueado: true, motivo: 'politica_do_agente' });
     process.stdout.write(JSON.stringify({
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',

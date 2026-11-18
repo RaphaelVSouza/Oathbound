@@ -7,7 +7,7 @@ const path = require('path');
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-test-'));
 process.env.AGENT_AUDIT_DIR = dir;
-const { registrar, resumir, redigir } = require(path.join(__dirname, '..', '..', 'claude', 'hooks', 'agent-audit.js'));
+const { registrar } = require(path.join(__dirname, '..', '..', 'claude', 'hooks', 'agent-audit.js'));
 const arquivo = path.join(dir, 'agent-audit.jsonl');
 const ler = () => fs.readFileSync(arquivo, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
 
@@ -19,110 +19,40 @@ try {
   // Subagente: grava campos esperados.
   assert.strictEqual(registrar({
     agent_id: 'abc', agent_type: 'assayer', session_id: '12345678-aaaa',
-    tool_name: 'Bash', tool_input: { command: 'git log -n 1' },
+    tool_name: 'Bash', tool_use_id: 'tool-1', tool_input: { command: 'fixture secreta' },
   }), true);
   let l = ler()[0];
   assert.strictEqual(l.agente, 'assayer');
   assert.strictEqual(l.ferramenta, 'Bash');
-  assert.strictEqual(l.alvo, 'git log -n 1');
+  assert.strictEqual(l.tool_use_id, 'tool-1');
+  assert.ok(!('alvo' in l));
+  assert.ok(!fs.readFileSync(arquivo, 'utf8').includes('fixture secreta'));
+  if (process.platform !== 'win32') assert.strictEqual(fs.statSync(arquivo).mode & 0o777, 0o600);
   assert.strictEqual(l.sessao, '12345678');
   assert.ok(l.ts);
 
   // Bloqueio carrega flag e motivo.
   registrar({ agent_id: 'abc', agent_type: 'sentinel', tool_name: 'Bash', tool_input: { command: 'touch x' } },
-    { bloqueado: true, motivo: 'comando fora da lista' });
+    { bloqueado: true, motivo: 'somente_leitura' });
   l = ler()[1];
   assert.strictEqual(l.bloqueado, true);
-  assert.strictEqual(l.motivo, 'comando fora da lista');
+  assert.strictEqual(l.motivo, 'somente_leitura');
 
   // Conteúdo de arquivo nunca é gravado.
   registrar({ agent_id: 'abc', agent_type: 'smith', tool_name: 'Write',
     tool_input: { file_path: 'a.txt', content: 'CONTEUDO-SECRETO-NAO-GRAVAR' } });
   assert.ok(!fs.readFileSync(arquivo, 'utf8').includes('CONTEUDO-SECRETO-NAO-GRAVAR'));
-  assert.strictEqual(ler()[2].alvo, 'a.txt');
+  assert.ok(!('alvo' in ler()[2]));
 
-  // Redação de segredos.
-  assert.ok(!redigir('GEMINI_API_KEY=valor123abc').includes('valor123abc'));
-  assert.ok(!redigir('curl -H "Authorization: Bearer abcdefgh12345678"').includes('abcdefgh12345678'));
-  assert.ok(!redigir('x sk-abcdefghijklmnop1234 y').includes('abcdefghijklmnop1234'));
-  assert.ok(!redigir('token: ghp_abcdefghijklmnopqrstuvwx').includes('ghp_abcdefghijklmnopqrstuvwx'));
-  assert.ok(redigir('git log -n 1').includes('git log -n 1'));
-
-  // Formas que vazavam (auditoria Opus): aspas, flag com espaço, valor com espaço, outros formatos.
-  const casos = [
-    ['{"api_key": "SEGREDO1"}', 'SEGREDO1'],
-    ["{'password': 'SEGREDO2'}", 'SEGREDO2'],
-    ['run --token SEGREDO3 --x', 'SEGREDO3'],
-    ['run --password SEGREDO4', 'SEGREDO4'],
-    ['run --api-key "SEG RETO5 B"', 'RETO5'],
-    ['PASSWORD="seg reto6 parte"', 'parte'],
-    ['STRIPE=sk_live_abcdefghijklmnop1234', 'abcdefghijklmnop1234'],
-    ['x github_pat_abcdefghijklmnopqrstuv1234 y', 'abcdefghijklmnopqrstuv1234'],
-    ['glpat-abcdefghijklmnopqrst', 'abcdefghijklmnopqrst'],
-    ['xoxb-1234567890-abcdefghij', '1234567890-abcdefghij'],
-    ['id ASIAABCDEFGHIJKLMNOP', 'ABCDEFGHIJKLMNOP'],
-    ['jwt eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefghijk', 'eyJzdWIiOiIxMjM0NTY3ODkwIn0'],
-    ['curl -H "Authorization: Basic dXNlcjpwYXNzd29yZA=="', 'dXNlcjpwYXNzd29yZA'],
-    ['curl -u admin:SEGREDO7 https://x.com', 'SEGREDO7'],
-    ['git clone https://usuario:SEGREDO8@host.com/r.git', 'SEGREDO8'],
-    ['git clone https://TOKEN9ABC@host.com/r.git', 'TOKEN9ABC'],
-    ['mysql -h db -u root -pSEGREDO10 base', 'SEGREDO10'],
-    ['sshpass -p SEGREDO11 ssh h', 'SEGREDO11'],
-    // Segunda rodada (auditoria sentinel): JSON escapado, cabeçalhos, nomes e prefixos novos.
-    ['curl -d "{\\"password\\":\\"hunter2xyz\\"}" http://x', 'hunter2xyz'],
-    ['curl -H "Authorization: Token SEGREDO13" http://x', 'SEGREDO13'],
-    ['curl -H "Cookie: sid=SEGREDO14; a=b" http://x', 'SEGREDO14'],
-    ['gpg --passphrase SEGREDO15 -d f', 'SEGREDO15'],
-    ['openssl enc -passin pass:SEGREDO16 -in f', 'SEGREDO16'],
-    ['get "u?X-Amz-Signature=SEGREDO17"', 'SEGREDO17'],
-    ['DB_DSN=postgres-SEGREDO18', 'SEGREDO18'],
-    ['t ya29.abcdefghijklmnopqrstuvwxyz', 'abcdefghijklmnopqrstuvwxyz'],
-    ['t npm_abcdefghijklmnopqrstuvwxyz1234', 'abcdefghijklmnopqrstuvwxyz1234'],
-    ['t hf_abcdefghijklmnopqrstuvwxyz1234', 'abcdefghijklmnopqrstuvwxyz1234'],
-    ['t shpat_0123456789abcdef0123', '0123456789abcdef0123'],
-    ['t dop_v1_0123456789abcdef0123456789', '0123456789abcdef0123456789'],
-    ['curl https://hooks.slack.com/services/T000/B000/SEGREDO19abc', 'SEGREDO19abc'],
-    ['echo -----BEGIN RSA PRIVATE KEY-----\nSEGREDO20LINHA\n-----END RSA PRIVATE KEY-----', 'SEGREDO20LINHA'],
-  ];
-  for (const [entrada, segredo] of casos) {
-    assert.ok(!redigir(entrada).includes(segredo), `vazou: ${entrada} => ${redigir(entrada)}`);
+  for (const [tool_name, tool_input] of [
+    ['Grep', { pattern: 'consulta fictícia' }],
+    ['WebSearch', { query: 'consulta fictícia' }],
+    ['WebFetch', { url: 'https://example.com/consulta fictícia' }],
+  ]) {
+    registrar({ agent_id: 'abc', tool_name, tool_input },
+      { bloqueado: true, motivo: 'consulta fictícia', alvo: 'consulta fictícia' });
   }
-  // Não redige comando comum (sem falso positivo evidente).
-  for (const ok of ['git push -u origin main', 'mkdir -p a/b', 'find . -prune -name x', 'rtk rg "token" src', 'ls -la']) {
-    assert.strictEqual(redigir(ok), ok, `redigiu indevidamente: ${ok}`);
-  }
-  // Idempotente.
-  assert.strictEqual(redigir(redigir('A_TOKEN=abc')), redigir('A_TOKEN=abc'));
-
-  // ReDoS: entrada adversarial termina rápido.
-  // Inclui entradas de exatamente o tamanho analisado (4096), que exercitam os quantificadores de 64.
-  const adversarias = ['key'.repeat(40000), 'a'.repeat(200000), '-'.repeat(100000), 'mysql ' + ' x'.repeat(50000),
-    'token'.repeat(30000) + ' =', 'key'.repeat(1365), '--' + 'token-'.repeat(680), 'mysql ' + '-p '.repeat(1360),
-    '-----BEGIN PRIVATE KEY-----' + 'A'.repeat(4000), 'Cookie:' + ' '.repeat(4000), '"' + 'password'.repeat(500), 'a://' + 'b'.repeat(4000)];
-  for (const adv of adversarias) {
-    const t0 = Date.now();
-    redigir(adv);
-    assert.ok(Date.now() - t0 < 2000, `redigir lento (${Date.now() - t0} ms) em entrada de ${adv.length} caracteres`);
-  }
-
-  // Caminho de URL: token de bot e assinatura longa são mascarados.
-  assert.ok(!resumir('WebFetch', { url: 'https://api.telegram.org/bot123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw/getMe' }).includes('AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw'));
-  assert.strictEqual(resumir('WebFetch', { url: 'https://code.claude.com/docs/en/hooks-guide.md' }), 'https://code.claude.com/docs/en/hooks-guide.md');
-
-  // extra: só bloqueado e motivo; nada sobrescreve campos base.
-  registrar({ agent_id: 'abc', agent_type: 'scout', tool_name: 'Read', tool_input: { file_path: 'real.txt' } },
-    { alvo: 'FALSO', agent_id: 'FALSO', ts: 'FALSO', extra_livre: 'x', bloqueado: true, motivo: 'm token=SEGREDO12' });
-  const ult = ler().pop();
-  assert.strictEqual(ult.alvo, 'real.txt');
-  assert.strictEqual(ult.agent_id, 'abc');
-  assert.ok(ult.ts !== 'FALSO' && !('extra_livre' in ult));
-  assert.ok(!ult.motivo.includes('SEGREDO12'));
-  fs.writeFileSync(arquivo, ''); // zera para os testes seguintes
-
-  // URL sem query string; MCP sem alvo; truncamento.
-  assert.strictEqual(resumir('WebFetch', { url: 'https://a.com/p?key=SEGREDO' }), 'https://a.com/p');
-  assert.strictEqual(resumir('mcp__playwright__browser_click', { ref: 'x' }), '');
-  assert.ok(resumir('Bash', { command: 'a'.repeat(500) }).length <= 201);
+  assert.ok(!fs.readFileSync(arquivo, 'utf8').includes('consulta fictícia'));
 
   // Rotação acima de 1 MB.
   fs.writeFileSync(arquivo, 'x'.repeat(1024 * 1024 + 1));
@@ -186,7 +116,7 @@ try {
   const rv = rodar(JSON.stringify({ agent_id: 'z', agent_type: 'scout', tool_name: 'Read', tool_input: { file_path: 'e' } }));
   assert.strictEqual(rv.status, 0);
   assert.strictEqual(rv.stdout, '');
-  assert.strictEqual(ler().pop().alvo, 'e');
+  assert.strictEqual(ler().pop().ferramenta, 'Read');
 
   // Payload ilegível mas com agent_id: não some da trilha; grava linha com erro, sem conteúdo.
   fs.writeFileSync(arquivo, '');

@@ -33,7 +33,7 @@ function resumir(registros, mes) {
     // Chamada negada gera duas linhas (a da chamada, pelo hook global, e a da negação, pelo guard,
     // com bloqueado:true). A linha com bloqueado:true conta só como bloqueio; a chamada já foi contada.
     // Negação sem a linha da chamada (dado antigo, hook global que falhou) vira órfã e é somada abaixo.
-    const chave = `${r.agent_id}|${r.ferramenta}|${r.alvo}`;
+    const chave = JSON.stringify([r.agent_id, r.ferramenta, r.tool_use_id ?? r.alvo]);
     const p = (e.pares[chave] ||= { chamadas: 0, bloqueios: 0, ferramenta: r.ferramenta });
     if (r.bloqueado) {
       e.bloqueios++;
