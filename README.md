@@ -12,7 +12,7 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 
 1. **Regras de Governança:** O orquestrador aplica o fluxo comum do pacote. Cada projeto define suas exceções locais.
 2. **Subagentes Especializados:** Orquestrador principal complementado por 7 papéis: `scout`, `scholar`, `scribe`, `smith`, `assayer`, `sentinel` e `tester`.
-3. **Skills de Engenharia:** Conjunto de 6 skills genéricas: `diagnosing-bugs`, `grill-me`, `migration`, `safe-refactor`, `surgical-patch` e `verify-and-stop`.
+3. **Skills de Engenharia:** Conjunto de 4 skills: `diagnosing-bugs`, `grill-me`, `migration` e `surgical-patch`.
 4. **Hooks Determinísticos:** Mecanismos de proteção em tempo de execução incluindo `agent-audit`, `readonly-guard`, `read-size-guard`, `destructive-guard` e `rtk-hook`.
 5. **Telemetria, Relatórios e Protótipos:** Inclui `audit-resumo`, módulos de custo e dificuldade (`test/custo`, `test/dificuldade`) e protótipos inativos com Jev (`claude/hooks/skill-suggest.js`, `test/jev/revisar-teste.js`) documentados nos ADRs [docs/adr/0001-sugestao-de-skill-com-jev.md](docs/adr/0001-sugestao-de-skill-com-jev.md), [docs/adr/0002-roteamento-de-subagentes-com-jev.md](docs/adr/0002-roteamento-de-subagentes-com-jev.md) e [docs/adr/0003-jev-revisao-de-testes.md](docs/adr/0003-jev-revisao-de-testes.md).
 
@@ -44,7 +44,7 @@ claude plugin validate dist/claude
 agy plugin validate dist/agy
 ```
 
-Crie `dist/` antes de gerar os pacotes. O gerador exige destinos novos. Cada pacote contém seis skills e oito agentes. O pacote Claude inclui os guards por agente, que requerem Node.js.
+Crie `dist/` antes de gerar os pacotes. O gerador exige destinos novos. Cada pacote contém quatro skills e oito agentes. O pacote Claude inclui os guards por agente, que requerem Node.js.
 
 ### 2. Instalador de Projeto e Ambiente (`install.ts`)
 
@@ -60,7 +60,7 @@ node tools/install.ts [opções]
 ```
 
 **Opções suportadas:**
-- `--global`: Instala agentes em `~/.claude/agents/` e `~/.gemini/config/agents/`. O manifesto e os scripts usados pelos guards dos agentes Claude ficam em `~/.oathbound/`.
+- `--global`: Instala agentes e skills em `~/.claude/` e `~/.gemini/config/`. O manifesto e os scripts usados pelos guards dos agentes Claude ficam em `~/.oathbound/`.
 - `--project <dir>`: Instala em diretório específico gerando `.claude/`, `.agents/`, `.oathbound/manifest.json`, `.agents/skills.json` e `_disabled/`.
 - `--runner all|claude|agy`: Seleciona o runner alvo.
 - `--upgrade`: Atualiza uma instalação existente apresentando o diff de alterações.

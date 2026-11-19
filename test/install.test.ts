@@ -41,7 +41,7 @@ test('parseArgs valida runners permitidos e rejeita opções inválidas ou confl
   assert.equal(parsedNoDedupe.dedupeSkills, false);
 });
 
-test('instalação global limita os arquivos a agentes, guards e manifesto', t => {
+test('instalação global inclui agentes, skills, guards e manifesto sem tocar settings', t => {
   const root = fixtureDir('global-');
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const settings = [
@@ -58,8 +58,8 @@ test('instalação global limita os arquivos a agentes, guards e manifesto', t =
   for (const runner of ['claude', 'agy', 'all']) {
     const result = install({ root, global: true, runner, upgrade: true });
     const prefixes = [
-      ...(runner === 'agy' ? [] : ['.claude/agents/', '.oathbound/claude-hooks/']),
-      ...(runner === 'claude' ? [] : ['.gemini/config/agents/'])
+      ...(runner === 'agy' ? [] : ['.claude/agents/', '.claude/skills/', '.oathbound/claude-hooks/']),
+      ...(runner === 'claude' ? [] : ['.gemini/config/agents/', '.gemini/config/skills/'])
     ];
     for (const prefix of prefixes) {
       assert.ok(result.manifest.files.some((file: any) => file.path.startsWith(prefix)));
@@ -75,7 +75,8 @@ test('instalação global limita os arquivos a agentes, guards e manifesto', t =
   for (const file of settings) {
     assert.equal(fs.readFileSync(path.join(root, file), 'utf8'), 'conteúdo local\n');
   }
-  assert.equal(walkAllFiles(root).length, settings.length + 16 + 5 + 1);
+  const skillFileCount = walkAllFiles(path.join(__dirname, '..', 'skills')).length;
+  assert.equal(walkAllFiles(root).length, settings.length + 16 + 5 + skillFileCount * 2 + 1);
   const smith = fs.readFileSync(path.join(root, '.claude/agents/smith.md'), 'utf8');
   const guard = path.join(root, '.oathbound/claude-hooks/destructive-guard.js');
   assert.ok(smith.includes(`command: 'node "${guard.split(path.sep).join('/')}"'`));

@@ -478,16 +478,15 @@ function install(options: InstallOptions) {
         }
       }
     }
-    if (!isGlobal) {
-      for (const skill of availableSkills) {
-        if (skipProjectClaudeSkills.has(skill)) continue;
-        const skillDir = path.join(skillsSourceDir, skill);
-        for (const full of walkFiles(skillDir)) {
-          const relInside = path.relative(skillDir, full).split(path.sep).join('/');
-          plannedFiles.set(`.claude/skills/${skill}/${relInside}`, { content: fs.readFileSync(full) });
-        }
+    for (const skill of availableSkills) {
+      if (!isGlobal && skipProjectClaudeSkills.has(skill)) continue;
+      const skillDir = path.join(skillsSourceDir, skill);
+      for (const full of walkFiles(skillDir)) {
+        const relInside = path.relative(skillDir, full).split(path.sep).join('/');
+        plannedFiles.set(`.claude/skills/${skill}/${relInside}`, { content: fs.readFileSync(full) });
       }
-
+    }
+    if (!isGlobal) {
       const incomingSettingsPath = path.join(sourceRoot, 'claude', 'settings.json');
       let incomingSettings: any = {};
       if (fs.existsSync(incomingSettingsPath)) {
@@ -518,6 +517,15 @@ function install(options: InstallOptions) {
         }
       }
     }
+    const agySkillDir = isGlobal ? '.gemini/config/skills' : '.agents/skills';
+    for (const skill of availableSkills) {
+      if (!isGlobal && skipProjectAgySkills.has(skill)) continue;
+      const skillDir = path.join(skillsSourceDir, skill);
+      for (const full of walkFiles(skillDir)) {
+        const relInside = path.relative(skillDir, full).split(path.sep).join('/');
+        plannedFiles.set(`${agySkillDir}/${skill}/${relInside}`, { content: fs.readFileSync(full) });
+      }
+    }
     if (!isGlobal) {
       const rtkHookSrc = path.join(sourceRoot, 'agy', 'antigravity-cli', 'rtk-hook.js');
       const rtkHookContent = fs.existsSync(rtkHookSrc) ? fs.readFileSync(rtkHookSrc) : '// rtk-hook.js\n';
@@ -545,15 +553,6 @@ function install(options: InstallOptions) {
         content: JSON.stringify(mergedHooks, null, 2) + '\n',
         isMerge: true
       });
-
-      for (const skill of availableSkills) {
-        if (skipProjectAgySkills.has(skill)) continue;
-        const skillDir = path.join(skillsSourceDir, skill);
-        for (const full of walkFiles(skillDir)) {
-          const relInside = path.relative(skillDir, full).split(path.sep).join('/');
-          plannedFiles.set(`.agents/skills/${skill}/${relInside}`, { content: fs.readFileSync(full) });
-        }
-      }
 
       // .agents/skills.json
       const agentsSkillsJsonPath = path.join(targetRoot, '.agents', 'skills.json');

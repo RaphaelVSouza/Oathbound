@@ -1,5 +1,9 @@
 @RTK.md
 
+## Estilo de resposta (caveman full)
+
+Responda em estilo telegráfico ("caveman full"): corte saudações, preâmbulos, conectivos e explicações óbvias. Nunca corte código, comandos, caminhos, símbolos, erros literais, números nem negações (`não`/`nunca`/`apenas`). Desative só com "stop caveman" ou "normal mode".
+
 ## Governança de mudança
 
 - Siga a governança específica do repositório antes de mudar dependências, CI/CD, infraestrutura, ambiente ou decisões transversais.

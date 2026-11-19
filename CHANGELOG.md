@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.50.0-alpha.21] - 2026-11-19
+
+- Mantidas apenas as 4 skills usadas (`diagnosing-bugs`, `grill-me`, `migration`, `surgical-patch`); removidas `safe-refactor` e `verify-and-stop`.
+- Instalação `--global` passa a sincronizar `skills/` em `~/.claude/skills/` e `~/.gemini/config/skills/`.
+
 ## [0.50.0-alpha.20] - 2026-11-18
 
 - Adiciona smoke tests pagos e explícitos para revisão diária, delegação e guard do orquestrador Claude em Haiku.

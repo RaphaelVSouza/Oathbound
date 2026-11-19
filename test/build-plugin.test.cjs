@@ -35,7 +35,7 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
   for (const runner of ['claude', 'agy']) {
     const out = buildPlugin(runner, path.join(tmp, runner));
     assert.equal(fs.readdirSync(path.join(out, 'agents')).length, 8);
-    assert.equal(fs.readdirSync(path.join(out, 'skills')).length, 6);
+    assert.equal(fs.readdirSync(path.join(out, 'skills')).length, 4);
     assert.equal(fs.existsSync(path.join(out, 'AGENTS.md')), false);
     assert.throws(() => buildPlugin(runner, out), /EEXIST/);
     if (runner === 'claude') {
