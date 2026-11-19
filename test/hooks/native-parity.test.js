@@ -126,7 +126,7 @@ test('native hook: rtk-hook bloqueia find e gci -Recurse e ajusta WaitMsBeforeAs
   assert.equal(parsed.overwrite.WaitMsBeforeAsync, 10000);
 });
 
-test('native hook: statusline produz saída idêntica ao statusline.js', { skip: !fs.existsSync(BIN) }, () => {
+test('native hook: statusline formata workspace, vcs, modelo, contexto, quota e subagentes', { skip: !fs.existsSync(BIN) }, () => {
   const repoRoot = path.resolve(__dirname, '..', '..');
   const payload = {
     workspace: { current_dir: repoRoot },
@@ -147,13 +147,10 @@ test('native hook: statusline produz saída idêntica ao statusline.js', { skip:
     ],
   };
 
-  const nodeRes = spawnSync(process.execPath, [path.join(repoRoot, 'agy', 'antigravity-cli', 'statusline.js')], {
-    input: JSON.stringify(payload),
-    encoding: 'utf8',
-  });
-  assert.equal(nodeRes.status, 0);
-
   const rustRes = runHook('statusline', payload);
   assert.equal(rustRes.status, 0);
-  assert.equal(rustRes.stdout, nodeRes.stdout);
+  assert.match(rustRes.stdout, /2\.5 Pro/);
+  assert.match(rustRes.stdout, /55%/);
+  assert.match(rustRes.stdout, /main/);
+  assert.match(rustRes.stdout, /scout/);
 });

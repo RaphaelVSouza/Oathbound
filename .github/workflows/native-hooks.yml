@@ -35,10 +35,13 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Run Rust unit tests
+        run: cargo test --manifest-path native/oathbound-hook/Cargo.toml
+
       - name: Build oathbound-hook
         run: cargo build --release --manifest-path native/oathbound-hook/Cargo.toml
 
-      - name: Run native parity tests
+      - name: Run native hook integration tests
         run: node --test test/hooks/native-parity.test.js
 
       - name: Stage platform binary

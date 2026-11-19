@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/claude/hooks/plugin-agent-guard.js\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/native/bin/oathbound-hook\" plugin-agent-guard",
             "timeout": 5
           }
         ]

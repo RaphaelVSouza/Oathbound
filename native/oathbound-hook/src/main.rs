@@ -47,34 +47,62 @@ fn avaliar_plugin_agent_guard(payload: &Value) -> Option<String> {
     }
 }
 
-fn run_plugin_agent_guard() {
+fn emit_deny(payload: &Value, motivo_audit: &'static str, reason: &str) {
+    registrar(
+        payload,
+        Some(AuditExtra {
+            bloqueado: true,
+            motivo: Some(motivo_audit),
+            erro: None,
+        }),
+    );
+    let out = json!({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": reason,
+        }
+    });
+    let _ = io::stdout().write_all(out.to_string().as_bytes());
+}
+
+fn run_guard(motivo_audit: &'static str, eval: fn(&Value) -> Option<String>) {
     let (raw, _) = read_stdin_limited(MAX_STDIN_AUDIT);
     let mut payload = Value::Null;
     let motivo = match serde_json::from_str::<Value>(&raw) {
         Ok(v) if v.is_object() => {
             payload = v;
-            avaliar_plugin_agent_guard(&payload)
+            eval(&payload)
         }
         _ => Some("entrada do hook inválida".to_string()),
     };
     if let Some(m) = motivo {
-        registrar(
-            &payload,
-            Some(AuditExtra {
-                bloqueado: true,
-                motivo: Some("politica_do_agente"),
-                erro: None,
-            }),
-        );
-        let out = json!({
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "permissionDecision": "deny",
-                "permissionDecisionReason": m,
-            }
-        });
-        let _ = io::stdout().write_all(out.to_string().as_bytes());
+        emit_deny(&payload, motivo_audit, &m);
     }
+}
+
+fn avaliar_readonly_payload(payload: &Value) -> Option<String> {
+    let cmd = payload
+        .get("tool_input")
+        .and_then(|v| v.get("command"))
+        .and_then(|v| v.as_str());
+    readonly::avaliar(cmd)
+}
+
+fn run_plugin_agent_guard() {
+    run_guard("politica_do_agente", avaliar_plugin_agent_guard);
+}
+
+fn run_readonly_guard() {
+    run_guard("somente_leitura", avaliar_readonly_payload);
+}
+
+fn run_read_size_guard() {
+    run_guard("limite_de_leitura", read_size::avaliar);
+}
+
+fn run_destructive_guard() {
+    run_guard("comando_destrutivo", destructive::avaliar);
 }
 
 fn run_agent_audit() {
@@ -109,6 +137,9 @@ fn main() {
     let sub = env::args().nth(1).unwrap_or_default();
     match sub.as_str() {
         "plugin-agent-guard" => run_plugin_agent_guard(),
+        "readonly-guard" => run_readonly_guard(),
+        "read-size-guard" => run_read_size_guard(),
+        "destructive-guard" => run_destructive_guard(),
         "agent-audit" => run_agent_audit(),
         "rtk-hook" => run_rtk_hook(),
         "statusline" => run_statusline(),
@@ -116,8 +147,97 @@ fn main() {
             println!("oathbound-hook {}", env!("CARGO_PKG_VERSION"));
         }
         _ => {
-            eprintln!("Usage: oathbound-hook <plugin-agent-guard|agent-audit|rtk-hook|statusline>");
+            eprintln!("Usage: oathbound-hook <plugin-agent-guard|readonly-guard|read-size-guard|destructive-guard|agent-audit|rtk-hook|statusline>");
             std::process::exit(2);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn plugin_agent_guard_blocks_read_over_limit_for_readers() {
+        for agent in ["oathbound:assayer", "oathbound:sentinel", "oathbound:scout"] {
+            let p = json!({
+                "agent_type": agent,
+                "tool_name": "Read",
+                "tool_input": { "file_path": "a.js", "limit": 151 }
+            });
+            assert!(avaliar_plugin_agent_guard(&p).is_some(), "expected deny for {agent}");
+        }
+    }
+
+    #[test]
+    fn plugin_agent_guard_allows_safe_read_and_blocks_destructive_for_writers() {
+        let safe = json!({
+            "agent_type": "oathbound:smith",
+            "tool_name": "Bash",
+            "tool_input": { "command": "git status" }
+        });
+        assert!(avaliar_plugin_agent_guard(&safe).is_none());
+
+        for agent in ["oathbound:smith", "oathbound:scribe"] {
+            let commit = json!({
+                "agent_type": agent,
+                "tool_name": "Bash",
+                "tool_input": { "command": "git commit -m x" }
+            });
+            assert!(avaliar_plugin_agent_guard(&commit).is_some(), "expected deny for {agent}");
+        }
+
+        let other = json!({
+            "agent_type": "outro:scout",
+            "tool_name": "Read",
+            "tool_input": { "file_path": "a.js", "limit": 999 }
+        });
+        assert!(avaliar_plugin_agent_guard(&other).is_none());
+    }
+
+    #[test]
+    fn destructive_guard_prefilter_catches_all_categories() {
+        let cases = [
+            "git commit -m x",
+            "git branch -D foo",
+            "rm -rf tmp",
+            "find . -name '*.tmp' -delete",
+            "gh pr create --title x",
+            "npm publish",
+            "bash -c 'echo hi'",
+            "iex 'echo hi'",
+        ];
+        for cmd in cases {
+            let p = json!({ "tool_name": "Bash", "tool_input": { "command": cmd } });
+            assert!(destructive::avaliar(&p).is_some(), "expected deny for {cmd}");
+        }
+        let safe = json!({ "tool_name": "Bash", "tool_input": { "command": "cargo test -q" } });
+        assert!(destructive::avaliar(&safe).is_none());
+    }
+
+    #[test]
+    fn rtk_hook_blocks_find_and_gci_and_adjusts_wait() {
+        let find_out = rtk_hook::run(r#"{"toolCall":{"args":{"CommandLine":"find . -name '*.js'"}}}"#, false);
+        assert!(find_out.contains(r#""decision":"deny""#));
+
+        let gci_out = rtk_hook::run(r#"{"toolCall":{"args":{"CommandLine":"Get-ChildItem -Recurse ."}}}"#, false);
+        assert!(gci_out.contains(r#""decision":"deny""#));
+
+        let node_out = rtk_hook::run(r#"{"toolCall":{"args":{"CommandLine":"node -e \"console.log('Get-ChildItem -Recurse')\""}}}"#, false);
+        assert!(!node_out.contains(r#""decision":"deny""#));
+
+        let wait_out = rtk_hook::run(r#"{"toolCall":{"args":{"CommandLine":"git status","WaitMsBeforeAsync":5000}}}"#, false);
+        assert!(wait_out.contains(r#""WaitMsBeforeAsync":10000"#));
+    }
+
+    #[test]
+    fn statusline_formats_basic_payload() {
+        let out = statusline::run(
+            r#"{"model":{"display_name":"Gemini 2.5 Pro"},"context_window":{"used_percentage":42},"cost":{"total_cost_usd":0.12}}"#,
+            false,
+        );
+        assert!(out.contains("2.5 Pro"));
+        assert!(out.contains("42%"));
     }
 }

@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('node:fs');
-const { redigir } = require('../../claude/hooks/agent-audit.js');
+const { redigir } = require('../../claude/hooks/redigir.js');
 const { chamarJev } = require('../../claude/hooks/skill-suggest.js');
 
 const CAMPOS = ['criterio', 'assercao_anterior', 'diff'];

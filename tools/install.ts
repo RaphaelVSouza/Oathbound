@@ -161,14 +161,7 @@ function mergeClaudeSettings(existing: any, incoming: any, enableStatusline: boo
   result.hooks = { ...(result.hooks || {}) };
   const incomingHooks = incoming?.hooks || {};
   for (const event of Object.keys(incomingHooks)) {
-    const oldAudit = `node ${homePosix}/.claude/hooks/agent-audit.js`;
-    const newAudit = `node "${escapeClaudeHookPath(homePosix)}/.claude/hooks/agent-audit.js"`;
-    const existingEventHooks = Array.isArray(result.hooks[event]) ? result.hooks[event].map((group: any) => ({
-      ...group,
-      hooks: Array.isArray(group.hooks) ? group.hooks.map((hook: any) =>
-        hook.command === oldAudit ? { ...hook, command: newAudit } : hook
-      ) : group.hooks
-    })) : [];
+    const existingEventHooks = Array.isArray(result.hooks[event]) ? [...result.hooks[event]] : [];
     const incomingEventHooks = Array.isArray(incomingHooks[event]) ? incomingHooks[event] : [];
 
     for (const inHookItem of incomingEventHooks) {
@@ -220,7 +213,7 @@ function rewriteHookCommands(obj: any, replacementCommand?: string, homePosix?: 
   const result: any = {};
   for (const [key, value] of Object.entries(obj)) {
     if (key === 'command' && typeof value === 'string') {
-      if (replacementCommand && (value.includes('rtk-hook.js') || value.includes('antigravity-cli'))) {
+      if (replacementCommand && (value.includes('oathbound-hook') || value.includes('antigravity-cli'))) {
         result[key] = replacementCommand;
       } else if (homePosix && value.includes('__HOME__')) {
         result[key] = value.replaceAll('__HOME__', homePosix);
@@ -246,37 +239,46 @@ function nativeHookBinName(): string {
   return process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
 }
 
-function findNativeHookBinary(sourceRoot: string): string | null {
+function findNativeHookBinary(sourceRoot: string): string {
   if (process.env.OATHBOUND_NATIVE_BIN && fs.existsSync(process.env.OATHBOUND_NATIVE_BIN)) {
     return process.env.OATHBOUND_NATIVE_BIN;
   }
   const ext = process.platform === 'win32' ? '.exe' : '';
   const platformName = `oathbound-hook-${process.platform}-${process.arch}${ext}`;
-  const releaseBin = path.join(sourceRoot, 'native', 'bin', platformName);
-  return fs.existsSync(releaseBin) ? releaseBin : null;
+  const candidates = [
+    path.join(sourceRoot, 'native', 'bin', platformName),
+    path.join(sourceRoot, 'native', 'oathbound-hook', 'target', 'release', `oathbound-hook${ext}`)
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  throw new Error(
+    `Binário nativo oathbound-hook não encontrado (${platformName}). Compile com "cargo build --release --manifest-path native/oathbound-hook/Cargo.toml" ou defina OATHBOUND_NATIVE_BIN.`
+  );
 }
 
 const reviewAgentGuards = {
-  Bash: ['readonly-guard.js', 'read-size-guard.js'],
-  Read: ['read-size-guard.js']
+  Bash: ['readonly-guard', 'read-size-guard'],
+  Read: ['read-size-guard']
 };
 const claudeAgentGuards: Record<string, Record<string, string[]>> = {
   'assayer.md': reviewAgentGuards,
   'sentinel.md': reviewAgentGuards,
-  'scout.md': { Read: ['read-size-guard.js'] },
-  'scribe.md': { Bash: ['destructive-guard.js'] },
-  'smith.md': { 'Bash|PowerShell': ['destructive-guard.js'] }
+  'scout.md': { Read: ['read-size-guard'] },
+  'scribe.md': { Bash: ['destructive-guard'] },
+  'smith.md': { 'Bash|PowerShell': ['destructive-guard'] }
 };
 
 function renderClaudeAgent(raw: string, file: string, hookPath: string): string {
   let content = raw;
+  const binName = nativeHookBinName();
   if (Object.hasOwn(claudeAgentGuards, file)) {
-    const groups = Object.entries(claudeAgentGuards[file]).flatMap(([matcher, scripts]) => [
+    const groups = Object.entries(claudeAgentGuards[file]).flatMap(([matcher, subcommands]) => [
       `    - matcher: "${matcher}"`,
       '      hooks:',
-      ...scripts.flatMap(script => [
+      ...subcommands.flatMap(sub => [
         '        - type: command',
-        `          command: 'node "${hookPath.replaceAll("'", "''")}/${script}"'`
+        `          command: '"${hookPath.replaceAll("'", "''")}/${binName}" ${sub}'`
       ])
     ]);
     const hooks = ['hooks:', '  PreToolUse:', ...groups].join('\n');
@@ -485,14 +487,11 @@ function install(options: InstallOptions) {
     }
     const nativeHookSrc = findNativeHookBinary(sourceRoot);
     const nativeBinName = nativeHookBinName();
-    if (nativeHookSrc) {
-      plannedFiles.set(`${hookDir}/${nativeBinName}`, { content: fs.readFileSync(nativeHookSrc) });
-    }
+    plannedFiles.set(`${hookDir}/${nativeBinName}`, { content: fs.readFileSync(nativeHookSrc) });
     const hooksDir = path.join(sourceRoot, 'claude', 'hooks');
-    const agentHookScripts = ['agent-audit.js', 'destructive-guard.js', 'read-size-guard.js', 'readonly-guard.js', 'redigir.js'];
-    if (fs.existsSync(hooksDir)) {
+    if (!isGlobal && fs.existsSync(hooksDir)) {
       for (const file of fs.readdirSync(hooksDir)) {
-        if (isGlobal ? agentHookScripts.includes(file) : file.endsWith('.js')) {
+        if (file.endsWith('.js')) {
           plannedFiles.set(`${hookDir}/${file}`, { content: fs.readFileSync(path.join(hooksDir, file)) });
         }
       }
@@ -510,10 +509,8 @@ function install(options: InstallOptions) {
       let incomingSettings: any = {};
       if (fs.existsSync(incomingSettingsPath)) {
         let raw = fs.readFileSync(incomingSettingsPath, 'utf8').replaceAll('__HOME__', () => escapeJsonString(claudeHookPath));
-        if (nativeHookSrc) {
-          const jsAuditCmd = `node \\"${escapeJsonString(claudeHookPath)}/.claude/hooks/agent-audit.js\\"`;
-          const nativeAuditCmd = `\\"${escapeJsonString(claudeHookPath)}/.claude/hooks/${nativeBinName}\\" agent-audit`;
-          raw = raw.replaceAll(jsAuditCmd, nativeAuditCmd);
+        if (nativeBinName !== 'oathbound-hook') {
+          raw = raw.replaceAll('/.claude/hooks/oathbound-hook\\"', `/.claude/hooks/${nativeBinName}\\"`);
         }
         try { incomingSettings = JSON.parse(raw); } catch (_) {}
       }
@@ -551,20 +548,12 @@ function install(options: InstallOptions) {
       }
     }
     if (!isGlobal) {
-      const rtkHookSrc = path.join(sourceRoot, 'agy', 'antigravity-cli', 'rtk-hook.js');
-      const rtkHookContent = fs.existsSync(rtkHookSrc) ? fs.readFileSync(rtkHookSrc) : '// rtk-hook.js\n';
-      plannedFiles.set('.agents/rtk-hook.js', { content: rtkHookContent });
-
       const nativeHookSrc = findNativeHookBinary(sourceRoot);
       const nativeBinName = nativeHookBinName();
-      if (nativeHookSrc) {
-        plannedFiles.set(`.agents/${nativeBinName}`, { content: fs.readFileSync(nativeHookSrc) });
-      }
+      plannedFiles.set(`.agents/${nativeBinName}`, { content: fs.readFileSync(nativeHookSrc) });
 
-      // Merge em .agents/hooks.json apontando para o binário nativo quando disponível, ou fallback node .agents/rtk-hook.js
-      const hookCommand = nativeHookSrc
-        ? `"${targetPosix}/.agents/${nativeBinName}" rtk-hook`
-        : `node ${targetPosix}/.agents/rtk-hook.js`;
+      // Merge em .agents/hooks.json apontando para o binário nativo oathbound-hook
+      const hookCommand = `"${targetPosix}/.agents/${nativeBinName}" rtk-hook`;
       const incomingHooksPath = path.join(sourceRoot, 'agy', 'config', 'hooks.json');
       let incomingHooks: any = {
         hooks: {

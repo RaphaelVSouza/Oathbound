@@ -25,7 +25,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { achaPreco, extrairTokens, precificar, listarJsonl } = require('../custo/custo.js');
-const { redigir } = require('../../claude/hooks/agent-audit.js');
+const { redigir } = require('../../claude/hooks/redigir.js');
 
 const HOME = process.env.CUSTO_HOME || path.join(os.homedir(), '.claude');
 const MAX_AMOSTRA = 60;

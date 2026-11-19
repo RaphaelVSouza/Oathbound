@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.50.0-alpha.24] - 2026-11-19
+
+- Modo Rust-only no hot path: removidos scripts `.js` duplicados dos hooks (`plugin-agent-guard`, `readonly-guard`, `read-size-guard`, `destructive-guard`, `agent-audit`, `rtk-hook`, `statusline`) e fallback `.js` no instalador (`tools/install.ts`).
+- Adicionados subcomandos `readonly-guard`, `read-size-guard` e `destructive-guard` e testes unitários (`cargo test`) em `native/oathbound-hook`.
+- Otimizado `destructive.rs` com pré-filtro por substring e compilação lazy de regexes (`plugin-agent-guard` p50 de 77.7 ms → 13.8 ms; ~8–10x mais rápido que Node.js).
+
 ## [0.50.0-alpha.23] - 2026-11-19
 
 - Adicionado binário nativo multi-call em Rust (`native/oathbound-hook`) para os hooks `plugin-agent-guard`, `agent-audit`, `rtk-hook` e `statusline`, documentado em `docs/adr/0004-hooks-nativos.md`.

@@ -11,7 +11,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { redigir } = require('./agent-audit.js');
+const { redigir } = require('./redigir.js');
 
 const ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
 const MODELO = 'jev-1.14.0'; // versão fixa: a medição só vale para ela

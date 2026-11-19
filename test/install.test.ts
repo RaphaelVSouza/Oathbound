@@ -75,11 +75,12 @@ test('instalação global inclui agentes, skills, guards e manifesto sem tocar s
   for (const file of settings) {
     assert.equal(fs.readFileSync(path.join(root, file), 'utf8'), 'conteúdo local\n');
   }
+  const binName = process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
   const skillFileCount = walkAllFiles(path.join(__dirname, '..', 'skills')).length;
-  assert.equal(walkAllFiles(root).length, settings.length + 16 + 5 + skillFileCount * 2 + 1);
+  assert.equal(walkAllFiles(root).length, settings.length + 16 + 1 + skillFileCount * 2 + 1);
   const smith = fs.readFileSync(path.join(root, '.claude/agents/smith.md'), 'utf8');
-  const guard = path.join(root, '.oathbound/claude-hooks/destructive-guard.js');
-  assert.ok(smith.includes(`command: 'node "${guard.split(path.sep).join('/')}"'`));
+  const guard = path.join(root, `.oathbound/claude-hooks/${binName}`);
+  assert.ok(smith.includes(`command: '"${guard.split(path.sep).join('/')}" destructive-guard'`));
   assert.ok(fs.existsSync(guard));
   assert.throws(() => install({ root, global: true, statusline: true }), /--statusline/);
 });
@@ -103,8 +104,9 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
   assert.ok(fs.existsSync(res.manifestPath));
   assert.equal(res.manifestPath.endsWith('manifest.json'), true);
 
+  const binName = process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
   assert.ok(fs.existsSync(path.join(projectRoot, '.claude', 'agents', 'assayer.md')));
-  assert.ok(fs.existsSync(path.join(projectRoot, '.agents', 'rtk-hook.js')));
+  assert.ok(fs.existsSync(path.join(projectRoot, '.agents', binName)));
   assert.ok(fs.existsSync(path.join(projectRoot, '.agents', 'hooks.json')));
   assert.ok(fs.existsSync(path.join(projectRoot, '.agents', 'skills.json')));
 
@@ -112,7 +114,7 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
   assert.ok(fs.existsSync(path.join(projectRoot, 'tools', 'audit-docs.ts')));
   assert.ok(fs.existsSync(path.join(projectRoot, 'tools', 'audit-docs.core.ts')));
   const smith = fs.readFileSync(path.join(projectRoot, '.claude', 'agents', 'smith.md'), 'utf8');
-  assert.ok(smith.includes(`command: 'node "${projectRoot.split(path.sep).join('/')}/.claude/hooks/destructive-guard.js"'`));
+  assert.ok(smith.includes(`command: '"${projectRoot.split(path.sep).join('/')}/.claude/hooks/${binName}" destructive-guard'`));
   const orchestrator = fs.readFileSync(path.join(projectRoot, '.claude', 'agents', 'orquestrador.md'), 'utf8');
   assert.match(orchestrator, /^tools: Agent\(scout,/m);
   const auditDocsConfigPath = path.join(projectRoot, 'tools', 'audit-docs.config.js');
@@ -121,14 +123,14 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
   assert.equal(auditDocsConfigContent.includes('caipora'), false);
   assert.equal(auditDocsConfigContent.includes('oathbound.dev'), false);
 
-  // Verifica que os hooks do agy apontam para .agents/rtk-hook.js do projeto
+  // Verifica que os hooks do agy apontam para .agents/oathbound-hook[.exe] do projeto
   const hooks = JSON.parse(fs.readFileSync(path.join(projectRoot, '.agents', 'hooks.json'), 'utf8'));
   const rawHooksText = JSON.stringify(hooks);
-  assert.ok(rawHooksText.includes('.agents/rtk-hook.js'));
+  assert.ok(rawHooksText.includes(`.agents/${binName}`));
   const preToolUse = hooks['rtk-rewrite']?.PreToolUse || hooks.hooks?.PreToolUse || hooks.PreToolUse || [];
   const hookMatcher = preToolUse.find((m: any) => m.matcher === 'run_command' || m.matcher === '*');
   assert.ok(hookMatcher);
-  assert.ok(hookMatcher.hooks.some((h: any) => h.command.includes('.agents/rtk-hook.js')));
+  assert.ok(hookMatcher.hooks.some((h: any) => h.command.includes(`.agents/${binName}`) && h.command.includes('rtk-hook')));
 
   // Zero symlinks
   for (const f of walkAllFiles(projectRoot)) {

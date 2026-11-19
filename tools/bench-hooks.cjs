@@ -48,8 +48,18 @@ function measure(cmd, args, input, env, runs, warmup = 3) {
   };
 }
 
+function defaultBin() {
+  const ext = process.platform === 'win32' ? '.exe' : '';
+  return path.join(ROOT, 'native', 'oathbound-hook', 'target', 'release', `oathbound-hook${ext}`);
+}
+
 function main() {
   const { runs, bin } = parseArgs(process.argv.slice(2));
+  const targetBin = bin || defaultBin();
+  if (!fs.existsSync(targetBin)) {
+    console.error(`Binário não encontrado: ${targetBin}`);
+    process.exit(1);
+  }
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-bench-'));
   const env = { ...process.env, AGENT_AUDIT_DIR: tmpDir };
 
@@ -57,7 +67,6 @@ function main() {
     {
       name: 'plugin-agent-guard (allow)',
       subcmd: 'plugin-agent-guard',
-      script: path.join(ROOT, 'claude', 'hooks', 'plugin-agent-guard.js'),
       input: JSON.stringify({
         agent_id: 'bench-1',
         agent_type: 'oathbound:smith',
@@ -68,7 +77,6 @@ function main() {
     {
       name: 'plugin-agent-guard (deny)',
       subcmd: 'plugin-agent-guard',
-      script: path.join(ROOT, 'claude', 'hooks', 'plugin-agent-guard.js'),
       input: JSON.stringify({
         agent_id: 'bench-2',
         agent_type: 'oathbound:smith',
@@ -79,7 +87,6 @@ function main() {
     {
       name: 'agent-audit (append)',
       subcmd: 'agent-audit',
-      script: path.join(ROOT, 'claude', 'hooks', 'agent-audit.js'),
       input: JSON.stringify({
         agent_id: 'bench-3',
         agent_type: 'oathbound:scout',
@@ -91,7 +98,6 @@ function main() {
     {
       name: 'rtk-hook (deny find)',
       subcmd: 'rtk-hook',
-      script: path.join(ROOT, 'agy', 'antigravity-cli', 'rtk-hook.js'),
       input: JSON.stringify({
         toolCall: { args: { CommandLine: 'find . -name "*.js"' } },
       }),
@@ -99,14 +105,11 @@ function main() {
   ];
 
   try {
-    const mode = bin ? `native (${bin})` : `node ${process.version}`;
-    console.log(`Benchmark: ${mode} | ${os.platform()}-${os.arch()} | runs=${runs}\n`);
+    console.log(`Benchmark: native (${targetBin}) | ${os.platform()}-${os.arch()} | runs=${runs}\n`);
     console.log('| Hook | min (ms) | p50 (ms) | p95 (ms) | max (ms) |');
     console.log('| --- | ---: | ---: | ---: | ---: |');
     for (const c of cases) {
-      const cmd = bin || process.execPath;
-      const args = bin ? [c.subcmd] : [c.script];
-      const stats = measure(cmd, args, c.input, env, runs);
+      const stats = measure(targetBin, [c.subcmd], c.input, env, runs);
       console.log(
         `| ${c.name} | ${stats.min.toFixed(1)} | ${stats.p50.toFixed(1)} | ${stats.p95.toFixed(1)} | ${stats.max.toFixed(1)} |`
       );

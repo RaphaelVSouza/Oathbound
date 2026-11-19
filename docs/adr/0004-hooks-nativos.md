@@ -50,7 +50,16 @@ Medido com `rtk proxy node tools/bench-hooks.cjs --runs=15 --bin=native/oathboun
 | `agent-audit` (append) | 133.0 | 30.9 | 4.3x | 235.6 | 41.3 | 5.7x |
 | `rtk-hook` (deny find) | 137.0 | 28.1 | 4.9x | 196.3 | 34.2 | 5.7x |
 
-Nota: `plugin-agent-guard` compila as 8 regexes de `destructive.rs` em cada invocação (com suporte Unicode padrão do crate `regex`). Compilar cada regex sob demanda ou desabilitar `unicode` no crate `regex` deve aproximá-lo dos ~28–31 ms de `agent-audit`/`rtk-hook`.
+## Atualização (0.50.0-alpha.24): Rust-only no hot path + lazy regexes
+
+Removido o fallback `.js` dos hooks de hot path (`plugin-agent-guard`, `readonly-guard`, `read-size-guard`, `destructive-guard`, `agent-audit`, `rtk-hook` e `statusline`) para eliminar duplicação e drift. `destructive.rs` passou a compilar regexes sob demanda após pré-filtro por substring:
+
+| Hook | Node p50 (ms) | Nativo p50 (ms) | Ganho p50 | Nativo p95 (ms) |
+| --- | ---: | ---: | ---: | ---: |
+| `plugin-agent-guard` (allow) | 136.9 | 13.8 | 9.9x | 15.0 |
+| `plugin-agent-guard` (deny) | 130.5 | 16.6 | 7.9x | 20.9 |
+| `agent-audit` (append) | 133.0 | 17.3 | 7.7x | 21.2 |
+| `rtk-hook` (deny find) | 137.0 | 16.9 | 8.1x | 19.2 |
 
 ## Consequências
 

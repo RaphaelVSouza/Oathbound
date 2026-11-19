@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"__HOME__/.claude/hooks/agent-audit.js\"",
+            "command": "\"__HOME__/.claude/hooks/oathbound-hook\" agent-audit",
             "timeout": 5
           }
         ]

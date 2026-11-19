@@ -5,67 +5,69 @@ use std::sync::OnceLock;
 const INICIO: &str = r"(?i)(?:^|[;&|\n(]|&&)\s*(?:rtk\s+(?:proxy\s+)?)?";
 const GIT_OPCOES: &str = r"(?:\s+(?:--no-pager|-C\s+\S+|-c\s+\S+))*";
 
-struct Regra {
-    re: Regex,
-    motivo: fn(&regex::Captures<'_>) -> String,
+fn re_git_mut() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(&format!(
+            r"{INICIO}git{GIT_OPCOES}\s+(commit|push|reset|clean|rebase|merge|cherry-pick|revert|am|apply|stash|checkout|restore|switch|filter-branch|gc|prune|update-ref|config|remote)\b"
+        ))
+        .unwrap()
+    })
 }
 
-fn regras() -> &'static [Regra] {
-    static REGRAS: OnceLock<Vec<Regra>> = OnceLock::new();
-    REGRAS.get_or_init(|| {
-        vec![
-            Regra {
-                re: Regex::new(&format!(
-                    r"{INICIO}git{GIT_OPCOES}\s+(commit|push|reset|clean|rebase|merge|cherry-pick|revert|am|apply|stash|checkout|restore|switch|filter-branch|gc|prune|update-ref|config|remote)\b"
-                ))
-                .unwrap(),
-                motivo: |m| format!("git {} muda histórico, estado ou remoto", &m[1]),
-            },
-            Regra {
-                re: Regex::new(&format!(
-                    r"{INICIO}git{GIT_OPCOES}\s+(branch\s+(?:-\S*[dDmM]\S*|--delete|--move)|tag\s+(?:-\S*d\S*|--delete)|reflog\s+(?:expire|delete))\b"
-                ))
-                .unwrap(),
-                motivo: |m| {
-                    let sub = m[1].split_whitespace().next().unwrap_or("");
-                    format!("git {sub} apaga ou move referência")
-                },
-            },
-            Regra {
-                re: Regex::new(&format!(
-                    r"{INICIO}(rm|rmdir|del|erase|rd|remove-item|ri|unlink|shred)\b"
-                ))
-                .unwrap(),
-                motivo: |m| format!("{} remove arquivo ou pasta", &m[1]),
-            },
-            Regra {
-                re: Regex::new(r"(?i)\bfind\b[^;&|\n]*\s-(delete|exec|execdir)\b").unwrap(),
-                motivo: |_| "find com ação de remoção/execução".to_string(),
-            },
-            Regra {
-                re: Regex::new(&format!(
-                    r"{INICIO}gh\s+(pr\s+(create|merge|close|edit|comment|review|ready)|issue\s+(create|close|edit|comment|delete)|release\b|repo\s+(create|delete|edit|rename)|api\b[^;&|\n]*(-X|--method)\s*(POST|PUT|PATCH|DELETE))"
-                ))
-                .unwrap(),
-                motivo: |_| "gh faz escrita remota".to_string(),
-            },
-            Regra {
-                re: Regex::new(&format!(r"{INICIO}(npm|pnpm|yarn)\s+publish\b")).unwrap(),
-                motivo: |_| "publish é escrita remota".to_string(),
-            },
-            Regra {
-                re: Regex::new(&format!(
-                    r"{INICIO}(bash|sh|zsh|cmd|powershell|pwsh)(?:\.exe)?\b[^;&|\n]*\s(-c|-command|-encodedcommand|/c)\b"
-                ))
-                .unwrap(),
-                motivo: |_| "wrapper de shell esconde o comando real".to_string(),
-            },
-            Regra {
-                re: Regex::new(&format!(r"{INICIO}(eval|invoke-expression|iex)\b")).unwrap(),
-                motivo: |_| "eval/Invoke-Expression esconde o comando real".to_string(),
-            },
-        ]
+fn re_git_ref() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(&format!(
+            r"{INICIO}git{GIT_OPCOES}\s+(branch\s+(?:-\S*[dDmM]\S*|--delete|--move)|tag\s+(?:-\S*d\S*|--delete)|reflog\s+(?:expire|delete))\b"
+        ))
+        .unwrap()
     })
+}
+
+fn re_remove() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(&format!(
+            r"{INICIO}(rm|rmdir|del|erase|rd|remove-item|ri|unlink|shred)\b"
+        ))
+        .unwrap()
+    })
+}
+
+fn re_find() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"(?i)\bfind\b[^;&|\n]*\s-(delete|exec|execdir)\b").unwrap())
+}
+
+fn re_gh() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(&format!(
+            r"{INICIO}gh\s+(pr\s+(create|merge|close|edit|comment|review|ready)|issue\s+(create|close|edit|comment|delete)|release\b|repo\s+(create|delete|edit|rename)|api\b[^;&|\n]*(-X|--method)\s*(POST|PUT|PATCH|DELETE))"
+        ))
+        .unwrap()
+    })
+}
+
+fn re_publish() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(&format!(r"{INICIO}(npm|pnpm|yarn)\s+publish\b")).unwrap())
+}
+
+fn re_shell_wrapper() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(&format!(
+            r"{INICIO}(bash|sh|zsh|cmd|powershell|pwsh)(?:\.exe)?\b[^;&|\n]*\s(-c|-command|-encodedcommand|/c)\b"
+        ))
+        .unwrap()
+    })
+}
+
+fn re_eval() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(&format!(r"{INICIO}(eval|invoke-expression|iex)\b")).unwrap())
 }
 
 pub fn avaliar(payload: &Value) -> Option<String> {
@@ -83,10 +85,58 @@ pub fn avaliar(payload: &Value) -> Option<String> {
     if cmd.trim().is_empty() {
         return Some("comando vazio ou ausente".to_string());
     }
-    for r in regras() {
-        if let Some(m) = r.re.captures(cmd) {
-            return Some((r.motivo)(&m));
+
+    let lower = cmd.to_ascii_lowercase();
+
+    if lower.contains("git") {
+        if let Some(m) = re_git_mut().captures(cmd) {
+            return Some(format!("git {} muda histórico, estado ou remoto", &m[1]));
+        }
+        if lower.contains("branch") || lower.contains("tag") || lower.contains("reflog") {
+            if let Some(m) = re_git_ref().captures(cmd) {
+                let sub = m[1].split_whitespace().next().unwrap_or("");
+                return Some(format!("git {sub} apaga ou move referência"));
+            }
         }
     }
+
+    if lower.contains("rm")
+        || lower.contains("del")
+        || lower.contains("erase")
+        || lower.contains("rd")
+        || lower.contains("remove-item")
+        || lower.contains("ri")
+        || lower.contains("unlink")
+        || lower.contains("shred")
+    {
+        if let Some(m) = re_remove().captures(cmd) {
+            return Some(format!("{} remove arquivo ou pasta", &m[1]));
+        }
+    }
+
+    if lower.contains("find") && re_find().is_match(cmd) {
+        return Some("find com ação de remoção/execução".to_string());
+    }
+
+    if lower.contains("gh") && re_gh().is_match(cmd) {
+        return Some("gh faz escrita remota".to_string());
+    }
+
+    if lower.contains("publish") && re_publish().is_match(cmd) {
+        return Some("publish é escrita remota".to_string());
+    }
+
+    if (lower.contains("sh") || lower.contains("cmd") || lower.contains("powershell"))
+        && re_shell_wrapper().is_match(cmd)
+    {
+        return Some("wrapper de shell esconde o comando real".to_string());
+    }
+
+    if (lower.contains("eval") || lower.contains("invoke-expression") || lower.contains("iex"))
+        && re_eval().is_match(cmd)
+    {
+        return Some("eval/Invoke-Expression esconde o comando real".to_string());
+    }
+
     None
 }

@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node __HOME__/.gemini/antigravity-cli/rtk-hook.js",
+            "command": "__HOME__/.gemini/antigravity-cli/oathbound-hook rtk-hook",
             "timeout": 5
           }
         ]

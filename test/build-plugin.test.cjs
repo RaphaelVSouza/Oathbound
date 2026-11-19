@@ -55,8 +55,8 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
       const sourceHooks = JSON.parse(fs.readFileSync(path.join(ROOT, 'hooks', 'hooks.json'), 'utf8'));
       assert.deepEqual(hooks, sourceHooks);
       assert.equal(hooks.hooks.PreToolUse.length, 1);
-      assert.match(hooks.hooks.PreToolUse[0].hooks[0].command, /plugin-agent-guard\.js/);
-      assert.equal(fs.existsSync(path.join(out, 'claude/hooks/agent-audit.js')), true);
+      assert.match(hooks.hooks.PreToolUse[0].hooks[0].command, /oathbound-hook.*plugin-agent-guard/);
+      assert.equal(fs.existsSync(path.join(out, 'claude/hooks/redigir.js')), true);
     } else {
       const manifest = JSON.parse(fs.readFileSync(path.join(out, '.antigravity-plugin', 'plugin.json'), 'utf8'));
       assert.equal(manifest.version, version);
