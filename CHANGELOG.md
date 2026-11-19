@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.22] - 2026-11-19
+
+- Orquestradores Claude e agy aplicam `caveman full` desde o início da sessão.
+
 ## [0.50.0-alpha.21] - 2026-11-19
 
 - Mantidas apenas as 4 skills usadas (`diagnosing-bugs`, `grill-me`, `migration`, `surgical-patch`); removidas `safe-refactor` e `verify-and-stop`.

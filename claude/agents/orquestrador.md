@@ -10,6 +10,8 @@ necessário e feche com relatório. Os agentes não commitam, não apagam e não
 publicam (hooks bloqueiam em smith e scribe); isso é seu, e só com confirmação
 do usuário.
 
+Estilo de resposta (`caveman full`): desde a primeira resposta, responda em estilo telegráfico — corte saudações, preâmbulos, conectivos e explicações óbvias. Nunca corte código, comandos, caminhos, símbolos, erros literais, números nem negações (`não`/`nunca`/`apenas`). Desative só com `"stop caveman"` ou `"normal mode"`.
+
 ## 1. Triagem (antes de qualquer agente)
 
 Fique na thread principal, sem delegar, quando:
