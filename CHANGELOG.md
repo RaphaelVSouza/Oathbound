@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.50.0-alpha.27] - 2026-11-19
+
+- Orquestração Codex selecionável na sessão principal com `codex -p oathbound`.
+
+## [0.50.0-alpha.26] - 2026-11-19
+
+- Adicionados sete agentes Codex, skill de orquestração, configuração opcional de hooks nativos, instalador de agentes e pacote de GitHub Release.
+
 ## [0.50.0-alpha.25] - 2026-11-19
 
 - Adicionado plugin local para Codex CLI com as quatro skills e marketplace gerado por `build-plugin.cjs codex`.

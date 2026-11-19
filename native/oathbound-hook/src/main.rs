@@ -121,6 +121,22 @@ fn run_agent_audit() {
     }
 }
 
+fn run_codex_agent_audit() {
+    let (raw, oversized) = read_stdin_limited(MAX_STDIN_AUDIT);
+    if oversized {
+        return;
+    }
+    if let Ok(mut payload) = serde_json::from_str::<Value>(&raw) {
+        let event = match payload.get("hook_event_name").and_then(Value::as_str) {
+            Some("SubagentStart") => "SubagentStart",
+            Some("SubagentStop") => "SubagentStop",
+            _ => return,
+        };
+        payload["tool_name"] = json!(event);
+        registrar(&payload, None);
+    }
+}
+
 fn run_rtk_hook() {
     let (raw, oversized) = read_stdin_limited(MAX_STDIN_RTK);
     let out = rtk_hook::run(&raw, oversized);
@@ -141,13 +157,14 @@ fn main() {
         "read-size-guard" => run_read_size_guard(),
         "destructive-guard" => run_destructive_guard(),
         "agent-audit" => run_agent_audit(),
+        "codex-agent-audit" => run_codex_agent_audit(),
         "rtk-hook" => run_rtk_hook(),
         "statusline" => run_statusline(),
         "--version" | "-V" => {
             println!("oathbound-hook {}", env!("CARGO_PKG_VERSION"));
         }
         _ => {
-            eprintln!("Usage: oathbound-hook <plugin-agent-guard|readonly-guard|read-size-guard|destructive-guard|agent-audit|rtk-hook|statusline>");
+            eprintln!("Usage: oathbound-hook <plugin-agent-guard|readonly-guard|read-size-guard|destructive-guard|agent-audit|codex-agent-audit|rtk-hook|statusline>");
             std::process::exit(2);
         }
     }

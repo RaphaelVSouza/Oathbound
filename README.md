@@ -4,7 +4,7 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 
 - **Estágio:** alpha / incompleto, com protótipos em calibração (versão em [VERSION](VERSION) e histórico em [CHANGELOG.md](CHANGELOG.md)).
 - **Stack:** TypeScript e JavaScript nativos em **Node.js 24+** (type stripping nativo, sem etapa de build e sem dependências externas).
-- **Alvos suportados:** **Claude Code** (`claude`), **Antigravity CLI** (`agy`) e **Codex CLI** (plugin local com quatro skills).
+- **Alvos suportados:** **Claude Code** (`claude`), **Antigravity CLI** (`agy`) e **Codex CLI** (plugin, agentes e hooks opcionais).
 
 ---
 
@@ -58,7 +58,18 @@ codex plugin add oathbound@oathbound-local
 codex plugin list --marketplace oathbound-local --json
 ```
 
-Abra uma nova sessão do Codex para usar as skills. [ADR do plugin Codex](docs/adr/0005-plugin-codex.md)
+Para instalar os sete agentes no projeto, execute `node tools/install.ts --runner codex --project .`.
+Use `--global` no lugar de `--project .` para instalá-los em `~/.codex/agents/`.
+Se você usa um `CODEX_HOME` personalizado, copie os TOMLs para a pasta `agents/` desse perfil.
+Quem instala a partir do GitHub Release encontra os TOMLs em `setup/agents/` e pode copiá-los para `.codex/agents/`, preservando arquivos existentes.
+
+Inicie `codex -p oathbound` para carregar o orquestrador na sessão principal.
+A instalação global inclui o perfil. Na instalação por projeto ou pelo GitHub Release, copie `codex/oathbound.config.toml` ou `setup/oathbound.config.toml` para o diretório `CODEX_HOME` (padrão `~/.codex/`), preservando arquivos existentes.
+Para ativar os hooks opcionais, coloque o binário nativo da sua plataforma no PATH com o nome `oathbound-hook`.
+Copie `setup/hooks.json` para `.codex/hooks.json` ou acrescente suas entradas ao arquivo existente.
+Revise e confie nas definições com `/hooks`. O guard Bash se aplica à sessão inteira.
+Execute no terminal externo as ações autorizadas que o guard bloquear.
+[ADR do plugin Codex](docs/adr/0005-plugin-codex.md)
 
 ### 3. Instalador de Projeto e Ambiente (`install.ts`)
 

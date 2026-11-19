@@ -106,6 +106,29 @@ test('native hook: agent-audit grava linha JSONL sem stdout', { skip: !fs.exists
   }
 });
 
+test('hooks Codex registram ciclo de vida e bloqueiam apenas o comando avaliado', { skip: !fs.existsSync(BIN) }, t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-codex-audit-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const env = { ...process.env, AGENT_AUDIT_DIR: dir };
+  const events = ['SubagentStart', 'SubagentStop'];
+  for (const event of events) {
+    const result = runHook('codex-agent-audit', {
+      hook_event_name: event, agent_id: 'sub-42', agent_type: 'scout', session_id: 'parent',
+    }, env);
+    assert.equal(result.status, 0);
+    assert.equal(result.stdout, '');
+  }
+  const records = fs.readFileSync(path.join(dir, 'agent-audit.jsonl'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
+  assert.deepEqual(records.map(record => record.agent_id), ['sub-42', 'sub-42']);
+  assert.deepEqual(records.map(record => record.ferramenta), events);
+  const bash = command => ({ hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command } });
+  const allowed = runHook('destructive-guard', bash('git status'), env);
+  assert.equal(allowed.status, 0);
+  assert.equal(allowed.stdout, '');
+  const denied = runHook('destructive-guard', bash('git commit -m x'), env);
+  assert.equal(JSON.parse(denied.stdout).hookSpecificOutput.permissionDecision, 'deny');
+});
+
 test('native hook: rtk-hook bloqueia find e gci -Recurse e ajusta WaitMsBeforeAsync', { skip: !fs.existsSync(BIN) }, () => {
   const findRes = runHook('rtk-hook', { toolCall: { args: { CommandLine: 'find . -name "*.js"' } } });
   assert.equal(JSON.parse(findRes.stdout).decision, 'deny');

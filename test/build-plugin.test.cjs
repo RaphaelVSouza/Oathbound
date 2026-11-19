@@ -89,6 +89,18 @@ test('gera marketplace Codex com plugin portátil e skills completas', t => {
   assert.equal(manifest.version, fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim());
   const skills = path.join(plugin, 'skills');
   assert.deepEqual(fs.readdirSync(skills).sort(), ['diagnosing-bugs', 'grill-me', 'migration', 'surgical-patch']);
+  assert.deepEqual(fs.readFileSync(path.join(out, 'setup/oathbound.config.toml')),
+    fs.readFileSync(path.join(ROOT, 'codex/oathbound.config.toml')));
+  assert.deepEqual(fs.readdirSync(path.join(out, 'setup/agents')).sort(),
+    ['assayer', 'scholar', 'scout', 'scribe', 'sentinel', 'smith', 'tester'].map(name => name + '.toml'));
+  const { verificar } = require('./agents/sincronia.js');
+  const contracts = require('./agents/regras-comuns.json');
+  for (const role of Object.keys(contracts.regras)) {
+    const profile = fs.readFileSync(path.join(out, 'setup/agents', role + '.toml'), 'utf8');
+    assert.match(profile, new RegExp('^name = "' + role + '"', 'm'));
+    assert.deepEqual(verificar(profile, role, contracts, 'codex'), []);
+  }
+  assert.deepEqual(fs.readFileSync(path.join(out, 'setup/hooks.json')), fs.readFileSync(path.join(ROOT, 'codex/hooks.json')));
   for (const file of fs.readdirSync(path.join(ROOT, 'skills'), { recursive: true, withFileTypes: true })) {
     if (!file.isFile()) continue;
     const original = path.join(file.parentPath, file.name);

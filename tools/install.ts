@@ -16,7 +16,7 @@ const LEGACY_IDS = [
   'mago', 'cacador', 'sabio', 'bardo', 'escriba', 'docs', 'qa'
 ];
 
-const ALLOWED_RUNNERS = ['all', 'claude', 'agy'];
+const ALLOWED_RUNNERS = ['all', 'claude', 'agy', 'codex'];
 
 function sha256(content: Buffer | string): string {
   return crypto.createHash('sha256').update(content).digest('hex');
@@ -65,7 +65,7 @@ function walkFiles(directory: string): string[] {
 interface InstallOptions {
   project?: string;
   global?: boolean;
-  runner?: 'all' | 'claude' | 'agy';
+  runner?: 'all' | 'claude' | 'agy' | 'codex';
   upgrade?: boolean;
   statusline?: boolean;
   auditDocs?: boolean;
@@ -101,13 +101,13 @@ function parseArgs(args: string[]): InstallOptions {
     } else if (arg === '--runner') {
       if (!args[i + 1]) throw new Error('Missing value for --runner');
       const val = args[++i].toLowerCase();
-      if (['opencode', 'codex', 'generic'].includes(val) || !ALLOWED_RUNNERS.includes(val)) {
+      if (!ALLOWED_RUNNERS.includes(val)) {
         throw new Error(`Unsupported runner: ${val}`);
       }
       options.runner = val as any;
     } else if (arg.startsWith('--runner=')) {
       const val = arg.slice('--runner='.length).toLowerCase();
-      if (['opencode', 'codex', 'generic'].includes(val) || !ALLOWED_RUNNERS.includes(val)) {
+      if (!ALLOWED_RUNNERS.includes(val)) {
         throw new Error(`Unsupported runner: ${val}`);
       }
       options.runner = val as any;
@@ -120,7 +120,7 @@ function parseArgs(args: string[]): InstallOptions {
     } else if (arg === '--no-dedupe-skills') {
       options.dedupeSkills = false;
     } else if (arg === '--help' || arg === '-h') {
-      console.log('Usage: node tools/install.ts [--project <dir> | --global] [--runner <all|claude|agy>] [--upgrade] [--statusline] [--audit-docs] [--no-dedupe-skills]');
+      console.log('Usage: node tools/install.ts [--project <dir> | --global] [--runner <all|claude|agy|codex>] [--upgrade] [--statusline] [--audit-docs] [--no-dedupe-skills]');
       process.exit(0);
     } else {
       throw new Error(`Unknown or incomplete option: ${arg}`);
@@ -353,7 +353,7 @@ function moveFolderSafely(srcDir: string, destDir: string): void {
 function install(options: InstallOptions) {
   const isGlobal = Boolean(options.global);
   const runner = options.runner || 'all';
-  if (['opencode', 'codex', 'generic'].includes(runner) || !ALLOWED_RUNNERS.includes(runner)) {
+  if (!ALLOWED_RUNNERS.includes(runner)) {
     throw new Error(`Unsupported runner: ${runner}`);
   }
   if (isGlobal && options.auditDocs) {
@@ -373,7 +373,9 @@ function install(options: InstallOptions) {
   const claudeHomePosix = targetPosix;
   const claudeHookPath = escapeClaudeHookPath(claudeHomePosix);
 
-  const manifestRelPath = isGlobal ? '.oathbound/global-manifest.json' : '.oathbound/manifest.json';
+  const manifestRelPath = runner === 'codex'
+    ? '.oathbound/codex-manifest.json'
+    : isGlobal ? '.oathbound/global-manifest.json' : '.oathbound/manifest.json';
   const manifestFullPath = path.join(targetRoot, manifestRelPath);
 
   let oldManifest: { schema?: number; files?: Array<{ path: string; sha256: string }> } | null = null;
@@ -395,7 +397,7 @@ function install(options: InstallOptions) {
 
   const legacyRemovals: string[] = [];
   // Planeja a limpeza de agentes legados em --upgrade.
-  if (options.upgrade) {
+  if (options.upgrade && runner !== 'codex') {
     const legacyDirs = isGlobal ? [
       ...(runner !== 'agy' ? [path.join(targetRoot, '.claude', 'agents')] : []),
       ...(runner !== 'claude' ? [path.join(targetRoot, '.gemini', 'config', 'agents')] : [])
@@ -437,7 +439,7 @@ function install(options: InstallOptions) {
   const disabledSkillsForAgy = new Set<string>(['_disabled']);
   const skillMoves: Array<[string, string]> = [];
 
-  if (dedupeActive) {
+  if (dedupeActive && runner !== 'codex') {
     if (!isGlobal) {
       for (const skill of availableSkills) {
         const inClaudeGlobal = fs.existsSync(path.join(userHome, '.claude', 'skills', skill));
@@ -471,6 +473,18 @@ function install(options: InstallOptions) {
   }
 
   const plannedFiles = new Map<string, { content: Buffer | string; isMerge?: boolean }>();
+
+  if (runner === 'codex') {
+    if (isGlobal) {
+      plannedFiles.set('.codex/oathbound.config.toml', {
+        content: fs.readFileSync(path.join(sourceRoot, 'codex', 'oathbound.config.toml'))
+      });
+    }
+    const agentsDir = path.join(sourceRoot, 'codex', 'agents');
+    for (const file of fs.readdirSync(agentsDir).filter(file => file.endsWith('.toml'))) {
+      plannedFiles.set(`.codex/agents/${file}`, { content: fs.readFileSync(path.join(agentsDir, file)) });
+    }
+  }
 
   // --- Runner Claude ---
   if (runner === 'all' || runner === 'claude') {

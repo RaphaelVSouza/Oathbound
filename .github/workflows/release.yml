@@ -39,8 +39,10 @@ jobs:
           mkdir -p dist
           node tools/build-plugin.cjs claude dist/claude
           node tools/build-plugin.cjs agy dist/agy
+          node tools/build-plugin.cjs codex dist/codex
           tar -czf "dist/oathbound-claude-${TAG_VER}.tar.gz" -C dist/claude .
           tar -czf "dist/oathbound-agy-${TAG_VER}.tar.gz" -C dist/agy .
+          tar -czf "dist/oathbound-codex-${TAG_VER}.tar.gz" -C dist/codex .
 
       - name: Validate Claude release artifact
         run: npx --yes @anthropic-ai/claude-code@2.1.327 plugin validate dist/claude
@@ -57,6 +59,7 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             "dist/oathbound-claude-${TAG_VER}.tar.gz" \
             "dist/oathbound-agy-${TAG_VER}.tar.gz" \
+            "dist/oathbound-codex-${TAG_VER}.tar.gz" \
             --title "$GITHUB_REF_NAME" \
             --generate-notes \
             $PRERELEASE_FLAG

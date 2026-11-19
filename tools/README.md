@@ -28,7 +28,7 @@ node tools/install.ts [opções]
 Opções suportadas:
 - `--global`: Instala agentes do Claude e do agy e guarda o manifesto e os guards dos agentes Claude em `~/.oathbound/`.
 - `--project <dir>`: Instala em um diretório de projeto específico.
-- `--runner all|claude|agy`: Seleciona o runner alvo.
+- `--runner all|claude|agy|codex`: Seleciona o runner alvo. Selecione `codex` para instalar seus agentes. Com `--global`, instala também o perfil para `codex -p oathbound`. `all` inclui Claude e agy.
 - `--upgrade`: Atualiza uma instalação existente apresentando o diff.
 - `--statusline`: Configura a barra de status.
 - `--audit-docs`: Instala a configuração de auditoria de documentação.
@@ -36,7 +36,7 @@ Opções suportadas:
 
 O instalador valida manifestos SHA-256 e desativa skills duplicadas sem utilizar symlinks.
 O instalador global preserva instruções, configurações, hooks compartilhados e skills existentes. Use `--statusline` na instalação local do Claude.
-O instalador exige o binário nativo `oathbound-hook` (resolvido via `OATHBOUND_NATIVE_BIN`, `native/bin/oathbound-hook-<platform>-<arch>[.exe]` ou build local em `native/oathbound-hook/target/release/`), copia-o para o destino e aponta todos os hooks de hot path diretamente para ele.
+Quando instala hooks, o instalador exige o binário nativo `oathbound-hook` (resolvido via `OATHBOUND_NATIVE_BIN`, `native/bin/oathbound-hook-<platform>-<arch>[.exe]` ou build local em `native/oathbound-hook/target/release/`), copia-o para o destino e aponta os hooks diretamente para ele. No Codex, a configuração de hooks é manual.
 
 ## Benchmark de hooks (`bench-hooks.cjs`)
 

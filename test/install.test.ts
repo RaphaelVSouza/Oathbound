@@ -31,7 +31,7 @@ test('parseArgs valida runners permitidos e rejeita opções inválidas ou confl
   assert.equal(parseArgs(['--runner', 'agy']).runner, 'agy');
 
   assert.throws(() => parseArgs(['--runner', 'opencode']), /Unsupported runner: opencode/);
-  assert.throws(() => parseArgs(['--runner', 'codex']), /Unsupported runner: codex/);
+  assert.equal(parseArgs(['--runner', 'codex']).runner, 'codex');
   assert.throws(() => parseArgs(['--runner', 'generic']), /Unsupported runner: generic/);
 
   assert.throws(() => parseArgs(['--global', '--project', '.']), /--global and --project cannot be combined/);
@@ -39,6 +39,23 @@ test('parseArgs valida runners permitidos e rejeita opções inválidas ou confl
 
   const parsedNoDedupe = parseArgs(['--no-dedupe-skills']);
   assert.equal(parsedNoDedupe.dedupeSkills, false);
+});
+
+test('Codex instala sete agentes e preserva edição local no upgrade', t => {
+  const root = fixtureDir('codex-install-');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const options = { root, runner: 'codex' as const };
+  const first = install(options);
+  assert.equal(first.manifest.files.length, 7);
+  assert.deepEqual(install(options).manifest.files, first.manifest.files);
+  const scout = path.join(root, '.codex/agents/scout.toml');
+  fs.appendFileSync(scout, '\n# alteração local\n');
+  assert.deepEqual(install({ ...options, upgrade: true }).manifest.preservedFiles, ['.codex/agents/scout.toml']);
+  assert.match(fs.readFileSync(scout, 'utf8'), /alteração local/);
+  assert.equal(fs.existsSync(path.join(root, '.claude')), false);
+  assert.equal(fs.existsSync(path.join(root, '.codex/oathbound.config.toml')), false);
+  const globalInstall = install({ ...options, global: true });
+  assert.ok(globalInstall.manifest.files.some(file => file.path === '.codex/oathbound.config.toml'));
 });
 
 test('instalação global inclui agentes, skills, guards e manifesto sem tocar settings', t => {

@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "SubagentStart": [{ "hooks": [{ "type": "command", "command": "oathbound-hook codex-agent-audit" }] }],
+    "SubagentStop": [{ "hooks": [{ "type": "command", "command": "oathbound-hook codex-agent-audit" }] }],
+    "PreToolUse": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "oathbound-hook destructive-guard" }] }]
+  }
+}
