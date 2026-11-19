@@ -13,7 +13,7 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 1. **Regras de Governança:** O orquestrador aplica o fluxo comum do pacote. Cada projeto define suas exceções locais.
 2. **Subagentes Especializados:** Orquestrador principal complementado por 7 papéis: `scout`, `scholar`, `scribe`, `smith`, `assayer`, `sentinel` e `tester`.
 3. **Skills de Engenharia:** Conjunto de 4 skills: `diagnosing-bugs`, `grill-me`, `migration` e `surgical-patch`.
-4. **Hooks Determinísticos:** Mecanismos de proteção em tempo de execução incluindo `agent-audit`, `readonly-guard`, `read-size-guard`, `destructive-guard` e `rtk-hook`.
+4. **Hooks Determinísticos:** Mecanismos de proteção em tempo de execução incluindo `agent-audit`, `readonly-guard`, `read-size-guard`, `destructive-guard` e `rtk-hook`. Os hooks de hot path possuem implementação nativa opcional em Rust (`native/oathbound-hook`) com fallback automático para Node.js, conforme [docs/adr/0004-hooks-nativos.md](docs/adr/0004-hooks-nativos.md).
 5. **Telemetria, Relatórios e Protótipos:** Inclui `audit-resumo`, módulos de custo e dificuldade (`test/custo`, `test/dificuldade`) e protótipos inativos com Jev (`claude/hooks/skill-suggest.js`, `test/jev/revisar-teste.js`) documentados nos ADRs [docs/adr/0001-sugestao-de-skill-com-jev.md](docs/adr/0001-sugestao-de-skill-com-jev.md), [docs/adr/0002-roteamento-de-subagentes-com-jev.md](docs/adr/0002-roteamento-de-subagentes-com-jev.md) e [docs/adr/0003-jev-revisao-de-testes.md](docs/adr/0003-jev-revisao-de-testes.md).
 
 ---

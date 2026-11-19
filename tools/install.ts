@@ -242,6 +242,20 @@ function escapeClaudeHookPath(value: string): string {
   return value.replace(/["`$\\]/g, '\\$&');
 }
 
+function nativeHookBinName(): string {
+  return process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
+}
+
+function findNativeHookBinary(sourceRoot: string): string | null {
+  if (process.env.OATHBOUND_NATIVE_BIN && fs.existsSync(process.env.OATHBOUND_NATIVE_BIN)) {
+    return process.env.OATHBOUND_NATIVE_BIN;
+  }
+  const ext = process.platform === 'win32' ? '.exe' : '';
+  const platformName = `oathbound-hook-${process.platform}-${process.arch}${ext}`;
+  const releaseBin = path.join(sourceRoot, 'native', 'bin', platformName);
+  return fs.existsSync(releaseBin) ? releaseBin : null;
+}
+
 const reviewAgentGuards = {
   Bash: ['readonly-guard.js', 'read-size-guard.js'],
   Read: ['read-size-guard.js']
@@ -469,6 +483,11 @@ function install(options: InstallOptions) {
         }
       }
     }
+    const nativeHookSrc = findNativeHookBinary(sourceRoot);
+    const nativeBinName = nativeHookBinName();
+    if (nativeHookSrc) {
+      plannedFiles.set(`${hookDir}/${nativeBinName}`, { content: fs.readFileSync(nativeHookSrc) });
+    }
     const hooksDir = path.join(sourceRoot, 'claude', 'hooks');
     const agentHookScripts = ['agent-audit.js', 'destructive-guard.js', 'read-size-guard.js', 'readonly-guard.js', 'redigir.js'];
     if (fs.existsSync(hooksDir)) {
@@ -490,7 +509,12 @@ function install(options: InstallOptions) {
       const incomingSettingsPath = path.join(sourceRoot, 'claude', 'settings.json');
       let incomingSettings: any = {};
       if (fs.existsSync(incomingSettingsPath)) {
-        const raw = fs.readFileSync(incomingSettingsPath, 'utf8').replaceAll('__HOME__', () => escapeJsonString(claudeHookPath));
+        let raw = fs.readFileSync(incomingSettingsPath, 'utf8').replaceAll('__HOME__', () => escapeJsonString(claudeHookPath));
+        if (nativeHookSrc) {
+          const jsAuditCmd = `node \\"${escapeJsonString(claudeHookPath)}/.claude/hooks/agent-audit.js\\"`;
+          const nativeAuditCmd = `\\"${escapeJsonString(claudeHookPath)}/.claude/hooks/${nativeBinName}\\" agent-audit`;
+          raw = raw.replaceAll(jsAuditCmd, nativeAuditCmd);
+        }
         try { incomingSettings = JSON.parse(raw); } catch (_) {}
       }
       const destSettingsPath = path.join(targetRoot, '.claude', 'settings.json');
@@ -531,8 +555,16 @@ function install(options: InstallOptions) {
       const rtkHookContent = fs.existsSync(rtkHookSrc) ? fs.readFileSync(rtkHookSrc) : '// rtk-hook.js\n';
       plannedFiles.set('.agents/rtk-hook.js', { content: rtkHookContent });
 
-      // Merge em .agents/hooks.json apontando para node <projectPosix>/.agents/rtk-hook.js
-      const hookCommand = `node ${targetPosix}/.agents/rtk-hook.js`;
+      const nativeHookSrc = findNativeHookBinary(sourceRoot);
+      const nativeBinName = nativeHookBinName();
+      if (nativeHookSrc) {
+        plannedFiles.set(`.agents/${nativeBinName}`, { content: fs.readFileSync(nativeHookSrc) });
+      }
+
+      // Merge em .agents/hooks.json apontando para o binário nativo quando disponível, ou fallback node .agents/rtk-hook.js
+      const hookCommand = nativeHookSrc
+        ? `"${targetPosix}/.agents/${nativeBinName}" rtk-hook`
+        : `node ${targetPosix}/.agents/rtk-hook.js`;
       const incomingHooksPath = path.join(sourceRoot, 'agy', 'config', 'hooks.json');
       let incomingHooks: any = {
         hooks: {

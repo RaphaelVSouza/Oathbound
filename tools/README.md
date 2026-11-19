@@ -36,6 +36,16 @@ Opções suportadas:
 
 O instalador valida manifestos SHA-256 e desativa skills duplicadas sem utilizar symlinks.
 O instalador global preserva instruções, configurações, hooks compartilhados e skills existentes. Use `--statusline` na instalação local do Claude.
+Quando um binário nativo `oathbound-hook` está disponível em `native/bin/oathbound-hook-<platform>-<arch>[.exe]` ou informado via `OATHBOUND_NATIVE_BIN`, o instalador copia o binário e aponta `agent-audit` e `rtk-hook` para ele; na ausência do binário, mantém o fallback automático para os scripts `.js`.
+
+## Benchmark de hooks (`bench-hooks.cjs`)
+
+Mede latência (p50/p95/min/max) dos hooks `plugin-agent-guard`, `agent-audit` e `rtk-hook` em Node.js e, opcionalmente, no binário nativo Rust:
+
+```sh
+node tools/bench-hooks.cjs --runs=15
+node tools/bench-hooks.cjs --runs=15 --bin=native/oathbound-hook/target/release/oathbound-hook.exe
+```
 
 ## Pacotes de plugin (`build-plugin.cjs`)
 

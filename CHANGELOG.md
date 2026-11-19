@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.50.0-alpha.23] - 2026-11-19
+
+- Adicionado binário nativo multi-call em Rust (`native/oathbound-hook`) para os hooks `plugin-agent-guard`, `agent-audit`, `rtk-hook` e `statusline`, documentado em `docs/adr/0004-hooks-nativos.md`.
+- Instalador (`tools/install.ts`) detecta binário nativo via `OATHBOUND_NATIVE_BIN` ou `native/bin/oathbound-hook-<platform>-<arch>[.exe]` e aplica fallback automático para os scripts `.js` quando ausente.
+- Adicionados `tools/bench-hooks.cjs`, `test/hooks/native-parity.test.js` e workflow `.github/workflows/native-hooks.yml` para build/release em `win32-x64`, `linux-x64` e `darwin-arm64`.
+
 ## [0.50.0-alpha.22] - 2026-11-19
 
 - Orquestradores Claude e agy aplicam `caveman full` desde o início da sessão.

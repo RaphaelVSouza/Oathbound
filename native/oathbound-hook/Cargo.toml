@@ -1,0 +1,17 @@
+[package]
+name = "oathbound-hook"
+version = "0.1.0"
+edition = "2021"
+description = "Native PreToolUse hooks and statusline binary for Oathbound"
+license = "MIT"
+
+[dependencies]
+regex = "1"
+serde_json = "1"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+opt-level = "z"
+panic = "abort"

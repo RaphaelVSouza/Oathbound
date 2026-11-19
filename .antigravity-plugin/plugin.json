@@ -1,7 +1,7 @@
 {
   "name": "oathbound",
   "displayName": "Oathbound",
-  "version": "0.50.0-alpha.22",
+  "version": "0.50.0-alpha.23",
   "logo": "assets/logo.svg",
   "description": "Governança de subagentes e skills de engenharia para Antigravity CLI (agy).",
   "author": {
