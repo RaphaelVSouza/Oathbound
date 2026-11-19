@@ -50,6 +50,10 @@ node tools/bench-hooks.cjs --runs=15
 
 Crie o diretório pai e execute `node tools/build-plugin.cjs claude <destino>` ou `node tools/build-plugin.cjs agy <destino>`. O destino deve ser novo e estar dentro do repositório. O gerador não sobrescreve arquivos existentes e injeta a versão de `VERSION` nos manifestos gerados. Valide com `claude plugin validate <destino>` ou `agy plugin validate <destino>`.
 
+Para Codex CLI, execute `node tools/build-plugin.cjs codex dist/codex`.
+O destino gerado é a raiz do marketplace local e contém o plugin em
+`plugins/oathbound/`. Siga a [instalação manual](../README.md#2-plugin-local-para-codex-cli).
+
 ## Smoke tests pagos do orquestrador Claude
 
 Execute apenas o caso necessário após mudanças relevantes no orquestrador,
@@ -80,7 +84,7 @@ Claude. Uma futura execução no agy precisa de executor próprio.
 
 ## Atualização de versão (`bump-version.cjs`)
 
-Execute `node tools/bump-version.cjs <semver>` para atualizar `VERSION`, `.antigravity-plugin/plugin.json` e `.claude-plugin/plugin.json` juntos. Use `--commit` para criar o commit de release e `--tag` para criar também a tag anotada `v<semver>`.
+Execute `node tools/bump-version.cjs <semver>` para atualizar `VERSION` e os manifestos de Antigravity, Claude e Codex. Use `--commit` para criar o commit de release e `--tag` para criar também a tag anotada `v<semver>`.
 
 Para ativar a validação automática local antes de cada commit, configure os hooks versionados:
 ```sh

@@ -8,6 +8,7 @@ const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const MANIFESTS = [
   '.antigravity-plugin/plugin.json',
   '.claude-plugin/plugin.json',
+  'codex/plugin.json',
 ];
 
 function runGit(args, cwd) {

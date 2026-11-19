@@ -4,7 +4,7 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 
 - **Estágio:** alpha / incompleto, com protótipos em calibração (versão em [VERSION](VERSION) e histórico em [CHANGELOG.md](CHANGELOG.md)).
 - **Stack:** TypeScript e JavaScript nativos em **Node.js 24+** (type stripping nativo, sem etapa de build e sem dependências externas).
-- **Alvos suportados:** **Claude Code** (`claude`) e **Antigravity CLI** (`agy` — nota: ferramenta independente, não se refere ao Gemini CLI do Google). O suporte ao **Codex** encontra-se planejado para entregas futuras.
+- **Alvos suportados:** **Claude Code** (`claude`), **Antigravity CLI** (`agy`) e **Codex CLI** (plugin local com quatro skills).
 
 ---
 
@@ -46,7 +46,21 @@ agy plugin validate dist/agy
 
 Crie `dist/` antes de gerar os pacotes. O gerador exige destinos novos. Cada pacote contém quatro skills e oito agentes. O pacote Claude inclui os guards por agente, que requerem Node.js.
 
-### 2. Instalador de Projeto e Ambiente (`install.ts`)
+### 2. Plugin local para Codex CLI
+
+Crie `dist/` e use um destino novo. A instalação é manual pelo marketplace local.
+Validação de referência com Codex CLI `0.170.0`.
+
+```sh
+node tools/build-plugin.cjs codex dist/codex
+codex plugin marketplace add ./dist/codex
+codex plugin add oathbound@oathbound-local
+codex plugin list --marketplace oathbound-local --json
+```
+
+Abra uma nova sessão do Codex para usar as skills. [ADR do plugin Codex](docs/adr/0005-plugin-codex.md)
+
+### 3. Instalador de Projeto e Ambiente (`install.ts`)
 
 Na migração de manifestos antigos, o instalador conserva arquivos divergentes e mostra o diff para revisão. A limpeza automática exige registro de origem no manifesto atual.
 

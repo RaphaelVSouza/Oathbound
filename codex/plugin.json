@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "oathbound",
+  "version": "0.50.0-alpha.25",
+  "description": "Quatro skills de engenharia do Oathbound para Codex.",
+  "author": {
+    "name": "Raphael Vieira"
+  },
+  "repository": "https://github.com/RaphaelVSouza/Oathbound",
+  "license": "MIT"
+}

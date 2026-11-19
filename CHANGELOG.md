@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.25] - 2026-11-19
+
+- Adicionado plugin local para Codex CLI com as quatro skills e marketplace gerado por `build-plugin.cjs codex`.
+
 ## [0.50.0-alpha.24] - 2026-11-19
 
 - Modo Rust-only no hot path: removidos scripts `.js` duplicados dos hooks (`plugin-agent-guard`, `readonly-guard`, `read-size-guard`, `destructive-guard`, `agent-audit`, `rtk-hook`, `statusline`) e fallback `.js` no instalador (`tools/install.ts`).

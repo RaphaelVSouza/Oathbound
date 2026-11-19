@@ -75,12 +75,36 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
   assert.throws(() => buildPlugin('agy', path.resolve(tmp, '..', '..', '..', 'outside')), /dentro do repositório/);
 });
 
+test('gera marketplace Codex com plugin portátil e skills completas', t => {
+  const tmp = fixtureDir('codex-test-');
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const out = buildPlugin('codex', path.join(tmp, 'codex'));
+  const marketplace = JSON.parse(fs.readFileSync(path.join(out, '.agents/plugins/marketplace.json'), 'utf8'));
+  assert.equal(marketplace.name, 'oathbound-local');
+  const [entry] = marketplace.plugins;
+  assert.deepEqual(entry.source, { source: 'local', path: './plugins/oathbound' });
+  const plugin = path.resolve(out, entry.source.path);
+  const manifest = JSON.parse(fs.readFileSync(path.join(plugin, 'plugin.json'), 'utf8'));
+  assert.equal(manifest.name, entry.name);
+  assert.equal(manifest.version, fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim());
+  const skills = path.join(plugin, 'skills');
+  assert.deepEqual(fs.readdirSync(skills).sort(), ['diagnosing-bugs', 'grill-me', 'migration', 'surgical-patch']);
+  for (const file of fs.readdirSync(path.join(ROOT, 'skills'), { recursive: true, withFileTypes: true })) {
+    if (!file.isFile()) continue;
+    const original = path.join(file.parentPath, file.name);
+    assert.deepEqual(fs.readFileSync(path.join(skills, path.relative(path.join(ROOT, 'skills'), original))), fs.readFileSync(original));
+  }
+  assert.deepEqual(fs.readdirSync(plugin).sort(), ['plugin.json', 'skills']);
+  assert.throws(() => buildPlugin('codex', out), /EEXIST/);
+});
+
 test('manifestos de plugin sincronizados com VERSION e apenas campos suportados no Antigravity', () => {
   const version = fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim();
   const agyManifest = JSON.parse(fs.readFileSync(path.join(ROOT, '.antigravity-plugin', 'plugin.json'), 'utf8'));
   const claudeManifest = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
   assert.equal(agyManifest.version, version);
   assert.equal(claudeManifest.version, version);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(ROOT, 'codex/plugin.json'), 'utf8')).version, version);
   for (const key of Object.keys(agyManifest)) {
     assert.equal(AGY_ALLOWED_FIELDS.has(key), true, `Campo não suportado no .antigravity-plugin/plugin.json: ${key}`);
   }
@@ -108,22 +132,25 @@ test('revisão de arquitetura limita a execução a quatro agentes de leitura', 
   assert.match(calls[3].prompt, /Contratos.*Operação.*Migração/);
 });
 
-test('bumpVersion atualiza VERSION e ambos os manifestos e rejeita versão inválida', t => {
+test('bumpVersion atualiza VERSION e os manifestos e rejeita versão inválida', t => {
   const tmp = fixtureDir('bump-test-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
   fs.mkdirSync(path.join(tmp, '.antigravity-plugin'));
   fs.mkdirSync(path.join(tmp, '.claude-plugin'));
+  fs.mkdirSync(path.join(tmp, 'codex'));
+  fs.copyFileSync(path.join(ROOT, 'codex/plugin.json'), path.join(tmp, 'codex/plugin.json'));
   fs.writeFileSync(path.join(tmp, 'VERSION'), '0.1.0\n');
   fs.writeFileSync(path.join(tmp, '.antigravity-plugin', 'plugin.json'), '{"name":"oathbound","version":"0.1.0"}\n');
   fs.writeFileSync(path.join(tmp, '.claude-plugin', 'plugin.json'), '{"name":"oathbound","version":"0.1.0"}\n');
 
   assert.throws(() => bumpVersion('invalida', tmp), /Uso:/);
   const updated = bumpVersion('1.2.3-rc.1', tmp);
-  assert.deepEqual(updated, ['VERSION', '.antigravity-plugin/plugin.json', '.claude-plugin/plugin.json']);
+  assert.deepEqual(updated, ['VERSION', '.antigravity-plugin/plugin.json', '.claude-plugin/plugin.json', 'codex/plugin.json']);
   assert.equal(fs.readFileSync(path.join(tmp, 'VERSION'), 'utf8').trim(), '1.2.3-rc.1');
   assert.equal(JSON.parse(fs.readFileSync(path.join(tmp, '.antigravity-plugin', 'plugin.json'), 'utf8')).version, '1.2.3-rc.1');
   assert.equal(JSON.parse(fs.readFileSync(path.join(tmp, '.claude-plugin', 'plugin.json'), 'utf8')).version, '1.2.3-rc.1');
+  assert.equal(JSON.parse(fs.readFileSync(path.join(tmp, 'codex/plugin.json'), 'utf8')).version, '1.2.3-rc.1');
 });
 
 test('bumpVersion --commit e --tag cria commit e tag no Git e rejeita tag duplicada', t => {
@@ -137,6 +164,8 @@ test('bumpVersion --commit e --tag cria commit e tag no Git e rejeita tag duplic
 
   fs.mkdirSync(path.join(tmp, '.antigravity-plugin'));
   fs.mkdirSync(path.join(tmp, '.claude-plugin'));
+  fs.mkdirSync(path.join(tmp, 'codex'));
+  fs.copyFileSync(path.join(ROOT, 'codex/plugin.json'), path.join(tmp, 'codex/plugin.json'));
   fs.writeFileSync(path.join(tmp, 'VERSION'), '0.1.0\n');
   fs.writeFileSync(path.join(tmp, '.antigravity-plugin', 'plugin.json'), '{"name":"oathbound","version":"0.1.0"}\n');
   fs.writeFileSync(path.join(tmp, '.claude-plugin', 'plugin.json'), '{"name":"oathbound","version":"0.1.0"}\n');

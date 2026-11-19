@@ -6,8 +6,8 @@ const path = require('node:path');
 const source = path.resolve(__dirname, '..');
 
 function buildPlugin(runner, destination) {
-  if (!['claude', 'agy'].includes(runner) || !destination) {
-    throw new Error('Uso: node tools/build-plugin.cjs <claude|agy> <diretório-novo>');
+  if (!['claude', 'agy', 'codex'].includes(runner) || !destination) {
+    throw new Error('Uso: node tools/build-plugin.cjs <claude|agy|codex> <diretório-novo>');
   }
   const out = path.resolve(destination);
   const parent = fs.realpathSync(path.dirname(out));
@@ -22,7 +22,6 @@ function buildPlugin(runner, destination) {
     fs.mkdirSync(path.dirname(full), { recursive: true });
     fs.writeFileSync(full, JSON.stringify(value, null, 2) + '\n', { flag: 'wx' });
   };
-  copy('skills', 'skills');
   const version = fs.readFileSync(path.join(source, 'VERSION'), 'utf8').trim();
   const loadManifest = (relPath) => {
     const manifest = JSON.parse(fs.readFileSync(path.join(source, relPath), 'utf8'));
@@ -31,6 +30,13 @@ function buildPlugin(runner, destination) {
     delete manifest.skills;
     return manifest;
   };
+  if (runner === 'codex') {
+    write('plugins/oathbound/plugin.json', loadManifest('codex/plugin.json'));
+    copy('skills', 'plugins/oathbound/skills');
+    write('.agents/plugins/marketplace.json', JSON.parse(fs.readFileSync(path.join(source, 'codex/marketplace.json'), 'utf8')));
+    return out;
+  }
+  copy('skills', 'skills');
   if (runner === 'claude') {
     const manifest = loadManifest('.claude-plugin/plugin.json');
     write('.claude-plugin/plugin.json', manifest);

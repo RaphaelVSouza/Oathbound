@@ -1,0 +1,20 @@
+{
+  "name": "oathbound-local",
+  "interface": {
+    "displayName": "Oathbound"
+  },
+  "plugins": [
+    {
+      "name": "oathbound",
+      "source": {
+        "source": "local",
+        "path": "./plugins/oathbound"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
