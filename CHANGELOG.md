@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.28] - 2026-11-19
+
+- Detalha os prompts de `scout`, `assayer` e `sentinel` no Codex com critérios de análise, tratamento de lacunas e formatos de saída.
+
 ## [0.50.0-alpha.27] - 2026-11-19
 
 - Orquestração Codex selecionável na sessão principal com `codex -p oathbound`.

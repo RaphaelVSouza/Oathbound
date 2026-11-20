@@ -59,6 +59,7 @@ codex plugin list --marketplace oathbound-local --json
 ```
 
 Para instalar os sete agentes no projeto, execute `node tools/install.ts --runner codex --project .`.
+Os prompts ficam em `codex/agents/`, no campo `developer_instructions` de cada TOML. `scout`, `assayer` e `sentinel` definem critérios de análise e como reportar evidências e lacunas.
 Use `--global` no lugar de `--project .` para instalá-los em `~/.codex/agents/`.
 Se você usa um `CODEX_HOME` personalizado, copie os TOMLs para a pasta `agents/` desse perfil.
 Quem instala a partir do GitHub Release encontra os TOMLs em `setup/agents/` e pode copiá-los para `.codex/agents/`, preservando arquivos existentes.
