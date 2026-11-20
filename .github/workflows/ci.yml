@@ -18,7 +18,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '26.13.1'
+
+      - uses: dtolnay/rust-toolchain@1.100.0
+
+      - name: Build oathbound-hook
+        run: cargo build --locked --release --manifest-path native/oathbound-hook/Cargo.toml
 
       - name: Run unit tests
         run: node --test "test/*.test.ts" "test/*.test.cjs" "test/*/*.test.js"
