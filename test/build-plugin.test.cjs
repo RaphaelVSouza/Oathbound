@@ -35,7 +35,11 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
   for (const runner of ['claude', 'agy']) {
     const out = buildPlugin(runner, path.join(tmp, runner));
     assert.equal(fs.readdirSync(path.join(out, 'agents')).length, 8);
-    assert.equal(fs.readdirSync(path.join(out, 'skills')).length, 4);
+    assert.equal(fs.readdirSync(path.join(out, 'skills')).length, 5);
+    assert.deepEqual(
+      fs.readFileSync(path.join(out, 'skills/create-adr/SKILL.md')),
+      fs.readFileSync(path.join(ROOT, 'skills/create-adr/SKILL.md'))
+    );
     assert.equal(fs.existsSync(path.join(out, 'AGENTS.md')), false);
     assert.throws(() => buildPlugin(runner, out), /EEXIST/);
     if (runner === 'claude') {
@@ -88,7 +92,7 @@ test('gera marketplace Codex com plugin portátil e skills completas', t => {
   assert.equal(manifest.name, entry.name);
   assert.equal(manifest.version, fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim());
   const skills = path.join(plugin, 'skills');
-  assert.deepEqual(fs.readdirSync(skills).sort(), ['diagnosing-bugs', 'grill-me', 'migration', 'surgical-patch']);
+  assert.deepEqual(fs.readdirSync(skills).sort(), ['create-adr', 'diagnosing-bugs', 'grill-me', 'migration', 'surgical-patch']);
   assert.deepEqual(fs.readFileSync(path.join(out, 'setup/oathbound.config.toml')),
     fs.readFileSync(path.join(ROOT, 'codex/oathbound.config.toml')));
   assert.deepEqual(fs.readdirSync(path.join(out, 'setup/agents')).sort(),

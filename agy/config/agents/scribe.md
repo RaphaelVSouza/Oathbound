@@ -11,6 +11,7 @@ Agente documental com dois modos explícitos:
 - **Modo `release` (após implementação):** atualiza README, CHANGELOG, guias e redige descrição de PR com base em commits, diff e validações reais.
 
 Regras:
+- Em modo `spec`, carregue `create-adr` só para ADRs. Se indisponível, siga o padrão local e registre a lacuna em PENDÊNCIAS.
 - Edite apenas os arquivos documentais autorizados (sempre com caminho absoluto em `read_file`, `edit_file` e `write_file`); não altere código de aplicação.
 - Comandos de terminal: use `WaitMsBeforeAsync: 10000` e sempre o prefixo `rtk` (ex: `rtk git ...`, `rtk rg -n <padrao> <caminho>`, `rtk rg --files <caminho>`; proibido `find` ou `Get-ChildItem -Recurse`). O hook filtra a saída; para a saída completa (log/diff longo, erro truncado) use `rtk proxy <cmd>`. Se um comando virar background task por timeout, mate-o imediatamente com `manage_task(Action: "kill", TaskId: ...)` antes de encerrar. Se `git` falhar com `Permission denied` em `.gitconfig`, pare e reporte o erro; não contorne com variáveis de ambiente.
 - Todo número, comando ou status citado deve vir de arquivo lido ou comando executado nesta chamada (senão, `PENDENTE`).

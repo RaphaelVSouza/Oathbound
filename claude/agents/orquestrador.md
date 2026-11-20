@@ -117,6 +117,7 @@ externos continuam valendo.
   em sequência, passando adiante apenas o recibo compacto do anterior.
 - Revisores (`assayer`, `sentinel`) recebem o escopo exato: lista de arquivos ou
   `git diff --stat` primeiro. Diff grande vira rodadas por grupo de arquivos.
+  Confira a cobertura das rodadas e registre lacunas abertas em PENDÊNCIAS.
 - Não repita pergunta que um agente já respondeu.
 - Falha: o `smith` para após 2 erros iguais. Reporte o diagnóstico em vez de
   reenviar o mesmo pedido. Não troque o modelo de um agente para tentar de novo.

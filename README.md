@@ -12,7 +12,7 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 
 1. **Regras de Governança:** O orquestrador aplica o fluxo comum do pacote. Cada projeto define suas exceções locais.
 2. **Subagentes Especializados:** Orquestrador principal complementado por 7 papéis: `scout`, `scholar`, `scribe`, `smith`, `assayer`, `sentinel` e `tester`.
-3. **Skills de Engenharia:** Conjunto de 4 skills: `diagnosing-bugs`, `grill-me`, `migration` e `surgical-patch`.
+3. **Skills de Engenharia:** [`create-adr`](skills/create-adr/SKILL.md), `diagnosing-bugs`, `grill-me`, `migration` e `surgical-patch`. O `scribe` carrega `create-adr` ao trabalhar em uma ADR e prioriza o guia e o template do projeto.
 4. **Hooks Determinísticos:** Mecanismos de proteção em tempo de execução incluindo `agent-audit`, `readonly-guard`, `read-size-guard`, `destructive-guard`, `rtk-hook` e `statusline`, implementados em binário nativo Rust (`native/oathbound-hook`), conforme [docs/adr/0004-hooks-nativos.md](docs/adr/0004-hooks-nativos.md).
 5. **Telemetria, Relatórios e Protótipos:** Inclui `audit-resumo`, módulos de custo e dificuldade (`test/custo`, `test/dificuldade`) e protótipos inativos com Jev (`claude/hooks/skill-suggest.js`, `test/jev/revisar-teste.js`) documentados nos ADRs [docs/adr/0001-sugestao-de-skill-com-jev.md](docs/adr/0001-sugestao-de-skill-com-jev.md), [docs/adr/0002-roteamento-de-subagentes-com-jev.md](docs/adr/0002-roteamento-de-subagentes-com-jev.md) e [docs/adr/0003-jev-revisao-de-testes.md](docs/adr/0003-jev-revisao-de-testes.md).
 
@@ -44,7 +44,7 @@ claude plugin validate dist/claude
 agy plugin validate dist/agy
 ```
 
-Crie `dist/` antes de gerar os pacotes. O gerador exige destinos novos. Cada pacote contém quatro skills e oito agentes. O pacote Claude inclui os guards por agente, que requerem Node.js.
+Crie `dist/` antes de gerar os pacotes. O gerador exige destinos novos. Cada pacote contém as skills e oito agentes. O pacote Claude inclui os guards por agente, que requerem Node.js.
 
 ### 2. Plugin local para Codex CLI
 
@@ -59,7 +59,7 @@ codex plugin list --marketplace oathbound-local --json
 ```
 
 Para instalar os sete agentes no projeto, execute `node tools/install.ts --runner codex --project .`.
-Os prompts ficam em `codex/agents/`, no campo `developer_instructions` de cada TOML. `scout`, `assayer` e `sentinel` definem critérios de análise e como reportar evidências e lacunas.
+Os prompts ficam em `codex/agents/`, no campo `developer_instructions` de cada TOML. Os agentes indicam as evidências, validações e lacunas esperadas em cada papel. O perfil `oathbound` planeja revisões grandes em lotes e leva lacunas abertas ao relatório final.
 Use `--global` no lugar de `--project .` para instalá-los em `~/.codex/agents/`.
 Se você usa um `CODEX_HOME` personalizado, copie os TOMLs para a pasta `agents/` desse perfil.
 Quem instala a partir do GitHub Release encontra os TOMLs em `setup/agents/` e pode copiá-los para `.codex/agents/`, preservando arquivos existentes.

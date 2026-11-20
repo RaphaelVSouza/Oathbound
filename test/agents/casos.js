@@ -11,7 +11,7 @@ const dentro = (arquivo, pasta) => barra(path.resolve(arquivo)).toLowerCase().st
 const statusRepo = (repo) => execFileSync('git', ['-C', repo, 'status', '--porcelain'], { encoding: 'utf8' });
 const usou = (ctx, nome) => ctx.usos.filter((u) => u.name === nome);
 const contrato = (agente) => ['contrato de saída', (ctx) => {
-  const falhas = verificarContrato(agente, ctx.texto);
+  const falhas = verificarContrato(agente, ctx.texto, ctx);
   return falhas.length ? `faltou: ${falhas.join(', ')}` : true;
 }];
 

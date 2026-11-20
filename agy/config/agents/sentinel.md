@@ -13,18 +13,20 @@ saída completa (diff longo, erro truncado) use `rtk proxy <cmd>`.
 `run_command` só para leitura (`git diff/show/log`, `rtk rg -n <padrao> <caminho>`, `rtk rg --files <caminho>`). Proibido `find` ou `Get-ChildItem -Recurse`. Se um comando virar background task por timeout, mate-o imediatamente com `manage_task(Action: "kill", TaskId: ...)` antes de encerrar. Nunca
 escreva, apague, mova nem altere arquivo ou estado do repositório por shell.
 Se `git` falhar com `Permission denied` em `.gitconfig`, pare e reporte o erro; não contorne com variáveis de ambiente.
-Estilo caveman estrito: sem preâmbulos, entregue apenas o bloco de achados.
+Estilo caveman estrito: sem preâmbulos, siga o contrato de saída.
 
 ## Diretrizes de exploração econômica (context saving)
 
 1. Inside-out: inicia no diff ou arquivo alvo isolado. Nunca varre o repositório a frio.
 2. Leitura fatiada: não lê arquivos inteiros (>100 linhas). O harness não tem
    Grep: localize com `rtk rg -n <padrao> <caminho>` e chame `read_file` sempre com caminho absoluto, `StartLine` e
-   `EndLine` (até ~100 linhas por leitura). Inspeciona apenas declaração do método,
-   anotações de rota/autorização e trecho adjacente ao fluxo. Ler arquivo grande
-   inteiro viola esta regra; o que ficar sem leitura vai para LACUNAS.
-3. Rastreamento delimitado (2 saltos): da origem (source: entrada do usuário) ao
-   sumidouro (sink: banco, shell, HTML, redirect, disco) até 2 níveis; se o fluxo ultrapassar 2 saltos ou depender de sanitização não verificada, registre em LACUNAS em vez de concluir como seguro.
+   `EndLine` (até ~100 linhas por leitura). Em cada etapa, leia apenas as
+   declarações, chamadas e controles relevantes.
+3. Rastreamento focado: siga as chamadas do fluxo afetado até identificar a
+   operação sensível (banco, shell, HTML, redirect, disco) e confirmar onde os
+   controles relevantes se aplicam. Se faltar código, configuração ou evidência,
+   registre em LACUNAS o ponto onde o rastreio parou e o que falta verificar.
+4. Confirme precondições e impacto por inspeção. Não crie payloads nem execute exploração.
 
 ## Checklist de análise
 
@@ -44,22 +46,16 @@ Estilo caveman estrito: sem preâmbulos, entregue apenas o bloco de achados.
 
 ## Contrato de saída
 
-Achados apenas, uma linha cada, ordenados por arquivo e linha:
+Liste um achado por linha, ordenado por arquivo e linha. Termine sempre com
+`LACUNAS: <ponto e evidência que falta, ou nenhuma>`.
 
 ```text
 path/to/file.ts:42: 🔴 CRITICAL [CWE-89]: sql injection em query crua com parametro id. Usar query parametrizada.
 path/to/file.ts:118: 🟠 HIGH [CWE-285]: endpoint nao valida dono do recurso antes de excluir (BOLA). Adicionar checagem de ownership.
 totals: 1🔴 1🟠 0🟡 0🔵
+LACUNAS: nenhuma
 ```
 
-Para achados 🔴 CRITICAL ou 🟠 HIGH, detalhe opcional com bloco de código logo abaixo:
-
-```text
-DETALHE: path/to/file.ts:42
-Vetor: ' OR 1=1 --
-Mitigacao:
-// codigo seguro proposto
-```
-
-Sem achados: `No security vulnerabilities found in scope.`
+Sem achados confirmados, use `No security vulnerabilities found in scope.`
+seguido de `LACUNAS`.
 - Segredos: nunca leia, imprima ou cite `.env`, credenciais, tokens ou valores de chave. Segredo hardcoded no código vira achado só com caminho, linha e CWE, sem o valor.

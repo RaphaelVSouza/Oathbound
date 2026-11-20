@@ -5,10 +5,39 @@
 const nl = (t) => String(t || '').split(/\r?\n/).filter((l) => l.trim() !== '');
 
 const tem = (re) => (t) => re.test(t);
+const lacunas = tem(/^LACUNAS:[ \t]+\S/m);
+
+function revisarCobertura(texto) {
+  const linhas = nl(texto);
+  const pendencias = linhas.pop();
+  const cobertura = linhas.pop();
+  if (!/^COBERTURA: (completa|parcial)$/.test(cobertura) || !lacunas(pendencias)) return false;
+  if (cobertura === 'COBERTURA: parcial' && /^LACUNAS:\s+nenhuma\.?\s*$/i.test(pendencias)) return false;
+  if (linhas.length === 1 && /^No issues\.?$/.test(linhas[0])) return true;
+  const total = linhas.pop();
+  const achado = /^\S.*:\d+: (🔴 bug|🟡 risk|🔵 nit|❓ question): /;
+  return /^totals: /.test(total) && linhas.length > 0 && linhas.every((linha) => achado.test(linha));
+}
+
+function conferirContagem(texto, totalAfirmacoes) {
+  const vereditos = [...texto.matchAll(/^[ \t]*(\d+)\. (CONFIRMADA|REFUTADA|INCONCLUSIVA) — \S/gm)];
+  const totais = texto.match(/^TOTAIS: (\d+) confirmadas, (\d+) refutadas, (\d+) inconclusivas[ \t]*$/m);
+  if (!totais || vereditos.length !== totalAfirmacoes) return false;
+  if (!vereditos.every((item, i) => Number(item[1]) === i + 1)) return false;
+  return ['CONFIRMADA', 'REFUTADA', 'INCONCLUSIVA'].every((veredito, i) =>
+    vereditos.filter((item) => item[2] === veredito).length === Number(totais[i + 1]));
+}
+
+function verificarColeta(texto, campo, ferramenta, { usos, resultados }) {
+  const informouLimpo = nl(texto).some((linha) => linha.trim().toLowerCase() === campo + ': limpo');
+  return !informouLimpo || usos.some((uso) =>
+    uso.name === ferramenta && resultados.some((resultado) => resultado.id === uso.id && !resultado.erro));
+}
+
 const CHECKS = {
   scout: [
     ['RESPOSTA', tem(/^RESPOSTA:/m)],
-    ['EVIDÊNCIA ou "não encontrado"', tem(/^EVIDÊNCIA:|^RESPOSTA:\s*não encontrado/m)],
+    ['EVIDÊNCIA ou "não encontrado"', tem(/^EVIDÊNCIAS?:|^RESPOSTA:\s*não encontrado/m)],
     ['LACUNAS', tem(/^LACUNAS:/m)],
   ],
   scholar: [
@@ -17,15 +46,7 @@ const CHECKS = {
     ['LACUNAS', tem(/^LACUNAS:/m)],
   ],
   assayer: [
-    ['só achados, totals ou "No issues."', (t) => {
-      const linhas = nl(t);
-      if (!linhas.length) return false;
-      if (linhas.length === 1 && /^No issues\.?$/.test(linhas[0].trim())) return true;
-      const achado = /^\S.*:\d+: (🔴 bug|🟡 risk|🔵 nit|❓ question): /;
-      const total = /^totals: /;
-      const ok = linhas.every((l) => achado.test(l) || total.test(l));
-      return ok && linhas.some((l) => achado.test(l)) && linhas.some((l) => total.test(l));
-    }],
+    ['achados e totais ou "No issues.", seguidos de COBERTURA e LACUNAS', revisarCobertura],
   ],
   sentinel: [
     ['achados com CWE e totals, ou frase de "sem achados"', (t) => {
@@ -33,6 +54,7 @@ const CHECKS = {
       const achado = /^\S.*:\d+: (🔴 CRITICAL|🟠 HIGH|🟡 MEDIUM|🔵 LOW) \[CWE-\d+\]: /m;
       return achado.test(t) && /^totals: /m.test(t);
     }],
+    ['LACUNAS', lacunas],
   ],
   scribe: [
     ['MODO', tem(/^MODO:\s*(spec|release)/m)],
@@ -55,10 +77,24 @@ const CHECKS = {
 };
 
 // Retorna a lista de itens do contrato que falharam (vazia = contrato cumprido).
-function verificarContrato(agente, texto) {
+function verificarContrato(agente, texto, contexto = {}) {
   const checks = CHECKS[agente];
   if (!checks) return [`agente sem contrato definido: ${agente}`];
-  return checks.filter(([, fn]) => !fn(String(texto || ''))).map(([nome]) => nome);
+  const saida = String(texto || '');
+  const falhas = checks.filter(([, fn]) => !fn(saida)).map(([nome]) => nome);
+  if (agente === 'scout' && contexto.totalAfirmacoes !== undefined &&
+      !conferirContagem(saida, contexto.totalAfirmacoes)) {
+    falhas.push('vereditos e TOTAIS compatíveis com o lote recebido');
+  }
+  if (agente === 'tester' && contexto.usos && contexto.resultados) {
+    if (!verificarColeta(saida, 'console', 'mcp__playwright__browser_console_messages', contexto)) {
+      falhas.push('CONSOLE limpo exige coleta bem-sucedida');
+    }
+    if (!verificarColeta(saida, 'network', 'mcp__playwright__browser_network_requests', contexto)) {
+      falhas.push('NETWORK limpo exige coleta bem-sucedida');
+    }
+  }
+  return falhas;
 }
 
 // Lê as linhas do `--output-format stream-json` e devolve texto final, usos e resultados de ferramenta.

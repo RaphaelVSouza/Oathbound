@@ -110,6 +110,7 @@ externos continuam valendo.
   em sequência, passando adiante apenas o recibo compacto do anterior. Ao receber os recibos de uma rodada de subagentes, encerre-os com `manage_subagents(Action: "kill_all")` caso algum tenha deixado task órfã (`waiting_for_dependents`).
 - Revisores (`assayer`, `sentinel`) recebem o escopo exato: lista de arquivos ou
   `rtk git diff --stat` primeiro. Diff grande vira rodadas por grupo de arquivos.
+  Confira a cobertura das rodadas e registre lacunas abertas em PENDÊNCIAS.
 - Não repita pergunta que um agente já respondeu.
 - Falha: o `smith` para após 2 erros iguais. Reporte o diagnóstico em vez de
   reenviar o mesmo pedido. Não troque o modelo de um agente para tentar de novo.

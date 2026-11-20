@@ -6,8 +6,8 @@ const { verificarContrato, lerStream } = require('./contratos.js');
 const bons = {
   scout: 'RESPOSTA: comando X\nEVIDÊNCIA:\n  - a.md:24 — trecho\nLACUNAS: nenhuma',
   scholar: 'RESPOSTA: sim\nFONTES: https://code.claude.com/docs/x — seção\nLACUNAS: nenhuma',
-  assayer: 'No issues.',
-  sentinel: 'No security vulnerabilities found in scope.',
+  assayer: 'No issues.\nCOBERTURA: completa\nLACUNAS: nenhuma',
+  sentinel: 'No security vulnerabilities found in scope.\nLACUNAS: nenhuma',
   scribe: 'MODO: release\nARQUIVOS: a.md — criado\nPENDÊNCIAS: nenhuma',
   smith: 'ARQUIVOS: a — mudança\nACEITE: cmd → ok\nNOTA: nenhuma',
   tester: 'STATUS: PASS\nAMBIENTE: x\nFLUXO: y\nCONSOLE: limpo\nNETWORK: não capturado\nEVIDÊNCIA: nenhuma',
@@ -19,15 +19,53 @@ for (const [ag, txt] of Object.entries(bons)) {
 // Variações válidas.
 assert.deepStrictEqual(verificarContrato('scout', 'RESPOSTA: não encontrado\nLACUNAS: nenhuma'), []);
 assert.deepStrictEqual(verificarContrato('assayer',
-  'a/b.py:42: 🔴 bug: erro. corrija.\nc.py:7: ❓ question: intenção?\ntotals: 1🔴 0🟡 1❓'), []);
+  'a/b.py:42: 🔴 bug: erro. corrija.\nc.py:7: ❓ question: intenção?\ntotals: 1🔴 0🟡 1❓\nCOBERTURA: completa\nLACUNAS: nenhuma'), []);
+assert.deepStrictEqual(verificarContrato('assayer',
+  'No issues.\nCOBERTURA: parcial\nLACUNAS: revisei a.py. b.py ficou pendente por falta de acesso.'), []);
 assert.deepStrictEqual(verificarContrato('sentinel',
-  'x/y.py:10: 🟡 MEDIUM [CWE-682]: texto. Corrija.\ntotals: 0🔴 0🟠 1🟡 0🔵'), []);
+  'x/y.py:10: 🟡 MEDIUM [CWE-682]: texto. Corrija.\ntotals: 0🔴 0🟠 1🟡 0🔵\nLACUNAS: nenhuma'), []);
+assert.deepStrictEqual(verificarContrato('sentinel',
+  'No security vulnerabilities found in scope.\nLACUNAS: servico.py:10 chama um controle cuja configuração não foi fornecida.'), []);
+
+// A contagem deve corresponder aos vereditos e ao tamanho do pedido.
+const lote = { totalAfirmacoes: 2 };
+const conferido = [
+  'RESPOSTA: conferi as duas afirmações.',
+  'EVIDÊNCIAS:',
+  '1. CONFIRMADA — Publica o status em app.js:10.',
+  '2. INCONCLUSIVA — Falta configuração do ambiente.',
+  'TOTAIS: 1 confirmadas, 0 refutadas, 1 inconclusivas',
+  'LACUNAS: configuração do ambiente.',
+].join('\n');
+assert.deepStrictEqual(verificarContrato('scout', conferido, lote), []);
+assert.ok(verificarContrato('scout', conferido, { totalAfirmacoes: 3 }).length > 0);
+assert.ok(verificarContrato('scout', conferido.replace('2. INCONCLUSIVA', '1. INCONCLUSIVA'), lote).length > 0);
+assert.ok(verificarContrato('scout', conferido.replace('0 refutadas, 1 inconclusivas', '1 refutadas, 0 inconclusivas'), lote).length > 0);
+
+const coleta = {
+  usos: [
+    { name: 'mcp__playwright__browser_console_messages', id: 'console' },
+    { name: 'mcp__playwright__browser_network_requests', id: 'rede' },
+  ],
+  resultados: [
+    { id: 'console', erro: false },
+    { id: 'rede', erro: true },
+  ],
+};
+assert.deepStrictEqual(verificarContrato('tester', bons.tester, coleta), []);
+assert.deepStrictEqual(verificarContrato('tester', bons.tester, { usos: [], resultados: [] }),
+  ['CONSOLE limpo exige coleta bem-sucedida']);
+assert.deepStrictEqual(verificarContrato('tester', bons.tester.replace('NETWORK: não capturado', 'NETWORK: limpo'), coleta),
+  ['NETWORK limpo exige coleta bem-sucedida']);
 
 // Violações devem falhar.
 assert.ok(verificarContrato('assayer', 'Achei um problema no código.').length > 0, 'prosa não é achado');
-assert.ok(verificarContrato('assayer', 'a.py:1: 🔴 bug: x. y.').length > 0, 'achado sem totals');
-assert.ok(verificarContrato('assayer', 'Resumo:\nNo issues.').length > 0, 'prosa antes de No issues');
-assert.ok(verificarContrato('sentinel', 'a.py:1: 🔴 CRITICAL: sem CWE. x\ntotals: 1').length > 0, 'sem CWE');
+assert.ok(verificarContrato('assayer', 'a.py:1: 🔴 bug: x. y.\nCOBERTURA: completa\nLACUNAS: nenhuma').length > 0, 'achado sem totals');
+assert.ok(verificarContrato('assayer', 'Resumo:\n' + bons.assayer).length > 0, 'prosa antes de No issues');
+assert.ok(verificarContrato('assayer', 'No issues.\nCOBERTURA: parcial').length > 0, 'cobertura parcial sem lacunas');
+assert.ok(verificarContrato('assayer', bons.assayer.replace('completa', 'parcial')).length > 0, 'cobertura parcial exige lacuna concreta');
+assert.ok(verificarContrato('sentinel', 'a.py:1: 🔴 CRITICAL: sem CWE. x\ntotals: 1\nLACUNAS: nenhuma').length > 0, 'sem CWE');
+assert.deepStrictEqual(verificarContrato('sentinel', 'No security vulnerabilities found in scope.'), ['LACUNAS']);
 assert.ok(verificarContrato('scout', 'Resposta: x').length > 0);
 assert.ok(verificarContrato('scholar', 'RESPOSTA: x\nFONTES: nenhuma\nLACUNAS: x').length > 0, 'sem URL');
 assert.ok(verificarContrato('tester', 'STATUS: OK\nAMBIENTE: x').length > 0);

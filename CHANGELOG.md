@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.50.0-alpha.30] - 2026-11-19
+
+- Adiciona `create-adr` aos três plugins. O `scribe` carrega a skill sob demanda e usa o guia e o template do projeto.
+
+## [0.50.0-alpha.29] - 2026-11-19
+
+- Claude e Antigravity. `assayer` revisa diffs grandes em lotes e informa cobertura. `sentinel` segue chamadas relevantes até o controle ou operação sensível e explicita lacunas.
+- Codex. `tester`, `smith` e `scribe` detalham evidências e pendências. `scholar` identifica a seção e a data ou versão da fonte. `scout` concilia vereditos com o total de afirmações. O perfil planeja revisão em lotes e registra lacunas abertas.
+
 ## [0.50.0-alpha.28] - 2026-11-19
 
 - Detalha os prompts de `scout`, `assayer` e `sentinel` no Codex com critérios de análise, tratamento de lacunas e formatos de saída.
