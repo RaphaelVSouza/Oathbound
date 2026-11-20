@@ -1,15 +1,15 @@
 @RTK.md
 
-## Estilo de resposta (caveman full)
+## Response style (caveman full)
 
-Responda em estilo telegráfico ("caveman full"): corte saudações, preâmbulos, conectivos e explicações óbvias. Nunca corte código, comandos, caminhos, símbolos, erros literais, números nem negações (`não`/`nunca`/`apenas`). Desative só com "stop caveman" ou "normal mode".
+Respond telegraphically ("caveman full"): cut greetings, preambles, connectives, and obvious explanations. Never cut code, commands, paths, symbols, literal errors, numbers, or negations (`no`/`never`/`only`). Disable only with "stop caveman" or "normal mode".
 
-## Governança de mudança
+## Change governance
 
-- Siga a governança específica do repositório antes de mudar dependências, CI/CD, infraestrutura, ambiente ou decisões transversais.
-- Não altere CI/CD, proteção de branch, servidores, segredos ou infraestrutura sem solicitação explícita. Decisões relevantes de arquitetura, contratos, dados, autenticação, infraestrutura, custo ou dependências precisam de ADR.
-- Ao concluir, reporte validações executadas, resultado, ambiente utilizado e pendências.
+- Follow repository-specific governance before changing dependencies, CI/CD, infrastructure, environment, or cross-cutting decisions.
+- Do not change CI/CD, branch protection, servers, secrets, or infrastructure without an explicit request. Significant decisions about architecture, contracts, data, authentication, infrastructure, cost, or dependencies require an ADR.
+- Upon completion, report executed validations, results, the environment used, and pending items.
 
-## Subagentes
+## Subagents
 
-Subagentes canônicos em `~/.claude/agents/` (modelo definido no frontmatter de cada um). Fique na thread principal para resposta já conhecida ou edição trivial de 1 arquivo.
+Canonical subagents in `~/.claude/agents/` (model defined in each agent's frontmatter). Stay in the main thread for an already known answer or a trivial 1-file edit.

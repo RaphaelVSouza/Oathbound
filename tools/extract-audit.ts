@@ -256,7 +256,7 @@ async function main() {
   const validDate = (day?: string): day is string => !!day && /^\d{4}-\d{2}-\d{2}$/.test(day) &&
     timestamp(day + 'T00:00:00Z')?.slice(0, 10) === day;
   if (!validDate(inicio) || !validDate(fim) || inicio > fim || !saida) {
-    throw new Error('Use --inicio AAAA-MM-DD --fim AAAA-MM-DD --saida <diretório novo>.');
+    throw new Error('Use --inicio YYYY-MM-DD --fim YYYY-MM-DD --saida <new directory>.');
   }
   const localDate = new Intl.DateTimeFormat('en', {
     timeZone: fuso, year: 'numeric', month: '2-digit', day: '2-digit',
@@ -278,7 +278,7 @@ async function main() {
     ...await transcriptSources('antigravity-desktop', join(gemini, 'antigravity-ide')),
   ].sort((a, b) => a.cli.localeCompare(b.cli) || basename(a.root).localeCompare(basename(b.root)) ||
     a.path.localeCompare(b.path));
-  if (!sources.length) throw new Error('Nenhuma fonte encontrada nos diretórios informados.');
+  if (!sources.length) throw new Error('No sources found in the specified directories.');
   const groups = new Map<Cli, Event[]>([
     ['claude', []], ['codex', []], ['agy', []], ['antigravity-desktop', []],
   ]);
@@ -304,7 +304,7 @@ async function main() {
   await mkdir(saida);
   await writeFile(join(saida, 'eventos.jsonl'), events.map(event => JSON.stringify(event) + '\n').join(''));
   await writeFile(join(saida, 'metricas.json'), JSON.stringify(metrics, null, 2) + '\n');
-  console.log(`${events.length} eventos de ${sources.length} arquivos.`);
+  console.log(`${events.length} events from ${sources.length} files.`);
 }
 
 main().catch(error => {

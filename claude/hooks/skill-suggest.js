@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Hook UserPromptSubmit: sugere no máximo uma skill por prompt, usando o Jev (TypeSafe).
-// Protótipo do ADR 0001 (docs/adr/0001-sugestao-de-skill-com-jev.md): NÃO registrado em settings.json.
-// Um request: `Choice` escolhe qual skill; `Noul` decide se alguma skill se aplica.
-// Modo `subagente` (ADR 0002, passo 2): `SKILL_SUGGEST_MODO=subagente` troca o request por um `Choice` entre os
-// subagentes (agents/*.md + embutidos) e a opção `inline`, mais um `Noul` por subagente. Nunca os dois modos no mesmo request.
-// Falha em silêncio e sem stdout: sem chave, sem rede, timeout ou resposta inválida não bloqueiam o prompt.
-// O texto do prompt vai ao serviço externo depois da redação de segredos; o log não guarda o prompt.
+// UserPromptSubmit hook: suggests at most one skill per prompt, using Jev (TypeSafe).
+// ADR 0001 prototype (docs/adr/0001-sugestao-de-skill-com-jev.md): NOT registered in settings.json.
+// One request: `Choice` selects a skill; `Noul` decides whether any skill applies.
+// `subagente` mode (ADR 0002, step 2): `SKILL_SUGGEST_MODO=subagente` replaces the request with a `Choice` among
+// subagents (agents/*.md + built-ins) and `inline`, plus one `Noul` per subagent. Never both modes in one request.
+// Fails silently without stdout: missing keys, no network, timeouts, or invalid responses do not block the prompt.
+// Prompt text goes to the external service after secret redaction; the log does not store the prompt.
 'use strict';
 const crypto = require('crypto');
 const fs = require('fs');
@@ -14,24 +14,24 @@ const path = require('path');
 const { redigir } = require('./redigir.js');
 
 const ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
-const MODELO = 'jev-1.14.0'; // versão fixa: a medição só vale para ela
+const MODELO = 'jev-1.14.0'; // pinned version: measurements apply only to this version
 const TEMPO_MAX_MS = 4000;
 const MAX_PROMPT = 2000;
 const MIN_PROMPT = 15;
 const MAX_DESC = 300;
 const MAX_STDIN = 1024 * 1024;
-// Constantes do cookbook `skill_suggestion`, ainda sem calibração nesta base (ADR 0001, critério de aceite).
+// Constants from the `skill_suggestion` cookbook, not yet calibrated on this dataset (ADR 0001, acceptance criterion).
 const LIMIAR_ACAO = 0.3;
 const LIMIAR_NOMEIA = 0.5;
 const LIMIAR_CONFIANCA = 0.5;
-// Sem calibração nesta base: valores iniciais, a calibrar no ADR 0002 passo 3.
-const LIMIAR_PROB_SUB = 0.5; // probabilidade da opção escolhida no `Choice` (confidence.md recomenda, não `confidence`)
-// Faixas do `Noul` do escolhido: >= ALTO sugere, <= BAIXO cala, o meio cala e registra `faixa: 'meio'`.
+// Not calibrated on this dataset: initial values, to calibrate in ADR 0002 step 3.
+const LIMIAR_PROB_SUB = 0.5; // probability of the selected `Choice` option (recommended by confidence.md, not `confidence`)
+// Selected `Noul` bands: >= ALTO suggests, <= BAIXO stays silent, middle stays silent and records `faixa: 'meio'`.
 const LIMIAR_NOUL_SUB_ALTO = 0.7;
 const LIMIAR_NOUL_SUB_BAIXO = 0.3;
 const OPCAO_INLINE = 'inline';
-const DESC_INLINE = 'Resolver na thread principal, sem delegar: resposta já conhecida ou edição trivial de 1 arquivo.';
-// Pares que o Jev confundiu na medição do ADR 0002; o `nao_faz` de cada Noul aponta o par.
+const DESC_INLINE = 'Resolve in the main thread, without delegation: known answer or trivial edit to 1 file.';
+// Pairs Jev confused in the ADR 0002 measurement; each Noul's `nao_faz` points to its pair.
 const PARES_CONFUNDIDOS = {
   smith: 'general-purpose',
   'general-purpose': 'smith',
@@ -43,11 +43,11 @@ const PARES_CONFUNDIDOS = {
   Explore: 'scout',
 };
 const SUBAGENTES_EMBUTIDOS = {
-  Explore: 'Agente rápido para explorar código: buscar arquivos por padrão, procurar palavras-chave e responder perguntas sobre a base.',
-  Plan: 'Arquiteto de software: projeta o plano de implementação, identifica arquivos críticos e compara trade-offs.',
-  'general-purpose': 'Agente genérico para pesquisar questões complexas, buscar código e executar tarefas de vários passos.',
-  'claude-code-guide': 'Responde dúvidas sobre o Claude Code (CLI, hooks, MCP, configurações), o Agent SDK e a API da Anthropic.',
-  'statusline-setup': 'Configura a status line do Claude Code do usuário.',
+  Explore: 'Fast code exploration agent: find files by pattern, search keywords, and answer codebase questions.',
+  Plan: 'Software architect: designs the implementation plan, identifies critical files, and compares trade-offs.',
+  'general-purpose': 'General agent for researching complex questions, searching code, and executing multi-step tasks.',
+  'claude-code-guide': 'Answers questions about Claude Code (CLI, hooks, MCP, settings), the Agent SDK, and the Anthropic API.',
+  'statusline-setup': 'Configures the Claude Code status line for the user.',
 };
 
 const raizClaude = () => process.env.SKILL_SUGGEST_HOME || path.join(os.homedir(), '.claude');
@@ -71,8 +71,8 @@ function versaoMaior(a, b) {
   return 0;
 }
 
-// Skills próprias (`skills/<nome>/SKILL.md`) e de plugins (`plugins/cache/<mkt>/<plugin>/<versão>/skills/...`).
-// Só a versão mais recente de cada plugin. Ignora `_disabled`.
+// Local skills (`skills/<name>/SKILL.md`) and plugin skills (`plugins/cache/<mkt>/<plugin>/<version>/skills/...`).
+// Only the latest version of each plugin. Ignores `_disabled`.
 function carregarCatalogo(raiz = raizClaude()) {
   const achados = new Map();
   const ler = (arquivo, prefixo) => {
@@ -81,7 +81,7 @@ function carregarCatalogo(raiz = raizClaude()) {
       if (!fm) return;
       const nome = prefixo ? `${prefixo}:${fm.nome.replace(/^.*:/, '')}` : fm.nome;
       achados.set(nome, fm.descricao.slice(0, MAX_DESC));
-    } catch { /* arquivo ilegível: ignora */ }
+    } catch { /* unreadable file: skip */ }
   };
   const listar = (dir) => { try { return fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); } catch { return []; } };
 
@@ -102,7 +102,7 @@ function carregarCatalogo(raiz = raizClaude()) {
   return achados;
 }
 
-// Embaralha de forma determinística por prompt: controla o viés de primeira opção do `Choice`.
+// Shuffles deterministically per prompt: controls `Choice` first-option bias.
 function embaralhar(nomes, semente) {
   const h = crypto.createHash('sha256').update(semente).digest();
   const lista = nomes.slice();
@@ -119,16 +119,16 @@ function montarPerguntas(catalogo, prompt, alvo = 'skill') {
   return {
     skill: {
       type: 'choice',
-      instructions: `Qual ${alvo} do catálogo faz exatamente o que o pedido do usuário exige? Escolha a que mais se aproxima, mesmo que nenhuma sirva.`,
+      instructions: `Which ${alvo === 'subagente' ? 'subagent' : alvo} in the catalog does exactly what the user request requires? Choose the closest match, even if none fits.`,
       criteria,
     },
     acao: {
       type: 'noul',
-      instructions: 'O pedido exige executar uma ação (em arquivos, contas, serviços, navegador) ou seguir um procedimento documentado, em vez de apenas ser respondido com texto?',
+      instructions: 'Does the request require an action (on files, accounts, services, browser) or a documented procedure, rather than just a text answer?',
     },
     nomeia: {
       type: 'noul',
-      instructions: 'O pedido nomeia uma ferramenta, formato, modelo ou método específico (por exemplo uma skill, um plugin, um tipo de arquivo ou um comando com barra)?',
+      instructions: 'Does the request name a specific tool, format, model, or method (for example a skill, plugin, file type, or slash command)?',
     },
   };
 }
@@ -148,8 +148,8 @@ async function chamarJev(estado, perguntas, chave, buscar = fetch) {
   } finally { clearTimeout(timer); }
 }
 
-// Devolve { skill, confianca, acao, nomeia } ou null. Só sugere se alguma skill é desejada
-// (ação ou nomeia acima do limiar) e a confiança da escolha passa do limiar.
+// Returns { skill, confianca, acao, nomeia } or null. Suggests only if a skill is wanted
+// (action or naming above threshold) and selection confidence passes the threshold.
 function decidir(resposta, catalogo) {
   const r = resposta && resposta.answers;
   if (!r || !r.skill || !r.acao || !r.nomeia) return null;
@@ -165,7 +165,7 @@ function decidir(resposta, catalogo) {
 }
 
 function bloco(skill) {
-  return `<skill_relevance>\nPossivelmente relevante ao pedido: ${skill}. Ignore se não combinar com o que o usuário pediu.\n</skill_relevance>`;
+  return `<skill_relevance>\nPossibly relevant to the request: ${skill}. Ignore if it does not match what the user requested.\n</skill_relevance>`;
 }
 
 function registrarLog(dado) {
@@ -173,10 +173,10 @@ function registrarLog(dado) {
     const dir = process.env.SKILL_SUGGEST_LOG_DIR || path.join(raizClaude(), 'state');
     fs.mkdirSync(dir, { recursive: true });
     fs.appendFileSync(path.join(dir, 'skill-suggest.jsonl'), JSON.stringify({ ts: new Date().toISOString(), modelo: MODELO, ...dado }) + '\n');
-  } catch { /* log é opcional */ }
+  } catch { /* logging is optional */ }
 }
 
-// Subagentes próprios (`agents/*.md`) mais os embutidos fixos. Embutido não é sobrescrito por arquivo homônimo.
+// Local subagents (`agents/*.md`) plus fixed built-ins. A same-named file does not override a built-in.
 function carregarSubagentes(raiz = raizClaude()) {
   const achados = new Map();
   try {
@@ -184,41 +184,41 @@ function carregarSubagentes(raiz = raizClaude()) {
       try {
         const fm = frontmatter(fs.readFileSync(path.join(raiz, 'agents', arq), 'utf8'));
         if (fm) achados.set(fm.nome, fm.descricao.slice(0, MAX_DESC));
-      } catch { /* arquivo ilegível: ignora */ }
+      } catch { /* unreadable file: skip */ }
     }
-  } catch { /* sem pasta agents */ }
+  } catch { /* no agents directory */ }
   for (const [nome, desc] of Object.entries(SUBAGENTES_EMBUTIDOS)) achados.set(nome, desc);
   return achados;
 }
 
-// Chave segura para o serviço: nomes com hífen ou outros símbolos viram `_`.
+// Service-safe key: names with hyphens or other symbols become `_`.
 const chaveNoul = (nome) => `noul_${nome.replace(/[^A-Za-z0-9]/g, '_')}`;
 
-// Um `Choice` entre todos os subagentes e um `Noul` por subagente, num único request.
+// One `Choice` among all subagents and one `Noul` per subagent, in a single request.
 function montarPerguntasSubagente(catalogo, prompt) {
   const criteria = {};
   for (const nome of embaralhar([...catalogo.keys(), OPCAO_INLINE], prompt)) criteria[nome] = nome === OPCAO_INLINE ? DESC_INLINE : catalogo.get(nome);
   const perguntas = {
     subagente: {
       type: 'choice',
-      instructions: 'Qual subagente do catálogo é o mais adequado para executar o pedido do usuário? Escolha o que mais se aproxima, mesmo que nenhum sirva.',
+      instructions: 'Which subagent in the catalog is best suited to execute the user request? Choose the closest match, even if none fits.',
       criteria,
     },
   };
   for (const [nome, desc] of catalogo) {
     const par = PARES_CONFUNDIDOS[nome];
-    const nao_faz = par && catalogo.has(par) ? [`Pedido que cabe ao ${par}: ${catalogo.get(par)}`] : ['Pedido que outro subagente do catálogo atende melhor.'];
+    const nao_faz = par && catalogo.has(par) ? [`Request suited to ${par}: ${catalogo.get(par)}`] : ['Request better handled by another subagent in the catalog.'];
     perguntas[chaveNoul(nome)] = {
       type: 'noul',
-      instructions: `Este pedido deve ser delegado ao subagente ${nome}?`,
+      instructions: `Should this request be delegated to subagent ${nome}?`,
       criteria: { true: { faz: desc }, false: { nao_faz } },
     };
   }
   return perguntas;
 }
 
-// Devolve { subagente, prob, noul, faixa, sugerir } ou null. `inline` escolhido: calado, com `inline: true`.
-// Sugere só se a probabilidade do escolhido no `Choice` passa do limiar e o `Noul` do escolhido cai na faixa alta.
+// Returns { subagente, prob, noul, faixa, sugerir } or null. Selected `inline`: silent, with `inline: true`.
+// Suggests only if the selected `Choice` probability passes the threshold and its `Noul` falls in the high band.
 function decidirSubagente(resposta, catalogo, limiares = {}) {
   const { conf = LIMIAR_PROB_SUB, alto = LIMIAR_NOUL_SUB_ALTO, baixo = LIMIAR_NOUL_SUB_BAIXO } = limiares;
   const r = resposta && resposta.answers;
@@ -237,10 +237,10 @@ function decidirSubagente(resposta, catalogo, limiares = {}) {
 }
 
 function blocoSubagente(nome) {
-  return `<subagent_relevance>\nSubagente possivelmente adequado: ${nome}. Ignore se não combinar.\n</subagent_relevance>`;
+  return `<subagent_relevance>\nPossibly suitable subagent: ${nome}. Ignore if it does not match.\n</subagent_relevance>`;
 }
 
-// Mesmas salvaguardas de `sugerir`. `deps` injeta catálogo, chave e transporte.
+// Same safeguards as `sugerir`. `deps` injects catalog, key, and transport.
 async function sugerirSubagente(prompt, deps = {}) {
   const chave = deps.chave !== undefined ? deps.chave : process.env.JEV_API_KEY;
   if (!chave) return null;
@@ -256,7 +256,7 @@ async function sugerirSubagente(prompt, deps = {}) {
   return d.sugerir ? { subagente: d.subagente, contexto: blocoSubagente(d.subagente) } : null;
 }
 
-// `deps` permite injetar catálogo, chave e transporte nos testes.
+// `deps` allows injecting catalog, key, and transport in tests.
 async function sugerir(prompt, deps = {}) {
   const chave = deps.chave !== undefined ? deps.chave : process.env.JEV_API_KEY;
   if (!chave) return null;

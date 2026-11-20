@@ -5,7 +5,7 @@ const { test } = require('node:test');
 const { revisarTeste } = require('./revisar-teste.js');
 
 const entrada = {
-  criterio: 'A reserva expira no segundo 323.',
+  criterio: 'The reservation expires at second 323.',
   assercao_anterior: 'assert.deepEqual(expire(322), [])',
   diff: '- assert.deepEqual(expire(322), [])\n+ assert.deepEqual(expire(322), ["boundary"])',
 };
@@ -15,21 +15,21 @@ const simular = (noul) => async () => ({
   json: async () => ({ answers: { enfraqueceu: { noul } } }),
 });
 
-test('envia uma pergunta e somente os campos previstos, com redação', async () => {
+test('sends one question and only the expected fields, with redaction', async () => {
   const resultado = await revisarTeste({
     ...entrada,
-    diff: entrada.diff + '\n+ password=segredo-ficticio',
-    caminho: 'não enviar',
+    diff: entrada.diff + '\n+ password=fake-secret',
+    caminho: 'do not send',
   }, {
-    chave: 'chave-ficticia',
+    chave: 'fake-key',
     buscar: async (_, opcoes) => {
       assert.equal(opcoes.method, 'POST');
-      assert.equal(opcoes.headers.Authorization, 'Bearer chave-ficticia');
+      assert.equal(opcoes.headers.Authorization, 'Bearer fake-key');
       const body = JSON.parse(opcoes.body);
       assert.deepEqual(Object.keys(body.state), ['criterio', 'assercao_anterior', 'diff']);
       assert.equal(body.state.criterio, entrada.criterio);
       assert.match(body.state.diff, /assert\.deepEqual/);
-      assert.ok(!body.state.diff.includes('segredo-ficticio'));
+      assert.ok(!body.state.diff.includes('fake-secret'));
       assert.deepEqual(Object.keys(body.questions), ['enfraqueceu']);
       assert.equal(body.questions.enfraqueceu.type, 'noul');
       return simular(0.9)();
@@ -38,7 +38,7 @@ test('envia uma pergunta e somente os campos previstos, com redação', async ()
   assert.deepEqual(resultado, { status: 'alerta', probabilidade: 0.9 });
 });
 
-test('classifica os limiares e preserva a faixa inconclusiva', async () => {
+test('classifies thresholds and preserves the inconclusive band', async () => {
   for (const [probabilidade, status] of [
     [0, 'sem_alerta'], [0.3, 'sem_alerta'], [0.31, 'inconclusivo'],
     [0.8, 'inconclusivo'], [0.81, 'alerta'],
@@ -48,7 +48,7 @@ test('classifica os limiares e preserva a faixa inconclusiva', async () => {
   }
 });
 
-test('entrada inválida e chave ausente não geram requisição', async () => {
+test('invalid input and missing key do not generate a request', async () => {
   let chamadas = 0;
   const buscar = async () => { chamadas++; };
   await assert.rejects(revisarTeste({ ...entrada, diff: ' ' }, { chave: 'teste', buscar }), /diff/);
@@ -57,8 +57,8 @@ test('entrada inválida e chave ausente não geram requisição', async () => {
   assert.equal(chamadas, 0);
 });
 
-test('falhas de API e probabilidades inválidas não produzem sinal', async () => {
-  for (const buscar of [async () => ({ ok: false }), async () => { throw new Error('falha simulada'); }]) {
+test('API failures and invalid probabilities do not produce a signal', async () => {
+  for (const buscar of [async () => ({ ok: false }), async () => { throw new Error('simulated failure'); }]) {
     assert.deepEqual(await revisarTeste(entrada, { chave: 'teste', buscar }),
       { status: 'indisponivel', motivo: 'falha_api' });
   }

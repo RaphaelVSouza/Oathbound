@@ -1,29 +1,29 @@
-# ADR 0005 — Plugin local para Codex CLI
+# ADR 0005 — Local Plugin for Codex CLI
 
-Data 2026-11-19. Estado aceito.
+Date 2026-11-19. Status accepted.
 
-## Contexto
+## Context
 
-O Oathbound mantém quatro skills compartilhadas. O Codex CLI distribui
-skills em plugins e descobre plugins por marketplace.
+Oathbound maintains four shared skills. Codex CLI distributes
+skills in plugins and discovers plugins through marketplaces.
 
-## Decisão
+## Decision
 
-Gerar um marketplace local com o plugin `oathbound`, manifesto portátil
-`plugin.json` e cópia integral de `skills/`. O marketplace referencia o
-plugin por caminho relativo. O manifesto usa a versão do pacote.
-[Empacotamento oficial](https://developers.openai.com/plugins/build/plugins)
+Generate a local marketplace with the `oathbound` plugin, a portable
+`plugin.json` manifest and a complete copy of `skills/`. The marketplace
+references the plugin through a relative path. The manifest uses the package version.
+[Official packaging](https://developers.openai.com/plugins/build/plugins)
 
-## Consequências
+## Consequences
 
-A instalação usa os comandos nativos de marketplace do Codex CLI.
-O perfil `oathkeeper` injeta instruções na sessão principal quando selecionado
-por `codex -p oathkeeper`. Os TOMLs acompanham o
-marketplace em `setup/agents/` e são instalados no escopo nativo do Codex.
-O GitHub Release distribui o marketplace completo.
+Installation uses native Codex CLI marketplace commands.
+The `oathkeeper` profile injects instructions into the main session when selected
+through `codex -p oathkeeper`. TOMLs accompany the
+marketplace in `setup/agents/` and are installed in Codex's native scope.
+GitHub Release distributes the complete marketplace.
 
-O arquivo opcional `setup/hooks.json` registra início e fim de subagentes
-e bloqueia comandos destrutivos por `PreToolUse`. A auditoria usa o papel
-informado pelos eventos de ciclo de vida. O guard Bash vale para toda a
-sessão porque o contrato documentado de `PreToolUse` não identifica o papel.
-[Skills](https://learn.chatgpt.com/docs/build-skills) · [Subagentes](https://learn.chatgpt.com/docs/agent-configuration/subagents) · [Hooks](https://learn.chatgpt.com/docs/hooks)
+The optional `setup/hooks.json` file records subagent starts and ends
+and blocks destructive commands through `PreToolUse`. Auditing uses the role
+reported by lifecycle events. The Bash guard applies to the entire
+session because the documented `PreToolUse` contract does not identify the role.
+[Skills](https://learn.chatgpt.com/docs/build-skills) · [Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents) · [Hooks](https://learn.chatgpt.com/docs/hooks)

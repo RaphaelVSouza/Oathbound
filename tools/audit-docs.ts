@@ -3,7 +3,7 @@
 
 const major = parseInt(process.versions.node.split('.')[0], 10);
 if (major < 24) {
-  console.error('audit-docs: requer Node >= 24 (atual: ' + process.version + ')');
+  console.error('audit-docs: requires Node >= 24 (current: ' + process.version + ')');
   process.exit(1);
 }
 
@@ -19,7 +19,7 @@ for (let i = 0; i < cli.length; i++) {
   const arg = cli[i];
   if (arg === '--project' || arg === '--config') {
     if (!cli[i + 1] || cli[i + 1].startsWith('--')) {
-      console.error('audit-docs: falta valor para ' + arg);
+      console.error('audit-docs: missing value for ' + arg);
       process.exit(2);
     }
     if (arg === '--project') projectArg = cli[++i];
@@ -29,7 +29,7 @@ for (let i = 0; i < cli.length; i++) {
   } else if (arg === '--verbose') {
     isVerbose = true;
   } else {
-    console.error('audit-docs: opção desconhecida: ' + arg);
+    console.error('audit-docs: unknown option: ' + arg);
     process.exit(2);
   }
 }
@@ -40,19 +40,19 @@ const configPath = configArg ? path.resolve(configArg) : null;
 try {
   const result = auditDocs({ repoRoot, configPath, staged: isStaged, verbose: isVerbose });
   if (result.stats.nothingToAudit) {
-    console.log('audit-docs: nada a auditar');
+    console.log('audit-docs: nothing to audit');
     process.exit(0);
   }
   for (const w of result.warnings) console.warn(w);
   for (const e of result.errors) console.error(e);
 
   console.log(
-    'fonte: ' + result.stats.sourceLabel +
-    ' | .md lidos: ' + result.stats.mdFiles +
-    ' | fontes lidos: ' + result.stats.sourceFiles +
-    ' | ignorados: ' + result.stats.ignoredCount +
-    ' | violações: ' + result.errors.length +
-    ' | avisos: ' + result.warnings.length
+    'source: ' + result.stats.sourceLabel +
+    ' | .md files read: ' + result.stats.mdFiles +
+    ' | source files read: ' + result.stats.sourceFiles +
+    ' | ignored: ' + result.stats.ignoredCount +
+    ' | violations: ' + result.errors.length +
+    ' | warnings: ' + result.warnings.length
   );
 
   process.exit(result.errors.length > 0 ? 1 : 0);

@@ -25,7 +25,7 @@ function walkAllFiles(dir: string): string[] {
   return files;
 }
 
-test('parseArgs valida runners permitidos e rejeita opções inválidas ou conflitantes', () => {
+test('parseArgs validates allowed runners and rejects invalid or conflicting options', () => {
   assert.equal(parseArgs(['--runner', 'all']).runner, 'all');
   assert.equal(parseArgs(['--runner', 'claude']).runner, 'claude');
   assert.equal(parseArgs(['--runner', 'agy']).runner, 'agy');
@@ -41,7 +41,7 @@ test('parseArgs valida runners permitidos e rejeita opções inválidas ou confl
   assert.equal(parsedNoDedupe.dedupeSkills, false);
 });
 
-test('Codex instala sete agentes e preserva edição local no upgrade', t => {
+test('Codex installs seven agents and preserves local edits during upgrade', t => {
   const root = fixtureDir('codex-install-');
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const options = { root, runner: 'codex' as const };
@@ -49,9 +49,9 @@ test('Codex instala sete agentes e preserva edição local no upgrade', t => {
   assert.equal(first.manifest.files.length, 7);
   assert.deepEqual(install(options).manifest.files, first.manifest.files);
   const scout = path.join(root, '.codex/agents/scout.toml');
-  fs.appendFileSync(scout, '\n# alteração local\n');
+  fs.appendFileSync(scout, '\n# local change\n');
   assert.deepEqual(install({ ...options, upgrade: true }).manifest.preservedFiles, ['.codex/agents/scout.toml']);
-  assert.match(fs.readFileSync(scout, 'utf8'), /alteração local/);
+  assert.match(fs.readFileSync(scout, 'utf8'), /local change/);
   assert.equal(fs.existsSync(path.join(root, '.claude')), false);
   assert.equal(fs.existsSync(path.join(root, '.codex/oathkeeper.config.toml')), false);
   const previousProfile = path.join(root, '.codex/oathbound.config.toml');
@@ -62,7 +62,7 @@ test('Codex instala sete agentes e preserva edição local no upgrade', t => {
   assert.ok(globalInstall.manifest.files.some(file => file.path === '.codex/oathkeeper.config.toml'));
 });
 
-test('instalação global inclui agentes, skills, guards e manifesto sem tocar settings', t => {
+test('global installation includes agents, skills, guards, and manifest without touching settings', t => {
   const root = fixtureDir('global-');
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const settings = [
@@ -73,7 +73,7 @@ test('instalação global inclui agentes, skills, guards e manifesto sem tocar s
   for (const file of settings) {
     const full = path.join(root, file);
     fs.mkdirSync(path.dirname(full), { recursive: true });
-    fs.writeFileSync(full, 'conteúdo local\n');
+    fs.writeFileSync(full, 'local content\n');
   }
 
   for (const runner of ['claude', 'agy', 'all']) {
@@ -94,7 +94,7 @@ test('instalação global inclui agentes, skills, guards e manifesto sem tocar s
     }
   }
   for (const file of settings) {
-    assert.equal(fs.readFileSync(path.join(root, file), 'utf8'), 'conteúdo local\n');
+    assert.equal(fs.readFileSync(path.join(root, file), 'utf8'), 'local content\n');
   }
   const binName = process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
   const skillFileCount = walkAllFiles(path.join(__dirname, '..', 'skills'))
@@ -117,7 +117,7 @@ test('instalação global inclui agentes, skills, guards e manifesto sem tocar s
   assert.throws(() => install({ root, global: true, statusline: true }), /--statusline/);
 });
 
-test('instalação --project cria estrutura do projeto e audit-docs sem symlinks', t => {
+test('--project installation creates project structure and audit-docs without symlinks', t => {
   const projectRoot = fixtureDir('oathbound project test-');
   const fakeHome = fixtureDir('oathbound-home-test-');
   t.after(() => {
@@ -142,7 +142,7 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
   assert.ok(fs.existsSync(path.join(projectRoot, '.agents', 'hooks.json')));
   assert.ok(fs.existsSync(path.join(projectRoot, '.agents', 'skills.json')));
 
-  // Audit docs copiado
+  // Audit docs copied
   assert.ok(fs.existsSync(path.join(projectRoot, 'tools', 'audit-docs.ts')));
   assert.ok(fs.existsSync(path.join(projectRoot, 'tools', 'audit-docs.core.ts')));
   const smith = fs.readFileSync(path.join(projectRoot, '.claude', 'agents', 'smith.md'), 'utf8');
@@ -179,7 +179,7 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
   }
 });
 
-test('--upgrade preserva edições locais e limpa agentes legados não modificados', t => {
+test('--upgrade preserves local edits and cleans unmodified legacy agents', t => {
   const projectRoot = fixtureDir('oathbound-upgrade-test-');
   const fakeHome = fixtureDir('oathbound-home-test-');
   t.after(() => {
@@ -187,7 +187,7 @@ test('--upgrade preserva edições locais e limpa agentes legados não modificad
     fs.rmSync(fakeHome, { recursive: true, force: true });
   });
 
-  // Primeira instalação
+  // First installation
   install({
     root: projectRoot,
     homeDir: fakeHome,
@@ -200,7 +200,7 @@ test('--upgrade preserva edições locais e limpa agentes legados não modificad
   const userEdit = '# Custom Assayer Content\n';
   fs.writeFileSync(agentPath, userEdit);
 
-  // Registra um legado gerenciado e deixa outro sob controle local.
+  // Registers one managed legacy agent and leaves another under local control.
   const legacyPath = path.join(projectRoot, '.claude', 'agents', 'mimic.md');
   fs.writeFileSync(legacyPath, '# Legacy Mimic\n');
   const localLegacy = path.join(projectRoot, '.claude', 'agents', 'qa.md');
@@ -210,7 +210,7 @@ test('--upgrade preserva edições locais e limpa agentes legados não modificad
   manifest.files.push({ path: '.claude/agents/mimic.md', sha256: sha256(fs.readFileSync(legacyPath)) });
   fs.writeFileSync(manifestPath, JSON.stringify(manifest));
 
-  // Segunda instalação com --upgrade
+  // Second installation with --upgrade
   install({
     root: projectRoot,
     homeDir: fakeHome,
@@ -219,15 +219,15 @@ test('--upgrade preserva edições locais e limpa agentes legados não modificad
     upgrade: true
   });
 
-  // Verifica que a edição local do usuário foi preservada
+  // Checks that the user local edit was preserved
   assert.equal(fs.readFileSync(agentPath, 'utf8'), userEdit);
 
-  // Verifica que o agente legado não modificado foi limpo
+  // Checks that the unmodified legacy agent was cleaned up
   assert.equal(fs.existsSync(legacyPath), false);
   assert.equal(fs.readFileSync(localLegacy, 'utf8'), '# Local QA\n');
 });
 
-test('deduplicação de skills no --project move cópias soltas pré-existentes para _disabled e atualiza skills.json', t => {
+test('skill deduplication in --project moves existing loose copies to _disabled and updates skills.json', t => {
   const projectRoot = fixtureDir('oathbound-dedupe-proj-');
   const fakeHome = fixtureDir('oathbound-dedupe-home-');
   t.after(() => {
@@ -235,12 +235,12 @@ test('deduplicação de skills no --project move cópias soltas pré-existentes 
     fs.rmSync(fakeHome, { recursive: true, force: true });
   });
 
-  // Global já possui a skill surgical-patch
+  // Global already has the surgical-patch skill
   const globalSkill = path.join(fakeHome, '.claude', 'skills', 'surgical-patch', 'SKILL.md');
   fs.mkdirSync(path.dirname(globalSkill), { recursive: true });
   fs.writeFileSync(globalSkill, '# Global surgical-patch\n');
 
-  // Projeto já possuía cópia local solta
+  // Project already had a loose local copy
   const looseProjectSkill = path.join(projectRoot, '.claude', 'skills', 'surgical-patch', 'SKILL.md');
   fs.mkdirSync(path.dirname(looseProjectSkill), { recursive: true });
   fs.writeFileSync(looseProjectSkill, '# Local loose edit\n');
@@ -252,19 +252,19 @@ test('deduplicação de skills no --project move cópias soltas pré-existentes 
     runner: 'all'
   });
 
-  // A cópia solta deve ter sido movida para _disabled sem perda de conteúdo
+  // The loose copy must have moved to _disabled without losing content
   const disabledSkill = path.join(projectRoot, '.claude', 'skills', '_disabled', 'surgical-patch', 'SKILL.md');
   assert.ok(fs.existsSync(disabledSkill));
   assert.equal(fs.readFileSync(disabledSkill, 'utf8'), '# Local loose edit\n');
   assert.equal(fs.existsSync(looseProjectSkill), false);
 
-  // .agents/skills.json deve excluir _disabled e surgical-patch
+  // .agents/skills.json must exclude _disabled and surgical-patch
   const skillsConfig = JSON.parse(fs.readFileSync(path.join(projectRoot, '.agents', 'skills.json'), 'utf8'));
   assert.ok(skillsConfig.exclude.includes('_disabled'));
   assert.ok(skillsConfig.exclude.includes('surgical-patch'));
 });
 
-test('preservação: preserva arquivo pré-existente antes do manifesto que difere do template', t => {
+test('preservation: preserves a pre-manifest file that differs from the template', t => {
   const projectRoot = fixtureDir('oathbound-preexist-test-');
   const fakeHome = fixtureDir('oathbound-home-test-');
   t.after(() => {
@@ -272,7 +272,7 @@ test('preservação: preserva arquivo pré-existente antes do manifesto que dife
     fs.rmSync(fakeHome, { recursive: true, force: true });
   });
 
-  // Cria um arquivo no projeto antes de qualquer instalação (sem manifesto pré-existente)
+  // Creates a project file before any installation (no existing manifest)
   const agentPath = path.join(projectRoot, '.claude', 'agents', 'assayer.md');
   fs.mkdirSync(path.dirname(agentPath), { recursive: true });
   const preExistingContent = '# Pre-existing assayer prior to manifest\n';
@@ -285,10 +285,10 @@ test('preservação: preserva arquivo pré-existente antes do manifesto que dife
     runner: 'claude'
   });
 
-  // Deve ter preservado o conteúdo pré-existente
+  // Must have preserved existing content
   assert.equal(fs.readFileSync(agentPath, 'utf8'), preExistingContent);
 
-  // A personalização não entra na lista de arquivos gerenciados.
+  // Customization is not listed among managed files.
   const manifest = JSON.parse(fs.readFileSync(res.manifestPath, 'utf8'));
   const record = manifest.files.find((f: any) => f.path === '.claude/agents/assayer.md');
   assert.equal(record, undefined);
@@ -297,7 +297,7 @@ test('preservação: preserva arquivo pré-existente antes do manifesto que dife
   assert.equal(fs.readFileSync(agentPath, 'utf8'), preExistingContent);
 });
 
-test('deduplicação preserva a pasta inteira em caso de colisão', t => {
+test('deduplication preserves the entire directory on collision', t => {
   const projectRoot = fixtureDir('oathbound-collision-proj-');
   const fakeHome = fixtureDir('oathbound-collision-home-');
   t.after(() => {
@@ -332,7 +332,7 @@ test('deduplicação preserva a pasta inteira em caso de colisão', t => {
   assert.equal(fs.readFileSync(backupSkill, 'utf8'), '# New local loose content\n');
 });
 
-test('readExistingJson lança erro claro quando settings.json existente contém JSON inválido, preservando o arquivo sem sobrescrever', t => {
+test('readExistingJson throws a clear error for invalid existing settings.json and preserves the file without overwriting', t => {
   const projectRoot = fixtureDir('oathbound-invalid-json-');
   const fakeHome = fixtureDir('oathbound-invalid-home-');
   t.after(() => {

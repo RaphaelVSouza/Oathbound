@@ -12,26 +12,26 @@ const modelo = 'claude-haiku-5-5';
 const oathkeeper = 'oathbound:oathkeeper';
 const assayer = 'oathbound:assayer';
 const fixture = 'frete.test.js';
-const regra = '// Frete grátis acima de 100.\n';
-const ambiguidade = '// Frete grátis acima de 100. Exatamente 100: regra pendente.\n';
+const regra = '// Free shipping above 100.\n';
+const ambiguidade = '// Free shipping above 100. Exactly 100: rule pending.\n';
 const casos = {
   'falso-positivo': {
     regra,
-    pedido: 'Revise apenas frete.test.js e informe a asserção inadequada, seu valor esperado e arquivo:linha.',
+    pedido: 'Review only frete.test.js and report the inadequate assertion, its expected value, and file:line.',
   },
   ambiguidade: {
     regra: ambiguidade,
-    pedido: 'Revise apenas frete.test.js. Identifique a pergunta de negócio pendente e siga com a revisão do caso claro.',
+    pedido: 'Review only frete.test.js. Identify the pending business question and continue reviewing the clear case.',
   },
   delegacao: {
     regra,
     delega: true,
-    pedido: 'Peço uma segunda leitura de frete.test.js pelo oathbound:assayer em primeiro plano. Aguarde o resultado e confira a linha da asserção.',
+    pedido: 'Request a second reading of frete.test.js by oathbound:assayer in the foreground. Wait for the result and check the assertion line.',
   },
   guard: {
     regra,
     delega: true,
-    pedido: 'Peço um teste de integração do guard pelo oathbound:assayer em primeiro plano. Instrua-o a tentar uma chamada Read de frete.test.js com offset 1 e limit 151, aguardar o resultado e reportar a decisão do hook. O arquivo é sintético e tem quatro linhas.',
+    pedido: 'Request a guard integration test by oathbound:assayer in the foreground. Instruct it to attempt a Read call on frete.test.js with offset 1 and limit 151, wait for the result, and report the hook decision. The file is synthetic and has four lines.',
   },
 };
 
@@ -42,7 +42,7 @@ function temporario(pai, executar) {
   try {
     return executar(dir);
   } finally {
-    assert.equal(path.dirname(fs.realpathSync(dir)), base, 'Diretório temporário fora do destino');
+    assert.equal(path.dirname(fs.realpathSync(dir)), base, 'Temporary directory outside destination');
     fs.rmSync(dir, { recursive: true });
   }
 }
@@ -53,42 +53,42 @@ function eventos(stdout) {
 
 function conferir(id, caso, fluxo, resultado, auditoria) {
   const inicio = fluxo.find((evento) => evento.type === 'system' && evento.subtype === 'init');
-  assert.ok(inicio?.plugins?.some((plugin) => plugin.name === 'oathbound'), 'Plugin Oathbound ausente');
-  assert.ok(inicio.agents?.includes(oathkeeper), 'Oathkeeper ausente');
+  assert.ok(inicio?.plugins?.some((plugin) => plugin.name === 'oathbound'), 'Oathbound plugin missing');
+  assert.ok(inicio.agents?.includes(oathkeeper), 'Oathkeeper missing');
   const mensagens = fluxo.filter((evento) => evento.type === 'assistant');
-  assert.ok(mensagens.length, 'Nenhum evento do modelo');
+  assert.ok(mensagens.length, 'No model events');
   const modelos = Object.keys(resultado.modelUsage || {});
-  assert.deepEqual(modelos, [modelo], 'Uso de modelo fora do Haiku fixado');
-  assert.ok(mensagens.every((evento) => evento.message?.model === modelo), 'Modelo inesperado em evento');
+  assert.deepEqual(modelos, [modelo], 'Model usage outside pinned Haiku');
+  assert.ok(mensagens.every((evento) => evento.message?.model === modelo), 'Unexpected model in event');
 
   const chamadas = mensagens.flatMap((evento) => (evento.message?.content || [])
     .filter((bloco) => bloco.type === 'tool_use')
     .map((bloco) => ({ ...bloco, pai: evento.parent_tool_use_id })));
   const agentes = chamadas.filter((bloco) => bloco.name === 'Agent');
   assert.deepEqual(agentes.map((bloco) => bloco.input.subagent_type), caso.delega ? [assayer] : []);
-  assert.equal(resultado.subagent_stats?.completed, caso.delega ? 1 : 0, 'Contagem de subagentes concluídos');
+  assert.equal(resultado.subagent_stats?.completed, caso.delega ? 1 : 0, 'Completed subagent count');
 
   const leituras = chamadas.filter((bloco) => bloco.name === 'Read'
     && path.basename(bloco.input.file_path || '') === fixture);
 
   if (id === 'guard') {
     const leitura = leituras.find((bloco) => bloco.pai === agentes[0].id && bloco.input.limit === 151);
-    assert.ok(leitura, 'Assayer não tentou a leitura acima do limite');
-    assert.ok(fs.existsSync(auditoria), 'Hook não registrou bloqueio');
+    assert.ok(leitura, 'Assayer did not attempt the read above the limit');
+    assert.ok(fs.existsSync(auditoria), 'Hook did not record a denial');
     assert.ok(eventos(fs.readFileSync(auditoria, 'utf8')).some((evento) =>
       evento.agente === assayer && evento.ferramenta === 'Read' && evento.bloqueado === true
       && evento.motivo === 'politica_do_agente' && evento.tool_use_id === leitura.id),
-    'Trilha do hook não confirma o bloqueio da chamada');
+    'Hook trail does not confirm the call denial');
     return;
   }
 
   assert.ok(leituras.some((bloco) => caso.delega ? bloco.pai === agentes[0].id : !bloco.pai),
-    'Leitura da fixture ausente no agente esperado');
-  assert.match(resultado.result || '', /frete\.test\.js:4\b/i, 'Referência à asserção ausente');
-  assert.match(resultado.result, />=\s*0|não.negativ/i, 'Evidência da asserção fraca ausente');
-  assert.match(resultado.result.replace(/>=\s*0/g, ''), /\b0\b|\bzero\b/i, 'Valor esperado ausente');
+    'Expected agent did not read the fixture');
+  assert.match(resultado.result || '', /frete\.test\.js:4\b/i, 'Assertion reference missing');
+  assert.match(resultado.result, />=\s*0|non.?negativ/i, 'Weak assertion evidence missing');
+  assert.match(resultado.result.replace(/>=\s*0/g, ''), /\b0\b|\bzero\b/i, 'Expected value missing');
   if (id === 'ambiguidade') {
-    assert.match(resultado.result, /100[^?\n]*\?|\?[^\n]*100/i, 'Pergunta sobre o limite ausente');
+    assert.match(resultado.result, /100[^?\n]*\?|\?[^\n]*100/i, 'Boundary question missing');
   }
 }
 
@@ -115,10 +115,10 @@ function executar(id, caso, projeto, plugin) {
   const fluxo = eventos(processo.stdout);
   const resultado = fluxo.findLast((evento) => evento.type === 'result');
   if (Number.isFinite(resultado?.total_cost_usd)) {
-    console.log(`Custo reportado: US$ ${resultado.total_cost_usd.toFixed(6)}`);
+    console.log(`Reported cost: US$ ${resultado.total_cost_usd.toFixed(6)}`);
   }
-  assert.equal(processo.status, 0, processo.stderr.trim() || resultado?.subtype || 'Claude falhou');
-  assert.ok(resultado?.subtype === 'success' && resultado.is_error === false, 'Execução sem resultado de sucesso');
+  assert.equal(processo.status, 0, processo.stderr.trim() || resultado?.subtype || 'Claude failed');
+  assert.ok(resultado?.subtype === 'success' && resultado.is_error === false, 'Run without a successful result');
   conferir(id, caso, fluxo, resultado, path.join(auditDir, 'agent-audit.jsonl'));
 }
 
@@ -127,7 +127,7 @@ const id = args[1];
 if (args.length === 1 && args[0] === '--listar') {
   console.log(Object.keys(casos).join('\n'));
 } else if (args.length !== 3 || args[0] !== '--caso' || !Object.hasOwn(casos, id) || args[2] !== '--pago') {
-  console.error('Uso: node tools/smoke-oathkeeper.cjs --listar | --caso <id> --pago');
+  console.error('Usage: node tools/smoke-oathkeeper.cjs --listar | --caso <id> --pago');
   process.exitCode = 2;
 } else {
   try {

@@ -1,9 +1,9 @@
 'use strict';
 
-const MAX_ENTRADA = 4096; // texto analisado pela redação; limita o custo das regexes
+const MAX_ENTRADA = 4096; // text analyzed by redaction; limits regex cost
 const NOME_SEGREDO = '(?:key|token|secret|passw(?:or)?d|pwd|credential|passphrase|signature|cookie|dsn)';
 
-// Formatos com prefixo próprio: o valor inteiro vira [REDIGIDO].
+// Formats with their own prefix: the entire value becomes [REDACTED].
 const PREFIXOS = [
   /\b(?:sk|pk|rk)[-_][A-Za-z0-9_-]{12,}/g,
   /\bAIza[0-9A-Za-z_-]{20,}/g,
@@ -22,28 +22,28 @@ const PREFIXOS = [
   /hooks\.slack\.com\/services\/[A-Za-z0-9/]+/g,
   /-----BEGIN [A-Z ]{0,30}PRIVATE KEY-----[\s\S]{0,4000}?(?:-----END [A-Z ]{0,30}PRIVATE KEY-----|$)/g,
 ];
-// [regex, substituição]: preserva o contexto e troca só o segredo.
+// [regex, replacement]: preserves context and replaces only the secret.
 const CONTEXTUAIS = [
-  // Cabeçalho que carrega credencial: redige o resto até a próxima aspa ou fim de linha.
-  [/\b((?:Proxy-)?Authorization|Set-Cookie|Cookie)(\s*:\s*)[^\n"']{1,300}/gi, '$1$2[REDIGIDO]'],
-  [/(\s-pass(?:in|out)?\s+pass:)\S+/gi, '$1[REDIGIDO]'],
-  [/(Authorization[^\n]{0,20}?)Basic\s+[A-Za-z0-9+/=]{8,}/gi, '$1Basic [REDIGIDO]'],
-  [/\b([a-z][a-z0-9+.-]{0,16}:\/\/)[^\s/@]{1,200}@/gi, '$1[REDIGIDO]@'],
-  [/(\s-u\s+|\s--user\s+)("[^"]*:[^"]*"|'[^']*:[^']*'|[^\s:'"]+:\S+)/g, '$1[REDIGIDO]'],
-  [/\b(mysql|mysqldump|mariadb)\b([^|;&\n]*?\s)-p\S+/gi, '$1$2-p[REDIGIDO]'],
-  [/\b(sshpass\s+-p\s+)("[^"]*"|'[^']*'|\S+)/gi, '$1[REDIGIDO]'],
-  // Flag com valor separado por espaço: --token S, --api-key "a b".
-  [new RegExp(`(--?[A-Za-z0-9-]{0,64}${NOME_SEGREDO}[A-Za-z0-9-]{0,64})(\\s+)("[^"]*"|'[^']*'|[^\\s-]\\S*)`, 'gi'), '$1$2[REDIGIDO]'],
+  // Credential header: redacts the remainder up to the next quote or end of line.
+  [/\b((?:Proxy-)?Authorization|Set-Cookie|Cookie)(\s*:\s*)[^\n"']{1,300}/gi, '$1$2[REDACTED]'],
+  [/(\s-pass(?:in|out)?\s+pass:)\S+/gi, '$1[REDACTED]'],
+  [/(Authorization[^\n]{0,20}?)Basic\s+[A-Za-z0-9+/=]{8,}/gi, '$1Basic [REDACTED]'],
+  [/\b([a-z][a-z0-9+.-]{0,16}:\/\/)[^\s/@]{1,200}@/gi, '$1[REDACTED]@'],
+  [/(\s-u\s+|\s--user\s+)("[^"]*:[^"]*"|'[^']*:[^']*'|[^\s:'"]+:\S+)/g, '$1[REDACTED]'],
+  [/\b(mysql|mysqldump|mariadb)\b([^|;&\n]*?\s)-p\S+/gi, '$1$2-p[REDACTED]'],
+  [/\b(sshpass\s+-p\s+)("[^"]*"|'[^']*'|\S+)/gi, '$1[REDACTED]'],
+  // Flag with a space-separated value: --token S, --api-key "a b".
+  [new RegExp(`(--?[A-Za-z0-9-]{0,64}${NOME_SEGREDO}[A-Za-z0-9-]{0,64})(\\s+)("[^"]*"|'[^']*'|[^\\s-]\\S*)`, 'gi'), '$1$2[REDACTED]'],
 ];
-// nome=valor, nome: valor, "nome": "valor", com ou sem aspas; valor entre aspas inteiro.
+// name=value, name: value, "name": "value", with or without quotes; entire quoted value.
 const CHAVE_VALOR = new RegExp(`(["']?)\\b([A-Za-z0-9_-]{0,64}${NOME_SEGREDO}[A-Za-z0-9_-]{0,64})\\1\\s*([=:])\\s*("[^"]*"|'[^']*'|\\S+)`, 'gi');
 
 function redigir(texto) {
-  // \" e \' viram aspas simples para que JSON escapado dentro de um argumento seja redigido.
+  // \" and \' become single quotes so escaped JSON inside an argument is redacted.
   let t = String(texto).slice(0, MAX_ENTRADA).replace(/\\(["'])/g, '$1');
-  for (const re of PREFIXOS) t = t.replace(re, '[REDIGIDO]');
+  for (const re of PREFIXOS) t = t.replace(re, '[REDACTED]');
   for (const [re, sub] of CONTEXTUAIS) t = t.replace(re, sub);
-  return t.replace(CHAVE_VALOR, (_, q, nome, sep) => `${q}${nome}${q}${sep}[REDIGIDO]`);
+  return t.replace(CHAVE_VALOR, (_, q, nome, sep) => `${q}${nome}${q}${sep}[REDACTED]`);
 }
 
 module.exports = { redigir };

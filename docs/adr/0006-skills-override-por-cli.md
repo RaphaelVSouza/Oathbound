@@ -6,48 +6,48 @@ consulted: []
 informed: []
 ---
 
-# 0006 - Override opcional de skills por CLI via `SKILL.<runner>.md`
+# 0006 - Optional Per-CLI Skill Overrides via `SKILL.<runner>.md`
 
-## Contexto e Problema
+## Context and Problem Statement
 
-As skills do Oathbound são compartilhadas entre três CLIs (`claude`, `agy` e `codex`). Até agora, [`tools/install.ts`](../../tools/install.ts) e [`tools/build-plugin.cjs`](../../tools/build-plugin.cjs) copiavam `skills/<nome>/` de forma idêntica para todos os runners.
+Oathbound skills are shared across three CLIs (`claude`, `agy` and `codex`). Until now, [`tools/install.ts`](../../tools/install.ts) and [`tools/build-plugin.cjs`](../../tools/build-plugin.cjs) copied `skills/<nome>/` identically for all runners.
 
-Quando uma skill referencia uma ferramenta nativa específica de uma CLI (por exemplo, `AskUserQuestion` no Claude Code, `ask_question` no Antigravity ou `request_user_input` no Codex), o texto acoplado a um runner degrada a execução nos demais.
+When a skill references a CLI-specific native tool (for example, `AskUserQuestion` in Claude Code, `ask_question` in Antigravity or `request_user_input` in Codex), text coupled to one runner degrades execution in the others.
 
-## Fatores de Decisão
+## Decision Drivers
 
-- Evitar duplicação integral de skills idênticas entre CLIs.
-- Permitir otimização cirúrgica quando uma skill depende de ferramenta específica do runner.
-- Manter o formato final instalado/empacotado compatível com o contrato padrão de cada CLI (`<skill>/SKILL.md`).
-- Não vazar arquivos de outros runners na instalação ou no artefato de plugin.
+- Avoid full duplication of identical skills across CLIs.
+- Allow narrow optimization when a skill depends on a runner-specific tool.
+- Keep the installed/packaged format compatible with each CLI's standard contract (`<skill>/SKILL.md`).
+- Do not leak other runners' files into the installation or plugin artifact.
 
-## Opções Consideradas
+## Considered Options
 
-- **Opção 1: `SKILL.md` canônico + override opcional `SKILL.<runner>.md` resolvido na instalação e no build.**
-- **Opção 2: `SKILL.md` único 100% agnóstico de ferramentas de CLI.**
-- **Opção 3: Diretórios separados `claude/skills/`, `agy/skills/` e `codex/skills/`.**
+- **Option 1: canonical `SKILL.md` + optional `SKILL.<runner>.md` override resolved at installation and build time.**
+- **Option 2: single `SKILL.md` fully agnostic of CLI tools.**
+- **Option 3: separate `claude/skills/`, `agy/skills/` and `codex/skills/` directories.**
 
-## Decisão
+## Decision Outcome
 
-Opção escolhida: **"Opção 1 (`SKILL.md` canônico + override opcional `SKILL.<runner>.md`)"**, porque preserva uma única fonte de verdade para skills agnósticas e permite adaptar apenas as skills que referenciam tools específicas de cada CLI.
+Chosen option: **"Option 1 (canonical `SKILL.md` + optional `SKILL.<runner>.md` override)"**, because it preserves a single source of truth for agnostic skills and allows adapting only skills that reference CLI-specific tools.
 
-Regras de resolução em [`tools/install.ts`](../../tools/install.ts) e [`tools/build-plugin.cjs`](../../tools/build-plugin.cjs):
+Resolution rules in [`tools/install.ts`](../../tools/install.ts) and [`tools/build-plugin.cjs`](../../tools/build-plugin.cjs):
 
-1. Para cada runner (`claude`, `agy`, `codex`), se existir `skills/<nome>/SKILL.<runner>.md`, ele é gravado como `SKILL.md` no destino daquele runner.
-2. Caso contrário, grava-se `skills/<nome>/SKILL.md` normalmente.
-3. Arquivos `SKILL.<outro-runner>.md` nunca são copiados para o destino.
+1. For each runner (`claude`, `agy`, `codex`), if `skills/<nome>/SKILL.<runner>.md` exists, write it as `SKILL.md` at that runner's destination.
+2. Otherwise, write `skills/<nome>/SKILL.md` normally.
+3. Never copy `SKILL.<outro-runner>.md` files to the destination.
 
-### Consequências
+### Consequences
 
-- **Bom:** skills agnósticas continuam com um único arquivo; skills acopladas a tools nativas entregam instruções exatas para cada CLI.
-- **Ruim:** skills com override exigem manter o texto sincronizado entre `SKILL.md` e `SKILL.<runner>.md` — _mitigação:_ restringir overrides apenas a skills que referenciam tools específicas de CLI.
-- **Neutro:** `tools/install.ts` e `tools/build-plugin.cjs` passam a aplicar a mesma função de resolução de skills por runner.
+- **Good:** agnostic skills retain a single file; skills coupled to native tools deliver exact instructions for each CLI.
+- **Bad:** skills with overrides require keeping text synchronized between `SKILL.md` and `SKILL.<runner>.md` — _mitigation:_ restrict overrides to skills that reference CLI-specific tools.
+- **Neutral:** `tools/install.ts` and `tools/build-plugin.cjs` apply the same per-runner skill resolution function.
 
-### Confirmação
+### Confirmation
 
-- Testes automatizados em [`test/build-plugin.test.cjs`](../../test/build-plugin.test.cjs) e [`test/install.test.ts`](../../test/install.test.ts) cobrindo resolução de `SKILL.<runner>.md` -> `SKILL.md`, fallback para `SKILL.md` e ausência de vazamento de overrides de outros runners.
+- Automated tests in [`test/build-plugin.test.cjs`](../../test/build-plugin.test.cjs) and [`test/install.test.ts`](../../test/install.test.ts) cover `SKILL.<runner>.md` -> `SKILL.md` resolution, fallback to `SKILL.md` and absence of leaked overrides from other runners.
 
-## Referências
+## References
 
 - [`skills/grill-me/SKILL.md`](../../skills/grill-me/SKILL.md)
 - [`tools/install.ts`](../../tools/install.ts)

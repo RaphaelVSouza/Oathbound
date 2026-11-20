@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 128" width="960" height="128" role="img" aria-labelledby="title">
-  <title id="title">Subagentes Oathbound: scout, scholar, scribe, smith, assayer, sentinel, breaker</title>
+  <title id="title">Oathbound subagents: scout, scholar, scribe, smith, assayer, sentinel, breaker</title>
   <rect width="960" height="128" rx="16" fill="#1B1A17"/>
   <rect x="8" y="8" width="944" height="112" rx="11" fill="none" stroke="#7E6134"/>
   <g fill="#F2ECDF" font-family="monospace" font-size="21" text-anchor="middle">

@@ -41,13 +41,13 @@ function copySkillsForRunner(runner, destDir) {
 
 function buildPlugin(runner, destination) {
   if (!['claude', 'agy', 'codex'].includes(runner) || !destination) {
-    throw new Error('Uso: node tools/build-plugin.cjs <claude|agy|codex> <diretório-novo>');
+    throw new Error('Usage: node tools/build-plugin.cjs <claude|agy|codex> <new-directory>');
   }
   const out = path.resolve(destination);
   const parent = fs.realpathSync(path.dirname(out));
   const relative = path.relative(fs.realpathSync(source), parent);
   if (relative.startsWith('..' + path.sep) || relative === '..' || path.isAbsolute(relative)) {
-    throw new Error('O destino deve estar dentro do repositório e ser um diretório novo.');
+    throw new Error('The destination must be a new directory inside the repository.');
   }
   fs.mkdirSync(out, { recursive: false });
   const copy = (from, to) => fs.cpSync(path.join(source, from), path.join(out, to), { recursive: true, errorOnExist: true, force: false });

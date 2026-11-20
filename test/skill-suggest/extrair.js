@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 'use strict';
-// Extrai dos transcritos (projects/**/*.jsonl) cada prompt humano da cadeia principal e o que o agente
-// fez até o prompt seguinte: skills carregadas (Skill.input.skill) e subagentes (Agent.input.subagent_type).
-// Grava state/medicao-skill-suggest/amostra.json (fora do repositório). Não imprime conteúdo de prompt.
+// Extracts each human prompt from the main chain of transcripts (projects/**/*.jsonl) and what the agent
+// did until the next prompt: loaded skills (Skill.input.skill) and subagents (Agent.input.subagent_type).
+// Writes state/medicao-skill-suggest/amostra.json (outside the repository). Does not print prompt content.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -35,7 +35,7 @@ for (const f of arquivos) {
     }
   }
 }
-// Fora do escopo: comandos com barra, saídas de comando local, notificações e prompts curtos.
+// Out of scope: slash commands, local command output, notifications, and short prompts.
 const util = amostra.filter((a) => {
   const t = a.prompt.trim();
   return t.length >= 15 && !t.startsWith('/') && !t.startsWith('<') && !t.startsWith('Caveman mode');

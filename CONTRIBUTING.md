@@ -1,38 +1,38 @@
-# Como Contribuir
+# Contributing
 
-Agradecemos o interesse em contribuir com o **Oathbound**! Este documento orienta o processo de colaboração, diretrizes de arquitetura e padrões de qualidade do repositório.
+Thank you for your interest in contributing to **Oathbound**! This document covers the collaboration process, architectural guidelines and repository quality standards.
 
-## Princípios de Design
+## Design Principles
 
-1. **Independência de consumidor**: o repositório não contém caminhos absolutos, hosts, segredos ou regras particulares de projetos consumidores.
-2. **Zero dependências externas (`npm`)**: as ferramentas e módulos utilizam exclusivamente recursos nativos do Node.js 24+, sem pacotes de terceiros.
-3. **Módulos profundos**: interfaces enxutas e bem documentadas com JSDoc.
+1. **Consumer independence**: the repository contains no absolute paths, hosts, secrets or rules specific to consumer projects.
+2. **Zero external (`npm`) dependencies**: tools and modules use only native Node.js 24+ features, without third-party packages.
+3. **Deep modules**: small, well-documented interfaces with JSDoc.
 
-## Validações Obrigatórias
+## Required Validation
 
 ```bash
-# Rodar suíte de testes unitários com cobertura
+# Run the unit test suite with coverage
 node --test --experimental-test-coverage test/*.test.ts test/*/*.test.js
 
-# Auditar integridade documental (links e âncoras)
+# Audit documentation integrity (links and anchors)
 node tools/audit-docs.ts
 
-# Auditar arquivos preparados no índice do Git
+# Audit files staged in the Git index
 node tools/audit-docs.ts --staged
 ```
 
-Todas as validações devem passar sem erros (`0 violações`).
+All validation must pass without errors (`0 violations`).
 
-## Padrão de Commits
+## Commit Convention
 
-Utilizamos o padrão **Conventional Commits** (ex: `feat(hooks): adiciona guardrail`):
-- `feat`: nova funcionalidade para agentes ou scripts de governança
-- `fix`: correção de comportamento inesperado
-- `refactor`: refatoração interna sem alteração de comportamento
-- `docs`: alterações exclusivamente documentais
-- `test`: inclusão ou ajuste de testes
-- `chore`: manutenção geral do repositório
+We use **Conventional Commits** (e.g. `feat(hooks): add guardrail`):
+- `feat`: new functionality for agents or governance scripts
+- `fix`: correction of unexpected behavior
+- `refactor`: internal refactoring without behavior changes
+- `docs`: documentation-only changes
+- `test`: new or updated tests
+- `chore`: general repository maintenance
 
-## Licença
+## License
 
-Licenciado sob os termos da licença [MIT](LICENSE).
+Licensed under the [MIT](LICENSE) license.

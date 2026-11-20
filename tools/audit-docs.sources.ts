@@ -54,7 +54,7 @@ function createFsSource(repoRoot) {
         return false;
       }
     },
-    // Confere a caixa exata segmento a segmento (Windows/macOS aceitam caixa errada; Linux e GitHub não).
+    // Check exact case segment by segment (Windows/macOS accept wrong case; Linux and GitHub do not).
     exactCase(rel) {
       if (rel === '') return { ok: true };
       const parts = rel.split('/');
@@ -105,7 +105,7 @@ function createFsSource(repoRoot) {
  * @returns {AuditSource}
  */
 function createIndexSource(git) {
-  // Modo 100644/100755 = arquivo; 120000 = symlink e 160000 = submódulo são ignorados.
+  // Mode 100644/100755 = file; 120000 = symlink and 160000 = submodule are ignored.
   const raw = git(['ls-files', '-s', '-z']).toString('utf8');
   const files = new Map();       // rel -> sha
   const lowerFiles = new Map();  // lower -> rel
@@ -167,7 +167,7 @@ function createIndexSource(git) {
   }
 
   return {
-    label: 'índice do git',
+    label: 'Git index',
     preload: preload,
     exists(rel) {
       return files.has(rel) || dirs.has(rel) || resolveInsensitive(rel) !== null;

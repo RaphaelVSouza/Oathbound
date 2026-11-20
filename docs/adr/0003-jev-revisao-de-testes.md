@@ -1,53 +1,55 @@
-# ADR 0003 — Jev na revisão de mudanças em testes
+# ADR 0003 — Jev in Test Change Reviews
 
-Data: 2026-11-14. Estado: protótipo manual, com limiar provisório medido em dados sintéticos.
+Date: 2026-11-14. Status: manual prototype, with a provisional threshold measured on synthetic data.
 
-## Decisão
+Language note: historical measurements used Portuguese prompts and corpora. English translations have not been recalibrated.
 
-Rodar `test/jev/revisar-teste.js` sob demanda quando comparar um teste com o requisito exige interpretar texto. O comando recebe um critério de aceite, a asserção anterior e o diff. Reutiliza o transporte do Jev com uma pergunta `Noul` sobre enfraquecimento.
+## Decision
 
-O comando envia esses três campos à TypeSafe após aplicar a redação do auditor. Use exemplos sintéticos ou trechos autorizados. A saída contém apenas status, probabilidade ou motivo de indisponibilidade.
+Run `test/jev/revisar-teste.js` on demand when comparing a test with a requirement needs text interpretation. The command receives an acceptance criterion, the previous assertion and the diff. It reuses Jev transport with a `Noul` question about weakening.
 
-Use `alerta` a partir de 0,81, `sem_alerta` até 0,30 e `inconclusivo` entre os dois. Use o sinal na revisão humana. Falha de infraestrutura retorna `indisponivel`. Delegação omitida, teste falhando e erro repetido são verificações locais.
+The command sends these three fields to TypeSafe after applying auditor redaction. Use synthetic examples or authorized excerpts. Output contains only status, probability or an unavailability reason.
 
-## Uso
+Use `alerta` from 0.81, `sem_alerta` up to 0.30 and `inconclusivo` between them. Use the signal in human review. Infrastructure failure returns `indisponivel`. Missing delegation, failing tests and repeated errors are local checks.
 
-Prepare um JSON com os três campos, como neste caso de expiração antecipada:
+## Usage
+
+Prepare JSON with the three fields, as in this early-expiration case:
 
 ```json
 {
-  "criterio": "A reserva expira no segundo 323.",
+  "criterio": "The reservation expires at second 323.",
   "assercao_anterior": "assert.deepEqual(expire(322), [])",
   "diff": "- assert.deepEqual(expire(322), [])\n+ assert.deepEqual(expire(322), ['boundary'])"
 }
 ```
 
-Com `JEV_API_KEY` no ambiente, rode no Git Bash:
+With `JEV_API_KEY` in the environment, run in Git Bash:
 
 ```bash
 rtk proxy node test/jev/revisar-teste.js < caso.json
 ```
 
-Saída JSON. Código 0 indica análise concluída, 1 indisponibilidade e 2 entrada inválida.
+JSON output. Code 0 indicates completed analysis, 1 unavailability and 2 invalid input.
 
-## Calibração preliminar
+## Preliminary Calibration
 
-Dois subagentes prepararam conjuntos sintéticos independentes. O gabarito foi revisado antes de medir a conferência. Com `jev-1.14.0`, medimos 18 casos de calibração e 18 de conferência. O modelo recebeu só os três campos de entrada. Os rótulos ficaram com o avaliador.
+Two subagents prepared independent synthetic sets. The answer key was reviewed before measuring the checking set. With `jev-1.14.0`, we measured 18 calibration cases and 18 checking cases. The model received only the three input fields. Labels stayed with the evaluator.
 
-| Conjunto | Sem alerta / alerta | Enfraquecimentos alertados | Mudanças legítimas alertadas | Incertos que ficaram inconclusivos |
+| Set | No alert / alert | Weakenings alerted | Legitimate changes alerted | Uncertain cases remaining inconclusive |
 | --- | --- | --- | --- | --- |
-| Calibração | 0,30 / 0,70 | 7/8 | 2/8 | 0/2 |
-| Calibração | 0,30 / 0,81 | 6/8 | 0/8 | 2/2 |
-| Conferência | 0,30 / 0,70 | 7/7 | 0/9 | 1/2 |
-| Conferência | 0,30 / 0,81 | 7/7 | 0/9 | 2/2 |
+| Calibration | 0.30 / 0.70 | 7/8 | 2/8 | 0/2 |
+| Calibration | 0.30 / 0.81 | 6/8 | 0/8 | 2/2 |
+| Checking | 0.30 / 0.70 | 7/7 | 0/9 | 1/2 |
+| Checking | 0.30 / 0.81 | 7/7 | 0/9 | 2/2 |
 
-A calibração sugeriu 0,65 / 0,81 antes da conferência. Nesse par, um caso incerto da conferência ficou como `sem_alerta`. Mantivemos 0,30 para evitar essa dispensa. Com 0,30 / 0,81, os dois enfraquecimentos sem alerta positivo na calibração ficaram inconclusivos. A alteração é provisória e requer outra amostra independente.
+Calibration suggested 0.65 / 0.81 before checking. At that pair, an uncertain checking case became `sem_alerta`. We kept 0.30 to avoid that dismissal. With 0.30 / 0.81, the two calibration weakenings without a positive alert remained inconclusive. The change is provisional and requires another independent sample.
 
-Para repetir as duas medições com a API:
+To repeat both measurements with the API:
 
 ```bash
 rtk proxy node test/jev/medir-revisao.js test/jev/casos-calibracao.json
 rtk proxy node test/jev/medir-revisao.js test/jev/casos-conferencia.json
 ```
 
-Antes de propor integração ao hook, compare com gabarito humano independente e reporte detecção, falsos alertas e taxa de inconclusivos.
+Before proposing hook integration, compare with an independent human answer key and report detection, false alerts and the inconclusive rate.

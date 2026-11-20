@@ -87,7 +87,7 @@ pub fn dividir(cmd: &str) -> Result<Vec<Vec<String>>, String> {
         if let Some(q) = aspa {
             if q == '"' && c == '\\' {
                 if i + 1 >= chars.len() {
-                    return Err("escape incompleto".to_string());
+                    return Err("incomplete escape".to_string());
                 }
                 i += 1;
                 atual.push(chars[i]);
@@ -101,7 +101,7 @@ pub fn dividir(cmd: &str) -> Result<Vec<Vec<String>>, String> {
                 continue;
             }
             if q == '"' && (c == '`' || (c == '$' && chars.get(i + 1) == Some(&'('))) {
-                return Err("substituição de comando".to_string());
+                return Err("command substitution".to_string());
             }
             atual.push(c);
             tem_token = true;
@@ -110,7 +110,7 @@ pub fn dividir(cmd: &str) -> Result<Vec<Vec<String>>, String> {
         }
         if c == '\\' {
             if i + 1 >= chars.len() {
-                return Err("escape incompleto".to_string());
+                return Err("incomplete escape".to_string());
             }
             i += 1;
             atual.push(chars[i]);
@@ -125,10 +125,10 @@ pub fn dividir(cmd: &str) -> Result<Vec<Vec<String>>, String> {
             continue;
         }
         if c == '`' || (c == '$' && chars.get(i + 1) == Some(&'(')) {
-            return Err("substituição de comando".to_string());
+            return Err("command substitution".to_string());
         }
         if c == '>' || c == '<' {
-            return Err("redirecionamento".to_string());
+            return Err("redirection".to_string());
         }
         if c == ';' || c == '|' || c == '&' || c == '\n' || c == '\r' {
             fecha_segmento(&mut segmentos, &mut tokens, &mut atual, &mut tem_token);
@@ -146,7 +146,7 @@ pub fn dividir(cmd: &str) -> Result<Vec<Vec<String>>, String> {
     }
 
     if aspa.is_some() {
-        return Err("aspas não fechadas".to_string());
+        return Err("unclosed quotes".to_string());
     }
     fecha_segmento(&mut segmentos, &mut tokens, &mut atual, &mut tem_token);
     Ok(segmentos)
@@ -171,11 +171,11 @@ fn verifica_segmento(tokens: &[String]) -> Option<String> {
             start += 1;
         }
         if start >= tokens.len() {
-            return Some("rtk sem subcomando".to_string());
+            return Some("rtk without a subcommand".to_string());
         }
     }
     if tokens[start].contains('=') {
-        return Some("atribuição de variável antes do comando".to_string());
+        return Some("variable assignment before command".to_string());
     }
     let cmd = nome_comando(&tokens[start]);
     let args = &tokens[start + 1..];
@@ -192,54 +192,54 @@ fn verifica_segmento(tokens: &[String]) -> Option<String> {
             }
         }
         let Some(sub) = args.get(i) else {
-            return Some("git sem subcomando".to_string());
+            return Some("git without a subcommand".to_string());
         };
         let resto = &args[i + 1..];
         if sub == "branch" {
             if let Some(ruim) = resto.iter().find(|a| !GIT_BRANCH_OK.contains(&a.as_str())) {
-                return Some(format!("git branch com argumento não permitido: {ruim}"));
+                return Some(format!("git branch with unsupported argument: {ruim}"));
             }
             return None;
         }
         if !GIT_LEITURA.contains(&sub.as_str()) {
-            return Some(format!("git {sub} não é leitura"));
+            return Some(format!("git {sub} is not read-only"));
         }
         if let Some(out) = resto
             .iter()
             .find(|a| re_git_out().is_match(a) || a.as_str() == "-o")
         {
             let flag = out.split('=').next().unwrap_or(out);
-            return Some(format!("git com {flag} não é permitido"));
+            return Some(format!("git with {flag} is not allowed"));
         }
         return None;
     }
 
     if cmd == "find" && args.iter().any(|a| re_find_proibido().is_match(a)) {
-        return Some("find com ação de escrita/execução".to_string());
+        return Some("find with a write/execute action".to_string());
     }
     if cmd == "sort"
         && args
             .iter()
             .any(|a| re_short_o().is_match(a) || re_sort_long().is_match(a))
     {
-        return Some("sort com gravação/execução não permitido".to_string());
+        return Some("sort with write/execute options is not allowed".to_string());
     }
     if cmd == "tree"
         && args
             .iter()
             .any(|a| re_short_o().is_match(a) || re_output_long().is_match(a))
     {
-        return Some("tree -o grava arquivo".to_string());
+        return Some("tree -o writes a file".to_string());
     }
     if cmd == "file"
         && args
             .iter()
             .any(|a| re_file_c().is_match(a) || a.as_str() == "--compile")
     {
-        return Some("file -C grava arquivo".to_string());
+        return Some("file -C writes a file".to_string());
     }
     if cmd == "rg" && args.iter().any(|a| re_rg_pre().is_match(a)) {
-        return Some("rg --pre executa comando".to_string());
+        return Some("rg --pre executes a command".to_string());
     }
     if cmd == "uniq" {
         let mut apos_double_dash = false;
@@ -262,7 +262,7 @@ fn verifica_segmento(tokens: &[String]) -> Option<String> {
             }
             posicionais += 1;
             if posicionais > 1 {
-                return Some("uniq com arquivo de saída".to_string());
+                return Some("uniq with an output file".to_string());
             }
             j += 1;
         }
@@ -274,22 +274,22 @@ fn verifica_segmento(tokens: &[String]) -> Option<String> {
     if COMANDOS_LEITURA.contains(&cmd.as_str()) {
         return None;
     }
-    Some(format!("comando fora da lista de leitura: {cmd}"))
+    Some(format!("command outside the read-only allowlist: {cmd}"))
 }
 
 pub fn avaliar(command: Option<&str>) -> Option<String> {
     let Some(cmd) = command else {
-        return Some("comando vazio ou ausente".to_string());
+        return Some("empty or missing command".to_string());
     };
     if cmd.trim().is_empty() {
-        return Some("comando vazio ou ausente".to_string());
+        return Some("empty or missing command".to_string());
     }
     let segmentos = match dividir(cmd) {
         Ok(s) => s,
-        Err(erro) => return Some(format!("construção não permitida ({erro})")),
+        Err(erro) => return Some(format!("unsupported construct ({erro})")),
     };
     if segmentos.is_empty() {
-        return Some("comando vazio".to_string());
+        return Some("empty command".to_string());
     }
     for seg in &segmentos {
         if let Some(motivo) = verifica_segmento(seg) {

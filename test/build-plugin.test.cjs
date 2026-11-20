@@ -28,7 +28,7 @@ const AGY_ALLOWED_FIELDS = new Set([
   'disabled',
 ]);
 
-test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever destino', t => {
+test('generates isolated plugins with agents and portable hooks without overwriting the destination', t => {
   const version = fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim();
   const tmp = fixtureDir('plugin-test-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
@@ -76,10 +76,10 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
       );
     }
   }
-  assert.throws(() => buildPlugin('agy', path.resolve(tmp, '..', '..', '..', 'outside')), /dentro do repositório/);
+  assert.throws(() => buildPlugin('agy', path.resolve(tmp, '..', '..', '..', 'outside')), /inside the repository/);
 });
 
-test('gera marketplace Codex com plugin portátil e skills completas', t => {
+test('generates a Codex marketplace with a portable plugin and complete skills', t => {
   const tmp = fixtureDir('codex-test-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
   const out = buildPlugin('codex', path.join(tmp, 'codex'));
@@ -121,7 +121,7 @@ test('gera marketplace Codex com plugin portátil e skills completas', t => {
     const original = path.join(file.parentPath, file.name);
     const rel = path.relative(path.join(ROOT, 'skills'), original);
     if (/^SKILL\.(claude|agy|codex)\.md$/.test(file.name)) {
-      assert.equal(fs.existsSync(path.join(skills, rel)), false, `Override não deve vazar: ${rel}`);
+      assert.equal(fs.existsSync(path.join(skills, rel)), false, `Override must not leak: ${rel}`);
       continue;
     }
     const override = path.join(file.parentPath, 'SKILL.codex.md');
@@ -132,7 +132,7 @@ test('gera marketplace Codex com plugin portátil e skills completas', t => {
   assert.throws(() => buildPlugin('codex', out), /EEXIST/);
 });
 
-test('manifestos de plugin sincronizados com VERSION e apenas campos suportados no Antigravity', () => {
+test('plugin manifests match VERSION and contain only fields supported by Antigravity', () => {
   const version = fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim();
   const agyManifest = JSON.parse(fs.readFileSync(path.join(ROOT, '.antigravity-plugin', 'plugin.json'), 'utf8'));
   const claudeManifest = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
@@ -140,11 +140,11 @@ test('manifestos de plugin sincronizados com VERSION e apenas campos suportados 
   assert.equal(claudeManifest.version, version);
   assert.equal(JSON.parse(fs.readFileSync(path.join(ROOT, 'codex/plugin.json'), 'utf8')).version, version);
   for (const key of Object.keys(agyManifest)) {
-    assert.equal(AGY_ALLOWED_FIELDS.has(key), true, `Campo não suportado no .antigravity-plugin/plugin.json: ${key}`);
+    assert.equal(AGY_ALLOWED_FIELDS.has(key), true, `Unsupported field in .antigravity-plugin/plugin.json: ${key}`);
   }
 });
 
-test('revisão de arquitetura limita a execução a quatro agentes de leitura', async () => {
+test('architecture review limits execution to four read-only agents', async () => {
   const source = fs.readFileSync(path.join(ROOT, 'workflows', 'revisao-arquitetura.js'), 'utf8');
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   const run = new AsyncFunction('args', 'phase', 'pipeline', 'agent', source.replace('export const meta', 'const meta'));
@@ -156,17 +156,17 @@ test('revisão de arquitetura limita a execução a quatro agentes de leitura', 
     return options.label;
   };
 
-  assert.match(await run(undefined, () => {}, pipeline, agent), /Informe a decisão/);
+  assert.match(await run(undefined, () => {}, pipeline, agent), /Provide the decision/);
   assert.equal(calls.length, 0);
   const result = await run({ modulos: ['src'] }, title => phases.push(title), pipeline, agent);
-  assert.equal(result, 'Verificação e síntese');
+  assert.equal(result, 'Verification and synthesis');
   assert.equal(phases.length, 2);
   assert.equal(calls.length, 4);
   for (const call of calls) assert.deepEqual(call.tools, ['Read', 'Glob', 'Grep']);
-  assert.match(calls[3].prompt, /Contratos.*Operação.*Migração/);
+  assert.match(calls[3].prompt, /Contracts.*Operations.*Migration/);
 });
 
-test('bumpVersion atualiza VERSION e os manifestos e rejeita versão inválida', t => {
+test('bumpVersion updates VERSION and manifests and rejects invalid versions', t => {
   const tmp = fixtureDir('bump-test-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
@@ -178,7 +178,7 @@ test('bumpVersion atualiza VERSION e os manifestos e rejeita versão inválida',
   fs.writeFileSync(path.join(tmp, '.antigravity-plugin', 'plugin.json'), '{"name":"oathbound","version":"0.1.0"}\n');
   fs.writeFileSync(path.join(tmp, '.claude-plugin', 'plugin.json'), '{"name":"oathbound","version":"0.1.0"}\n');
 
-  assert.throws(() => bumpVersion('invalida', tmp), /Uso:/);
+  assert.throws(() => bumpVersion('invalida', tmp), /Usage:/);
   const updated = bumpVersion('1.2.3-rc.1', tmp);
   assert.deepEqual(updated, ['VERSION', '.antigravity-plugin/plugin.json', '.claude-plugin/plugin.json', 'codex/plugin.json']);
   assert.equal(fs.readFileSync(path.join(tmp, 'VERSION'), 'utf8').trim(), '1.2.3-rc.1');
@@ -187,7 +187,7 @@ test('bumpVersion atualiza VERSION e os manifestos e rejeita versão inválida',
   assert.equal(JSON.parse(fs.readFileSync(path.join(tmp, 'codex/plugin.json'), 'utf8')).version, '1.2.3-rc.1');
 });
 
-test('bumpVersion --commit e --tag cria commit e tag no Git e rejeita tag duplicada', t => {
+test('bumpVersion --commit and --tag creates a Git commit and tag and rejects duplicate tags', t => {
   const tmp = fixtureDir('bump-git-test-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 
@@ -212,10 +212,10 @@ test('bumpVersion --commit e --tag cria commit e tag no Git e rejeita tag duplic
   bumpVersion(parsed.version, tmp, parsed.options);
   assert.equal(git(['log', '-1', '--pretty=%s']), 'chore(release): v0.2.0-alpha.1');
   assert.equal(git(['tag', '--list', 'v0.2.0-alpha.1']), 'v0.2.0-alpha.1');
-  assert.throws(() => bumpVersion('0.2.0-alpha.1', tmp, { tag: true }), /Tag Git já existe: v0.2.0-alpha.1/);
+  assert.throws(() => bumpVersion('0.2.0-alpha.1', tmp, { tag: true }), /Git tag already exists: v0.2.0-alpha.1/);
 });
 
-test('buildPlugin resolve SKILL.<runner>.md para SKILL.md sem vazar overrides', t => {
+test('buildPlugin resolves SKILL.<runner>.md to SKILL.md without leaking overrides', t => {
   const tmp = fixtureDir('skill-override-test-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
   const cases = [

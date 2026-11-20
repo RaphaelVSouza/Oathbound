@@ -1,259 +1,263 @@
 # Changelog
 
+## [0.50.0-alpha.38] - 2026-11-20
+
+- Translates repository documentation, agent and skill prompts, and CLI diagnostics into English while preserving stable machine identifiers, commands and paths.
+
 ## [0.50.0-alpha.37] - 2026-11-20
 
-- Renomeia o agente principal para `oathkeeper` no Claude e no agy. No Codex, o perfil da sessão principal passa a `oathkeeper` (`codex -p oathkeeper`). Renomeia o agente de QA de navegador para `breaker` no Claude, no agy e no Codex.
+- Renames the main agent to `oathkeeper` in Claude and agy. In Codex, the main-session profile becomes `oathkeeper` (`codex -p oathkeeper`). Renames the browser QA agent to `breaker` in Claude, agy and Codex.
 
 ## [0.50.0-alpha.36] - 2026-11-20
 
-- Remove o hook RTK customizado do binário nativo e do benchmark. O instalador continua migrando registros antigos para o hook oficial.
+- Removes the custom RTK hook from the native binary and benchmark. The installer continues migrating old entries to the official hook.
 
 ## [0.50.0-alpha.35] - 2026-11-20
 
-- Usa hooks oficiais do RTK em Claude Code, Codex e Antigravity CLI. Migra registros legados do RTK customizado em projetos Antigravity.
+- Uses official RTK hooks in Claude Code, Codex and Antigravity CLI. Migrates legacy custom RTK entries in Antigravity projects.
 
 ## [0.50.0-alpha.34] - 2026-11-20
 
-- Remove o subcomando RTK inválido do fallback de instalação do Antigravity. O fallback usa o hook nativo do Oathbound.
+- Removes the invalid RTK subcommand from the Antigravity installation fallback. The fallback uses Oathbound's native hook.
 
 ## [0.50.0-alpha.33] - 2026-11-20
 
-- Correlaciona invocações isoladas do Antigravity com sessões filhas e contabiliza lotes ambíguos.
+- Correlates isolated Antigravity invocations with child sessions and counts ambiguous batches.
 
 ## [0.50.0-alpha.32] - 2026-11-20
 
-- Adiciona extrator local de auditoria para Claude, Codex e Antigravity, com eventos normalizados, inventário de fontes e métricas por CLI.
+- Adds a local audit extractor for Claude, Codex and Antigravity, with normalized events, source inventory and per-CLI metrics.
 
 ## [0.50.0-alpha.31] - 2026-11-20
 
-- Adiciona 5 skills de engenharia (`create-spec`, `refactor-safely`, `test-strategy`, `incident-postmortem`, `api-contract-design`) calibradas para engenheiros de software.
-- Suporte a override opcional de skills por CLI (`SKILL.<runner>.md`, ADR 0006) em `tools/install.ts` e `tools/build-plugin.cjs`.
-- Adapta `grill-me` com overrides para `claude` (`AskUserQuestion`), `agy` (`ask_question`) e `codex` (`request_user_input` / `request_user_input_async`) e calibração para engenheiro de software.
-- Atualiza `scribe` nos três runners para carregar `create-spec` além de `create-adr`.
+- Adds 5 engineering skills (`create-spec`, `refactor-safely`, `test-strategy`, `incident-postmortem`, `api-contract-design`) calibrated for software engineers.
+- Supports optional per-CLI skill overrides (`SKILL.<runner>.md`, ADR 0006) in `tools/install.ts` and `tools/build-plugin.cjs`.
+- Adapts `grill-me` with overrides for `claude` (`AskUserQuestion`), `agy` (`ask_question`) and `codex` (`request_user_input` / `request_user_input_async`) and calibration for software engineers.
+- Updates `scribe` in all three runners to load `create-spec` alongside `create-adr`.
 
 ## [0.50.0-alpha.30] - 2026-11-19
 
-- Adiciona `create-adr` aos três plugins. O `scribe` carrega a skill sob demanda e usa o guia e o template do projeto.
+- Adds `create-adr` to all three plugins. `scribe` loads the skill on demand and uses the project's guide and template.
 
 ## [0.50.0-alpha.29] - 2026-11-19
 
-- Claude e Antigravity. `assayer` revisa diffs grandes em lotes e informa cobertura. `sentinel` segue chamadas relevantes até o controle ou operação sensível e explicita lacunas.
-- Codex. `tester`, `smith` e `scribe` detalham evidências e pendências. `scholar` identifica a seção e a data ou versão da fonte. `scout` concilia vereditos com o total de afirmações. O perfil planeja revisão em lotes e registra lacunas abertas.
+- Claude and Antigravity. `assayer` reviews large diffs in batches and reports coverage. `sentinel` follows relevant calls to the control or sensitive operation and makes gaps explicit.
+- Codex. `tester`, `smith` and `scribe` detail evidence and pending work. `scholar` identifies the source section and date or version. `scout` reconciles verdicts with the total number of claims. The profile plans batch reviews and records open gaps.
 
 ## [0.50.0-alpha.28] - 2026-11-19
 
-- Detalha os prompts de `scout`, `assayer` e `sentinel` no Codex com critérios de análise, tratamento de lacunas e formatos de saída.
+- Expands Codex `scout`, `assayer` and `sentinel` prompts with analysis criteria, gap handling and output formats.
 
 ## [0.50.0-alpha.27] - 2026-11-19
 
-- Orquestração Codex selecionável na sessão principal com `codex -p oathbound`.
+- Codex orchestration selectable in the main session with `codex -p oathbound`.
 
 ## [0.50.0-alpha.26] - 2026-11-19
 
-- Adicionados sete agentes Codex, skill de orquestração, configuração opcional de hooks nativos, instalador de agentes e pacote de GitHub Release.
+- Adds seven Codex agents, an orchestration skill, optional native hook configuration, agent installer and GitHub Release package.
 
 ## [0.50.0-alpha.25] - 2026-11-19
 
-- Adicionado plugin local para Codex CLI com as quatro skills e marketplace gerado por `build-plugin.cjs codex`.
+- Adds a local Codex CLI plugin with the four skills and marketplace generated by `build-plugin.cjs codex`.
 
 ## [0.50.0-alpha.24] - 2026-11-19
 
-- Modo Rust-only no hot path: removidos scripts `.js` duplicados dos hooks (`plugin-agent-guard`, `readonly-guard`, `read-size-guard`, `destructive-guard`, `agent-audit`, `rtk-hook`, `statusline`) e fallback `.js` no instalador (`tools/install.ts`).
-- Adicionados subcomandos `readonly-guard`, `read-size-guard` e `destructive-guard` e testes unitários (`cargo test`) em `native/oathbound-hook`.
-- Otimizado `destructive.rs` com pré-filtro por substring e compilação lazy de regexes (`plugin-agent-guard` p50 de 77.7 ms → 13.8 ms; ~8–10x mais rápido que Node.js).
+- Rust-only hot path: removes duplicate `.js` hook scripts (`plugin-agent-guard`, `readonly-guard`, `read-size-guard`, `destructive-guard`, `agent-audit`, `rtk-hook`, `statusline`) and installer `.js` fallback (`tools/install.ts`).
+- Adds `readonly-guard`, `read-size-guard` and `destructive-guard` subcommands and unit tests (`cargo test`) in `native/oathbound-hook`.
+- Optimizes `destructive.rs` with substring prefiltering and lazy regex compilation (`plugin-agent-guard` p50 from 77.7 ms → 13.8 ms; ~8–10x faster than Node.js).
 
 ## [0.50.0-alpha.23] - 2026-11-19
 
-- Adicionado binário nativo multi-call em Rust (`native/oathbound-hook`) para os hooks `plugin-agent-guard`, `agent-audit`, `rtk-hook` e `statusline`, documentado em `docs/adr/0004-hooks-nativos.md`.
-- Instalador (`tools/install.ts`) detecta binário nativo via `OATHBOUND_NATIVE_BIN` ou `native/bin/oathbound-hook-<platform>-<arch>[.exe]` e aplica fallback automático para os scripts `.js` quando ausente.
-- Adicionados `tools/bench-hooks.cjs`, `test/hooks/native-parity.test.js` e workflow `.github/workflows/native-hooks.yml` para build/release em `win32-x64`, `linux-x64` e `darwin-arm64`.
+- Adds a native multi-call Rust binary (`native/oathbound-hook`) for `plugin-agent-guard`, `agent-audit`, `rtk-hook` and `statusline` hooks, documented in `docs/adr/0004-hooks-nativos.md`.
+- Installer (`tools/install.ts`) detects the native binary through `OATHBOUND_NATIVE_BIN` or `native/bin/oathbound-hook-<platform>-<arch>[.exe]` and automatically falls back to `.js` scripts when absent.
+- Adds `tools/bench-hooks.cjs`, `test/hooks/native-parity.test.js` and the `.github/workflows/native-hooks.yml` workflow for builds/releases on `win32-x64`, `linux-x64` and `darwin-arm64`.
 
 ## [0.50.0-alpha.22] - 2026-11-19
 
-- Orquestradores Claude e agy aplicam `caveman full` desde o início da sessão.
+- Claude and agy orchestrators apply `caveman full` from session start.
 
 ## [0.50.0-alpha.21] - 2026-11-19
 
-- Mantidas apenas as 4 skills usadas (`diagnosing-bugs`, `grill-me`, `migration`, `surgical-patch`); removidas `safe-refactor` e `verify-and-stop`.
-- Instalação `--global` passa a sincronizar `skills/` em `~/.claude/skills/` e `~/.gemini/config/skills/`.
+- Keeps only the 4 skills in use (`diagnosing-bugs`, `grill-me`, `migration`, `surgical-patch`); removes `safe-refactor` and `verify-and-stop`.
+- `--global` installation now synchronizes `skills/` into `~/.claude/skills/` and `~/.gemini/config/skills/`.
 
 ## [0.50.0-alpha.20] - 2026-11-18
 
-- Adiciona smoke tests pagos e explícitos para revisão diária, delegação e guard do orquestrador Claude em Haiku.
+- Adds explicit paid smoke tests for daily review, delegation and the Claude orchestrator guard on Haiku.
 
 ## [0.50.0-alpha.19] - 2026-11-18
 
-- Orquestradores Claude e agy revisam testes dos fluxos afetados e esclarecem regras ambíguas na sessão principal.
+- Claude and agy orchestrators review tests for affected flows and clarify ambiguous rules in the main session.
 
 ## [0.50.0-alpha.18] - 2026-11-18
 
-- Plugin Claude inclui workflow de revisão de arquitetura com três análises e verificação de evidências.
+- Claude plugin includes an architecture review workflow with three analyses and evidence verification.
 
 ## [0.50.0-alpha.17] - 2026-11-18
 
-- Claude e agy aplicam aprovação de delegação conforme escopo e risco, mantendo os gates de ações externas.
+- Claude and agy apply delegation approval according to scope and risk, keeping external-action gates.
 
 ## [0.50.0-alpha.16] - 2026-11-18
 
-- O orquestrador Claude verifica as instruções do repositório antes de planejar.
+- Claude orchestrator checks repository instructions before planning.
 
 ## [0.50.0-alpha.15] - 2026-11-18
 
-- Claude nativo usa o guard do plugin. O instalador avulso gera hooks no frontmatter dos agentes.
+- Native Claude uses the plugin guard. The standalone installer generates hooks in agent frontmatter.
 
 ## [0.50.0-alpha.14] - 2026-11-18
 
-- Limitada a instalação global a agentes e seus guards, com manifesto próprio.
-- Retirados os hooks gerais do plugin Claude e as regras e o hook RTK do pacote agy. Documentada a entrada explícita pelo orquestrador.
+- Limits global installation to agents and their guards, with a dedicated manifest.
+- Removes general hooks from the Claude plugin and rules and the RTK hook from the agy package. Documents explicit entry through the orchestrator.
 
 ## [0.50.0-alpha.13] - 2026-11-18
 
-- CI: roda testes e valida o manifesto e artefato do Claude em Linux e Windows.
-- Claude Code: qualifica o nome dos agentes na delegação nativa.
+- CI: runs tests and validates the Claude manifest and artifact on Linux and Windows.
+- Claude Code: qualifies agent names in native delegation.
 
 ## [0.50.0-alpha.12] - 2026-11-18
 
-- Claude Code: minimiza os dados persistidos pela auditoria e restringe permissões de logs novos.
+- Claude Code: minimizes audit-persisted data and restricts permissions for new logs.
 
 ## [0.50.0-alpha.11] - 2026-11-18
 
-- Instalador: protege caminhos de hooks do Claude que contêm espaços.
+- Installer: protects Claude hook paths containing spaces.
 
 ## [0.50.0-alpha.10] - 2026-11-18
 
-- Instalador: valida configurações antes da deduplicação, preserva pastas em colisões e limita a operação ao runner selecionado.
+- Installer: validates configuration before deduplication, preserves folders on collisions and limits operation to the selected runner.
 
 ## [0.50.0-alpha.9] - 2026-11-18
 
-- Instalador: preserva arquivos locais em atualizações repetidas e limita a limpeza de agentes legados a arquivos gerenciados.
+- Installer: preserves local files across repeated upgrades and limits legacy-agent cleanup to managed files.
 
 ## [0.50.0-alpha.8] - 2026-11-18
 
-- Claude Code: aplica os guards de agentes do plugin pelo hook global.
+- Claude Code: applies plugin agent guards through the global hook.
 
 ## [0.50.0-alpha.7] - 2026-11-18
 
-- Claude Code: marketplace e pacote de release compartilham o registro dos hooks globais.
+- Claude Code: marketplace and release package share global hook registration.
 
 ## [0.50.0-alpha.6] - 2026-11-18
-- Empacotado `agy/config/GEMINI.md` como `rules/AGENTS.md` no build do plugin nativo Antigravity (`tools/build-plugin.cjs`).
-- Adicionado logo SVG com `<mask>` transparente em `assets/logo.svg`, referenciado em `.antigravity-plugin/plugin.json` e copiado no build do plugin Antigravity.
+- Packages `agy/config/GEMINI.md` as `rules/AGENTS.md` in the native Antigravity plugin build (`tools/build-plugin.cjs`).
+- Adds an SVG logo with a transparent `<mask>` in `assets/logo.svg`, referenced in `.antigravity-plugin/plugin.json` and copied in the Antigravity plugin build.
 
 ## [0.50.0-alpha.5] - 2026-11-17
-- Adicionados índices de documentação oficial para Claude Code e Antigravity CLI em `docs/`.
+- Adds official documentation indexes for Claude Code and Antigravity CLI in `docs/`.
 
 ## [0.50.0-alpha.4] - 2026-11-17
-- Removido o hook `Stop` do Antigravity para evitar loops de encerramento com `fullyIdle=false`; mantido o hook `PreToolUse`.
+- Removes the Antigravity `Stop` hook to prevent shutdown loops with `fullyIdle=false`; keeps the `PreToolUse` hook.
 
 ## [0.50.0-alpha.3] - 2026-11-17
-- Separado o manifesto nativo do Antigravity em `.antigravity-plugin/plugin.json`, ao lado do manifesto próprio do Claude em `.claude-plugin/`.
-- Gerados pacotes independentes por harness, com agentes, skills e hooks portáteis, sem sobrescrever diretórios existentes.
+- Separates the native Antigravity manifest into `.antigravity-plugin/plugin.json`, alongside Claude's own manifest in `.claude-plugin/`.
+- Generates independent packages per harness, with portable agents, skills and hooks, without overwriting existing directories.
 
 ## [0.50.0-alpha.2] - 2026-11-17
-- Corrigido o destino global das instruções Antigravity para `~/.gemini/GEMINI.md`, preservando arquivos existentes no destino e no caminho antigo.
+- Fixes the global Antigravity instruction destination to `~/.gemini/GEMINI.md`, preserving existing files at the destination and old path.
 
 ## [0.50.0-alpha.1] - 2026-11-15
-- Reconstrução pública do Oathbound para Claude Code e Antigravity CLI (`agy`), remoção do legado, empacotamento como plugin nativo e novo instalador com desativação de skills duplicadas.
+- Public Oathbound rebuild for Claude Code and Antigravity CLI (`agy`), legacy removal, native plugin packaging and a new installer with duplicate-skill disabling.
 
-## 2026-11-14 (encerra experimentos de roteamento com Jev)
+## 2026-11-14 (closes Jev routing experiments)
 
-- ADRs 0001 e 0002 encerrados. Os protótipos de sugestão de skills e agentes seguem inativos.
-- Revisão de testes com Jev segue sob demanda (ADR 0003). Testes locais do protótipo de roteamento conferem a probabilidade e o `Noul` do candidato escolhido e a saída para pedidos inelegíveis.
+- ADRs 0001 and 0002 closed. Skill and agent suggestion prototypes remain inactive.
+- Jev test review remains on demand (ADR 0003). Local routing-prototype tests check the selected candidate's probability and `Noul`, and output for ineligible requests.
 
-## 2026-11-14 (renomeia agente de testes E2E)
+## 2026-11-14 (renames E2E testing agent)
 
-- Agente `qa` passa a `tester` no Claude Code. Contrato e caso de regressão usam o nome novo. A sincronia continua usando `qa` no Codex e no Gemini.
+- Agent `qa` becomes `tester` in Claude Code. Contract and regression case use the new name. Synchronization continues using `qa` in Codex and Gemini.
 
-## 2026-11-14 (renomeia agente documental)
+## 2026-11-14 (renames documentation agent)
 
-- Agente `docs` passa a `scribe` no Claude Code. Contratos e casos de regressão usam o nome novo. Sincronia continua usando `docs` no Codex e no Gemini.
+- Agent `docs` becomes `scribe` in Claude Code. Contracts and regression cases use the new name. Synchronization continues using `docs` in Codex and Gemini.
 
-## 2026-11-14 (Jev na revisão de testes)
+## 2026-11-14 (Jev in test review)
 
-- ADR 0003 e CLI manual `tests/jev/revisar-teste.js`. Uma pergunta `Noul` por critério de aceite, com alerta, faixa inconclusiva e saída de indisponibilidade. Testes com transporte simulado.
-- Calibração preliminar com Jev 1.14.0 em 18 casos sintéticos de calibração e 18 de conferência. Limiar de alerta passou a 0,81; `sem_alerta` mantém 0,30. Corpus, medidor e resultados no ADR 0003.
+- ADR 0003 and manual CLI `tests/jev/revisar-teste.js`. One `Noul` question per acceptance criterion, with alert, inconclusive band and unavailable output. Tests with simulated transport.
+- Preliminary calibration with Jev 1.14.0 on 18 synthetic calibration cases and 18 checking cases. Alert threshold became 0.81; `sem_alerta` keeps 0.30. Corpus, measurement tool and results in ADR 0003.
 
-## 2026-11-14 (regressão RTK)
+## 2026-11-14 (RTK regression)
 
-- `node tests/rtk/rg.test.js`: valida offline a reescrita de buscas no hook, a compactação de resultados e a preservação de evidência em buscas focadas. No Windows, compara busca com e sem `PATHEXT`.
+- `node tests/rtk/rg.test.js`: validates hook search rewriting offline, result compaction and evidence preservation in focused searches. On Windows, compares searches with and without `PATHEXT`.
 
-## 2026-11-14 (custo e turnos por prompt)
-- Geração atualiza `por-prompt.json` e cria `rotulos.csv` só quando falta. `correcao_seguinte` considera apenas o próximo prompt humano no mesmo transcrito. Testes cobrem regeneração com notas e fronteira entre duas sessões.
-- `tests/dificuldade/por-prompt.js`: junta a segmentação por prompt humano (filtro de `extrair.js`) com a precificação de `custo.js` (`precos.json`; `custo.js` passa a exportar `achaPreco`, `extrairTokens`, `precificar`, `listarJsonl`; CLI igual). Por prompt: mensagens (dedup por `message.id`), ferramentas (total e por nome), arquivos editados distintos, subagentes, turnos, US$ da principal e dos subagentes, `irreversivel` (só booleano e categoria, nunca o comando), `correcao_seguinte` (**heurística fraca**: palavra-chave nos 80 primeiros chars do prompt seguinte).
-- Sidechain liga ao prompt por `promptId` (1ª linha de cada `subagents/*.jsonl` = linha humana da principal); sem ligação, não entra no custo e é contada à parte.
-- Grava `state/dificuldade/por-prompt.json` (id = sha256 8 hex, sem texto) e `rotulos.csv` (até 60 prompts embaralhados, texto redigido e truncado a 240, sem custo, rótulo vazio) para rotulagem às cegas. `--correlacao`: Spearman rótulo×custo e rótulo×turnos, subestimação (rótulo 1 ou 2 com custo acima do Q3), veredito (descartar se Spearman < 0,4 ou subestimação > 15%). n=60 dá IC ~±0,2.
-- Teste: `node tests/dificuldade/por-prompt.test.js` (fixtures em `CUSTO_HOME`).
+## 2026-11-14 (cost and turns per prompt)
+- Generation updates `por-prompt.json` and creates `rotulos.csv` only when missing. `correcao_seguinte` considers only the next human prompt in the same transcript. Tests cover regeneration with notes and the boundary between two sessions.
+- `tests/dificuldade/por-prompt.js`: joins human-prompt segmentation (`extrair.js` filter) with `custo.js` pricing (`precos.json`; `custo.js` now exports `achaPreco`, `extrairTokens`, `precificar`, `listarJsonl`; CLI unchanged). Per prompt: messages (dedup by `message.id`), tools (total and by name), distinct edited files, subagents, turns, US$ for main session and subagents, `irreversivel` (only boolean and category, never the command), `correcao_seguinte` (**weak heuristic**: keyword in the first 80 chars of the next prompt).
+- Sidechain links to prompt through `promptId` (1st line of each `subagents/*.jsonl` = main session's human line); without a link, excluded from cost and counted separately.
+- Writes `state/dificuldade/por-prompt.json` (id = sha256 8 hex, no text) and `rotulos.csv` (up to 60 shuffled prompts, redacted text truncated to 240, no cost, empty label) for blind labeling. `--correlacao`: Spearman label×cost and label×turns, underestimation (label 1 or 2 with cost above Q3), verdict (discard if Spearman < 0.4 or underestimation > 15%). n=60 gives CI ~±0.2.
+- Test: `node tests/dificuldade/por-prompt.test.js` (fixtures in `CUSTO_HOME`).
 
-## 2026-11-14 (refino do modo subagente do Jev)
-- `hooks/skill-suggest.js`, modo `subagente`: opção `inline` no `Choice` (sem `Noul`; escolhida, fica calado e loga `inline: true`); `criteria` estruturado por `Noul` (`true.faz`, `false.nao_faz` com `PARES_CONFUNDIDOS`); faixas do `Noul`: >= 0,7 sugere, <= 0,3 cala, meio cala e loga `faixa: 'meio'`. `LIMIAR_NOUL_SUB_ALTO` e `LIMIAR_NOUL_SUB_BAIXO` substituem `LIMIAR_NOUL_SUB`. Testes ampliados.
-- ADR 0002: seção "Emenda 2026-11-14" e linha "Estado" atualizada. Limiares sem calibração; **não registrado** em `settings.json`.
-- Correção posterior: `Choice` do modo subagente passa a exigir `probabilities[escolhido]` >= 0,5 (`LIMIAR_PROB_SUB`) em vez de `confidence`, conforme `confidence.md`. Teste cobre `confidence` ignorado.
+## 2026-11-14 (refines Jev subagent mode)
+- `hooks/skill-suggest.js`, `subagente` mode: `inline` option in `Choice` (no `Noul`; when selected, stays silent and logs `inline: true`); structured `criteria` per `Noul` (`true.faz`, `false.nao_faz` with `PARES_CONFUNDIDOS`); `Noul` bands: >= 0.7 suggests, <= 0.3 stays silent, middle stays silent and logs `faixa: 'meio'`. `LIMIAR_NOUL_SUB_ALTO` and `LIMIAR_NOUL_SUB_BAIXO` replace `LIMIAR_NOUL_SUB`. Expanded tests.
+- ADR 0002: "Amendment 2026-11-14" section and "Status" line updated. Uncalibrated thresholds; **not registered** in `settings.json`.
+- Later fix: subagent-mode `Choice` now requires `probabilities[escolhido]` >= 0.5 (`LIMIAR_PROB_SUB`) instead of `confidence`, per `confidence.md`. Test covers ignored `confidence`.
 
-## 2026-11-14 (implementação Jev: roteamento de subagente)
-- ADR 0002 passo 1: `description` dos 7 `agents/*.md` reescritas de forma contrastiva (o que faz, quando usar, o que não faz; pares `smith`/general-purpose, `scholar`/claude-code-guide, `assayer`/`sentinel`). Suíte `tests/agents/executar.js`: 12/12, US$ 0,063.
-- ADR 0002 passo 2: `hooks/skill-suggest.js` com modo `SKILL_SUGGEST_MODO=subagente`: 1 `Choice` + 1 `Noul` por subagente (12 itens: 7 locais + 5 embutidos) em um request; sugere se confiança e `Noul` >= 0,5 (sem calibração). Bloco `<subagent_relevance>`; log com `modo` e sem o prompt. Testes ampliados. Escrito pelo `smith`.
-- **Não registrado** em `settings.json`: critério de aceite do ADR (100 prompts humanos com subagente, calibração) não cumprido.
+## 2026-11-14 (Jev implementation: subagent routing)
+- ADR 0002 step 1: `description` in the 7 `agents/*.md` rewritten contrastively (what it does, when to use it, what it does not do; pairs `smith`/general-purpose, `scholar`/claude-code-guide, `assayer`/`sentinel`). `tests/agents/executar.js` suite: 12/12, US$ 0.063.
+- ADR 0002 step 2: `hooks/skill-suggest.js` with `SKILL_SUGGEST_MODO=subagente` mode: 1 `Choice` + 1 `Noul` per subagent (12 items: 7 local + 5 built-in) in one request; suggests if confidence and `Noul` >= 0.5 (without calibration). `<subagent_relevance>` block; log with `modo` and without the prompt. Expanded tests. Written by `smith`.
+- **Not registered** in `settings.json`: ADR acceptance criterion (100 human prompts with a subagent, calibration) not met.
 
-## 2026-11-14 (protótipo de sugestão de skill com o Jev)
-- ADR `docs/adr/0001-sugestao-de-skill-com-jev.md` (proposto) e protótipo `hooks/skill-suggest.js` (`UserPromptSubmit`). **Não registrado** em `settings.json`: registro só após o critério de aceite do ADR.
-- Um request ao Jev `jev-1.14.0` (`Choice` sobre as 44 skills + 2 `Noul`), prompt redigido por `redigir()`, falha em silêncio, log sem o prompt em `state/skill-suggest.jsonl`.
-- ADR `docs/adr/0002-roteamento-de-subagentes-com-jev.md` (proposto): perguntas por subagente, limiares por catálogo, gatilho de 100 prompts com subagente (hoje 11). Fine-tuning do Jev não existe na oferta da TypeSafe.
-- `.gitignore`: libera `docs/`.
-- Medição (121 prompts reais, `tests/skill-suggest/extrair.js` e `medir.js`, resultados em `state/`): skills inconclusivo (1 carga real); subagentes 6 de 11 no 1º (55%). Critério de aceite não cumprido, hook segue sem registro. Detalhe no ADR.
-- Teste: `node hooks/skill-suggest.test.js` (sem rede, transporte injetado). Chamada real com 3 prompts genéricos: 227 a 423 ms; sugeriu `grill-me` e `caveman:caveman-review`, e nada para pergunta factual.
+## 2026-11-14 (Jev skill suggestion prototype)
+- ADR `docs/adr/0001-sugestao-de-skill-com-jev.md` (proposed) and `hooks/skill-suggest.js` prototype (`UserPromptSubmit`). **Not registered** in `settings.json`: registration only after meeting ADR acceptance criteria.
+- One request to Jev `jev-1.14.0` (`Choice` over the 44 skills + 2 `Noul`), prompt redacted by `redigir()`, silent failure, no prompt in the `state/skill-suggest.jsonl` log.
+- ADR `docs/adr/0002-roteamento-de-subagentes-com-jev.md` (proposed): per-subagent questions, catalog-specific thresholds, trigger of 100 prompts with a subagent (currently 11). Jev fine-tuning is not offered by TypeSafe.
+- `.gitignore`: allows `docs/`.
+- Measurement (121 real prompts, `tests/skill-suggest/extrair.js` and `medir.js`, results in `state/`): skills inconclusive (1 actual load); subagents 6 of 11 correct first choices (55%). Acceptance criterion not met, hook remains unregistered. Details in the ADR.
+- Test: `node hooks/skill-suggest.test.js` (no network, injected transport). Real call with 3 generic prompts: 227 to 423 ms; suggested `grill-me` and `caveman:caveman-review`, and nothing for a factual question.
 
-## 2026-11-14 (custo em dólar por modelo)
-- `tests/custo/custo.js [AAAA-MM] [--json] [--sessao <id>]`: lê `projects/**/*.jsonl` (inclui `subagents/`), deduplica por `message.id` (58 de 80 ids repetem no transcrito; somar linhas dobra o custo) e soma US$ por mês, modelo e origem (principal/subagente). Mostra cache hit, decomposição do custo e contrafactual de subagentes a preço do modelo principal.
-- `tests/custo/precos.json`: Sonnet 5.5, Opus 5.5, Haiku 5.5 (tabela do skill `claude-api`, 2026-11-03). **Estimados**: cache write 5m (1,25×) e 1h (2×) dos três modelos; Haiku cache read e faixa acima de 100K. Saída avisa.
-- Teste: `node tests/custo/custo.test.js` (fixtures em `CUSTO_HOME`; saída sem texto de prompt).
-- Medição 2026-11-14: todos os transcritos US$ 30,83 (922 msgs, cache hit 96,6%); subagentes US$ 2,06 contra US$ 10,08 a preço do Opus. Escrito pelo `smith`.
+## 2026-11-14 (dollar cost per model)
+- `tests/custo/custo.js [YYYY-MM] [--json] [--sessao <id>]`: reads `projects/**/*.jsonl` (includes `subagents/`), deduplicates by `message.id` (58 of 80 ids repeat in the transcript; summing lines doubles cost) and sums US$ by month, model and origin (main/subagent). Shows cache hit, cost breakdown and subagent counterfactual at the main model's price.
+- `tests/custo/precos.json`: Sonnet 5.5, Opus 5.5, Haiku 5.5 (`claude-api` skill table, 2026-11-03). **Estimated**: cache write 5m (1.25×) and 1h (2×) for all three models; Haiku cache read and above-100K tier. Output warns.
+- Test: `node tests/custo/custo.test.js` (fixtures in `CUSTO_HOME`; output without prompt text).
+- Measurement 2026-11-14: all transcripts US$ 30.83 (922 msgs, cache hit 96.6%); subagents US$ 2.06 against US$ 10.08 at Opus prices. Written by `smith`.
 
-## 2026-11-14 (validação assayer e sentinel)
-- Validação do commit `ad10103` por `assayer` (0 🔴, 9 🟡) e `sentinel` (0 🔴, 3 🟡, 11 🔵). Corrigido:
-  - Payload ilegível, grande ou lento não apaga mais a chamada da trilha: grava linha com `erro` (`payload_invalido`, `payload_grande`, `stdin_lento`), só com identificadores extraídos do texto bruto, sem conteúdo.
-  - Redação: JSON com aspas escapadas, cabeçalhos `Authorization`/`Cookie`/`Set-Cookie`, `-passin pass:`, nomes `passphrase`/`signature`/`cookie`/`dsn`, prefixos `ya29.`, `npm_`, `hf_`, `shpat_`, `dop_v1_`, `sntrys_`, webhook do Slack e corpo de PEM.
-  - `audit-resumo.js`: negação sem a linha da chamada (órfã) entra como chamada e a ferramenta aparece; taxa nunca passa de 1; novos campos `orfas` e `erros`.
-  - Testes: ReDoS com limite de 2 s e entradas de 4096 caracteres; trava abandonada (`utimesSync`); rename que falha (`.2` como pasta); 14 formatos novos; payload ilegível por stdin.
-- Fica no `BACKLOG.md`: falsos positivos de redação em flags, senha de URL com `/`, modo de arquivo, `O_NOFOLLOW`, retenção, TOCTOU raro da trava.
+## 2026-11-14 (assayer and sentinel validation)
+- Validation of commit `ad10103` by `assayer` (0 🔴, 9 🟡) and `sentinel` (0 🔴, 3 🟡, 11 🔵). Fixed:
+  - Unreadable, large or slow payload no longer erases the call from the trail: writes a line with `erro` (`payload_invalido`, `payload_grande`, `stdin_lento`), containing only identifiers extracted from raw text, without content.
+  - Redaction: JSON with escaped quotes, `Authorization`/`Cookie`/`Set-Cookie` headers, `-passin pass:`, names `passphrase`/`signature`/`cookie`/`dsn`, prefixes `ya29.`, `npm_`, `hf_`, `shpat_`, `dop_v1_`, `sntrys_`, Slack webhook and PEM body.
+  - `audit-resumo.js`: denial without the call line (orphan) counts as a call and the tool appears; rate never exceeds 1; new `orfas` and `erros` fields.
+  - Tests: ReDoS with a 2 s limit and 4096-character inputs; abandoned lock (`utimesSync`); failed rename (`.2` as a folder); 14 new formats; unreadable payload through stdin.
+- Remains in `BACKLOG.md`: redaction false positives in flags, URL password with `/`, file mode, `O_NOFOLLOW`, retention, rare lock TOCTOU.
 
-## 2026-11-14 (auditoria do agent-audit.js)
-- Auditoria Opus (`assayer`) do `hooks/agent-audit.js`: 1 bug e 10 riscos. Corrigidos:
-  - Redação: chave entre aspas, flag com valor separado por espaço, valor com espaço entre aspas, Stripe `sk_live_`, `github_pat_`, `glpat-`, `xox*-`, `ASIA`, JWT, `Basic`, `curl -u`, `https://user:senha@`, `mysql -p`, `sshpass -p`. Caminho de URL com token mascarado. Entrada limitada a 4096 caracteres e quantificadores a 64 (ReDoS quadrático).
-  - Rotação: trava por arquivo; aborta em erro que não seja `ENOENT` (antes `EPERM` no Windows perdia geração). `extra` só aceita `bloqueado` e `motivo`. Entrada: timer de 3 s, handler de erro no stdin.
-  - `settings.json`: `timeout: 5` no hook global.
-- Dúvida verificada no log real: chamada negada gera 2 linhas (hook global + guard, `bloqueado:true`), não intencional para a contagem. `audit-resumo.js` agora conta só a linha sem `bloqueado` como chamada; taxa = bloqueios / chamadas. Antes a negação inflava `chamadas` e reduzia a taxa.
-- Testes: `agent-audit.test.js` (18 formatos de segredo, 5 entradas adversariais com limite de 500 ms, rotação até `.2`, trava, entrada por stdin) e `audit-resumo.test.js`. O teste novo falha na versão antiga.
+## 2026-11-14 (agent-audit.js audit)
+- Opus (`assayer`) audit of `hooks/agent-audit.js`: 1 bug and 10 risks. Fixed:
+  - Redaction: quoted key, flag with space-separated value, quoted value containing spaces, Stripe `sk_live_`, `github_pat_`, `glpat-`, `xox*-`, `ASIA`, JWT, `Basic`, `curl -u`, `https://user:senha@`, `mysql -p`, `sshpass -p`. URL path with masked token. Input limited to 4096 characters and quantifiers to 64 (quadratic ReDoS).
+  - Rotation: file lock; aborts on errors other than `ENOENT` (previously `EPERM` on Windows lost a generation). `extra` accepts only `bloqueado` and `motivo`. Input: 3 s timer, stdin error handler.
+  - `settings.json`: `timeout: 5` on the global hook.
+- Question checked in the real log: a denied call generates 2 lines (global hook + guard, `bloqueado:true`), unintentional for counting. `audit-resumo.js` now counts only the line without `bloqueado` as a call; rate = blocks / calls. Previously denial inflated `chamadas` and reduced the rate.
+- Tests: `agent-audit.test.js` (18 secret formats, 5 adversarial inputs with a 500 ms limit, rotation through `.2`, lock, stdin input) and `audit-resumo.test.js`. The new test fails on the old version.
 
-## 2026-11-14 (CLAUDE.md enxuto)
-- `CLAUDE.md` global de cerca de 40 para 13 linhas. Removidos: lista de modelos por subagente (duplicava o `model:` do frontmatter) e seção de skills cíclicas (as descrições das skills já restringem a ativação).
+## 2026-11-14 (lean CLAUDE.md)
+- Global `CLAUDE.md` from about 40 to 13 lines. Removed: per-subagent model list (duplicated frontmatter `model:`) and cyclic-skills section (skill descriptions already restrict activation).
 
-## 2026-11-14 (sincronia e testes)
-- Sincronia entre CLIs (L4): `tests/agents/regras-comuns.json` (regras `Segredos` e `Gate` por agente, trechos proibidos) e `tests/agents/sincronia.js` (verifica; `--aplicar` acrescenta o que falta em `~/.codex` e `~/.gemini`). Teste: `sincronia.test.js`. Achado: Codex e agy não tinham nenhuma regra de segredo nem gate; aplicado nos 7 agentes de cada.
-- agy: removido o contorno `GIT_CONFIG_GLOBAL`/`GIT_CONFIG_SYSTEM=NUL` de `assayer`, `sentinel`, `scout`, `smith` (burlava bloqueio e rodava em agentes somente leitura). Agora: parar e reportar. Reverter via `git revert`.
-- Suíte: casos `smith-gate`, `docs-gate` e `ask-commit`.
-- Remotos privados no GitHub: `claude-config`, `codex-config`, `gemini-config`.
+## 2026-11-14 (synchronization and tests)
+- Cross-CLI synchronization (L4): `tests/agents/regras-comuns.json` (per-agent `Segredos` and `Gate` rules, forbidden excerpts) and `tests/agents/sincronia.js` (checks; `--aplicar` appends missing content in `~/.codex` and `~/.gemini`). Test: `sincronia.test.js`. Finding: Codex and agy lacked any secret rule or gate; applied to all 7 agents in each.
+- agy: removes the `GIT_CONFIG_GLOBAL`/`GIT_CONFIG_SYSTEM=NUL` workaround from `assayer`, `sentinel`, `scout`, `smith` (bypassed a block and ran in read-only agents). Now: stop and report. Revert through `git revert`.
+- Suite: `smith-gate`, `docs-gate` and `ask-commit` cases.
+- Private GitHub remotes: `claude-config`, `codex-config`, `gemini-config`.
 
-## 2026-11-14 (um repositório por CLI)
-- Versionados separadamente, cada um com `.gitignore` em lista permitida, `.gitattributes` e `README.md`. Sem remoto. Varredura de segredos nos arquivos staged: limpa.
+## 2026-11-14 (one repository per CLI)
+- Versioned separately, each with an allowlist `.gitignore`, `.gitattributes` and `README.md`. No remote. Secret scan of staged files: clean.
 
-## 2026-11-14 (remoto)
-- `.gitattributes` (LF; `.ps1` CRLF): fim do aviso LF para CRLF.
-- Remoto privado no GitHub (`origin`, branch `main`). Varredura de segredos no histórico: limpa.
+## 2026-11-14 (remote)
+- `.gitattributes` (LF; `.ps1` CRLF): ends the LF-to-CRLF warning.
+- Private GitHub remote (`origin`, branch `main`). Secret scan of history: clean.
 
-## 2026-11-14 (Fase 7)
-- Métricas (L3): `hooks/audit-resumo.js [AAAA-MM] [--json]` resume `state/agent-audit.jsonl` por mês e agente (execuções, chamadas, bloqueios, taxa, ferramentas, top motivos). Teste: `audit-resumo.test.js`.
+## 2026-11-14 (Phase 7)
+- Metrics (L3): `hooks/audit-resumo.js [YYYY-MM] [--json]` summarizes `state/agent-audit.jsonl` by month and agent (runs, calls, blocks, rate, tools, top reasons). Test: `audit-resumo.test.js`.
 
-## 2026-11-14 (Fase 6)
-- RACI e gates (L7): `README.md` com dono, aprovador, ações irreversíveis e camadas de controle.
-- `permissions.ask` para `git push`, `git commit`, `git reset --hard`, `rm`, `Remove-Item` (variantes `rtk`).
+## 2026-11-14 (Phase 6)
+- RACI and gates (L7): `README.md` with owner, approver, irreversible actions and control layers.
+- `permissions.ask` for `git push`, `git commit`, `git reset --hard`, `rm`, `Remove-Item` (`rtk` variants).
 
-## 2026-11-14 (Fase 5)
-- Suíte de regressão em `tests/agents/` (L5).
-- RTK atualizado via script de atualização do ambiente.
-- `CHANGELOG.md` e `BACKLOG.md`.
+## 2026-11-14 (Phase 5)
+- Regression suite in `tests/agents/` (L5).
+- RTK updated through the environment update script.
+- `CHANGELOG.md` and `BACKLOG.md`.
 
 ## 2026-11-14
-- Trilha de auditoria (L3): `hooks/agent-audit.js` grava chamadas de subagentes em `state/agent-audit.jsonl`.
-- Guard de somente leitura (L1): `hooks/readonly-guard.js` no `assayer` e no `sentinel`.
-- Segredos (L6): regra nos agentes e `deny` de `Read(//**/.env*)` e `.credentials.json`.
-- Baseline Git local (L4).
+- Audit trail (L3): `hooks/agent-audit.js` records subagent calls in `state/agent-audit.jsonl`.
+- Read-only guard (L1): `hooks/readonly-guard.js` on `assayer` and `sentinel`.
+- Secrets (L6): agent rule and `deny` for `Read(//**/.env*)` and `.credentials.json`.
+- Local Git baseline (L4).

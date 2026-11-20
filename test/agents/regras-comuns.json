@@ -1,31 +1,52 @@
 {
-  "proibido": ["GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM"],
+  "proibido": [
+    "GIT_CONFIG_GLOBAL",
+    "GIT_CONFIG_SYSTEM"
+  ],
   "nomes": {
-    "codex": { "scribe": "docs" },
-    "gemini": { "scribe": "scribe" }
+    "codex": {
+      "scribe": "docs"
+    },
+    "gemini": {
+      "scribe": "scribe"
+    }
   },
   "mapa": {
-    "codex": { "scribe": "docs" },
-    "gemini": { "scribe": "scribe" }
+    "codex": {
+      "scribe": "docs"
+    },
+    "gemini": {
+      "scribe": "scribe"
+    }
   },
   "regras": {
-    "assayer": ["Segredos: nunca leia, imprima ou cite `.env`, credenciais, tokens ou valores de chave. Se aparecerem no diff, reporte só o caminho e a linha, sem o valor."],
-    "sentinel": ["Segredos: nunca leia, imprima ou cite `.env`, credenciais, tokens ou valores de chave. Segredo hardcoded no código vira achado só com caminho, linha e CWE, sem o valor."],
-    "scout": ["Segredos: nunca leia, imprima ou cite `.env`, credenciais, tokens ou valores de chave. Se a pergunta exigir isso, registre o bloqueio em LACUNAS e pare."],
-    "scholar": ["Segredos: nunca leia, imprima ou cite `.env`, credenciais, tokens ou valores de chave, nem os envie em consultas externas."],
-    "breaker": ["Segredos: nunca digite, imprima ou registre credenciais, tokens ou valores de chave; se o fluxo exigir login, pare e retorne `STATUS: BLOCKED`. Mascare segredos que apareçam em console, network ou screenshot."],
+    "assayer": [
+      "Secrets: never read, print, or cite `.env`, credentials, tokens, or key values. If they appear in the diff, report only the path and line, without the value."
+    ],
+    "sentinel": [
+      "Secrets: never read, print, or cite `.env`, credentials, tokens, or key values. A hardcoded secret in code becomes a finding with only path, line, and CWE, without the value."
+    ],
+    "scout": [
+      "Secrets: never read, print, or cite `.env`, credentials, tokens, or key values. If the question requires this, record the blocker in GAPS and stop."
+    ],
+    "scholar": [
+      "Secrets: never read, print, or cite `.env`, credentials, tokens, or key values, or send them in external queries."
+    ],
+    "breaker": [
+      "Secrets: never type, print, or record credentials, tokens, or key values; if the flow requires login, stop and return `STATUS: BLOCKED`. Mask secrets appearing in console, network, or screenshots."
+    ],
     "smith": [
-      "Segredos: nunca leia, imprima, registre em log ou passe pelo terminal `.env`, credenciais, tokens ou valores de chave; quem edita segredo é o humano.",
+      "Secrets: never read, print, log, or pass `.env`, credentials, tokens, or key values through the terminal; humans edit secrets.",
       {
-        "claude": "Gate: o hook `destructive-guard.js` nega `git commit/push/reset/clean/checkout/restore/stash`, `rm`/`del`/`Remove-Item`, `gh` de escrita, `npm publish` e wrappers (`bash -c`, `iex`), mesmo com autorização. Registre em NOTA o que a thread principal deve executar. Mudar permissão, configuração global, CI/CD ou infraestrutura exige autorização explícita no pedido.",
-        "default": "Gate: ação irreversível só com autorização explícita no pedido: apagar arquivo ou pasta, `git commit/push/reset/clean`, mudar permissão, configuração global, CI/CD ou infraestrutura, escrita remota. Sem autorização, pare e registre em NOTA."
+        "claude": "Gate: the `destructive-guard.js` hook denies `git commit/push/reset/clean/checkout/restore/stash`, `rm`/`del`/`Remove-Item`, write operations with `gh`, `npm publish`, and wrappers (`bash -c`, `iex`), even with authorization. Record in NOTE what the main thread must execute. Changing permissions, global configuration, CI/CD, or infrastructure requires explicit authorization in the request.",
+        "default": "Gate: irreversible actions require explicit authorization in the request: deleting a file or folder, `git commit/push/reset/clean`, changing permissions, global configuration, CI/CD or infrastructure, or remote writes. Without authorization, stop and record in NOTE."
       }
     ],
     "scribe": [
-      "Segredos: nunca leia, imprima ou escreva em documento `.env`, credenciais, tokens ou valores de chave.",
+      "Secrets: never read, print, or write `.env`, credentials, tokens, or key values into a document.",
       {
-        "claude": "Gate: o hook `destructive-guard.js` nega `git commit/push/reset/checkout/restore/stash`, `rm`, `gh` de escrita (publicar PR) e wrappers (`bash -c`), mesmo com autorização. Registre em PENDÊNCIAS o que a thread principal deve executar. Sobrescrever documento existente sem ler antes exige autorização explícita no pedido.",
-        "default": "Gate: ação irreversível só com autorização explícita no pedido: apagar ou sobrescrever documento existente sem ler antes, `git commit/push/reset/checkout/restore/stash`, `rm`, `gh` de escrita (publicar PR) ou escrita remota. Sem autorização, pare e registre em PENDÊNCIAS o que a thread principal deve executar."
+        "claude": "Gate: the `destructive-guard.js` hook denies `git commit/push/reset/checkout/restore/stash`, `rm`, write operations with `gh` (publishing a PR), and wrappers (`bash -c`), even with authorization. Record in PENDING what the main thread must execute. Overwriting an existing document without reading it first requires explicit authorization in the request.",
+        "default": "Gate: irreversible actions require explicit authorization in the request: deleting or overwriting an existing document without reading it first, `git commit/push/reset/checkout/restore/stash`, `rm`, write operations with `gh` (publishing a PR), or remote writes. Without authorization, stop and record in PENDING what the main thread must execute."
       }
     ]
   }

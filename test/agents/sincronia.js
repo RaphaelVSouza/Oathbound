@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 'use strict';
-// Sincronia das regras comuns entre as cópias dos agentes (Claude, Codex, agy).
-//   node test/agents/sincronia.js             verifica; exit 1 se divergir
-//   node test/agents/sincronia.js --aplicar   acrescenta regras que faltam (Codex e agy)
-// Fonte canônica: regras-comuns.json. Não gasta cota.
-// Variáveis: CLAUDE_AGENTS_DIR, CODEX_AGENTS_DIR, GEMINI_AGENTS_DIR.
+// Synchronize common rules across agent copies (Claude, Codex, agy).
+//   node test/agents/sincronia.js             check; exit 1 on divergence
+//   node test/agents/sincronia.js --aplicar   append missing rules (Codex and agy)
+// Canonical source: regras-comuns.json. Uses no quota.
+// Variables: CLAUDE_AGENTS_DIR, CODEX_AGENTS_DIR, GEMINI_AGENTS_DIR.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -21,7 +21,7 @@ function resolverRegra(r, cli) {
   return typeof r === 'string' ? r : (r?.[cli] ?? r?.default ?? null);
 }
 
-// Retorna a lista de problemas de uma cópia de agente.
+// Return the list of issues in an agent copy.
 function verificar(texto, agente, cfg, cli) {
   const n = norm(texto);
   const out = [];
@@ -36,10 +36,10 @@ function verificar(texto, agente, cfg, cli) {
   return out;
 }
 
-// Acrescenta uma regra: antes de "Recibo:" se houver, senão no fim das instruções.
+// Append a rule: before "Receipt:" if present, otherwise at the end of instructions.
 function inserir(texto, ext, regra) {
   const linha = `- ${regra}`;
-  const rec = texto.search(/^Recibo:/m);
+  const rec = texto.search(/^Receipt:/m);
   if (rec >= 0) return texto.slice(0, rec).replace(/\s*$/, '\n') + linha + '\n\n' + texto.slice(rec);
   if (ext === '.md') return texto.replace(/\s*$/, '\n') + '\n' + linha + '\n';
   const m = texto.indexOf('developer_instructions = """');
@@ -47,10 +47,10 @@ function inserir(texto, ext, regra) {
     const fim = texto.lastIndexOf('"""');
     return texto.slice(0, fim).replace(/\s*$/, '\n') + '\n' + linha + '\n' + texto.slice(fim);
   }
-  // string de uma linha com \n escapado: insere antes da aspa final da linha
+  // Single-line string with escaped \n: insert before the final quote on the line.
   const re = /^(developer_instructions = ".*)"([ \t]*)$/m;
   if (re.test(texto)) return texto.replace(re, (_, a, b) => `${a}\\n\\n${linha}"${b}`);
-  throw new Error('formato de agente não reconhecido');
+  throw new Error('unrecognized agent format');
 }
 
 function executar({ aplicar = false, cfgPath = path.join(__dirname, 'regras-comuns.json'), dirs } = {}) {
@@ -90,6 +90,6 @@ module.exports = { norm, resolverRegra, verificar, inserir, executar };
 if (require.main === module) {
   const rel = executar({ aplicar: process.argv.includes('--aplicar') });
   for (const r of rel) console.log(`${r.cli}/${r.agente}: ${r.tipo} ${r.detalhe}`);
-  console.log(rel.length ? `${rel.length} divergência(s)` : 'ok sincronia');
+  console.log(rel.length ? `${rel.length} divergence(s)` : 'ok synchronization');
   process.exit(rel.length ? 1 : 0);
 }

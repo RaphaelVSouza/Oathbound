@@ -1,7 +1,7 @@
 'use strict';
 
-// Configuração do próprio Oathbound. Projetos consumidores recebem
-// um modelo separado e definem suas próprias pastas e contratos canônicos.
+// Configuration for Oathbound itself. Consumer projects receive
+// a separate template and define their own directories and canonical contracts.
 module.exports = {
   limits: { maxBytes: 1048576 },
   blocklist: {

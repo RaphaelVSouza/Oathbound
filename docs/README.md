@@ -1,8 +1,8 @@
-# Referências oficiais por harness
+# Official References by Harness
 
-Índices de documentação oficial para os harnesses suportados. Os links apontam às fontes dos fornecedores; consulte-as para informações atuais.
+Official documentation indexes for supported harnesses. Links point to vendor sources; consult them for current information.
 
 - [Claude Code](claude/README.md)
 - [Antigravity CLI](antigravity/README.md)
 
-Revisão dos links: 2026-11-17.
+Links reviewed: 2026-11-17.

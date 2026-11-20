@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 'use strict';
-// Relatório de custo em dólar a partir dos transcritos do Claude Code.
-// Somente leitura; sem rede; sem dependências.
-// Uso: node custo.js [AAAA-MM] [--json] [--sessao <prefixo-do-id>]
-// Saída: nunca inclui texto de prompt nem caminhos; só id de sessão (8 chars) e nome do projeto.
-// Erros: opção inválida sai com código 2; falha inesperada sai com código 1.
+// Dollar cost report from Claude Code transcripts.
+// Read-only; offline; no dependencies.
+// Usage: node custo.js [YYYY-MM] [--json] [--sessao <id-prefix>]
+// Output: never includes prompt text or paths; only session ID (8 chars) and project name.
+// Errors: invalid options exit with code 2; unexpected failures exit with code 1.
 
 const fs = require('fs');
 const os = require('os');
@@ -13,7 +13,7 @@ const readline = require('readline');
 
 const HOME = process.env.CUSTO_HOME || path.join(os.homedir(), '.claude');
 const PRECOS = JSON.parse(fs.readFileSync(path.join(__dirname, 'precos.json'), 'utf8'));
-const SEM_DATA = 'sem data';
+const SEM_DATA = 'no date';
 
 function listarJsonl(dir) {
   const out = [];
@@ -27,7 +27,7 @@ function listarJsonl(dir) {
   return out.sort();
 }
 
-// Posição define projeto e sessão: projects/<proj>/<sessao>.jsonl ou projects/<proj>/<sessao>/subagents/*.jsonl
+// Position determines project and session: projects/<proj>/<session>.jsonl or projects/<proj>/<session>/subagents/*.jsonl
 function identificar(arquivo, raiz) {
   const partes = path.relative(raiz, arquivo).split(path.sep);
   return {
@@ -65,7 +65,7 @@ function extrairTokens(usage) {
   return { input: n(usage.input_tokens), output: n(usage.output_tokens), cache_read: n(usage.cache_read_input_tokens), w5, w1 };
 }
 
-// Tarifas por milhão de tokens. Haiku: prompt acima do limite usa a faixa alta, por mensagem.
+// Rates per million tokens. Haiku: prompts above the limit use the high tier, per message.
 function precificar(t, p) {
   let tar = p;
   let faixaAlta = false;
@@ -100,7 +100,7 @@ async function lerTranscritos(raiz) {
       const modelo = o.message.model;
       if (typeof modelo !== 'string' || modelo === '<synthetic>') continue;
       const chave = o.message.id || o.requestId || `sem-chave-${semChave++}`;
-      // Streaming repete o id; a última ocorrência prevalece.
+      // Streaming repeats the ID; the latest occurrence wins.
       msgs.set(chave, {
         modelo,
         origem: id.emSubagents || o.isSidechain === true ? 'subagente' : 'principal',
@@ -200,8 +200,8 @@ function calcular(msgs, ilegiveis, filtroMes, filtroSessao) {
   };
 }
 
-const f = new Intl.NumberFormat('pt-BR');
-const usd = (v) => 'US$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const f = new Intl.NumberFormat('en-US');
+const usd = (v) => 'US$ ' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function tabela(cab, linhas) {
   const larg = cab.map((h, i) => Math.max(h.length, ...linhas.map((l) => String(l[i]).length)));
@@ -211,36 +211,36 @@ function tabela(cab, linhas) {
 
 function texto(r) {
   const o = [];
-  o.push('Relatório de custo (preços de ' + r.precos_data + ')');
-  if (r.filtros.mes || r.filtros.sessao) o.push(`Filtros: mês=${r.filtros.mes || '-'} sessão=${r.filtros.sessao || '-'}`);
+  o.push('Cost report (prices as of ' + r.precos_data + ')');
+  if (r.filtros.mes || r.filtros.sessao) o.push(`Filters: month=${r.filtros.mes || '-'} session=${r.filtros.sessao || '-'}`);
   o.push('');
-  o.push(tabela(['mês', 'modelo', 'origem', 'msgs', 'input', 'output', 'cache_read', 'cache_write', 'US$'],
-    r.linhas.map((l) => [l.mes, l.modelo, l.origem, f.format(l.mensagens), f.format(l.input), f.format(l.output), f.format(l.cache_read), f.format(l.cache_write), usd(l.usd)])));
+  o.push(tabela(['month', 'model', 'source', 'msgs', 'input', 'output', 'cache_read', 'cache_write', 'US$'],
+    r.linhas.map((l) => [l.mes, l.modelo, l.origem === 'subagente' ? 'subagent' : 'main', f.format(l.mensagens), f.format(l.input), f.format(l.output), f.format(l.cache_read), f.format(l.cache_write), usd(l.usd)])));
   o.push('');
-  o.push(`Total geral: ${usd(r.total.usd)} em ${f.format(r.total.mensagens)} mensagens`);
-  o.push(`Razão de cache hit: ${r.razao_cache_hit === null ? 'n/d' : (r.razao_cache_hit * 100).toFixed(1) + '%'}`);
+  o.push(`Grand total: ${usd(r.total.usd)} across ${f.format(r.total.mensagens)} messages`);
+  o.push(`Cache hit ratio: ${r.razao_cache_hit === null ? 'n/a' : (r.razao_cache_hit * 100).toFixed(1) + '%'}`);
   const d = r.decomposicao_pct;
-  o.push(`Decomposição do US$: cache read ${d.cache_read.toFixed(1)}% | cache write ${d.cache_write.toFixed(1)}% | output ${d.output.toFixed(1)}% | input novo ${d.input_novo.toFixed(1)}%`);
+  o.push(`US$ breakdown: cache read ${d.cache_read.toFixed(1)}% | cache write ${d.cache_write.toFixed(1)}% | output ${d.output.toFixed(1)}% | new input ${d.input_novo.toFixed(1)}%`);
   const c = r.contrafactual_subagentes;
   if (c) {
-    o.push(`Subagentes a preço do modelo principal predominante (${c.modelo_principal_predominante}): ${usd(c.usd_contrafactual)} vs real ${usd(c.usd_real)}; diferença ${c.diferenca_usd >= 0 ? '+' : '-'}${usd(Math.abs(c.diferenca_usd))}`);
+    o.push(`Subagents priced at the predominant main model rate (${c.modelo_principal_predominante}): ${usd(c.usd_contrafactual)} vs real ${usd(c.usd_real)}; difference ${c.diferenca_usd >= 0 ? '+' : '-'}${usd(Math.abs(c.diferenca_usd))}`);
   } else {
-    o.push('Subagentes a preço do modelo principal predominante: n/d (sem mensagens de subagente ou de principal com preço)');
+    o.push('Subagents priced at the predominant main model rate: n/a (no priced subagent or main messages)');
   }
   if (r.sem_preco.length) {
     o.push('');
-    o.push('Sem preço (dólar não calculado):');
-    o.push(tabela(['modelo', '', '', 'msgs', 'input', 'output', 'cache_read', 'cache_write'],
+    o.push('Unpriced (dollar amount not calculated):');
+    o.push(tabela(['model', '', '', 'msgs', 'input', 'output', 'cache_read', 'cache_write'],
       r.sem_preco.map((s) => [s.modelo, '', '', f.format(s.mensagens), f.format(s.input), f.format(s.output), f.format(s.cache_read), f.format(s.cache_write)])));
   }
   o.push('');
-  o.push('Sessões de maior custo (id, projeto, principal, subagente, total):');
+  o.push('Highest-cost sessions (id, project, main, subagent, total):');
   for (const s of r.sessoes.slice(0, 10)) o.push(`  ${s.sessao}  ${s.projeto}  ${usd(s.principal)}  ${usd(s.subagente)}  ${usd(s.usd)}`);
   o.push('');
-  o.push('AVISO: preços estimados (não confirmados na tabela oficial):');
+  o.push('WARNING: estimated prices (not confirmed in the official table):');
   for (const e of r.precos_estimados) o.push(`  - ${e.modelo}: ${e.campos.join(', ')}`);
-  if (r.haiku_faixa_alta.mensagens) o.push(`  - Haiku acima de 100K de prompt: ${r.haiku_faixa_alta.mensagens} mensagem(ns); cache_read dessa faixa (${f.format(r.haiku_faixa_alta.cache_read_tokens_com_tarifa_estimada)} tokens) usa tarifa estimada`);
-  if (r.linhas_ilegiveis) o.push(`Linhas JSON ilegíveis ignoradas: ${r.linhas_ilegiveis}`);
+  if (r.haiku_faixa_alta.mensagens) o.push(`  - Haiku prompts above 100K: ${r.haiku_faixa_alta.mensagens} message(s); cache_read in this tier (${f.format(r.haiku_faixa_alta.cache_read_tokens_com_tarifa_estimada)} tokens) uses an estimated rate`);
+  if (r.linhas_ilegiveis) o.push(`Unreadable JSON lines ignored: ${r.linhas_ilegiveis}`);
   return o.join('\n');
 }
 
@@ -249,7 +249,7 @@ async function main() {
   let json = false;
   let mes = null;
   let sessao = null;
-  const uso = 'Uso: node custo.js [AAAA-MM] [--json] [--sessao <prefixo-do-id>]';
+  const uso = 'Usage: node custo.js [YYYY-MM] [--json] [--sessao <id-prefix>]';
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--json') json = true;
     else if (args[i] === '--sessao') {
@@ -264,7 +264,7 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch((e) => { console.error('Erro: ' + e.message); process.exit(1); });
+  main().catch((e) => { console.error('Error: ' + e.message); process.exit(1); });
 }
 
 module.exports = { achaPreco, extrairTokens, precificar, listarJsonl };

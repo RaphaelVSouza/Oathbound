@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 'use strict';
-// Custo e esforço por prompt humano, para medir se a dificuldade percebida prediz o custo.
-// Somente leitura dos transcritos; sem rede. Raiz: CUSTO_HOME ou ~/.claude (como custo.js).
-// Uso:
-//   node por-prompt.js                 atualiza por-prompt.json e só cria rotulos.csv se faltar
-//   node por-prompt.js --correlacao    lê rotulos.csv preenchido e imprime Spearman e veredito
-// Saída em disco: por-prompt.json sem texto de prompt (id = sha256 curto do texto);
-// rotulos.csv com texto redigido e truncado, sem custo, rótulo vazio. stdout: só contagens e quartis.
-// Erros: opção inválida sai com 2; falta de arquivo na correlação sai com 1.
+// Cost and effort per human prompt, to measure whether perceived difficulty predicts cost.
+// Read-only transcripts; offline. Root: CUSTO_HOME or ~/.claude (like custo.js).
+// Usage:
+//   node por-prompt.js                 updates por-prompt.json and creates rotulos.csv only if missing
+//   node por-prompt.js --correlacao    reads completed rotulos.csv and prints Spearman and verdict
+// Disk output: por-prompt.json without prompt text (id = short text sha256);
+// rotulos.csv with redacted, truncated text, no cost, empty label. stdout: counts and quartiles only.
+// Errors: invalid options exit with 2; missing correlation file exits with 1.
 //
-// Definições:
-// - Prompt elegível: mesmo filtro de skill-suggest/extrair.js (>=15 chars, sem '/', sem '<', sem 'Caveman mode').
-//   Qualquer prompt humano da cadeia principal encerra o trecho anterior, elegível ou não.
-// - turnos: idas e voltas = resultados de ferramenta devolvidos ao modelo no trecho + 1.
-// - Custo do subagente: mensagens de sidechain ligadas ao prompt por `promptId` (a linha humana da cadeia
-//   principal e a primeira linha de cada arquivo de subagente compartilham o campo). Prompt sem promptId marca
-//   custo_subagente_incluido=false; sidechain sem prompt correspondente é contada à parte, nunca atribuída.
-// - correcao_seguinte: HEURÍSTICA FRACA. Palavra-chave nos 80 primeiros chars do prompt humano seguinte no transcrito;
-//   "ainda" e "não" aparecem em frases que nada corrigem, e correções sem a palavra passam.
-// - irreversivel: só o booleano e as categorias; o comando nunca é guardado.
+// Definitions:
+// - Eligible prompt: same filter as skill-suggest/extrair.js (>=15 chars, no '/', no '<', no 'Caveman mode').
+//   Any human prompt in the main chain ends the previous segment, eligible or not.
+// - turnos: round trips = tool results returned to the model in the segment + 1.
+// - Subagent cost: sidechain messages linked to the prompt by `promptId` (the human line in the main
+//   chain and first line of each subagent file share the field). A prompt without promptId sets
+//   custo_subagente_incluido=false; sidechain without a matching prompt is counted separately, never attributed.
+// - correcao_seguinte: WEAK HEURISTIC. Keyword in the first 80 chars of the next human prompt in the transcript;
+//   "still" and "not" appear in non-corrections, and corrections without keywords are missed.
+// - irreversivel: only the boolean and categories; the command is never stored.
 
 const crypto = require('crypto');
 const fs = require('fs');
@@ -43,7 +43,7 @@ const IRREVERSIVEL = [
   ['truncate', /\bTRUNCATE\b/],
   ['delete-from', /DELETE\s+FROM(?![\s\S]*\bWHERE\b)/i],
 ];
-const CORRECAO = /(?<![\p{L}])(não|errado|de novo|refaça|corrija|ainda|erro)(?![\p{L}])/iu;
+const CORRECAO = /(?<![\p{L}])(not|wrong|again|redo|correct|still|error|não|errado|de novo|refaça|corrija|ainda|erro)(?![\p{L}])/iu;
 
 function categoriasIrreversiveis(comando) {
   return IRREVERSIVEL.filter(([, re]) => re.test(comando)).map(([nome]) => nome);
@@ -52,7 +52,7 @@ function categoriasIrreversiveis(comando) {
 function eElegivel(texto) {
   const t = texto.trim();
   return t.length >= 15 && !t.startsWith('/') && !t.startsWith('<') && !t.startsWith('Caveman mode')
-    && !t.startsWith('This session is being continued'); // resumo de compactação não é prompt humano
+    && !t.startsWith('This session is being continued'); // compaction summary is not a human prompt
 }
 
 function indicaCorrecao(proximo) {
@@ -65,7 +65,7 @@ function ehHumano(o) {
   return o.type === 'user' && !o.isMeta && typeof o.message?.content === 'string';
 }
 
-// Lê todos os transcritos. Principal: segmenta por prompt humano. Sidechain: lista à parte para ligar por promptId.
+// Reads all transcripts. Main: segments by human prompt. Sidechain: separate list to link by promptId.
 function lerTranscritos(raiz) {
   const proj = path.join(raiz, 'projects');
   const prompts = [];
@@ -83,7 +83,7 @@ function lerTranscritos(raiz) {
       try { o = JSON.parse(linha); } catch { ilegiveis++; continue; }
       if (!o || typeof o !== 'object') continue;
       const lateral = emSub || o.isSidechain === true;
-      // Só a primeira linha do subagente traz promptId; as mensagens do assistente herdam do arquivo.
+      // Only the first subagent line carries promptId; assistant messages inherit it from the file.
       if (lateral && !promptDoArquivo && o.promptId) promptDoArquivo = o.promptId;
 
       if (!lateral && ehHumano(o)) {
@@ -110,7 +110,7 @@ function lerTranscritos(raiz) {
         continue;
       }
       if (!atual) continue;
-      // Streaming repete o id com um bloco por linha: ferramentas se juntam por tool_use id.
+      // Streaming repeats the ID with one block per line: tools merge by tool_use ID.
       if (Array.isArray(m.content)) {
         for (const b of m.content) {
           if (b && b.type === 'tool_use') atual.tools.set(b.id || `t-${atual.tools.size}`, b);
@@ -194,7 +194,7 @@ function quartis(valores) {
   return { min: v[0], q1: q(0.25), mediana: q(0.5), q3: q(0.75), max: v[v.length - 1] };
 }
 
-// Postos 1..n; empates recebem a média dos postos que ocupam.
+// Ranks 1..n; ties receive the average of their ranks.
 function postos(v) {
   const idx = v.map((x, i) => [x, i]).sort((a, b) => a[0] - b[0]);
   const r = new Array(v.length);
@@ -209,7 +209,7 @@ function postos(v) {
   return r;
 }
 
-// Spearman = Pearson dos postos. Retorna null se n < 2 ou uma série não varia.
+// Spearman = Pearson of ranks. Returns null if n < 2 or a series does not vary.
 function spearman(x, y) {
   if (x.length !== y.length || x.length < 2) return null;
   const a = postos(x);
@@ -226,11 +226,11 @@ function spearman(x, y) {
   return va === 0 || vb === 0 ? null : cov / Math.sqrt(va * vb);
 }
 
-// Descarta se rho do custo < 0,4 ou subestimação > 15%; rho indefinido também descarta.
+// Discard if cost rho < 0.4 or underestimation > 15%; undefined rho also discards.
 function veredito(rhoCusto, subestimacao) {
   const motivos = [];
-  if (rhoCusto === null || rhoCusto < 0.4) motivos.push('Spearman rótulo×custo < 0,4');
-  if (subestimacao === null || subestimacao > 0.15) motivos.push('subestimação > 15%');
+  if (rhoCusto === null || rhoCusto < 0.4) motivos.push('Spearman label×cost < 0.4');
+  if (subestimacao === null || subestimacao > 0.15) motivos.push('underestimation > 15%');
   return { descartar: motivos.length > 0, motivos };
 }
 
@@ -353,7 +353,7 @@ function correlacao(raiz) {
     rotulados_1_ou_2: baixos.length,
     taxa_subestimacao: sub,
     veredito: veredito(rhoCusto, sub),
-    aviso: 'n=60 dá IC de cerca de ±0,2 no Spearman; resultado perto do limiar é inconclusivo.',
+    aviso: 'n=60 gives a Spearman CI of about ±0.2; results near the threshold are inconclusive.',
   };
 }
 
@@ -365,11 +365,11 @@ function main() {
     try {
       console.log(JSON.stringify(correlacao(HOME), null, 1));
     } catch (e) {
-      console.error('Erro: ' + e.message);
+      console.error('Error: ' + e.message);
       process.exit(1);
     }
   } else {
-    console.error('Uso: node por-prompt.js [--correlacao]');
+    console.error('Usage: node por-prompt.js [--correlacao]');
     process.exit(2);
   }
 }

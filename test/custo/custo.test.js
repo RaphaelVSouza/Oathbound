@@ -1,5 +1,5 @@
 'use strict';
-// Teste do relatório de custo: fixtures em diretório temporário via CUSTO_HOME.
+// Cost report test: fixtures in a temporary directory via CUSTO_HOME.
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
@@ -24,25 +24,25 @@ fs.mkdirSync(path.join(dirP, sessao, 'subagents'), { recursive: true });
 
 fs.writeFileSync(path.join(dirP, sessao + '.jsonl'), jl(
   { type: 'user', timestamp: '2026-10-05T10:00:00Z', cwd: CWD, message: { role: 'user', content: PROMPT } },
-  // m1 em streaming: primeira ocorrência parcial, a última prevalece
+  // streamed m1: first occurrence partial, latest wins
   asst('m1', 'claude-sonnet-5-5', { input_tokens: 1, output_tokens: 5 }, '2026-10-05T10:00:01Z'),
   asst('m1', 'claude-sonnet-5-5', {
     input_tokens: 1000000, output_tokens: 100000, cache_read_input_tokens: 2000000,
     cache_creation_input_tokens: 700000,
     cache_creation: { ephemeral_5m_input_tokens: 500000, ephemeral_1h_input_tokens: 200000 },
   }, '2026-10-05T10:00:02Z'),
-  // sem objeto cache_creation: tudo conta como 5m; timestamp inválido
+  // no cache_creation object: everything counts as 5m; invalid timestamp
   asst('m2', 'claude-sonnet-5-5', { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 400000 }, 'lixo'),
-  '{ linha corrompida',
+  '{ corrupt line',
   asst('m3', 'claude-foo-1', { input_tokens: 1000, output_tokens: 2000 }, '2026-10-06T00:00:00Z'),
   asst('m4', '<synthetic>', { input_tokens: 999, output_tokens: 999 }, '2026-10-06T00:00:00Z'),
   { type: 'assistant', timestamp: '2026-10-06T00:00:00Z', message: { id: 'm5', model: 'claude-sonnet-5-5', content: [] } },
-  // subagente marcado por isSidechain no arquivo principal; prompt 11K, faixa baixa do Haiku
+  // subagent marked by isSidechain in the main file; 11K prompt, Haiku low tier
   asst('s2', 'claude-haiku-5-5', { input_tokens: 10000, output_tokens: 1000 }, '2026-10-07T00:00:00Z', { isSidechain: true }),
 ));
 
 fs.writeFileSync(path.join(dirP, sessao, 'subagents', 'agent-x.jsonl'), jl(
-  // prompt 50000 + 40000 + 20000 = 110000 > 100K: faixa alta
+  // prompt 50000 + 40000 + 20000 = 110000 > 100K: high tier
   asst('s1', 'claude-haiku-5-5', {
     input_tokens: 50000, output_tokens: 10000, cache_read_input_tokens: 40000,
     cache_creation_input_tokens: 20000,
@@ -57,12 +57,12 @@ function rodar(...args) {
 }
 const perto = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`);
 
-// Valores calculados à mão (US$ por milhão de tokens)
+// Hand-calculated values (US$ per million tokens)
 const m1 = 1e6 * 2 / 1e6 + 1e5 * 10 / 1e6 + 2e6 * 0.10 / 1e6 + 5e5 * 2.5 / 1e6 + 2e5 * 4 / 1e6; // 5,25
 const m2 = 4e5 * 2.5 / 1e6; // 1,00
 const s1 = 5e4 * 0.5 / 1e6 + 1e4 * 2.5 / 1e6 + 4e4 * 0.005 / 1e6 + 2e4 * 0.625 / 1e6; // 0,0627
 const s2 = 1e4 * 0.1 / 1e6 + 1e3 * 0.5 / 1e6; // 0,0015
-const hipot = (5e4 * 2 + 1e4 * 10 + 4e4 * 0.1 + 2e4 * 2.5 + 1e4 * 2 + 1e3 * 10) / 1e6; // subagentes a preço do Sonnet
+const hipot = (5e4 * 2 + 1e4 * 10 + 4e4 * 0.1 + 2e4 * 2.5 + 1e4 * 2 + 1e3 * 10) / 1e6; // subagents at Sonnet prices
 perto(m1, 5.25);
 
 try {
@@ -73,12 +73,12 @@ try {
 
   const achar = (mes, modelo, origem) => j.linhas.find((l) => l.mes === mes && l.modelo === modelo && l.origem === origem);
   const p = achar('2026-10', 'claude-sonnet-5-5', 'principal');
-  assert.strictEqual(p.mensagens, 1); // duplicata contada uma vez
+  assert.strictEqual(p.mensagens, 1); // duplicate counted once
   assert.strictEqual(p.input, 1000000);
   assert.strictEqual(p.cache_write, 700000);
   perto(p.usd, m1);
-  perto(achar('sem data', 'claude-sonnet-5-5', 'principal').usd, m2);
-  assert.ok(!j.linhas.some((l) => /^\d{4}-\d{2}$/.test(l.mes) === false && l.mes !== 'sem data'));
+  perto(achar('no date', 'claude-sonnet-5-5', 'principal').usd, m2);
+  assert.ok(!j.linhas.some((l) => /^\d{4}-\d{2}$/.test(l.mes) === false && l.mes !== 'no date'));
 
   const sub = achar('2026-10', 'claude-haiku-5-5', 'subagente');
   assert.strictEqual(sub.mensagens, 2);
@@ -99,19 +99,19 @@ try {
   perto(j.decomposicao_pct.cache_write, ((5e5 * 2.5 + 2e5 * 4 + 4e5 * 2.5 + 2e4 * 0.625) / 1e6 / j.total.usd) * 100);
   assert.strictEqual(j.sessoes[0].sessao, 'aaaaaaaa');
 
-  // filtro de mês exclui "sem data"
+  // month filter excludes "no date"
   const jm = JSON.parse(rodar('2026-10', '--json'));
   perto(jm.total.usd, m1 + s1 + s2);
-  // filtro de sessão
+  // session filter
   assert.strictEqual(JSON.parse(rodar('--sessao', 'bbbb', '--json')).total.mensagens, 0);
   assert.strictEqual(JSON.parse(rodar('--sessao', 'aaaa', '--json')).total.mensagens, 4);
 
-  // privacidade: nem prompt, nem resposta, nem caminhos
+  // privacy: no prompt, response, or paths
   const txt = rodar();
-  assert.ok(txt.includes('Sem preço') && txt.includes('AVISO') && txt.includes('Subagentes a preço do modelo principal predominante'));
+  assert.ok(txt.includes('Unpriced') && txt.includes('WARNING') && txt.includes('Subagents priced at the predominant main model rate'));
   for (const saida of [txt, JSON.stringify(j)]) {
     for (const proibido of [PROMPT, RESPOSTA, CWD, home, sessao, 'req_']) {
-      assert.ok(!saida.includes(proibido), `vazou: ${proibido}`);
+      assert.ok(!saida.includes(proibido), `leaked: ${proibido}`);
     }
   }
   console.log('ok: custo');

@@ -23,7 +23,7 @@ jobs:
           TAG_VER="${GITHUB_REF_NAME#v}"
           FILE_VER="$(tr -d '[:space:]' < VERSION)"
           if [ "$TAG_VER" != "$FILE_VER" ]; then
-            echo "Tag ($TAG_VER) diverge de VERSION ($FILE_VER)" >&2
+            echo "Tag ($TAG_VER) differs from VERSION ($FILE_VER)" >&2
             exit 1
           fi
 

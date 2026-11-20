@@ -1,20 +1,20 @@
 # Claude Code
 
-Links para documentação oficial do Claude Code. Use a documentação do fornecedor como fonte de verdade para comportamento e opções atuais.
+Links to official Claude Code documentation. Use vendor documentation as the source of truth for current behavior and options.
 
-Revisão dos links: 2026-11-17.
+Links reviewed: 2026-11-17.
 
-## Começar e usar a CLI
+## Getting Started and Using the CLI
 
-- [Visão geral](https://code.claude.com/docs/en/overview) — superfícies e início rápido.
-- [Referência da CLI](https://code.claude.com/docs/en/cli-reference) — comandos, flags e opções.
-- [Configurações](https://code.claude.com/docs/en/settings) — configuração de usuário e projeto.
+- [Overview](https://code.claude.com/docs/en/overview) — surfaces and quick start.
+- [CLI reference](https://code.claude.com/docs/en/cli-reference) — commands, flags and options.
+- [Settings](https://code.claude.com/docs/en/settings) — user and project configuration.
 
-## Extensão e personalização
+## Extension and Customization
 
-- [Plugins](https://code.claude.com/docs/en/plugins) — instalar e desenvolver plugins.
-- [Skills](https://code.claude.com/docs/en/skills) — criar e usar skills.
-- [Subagentes](https://code.claude.com/docs/en/sub-agents) — agentes especializados.
-- [Hooks](https://code.claude.com/docs/en/hooks) — eventos e hooks de ciclo de vida.
-- [MCP](https://code.claude.com/docs/en/mcp) — conectar servidores MCP.
-- [Memória e instruções](https://code.claude.com/docs/en/memory) — arquivos de instrução e memória.
+- [Plugins](https://code.claude.com/docs/en/plugins) — install and develop plugins.
+- [Skills](https://code.claude.com/docs/en/skills) — create and use skills.
+- [Subagents](https://code.claude.com/docs/en/sub-agents) — specialized agents.
+- [Hooks](https://code.claude.com/docs/en/hooks) — lifecycle events and hooks.
+- [MCP](https://code.claude.com/docs/en/mcp) — connect MCP servers.
+- [Memory and instructions](https://code.claude.com/docs/en/memory) — instruction and memory files.

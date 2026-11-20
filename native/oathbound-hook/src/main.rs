@@ -74,7 +74,7 @@ fn run_guard(motivo_audit: &'static str, eval: fn(&Value) -> Option<String>) {
             payload = v;
             eval(&payload)
         }
-        _ => Some("entrada do hook inválida".to_string()),
+        _ => Some("invalid hook input".to_string()),
     };
     if let Some(m) = motivo {
         emit_deny(&payload, motivo_audit, &m);

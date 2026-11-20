@@ -2,48 +2,50 @@
 
 ![Oathbound — Sworn agents. Audited work.](assets/readme-banner.svg)
 
-Conjunto portátil de governança, regras de execução, subagentes especializados, guardrails determinísticos em hooks, trilha de auditoria e skills de engenharia para assistentes de IA baseados em CLI.
+A portable set of governance, execution rules, specialized subagents, deterministic hook guardrails, audit trails and engineering skills for CLI-based AI assistants.
 
-- **Estágio:** alpha / incompleto, com protótipos em calibração (versão em [VERSION](VERSION) e histórico em [CHANGELOG.md](CHANGELOG.md)).
-- **Stack:** TypeScript e JavaScript nativos em **Node.js 24+** (type stripping nativo, sem etapa de build e sem dependências externas).
-- **Alvos suportados:** **Claude Code** (`claude`), **Antigravity CLI** (`agy`) e **Codex CLI** (plugin, agentes e hooks opcionais).
+Documentation, prompts and diagnostics use English. Existing file paths, command flags, machine identifiers and JSON schema keys remain unchanged for compatibility. No renaming or migration is required.
 
----
-
-## O que o projeto faz
-
-1. **Regras de Governança:** O `oathkeeper` aplica o fluxo comum como agente no Claude Code e no Antigravity CLI, e como perfil no Codex CLI. Cada projeto define suas exceções locais.
-2. **Subagentes Especializados:** O `oathkeeper` coordena 7 subagentes: `scout`, `scholar`, `scribe`, `smith`, `assayer`, `sentinel` e `breaker`.
-
-   ![Ícones dos sete subagentes Oathbound](assets/readme-agents.svg)
-
-3. **Skills de Engenharia:** [`api-contract-design`](skills/api-contract-design/SKILL.md), [`create-adr`](skills/create-adr/SKILL.md), [`create-spec`](skills/create-spec/SKILL.md), `diagnosing-bugs`, `grill-me`, [`incident-postmortem`](skills/incident-postmortem/SKILL.md), `migration`, [`refactor-safely`](skills/refactor-safely/SKILL.md), `surgical-patch` e [`test-strategy`](skills/test-strategy/SKILL.md). Skills com tools específicas de CLI suportam override opcional `SKILL.<runner>.md` (ADR 0006). O `scribe` carrega `create-adr` e `create-spec` sob demanda.
-4. **Hooks Determinísticos:** Auditoria e proteção em tempo de execução com `agent-audit`, `readonly-guard`, `read-size-guard` e `destructive-guard` no binário nativo Rust (`native/oathbound-hook`), que também fornece `statusline`. A reescrita de comandos usa os hooks oficiais do RTK.
-
-   ![PreToolUse avalia a ferramenta e permite ou bloqueia sua execução. A auditoria registra eventos dos subagentes.](assets/readme-hooks.svg)
-
-5. **Telemetria, Relatórios e Protótipos:** Inclui `audit-resumo`, módulos de custo e dificuldade (`test/custo`, `test/dificuldade`) e protótipos inativos com Jev (`claude/hooks/skill-suggest.js`, `test/jev/revisar-teste.js`) documentados nos ADRs [docs/adr/0001-sugestao-de-skill-com-jev.md](docs/adr/0001-sugestao-de-skill-com-jev.md), [docs/adr/0002-roteamento-de-subagentes-com-jev.md](docs/adr/0002-roteamento-de-subagentes-com-jev.md) e [docs/adr/0003-jev-revisao-de-testes.md](docs/adr/0003-jev-revisao-de-testes.md).
+- **Stage:** alpha / incomplete, with prototypes under calibration (version in [VERSION](VERSION) and history in [CHANGELOG.md](CHANGELOG.md)).
+- **Stack:** native TypeScript and JavaScript on **Node.js 24+** (native type stripping, no build step and no external dependencies).
+- **Supported targets:** **Claude Code** (`claude`), **Antigravity CLI** (`agy`) and **Codex CLI** (plugin, agents and optional hooks).
 
 ---
 
-## Instalação
+## What the Project Does
 
-O Oathbound pode ser instalado como plugin nativo ou através do instalador em Node.js.
+1. **Governance Rules:** `oathkeeper` applies the shared workflow as an agent in Claude Code and Antigravity CLI, and as a profile in Codex CLI. Each project defines its local exceptions.
+2. **Specialized Subagents:** `oathkeeper` coordinates 7 subagents: `scout`, `scholar`, `scribe`, `smith`, `assayer`, `sentinel` and `breaker`.
 
-### 1. Plugin Nativo
+   ![Icons of the seven Oathbound subagents](assets/readme-agents.svg)
 
-No Claude Code, instale pelo marketplace com `/plugin install oathbound --marketplace RaphaelVSouza/Oathbound`.
+3. **Engineering Skills:** [`api-contract-design`](skills/api-contract-design/SKILL.md), [`create-adr`](skills/create-adr/SKILL.md), [`create-spec`](skills/create-spec/SKILL.md), `diagnosing-bugs`, `grill-me`, [`incident-postmortem`](skills/incident-postmortem/SKILL.md), `migration`, [`refactor-safely`](skills/refactor-safely/SKILL.md), `surgical-patch` and [`test-strategy`](skills/test-strategy/SKILL.md). Skills with CLI-specific tools support an optional `SKILL.<runner>.md` override (ADR 0006). `scribe` loads `create-adr` and `create-spec` on demand.
+4. **Deterministic Hooks:** Runtime auditing and protection through `agent-audit`, `readonly-guard`, `read-size-guard` and `destructive-guard` in the native Rust binary (`native/oathbound-hook`), which also provides `statusline`. Command rewriting uses official RTK hooks.
 
-Se já usa o marketplace, atualize-o e recarregue o plugin pelo painel `/plugin`. Se usa o pacote de release, gere ou extraia a nova versão em outro diretório e aponte o Claude para ele.
+   ![PreToolUse evaluates the tool and allows or blocks execution. Auditing records subagent events.](assets/readme-hooks.svg)
 
-Para iniciar uma sessão Oathbound no Claude, use `claude --agent oathbound:oathkeeper`. No agy, use `agy agents` para conferir os agentes disponíveis e selecione o `oathkeeper` com `agy --agent oathkeeper`.
+5. **Telemetry, Reports and Prototypes:** Includes `audit-resumo`, cost and difficulty modules (`test/custo`, `test/dificuldade`) and inactive Jev prototypes (`claude/hooks/skill-suggest.js`, `test/jev/revisar-teste.js`) documented in ADRs [docs/adr/0001-sugestao-de-skill-com-jev.md](docs/adr/0001-sugestao-de-skill-com-jev.md), [docs/adr/0002-roteamento-de-subagentes-com-jev.md](docs/adr/0002-roteamento-de-subagentes-com-jev.md) and [docs/adr/0003-jev-revisao-de-testes.md](docs/adr/0003-jev-revisao-de-testes.md).
 
-Inicie a CLI normalmente para manter o agente padrão. Na sessão, peça pelo subagente desejado, por exemplo, `oathbound:scout` no plugin Claude ou `scout` no agy.
+---
 
-No plugin Claude, o hook aplica guards pelo identificador `oathbound:<agente>` e registra bloqueios. Logs novos usam modo `0600` em Unix e herdam as permissões do diretório no Windows. Logs antigos podem conter detalhes gravados por versões anteriores.
+## Installation
 
-Com Dynamic Workflows habilitado no Claude, execute `/oathbound:revisao-arquitetura` e informe a decisão, os módulos e as restrições. O workflow compara contratos, operação e migração. A quarta chamada verifica referências e reúne subsídios para um ADR. Aprove a decisão antes de pedir implementação ou registro do ADR.
-Os manifestos de origem ficam separados por harness: [Claude Code](.claude-plugin/plugin.json), com seu [marketplace](.claude-plugin/marketplace.json), e [Antigravity](.antigravity-plugin/plugin.json). Para gerar pacotes nativos independentes, informe diretórios novos dentro do repositório:
+Oathbound can be installed as a native plugin or through the Node.js installer.
+
+### 1. Native Plugin
+
+In Claude Code, install from the marketplace with `/plugin install oathbound --marketplace RaphaelVSouza/Oathbound`.
+
+If you already use the marketplace, update it and reload the plugin through the `/plugin` panel. If you use the release package, generate or extract the new version into another directory and point Claude to it.
+
+To start an Oathbound session in Claude, use `claude --agent oathbound:oathkeeper`. In agy, use `agy agents` to check available agents and select `oathkeeper` with `agy --agent oathkeeper`.
+
+Start the CLI normally to keep the default agent. During the session, request the desired subagent, for example, `oathbound:scout` in the Claude plugin or `scout` in agy.
+
+In the Claude plugin, the hook applies guards by the `oathbound:<agent>` identifier and records blocks. New logs use mode `0600` on Unix and inherit directory permissions on Windows. Older logs may contain details recorded by previous versions.
+
+With Dynamic Workflows enabled in Claude, run `/oathbound:revisao-arquitetura` and provide the decision, modules and constraints. The workflow compares contracts, operations and migration. The fourth call checks references and gathers input for an ADR. Approve the decision before requesting implementation or an ADR record.
+Source manifests are separate for each harness: [Claude Code](.claude-plugin/plugin.json), with its [marketplace](.claude-plugin/marketplace.json), and [Antigravity](.antigravity-plugin/plugin.json). To generate independent native packages, specify new directories inside the repository:
 
 ```sh
 node tools/build-plugin.cjs claude dist/claude
@@ -52,12 +54,12 @@ claude plugin validate dist/claude
 agy plugin validate dist/agy
 ```
 
-Crie `dist/` antes de gerar os pacotes. O gerador exige destinos novos. Cada pacote contém as skills e oito agentes. O pacote Claude inclui os guards por agente, que requerem Node.js.
+Create `dist/` before generating packages. The generator requires new destinations. Each package contains the skills and eight agents. The Claude package includes per-agent guards, which require Node.js.
 
-### 2. Plugin local para Codex CLI
+### 2. Local Plugin for Codex CLI
 
-Crie `dist/` e use um destino novo. A instalação é manual pelo marketplace local.
-Validação de referência com Codex CLI `0.170.0`.
+Create `dist/` and use a new destination. Install manually through the local marketplace.
+Reference validation used Codex CLI `0.170.0`.
 
 ```sh
 node tools/build-plugin.cjs codex dist/codex
@@ -66,88 +68,88 @@ codex plugin add oathbound@oathbound-local
 codex plugin list --marketplace oathbound-local --json
 ```
 
-Para instalar os sete agentes no projeto, execute `node tools/install.ts --runner codex --project .`.
-Os prompts ficam em `codex/agents/`, no campo `developer_instructions` de cada TOML. Os agentes indicam as evidências, validações e lacunas esperadas em cada papel. O perfil `oathkeeper` planeja revisões grandes em lotes e leva lacunas abertas ao relatório final.
-Use `--global` no lugar de `--project .` para instalá-los em `~/.codex/agents/`.
-Se você usa um `CODEX_HOME` personalizado, copie os TOMLs para a pasta `agents/` desse diretório.
-Quem instala a partir do GitHub Release encontra os TOMLs em `setup/agents/` e pode copiá-los para `.codex/agents/`, preservando arquivos existentes.
+To install the seven agents in the project, run `node tools/install.ts --runner codex --project .`.
+Prompts live in `codex/agents/`, in each TOML's `developer_instructions` field. Agents specify the evidence, validation and gaps expected for each role. The `oathkeeper` profile plans large reviews in batches and carries open gaps into the final report.
+Use `--global` instead of `--project .` to install them in `~/.codex/agents/`.
+If you use a custom `CODEX_HOME`, copy the TOMLs into that directory's `agents/` folder.
+GitHub Release installations include TOMLs in `setup/agents/`; copy them into `.codex/agents/`, preserving existing files.
 
-Inicie `codex -p oathkeeper` para carregar as instruções da sessão principal.
-A instalação global inclui o perfil. Na instalação por projeto ou pelo GitHub Release, copie `codex/oathkeeper.config.toml` ou `setup/oathkeeper.config.toml` para o diretório `CODEX_HOME` (padrão `~/.codex/`), preservando arquivos existentes.
-Para ativar os hooks opcionais, coloque o binário nativo da sua plataforma no PATH com o nome `oathbound-hook`.
-Copie `setup/hooks.json` para `.codex/hooks.json` ou acrescente suas entradas ao arquivo existente.
-Revise e confie nas definições com `/hooks`. O guard Bash se aplica à sessão inteira.
-Execute no terminal externo as ações autorizadas que o guard bloquear.
-[ADR do plugin Codex](docs/adr/0005-plugin-codex.md)
+Start `codex -p oathkeeper` to load main-session instructions.
+Global installation includes the profile. For project or GitHub Release installations, copy `codex/oathkeeper.config.toml` or `setup/oathkeeper.config.toml` into `CODEX_HOME` (default `~/.codex/`), preserving existing files.
+To enable optional hooks, place your platform's native binary on PATH as `oathbound-hook`.
+Copy `setup/hooks.json` into `.codex/hooks.json` or append its entries to the existing file.
+Review and trust definitions with `/hooks`. The Bash guard applies to the entire session.
+Run authorized actions blocked by the guard in an external terminal.
+[Codex plugin ADR](docs/adr/0005-plugin-codex.md)
 
-### 3. Instalador de Projeto e Ambiente (`install.ts`)
+### 3. Project and Environment Installer (`install.ts`)
 
-Na migração de manifestos antigos, o instalador conserva arquivos divergentes e mostra o diff para revisão. A limpeza automática exige registro de origem no manifesto atual.
+When migrating old manifests, the installer preserves divergent files and displays the diff for review. Automatic cleanup requires a source record in the current manifest.
 
-Para agentes locais preservados de instalações antigas, revise o diff do instalador e aplique a delimitação dos caminhos dos hooks.
+For local agents preserved from older installations, review the installer diff and apply hook path boundaries.
 
-Gerencie skills do plugin pelo comando `/plugin` do Claude Code. Use `--no-dedupe-skills` para conservar as cópias locais durante a instalação.
-Para gerenciar a instalação e atualização em ambientes globais ou diretórios de projeto específicos, execute:
+Manage plugin skills through Claude Code's `/plugin` command. Use `--no-dedupe-skills` to retain local copies during installation.
+To manage installation and updates in global environments or specific project directories, run:
 
 ```sh
-node tools/install.ts [opções]
+node tools/install.ts [options]
 ```
 
-**Opções suportadas:**
-- `--global`: Instala agentes e skills em `~/.claude/` e `~/.gemini/config/`. O manifesto e os scripts usados pelos guards dos agentes Claude ficam em `~/.oathbound/`.
-- `--project <dir>`: Instala em diretório específico gerando `.claude/`, `.agents/`, `.oathbound/manifest.json`, `.agents/skills.json` e `_disabled/`.
-- `--runner all|claude|agy|codex`: Seleciona o runner. `all` inclui Claude Code e Antigravity CLI. Com `--global`, o runner `codex` instala os agentes e o perfil.
-- `--upgrade`: Atualiza uma instalação existente apresentando o diff de alterações.
-- `--statusline`: Configura a barra de status do Claude em instalações de projeto.
-- `--audit-docs`: Instala a configuração de auditoria de documentação (exclusivo para projetos).
-- `--no-dedupe-skills`: Desativa a desduplicação automática de skills duplicadas.
+**Supported options:**
+- `--global`: Installs agents and skills in `~/.claude/` and `~/.gemini/config/`. The manifest and scripts used by Claude agent guards live in `~/.oathbound/`.
+- `--project <dir>`: Installs into a specific directory, generating `.claude/`, `.agents/`, `.oathbound/manifest.json`, `.agents/skills.json` and `_disabled/`.
+- `--runner all|claude|agy|codex`: Selects the runner. `all` includes Claude Code and Antigravity CLI. With `--global`, the `codex` runner installs agents and the profile.
+- `--upgrade`: Updates an existing installation, displaying the change diff.
+- `--statusline`: Configures Claude's status bar in project installations.
+- `--audit-docs`: Installs documentation audit configuration (projects only).
+- `--no-dedupe-skills`: Disables automatic skill deduplication.
 
-O instalador valida manifestos SHA-256 (`.oathbound/manifest.json`), preserva alterações locais e desativa skills duplicadas sem utilizar symlinks (através de marcação e mapeamento em `_disabled` / `skills.json`).
+The installer validates SHA-256 manifests (`.oathbound/manifest.json`), preserves local changes and disables duplicate skills without symlinks (through markers and mapping in `_disabled` / `skills.json`).
 
-O instalador global preserva instruções, configurações, hooks compartilhados e skills existentes. Se uma versão anterior registrou regras ou hooks globais do Oathbound, revise esses registros antes de removê-los manualmente.
+The global installer preserves existing instructions, configuration, shared hooks and skills. If a previous version registered global Oathbound rules or hooks, review those records before removing them manually.
 
-Use os hooks oficiais `rtk hook claude`, `rtk hook codex` e `rtk hook antigravity` em `PreToolUse`. O upgrade de projeto Antigravity migra o registro legado do Oathbound. Em PowerShell sem um executável `ls` no PATH, preserve o alias com `ls` em `[hooks].exclude_commands` na configuração do RTK.
+Use official `rtk hook claude`, `rtk hook codex` and `rtk hook antigravity` hooks in `PreToolUse`. Antigravity project upgrades migrate the legacy Oathbound entry. In PowerShell without an `ls` executable on PATH, preserve the alias by adding `ls` to `[hooks].exclude_commands` in RTK configuration.
 
-### 4. Atualização de instalações globais para 0.50.0-alpha.37
+### 4. Updating Global Installations to 0.50.0-alpha.38
 
-A partir da raiz do repositório atualizado, execute:
+From the updated repository root, run:
 
 ```sh
 node tools/install.ts --global --runner all --upgrade
 node tools/install.ts --global --runner codex --upgrade
 ```
 
-Abra uma nova sessão para carregar os novos nomes:
+Open a new session to load the new names:
 
-- Claude Code (instalação avulsa): `claude --agent oathkeeper`.
+- Claude Code (standalone installation): `claude --agent oathkeeper`.
 - Antigravity CLI: `agy --agent oathkeeper`.
 - Codex CLI: `codex -p oathkeeper`.
 
-Após confirmar os substitutos, incorpore eventuais personalizações e arquive os arquivos antigos fora dos diretórios ativos:
+After confirming replacements, incorporate any customizations and archive old files outside active directories:
 
-- Claude Code: arquive `orquestrador.md` e `tester.md` de `~/.claude/agents/`.
-- Antigravity CLI: arquive `orquestrador.md` e `tester.md` de `~/.gemini/config/agents/`.
-- Codex CLI: arquive `agents/tester.toml` e `oathbound.config.toml` de `CODEX_HOME` (padrão `~/.codex/`).
+- Claude Code: archive `orquestrador.md` and `tester.md` from `~/.claude/agents/`.
+- Antigravity CLI: archive `orquestrador.md` and `tester.md` from `~/.gemini/config/agents/`.
+- Codex CLI: archive `agents/tester.toml` and `oathbound.config.toml` from `CODEX_HOME` (default `~/.codex/`).
 
 ---
 
-## Validação e Qualidade
+## Validation and Quality
 
-Para rodar os testes unitários utilizando os recursos nativos do Node.js 24+:
+To run unit tests using native Node.js 24+ features:
 ```sh
 node --test --experimental-test-coverage test/*.test.ts test/*/*.test.js
 ```
 
-Para executar o auditor de documentação (integridade de links, âncoras e portabilidade):
+To run the documentation auditor (link integrity, anchors and portability):
 ```sh
 node tools/audit-docs.ts
 node tools/audit-docs.ts --staged
 ```
 
-Consulte também os documentos de referência:
-- [Referências oficiais por harness](docs/README.md)
-- [Como Contribuir](CONTRIBUTING.md)
-- [Instruções do Pacote](AGENTS.md)
+See also the reference documents:
+- [Official references by harness](docs/README.md)
+- [Contributing](CONTRIBUTING.md)
+- [Package Instructions](AGENTS.md)
 - [Changelog](CHANGELOG.md)
-- [Guia de Ferramentas](tools/README.md)
-- [Licença](LICENSE)
+- [Tools Guide](tools/README.md)
+- [License](LICENSE)

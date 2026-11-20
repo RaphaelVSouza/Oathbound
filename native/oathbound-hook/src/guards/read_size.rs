@@ -55,7 +55,7 @@ fn verifica_segmento(tokens: &[String]) -> Option<String> {
             return None;
         }
         if tokens[start] == "read" {
-            return Some("rtk read lê arquivo inteiro. Use Read com offset e limit".to_string());
+            return Some("rtk read reads the entire file. Use Read with offset and limit".to_string());
         }
     }
     let cmd = nome_comando(&tokens[start]);
@@ -70,16 +70,16 @@ fn verifica_segmento(tokens: &[String]) -> Option<String> {
             }
         }
         return Some(format!(
-            "{cmd} lê arquivo inteiro. Use Read com offset e limit (<= {MAX_LINHAS}) ou Grep -n"
+            "{cmd} reads the entire file. Use Read with offset and limit (<= {MAX_LINHAS}) or Grep -n"
         ));
     }
     if matches!(cmd.as_str(), "head" | "tail") {
         match limite_de(args, &["-n"], &["--lines"]) {
             Some(Ok(n)) if n <= MAX_LINHAS => {}
-            _ => return Some(format!("{cmd} exige -n <= {MAX_LINHAS}")),
+            _ => return Some(format!("{cmd} requires -n <= {MAX_LINHAS}")),
         }
         if args.iter().any(|a| a.starts_with("-c") || a.starts_with("--bytes")) {
-            return Some(format!("{cmd} -c não permitido; use -n <= {MAX_LINHAS}"));
+            return Some(format!("{cmd} -c is not allowed; use -n <= {MAX_LINHAS}"));
         }
         return None;
     }
@@ -108,7 +108,7 @@ fn verifica_segmento(tokens: &[String]) -> Option<String> {
             return None;
         }
         return Some(format!(
-            "git {sub} sem --stat/--name-only nem caminho (-- <arquivo>) pode trazer diff enorme. Rode --stat primeiro e revise por arquivo"
+            "git {sub} without --stat/--name-only or a path (-- <file>) may produce a huge diff. Run --stat first and review each file"
         ));
     }
     None
@@ -116,14 +116,14 @@ fn verifica_segmento(tokens: &[String]) -> Option<String> {
 
 fn avaliar_bash(command: Option<&str>) -> Option<String> {
     let Some(cmd) = command else {
-        return Some("comando vazio ou ausente".to_string());
+        return Some("empty or missing command".to_string());
     };
     if cmd.trim().is_empty() {
-        return Some("comando vazio ou ausente".to_string());
+        return Some("empty or missing command".to_string());
     }
     let segmentos = match dividir(cmd) {
         Ok(s) => s,
-        Err(erro) => return Some(format!("construção não permitida ({erro})")),
+        Err(erro) => return Some(format!("unsupported construct ({erro})")),
     };
     for seg in &segmentos {
         if let Some(motivo) = verifica_segmento(seg) {
@@ -137,10 +137,10 @@ fn avaliar_read(input: Option<&Value>) -> Option<String> {
     let limit = input.and_then(|v| v.get("limit")).and_then(|v| v.as_i64());
     match limit {
         Some(n) if n > MAX_LINHAS => {
-            Some(format!("Read com limit {n} > {MAX_LINHAS}. Fatie a leitura"))
+            Some(format!("Read with limit {n} > {MAX_LINHAS}. Split the read"))
         }
         Some(n) if n > 0 => None,
-        _ => Some(format!("Read sem limit. Passe offset e limit <= {MAX_LINHAS}")),
+        _ => Some(format!("Read without limit. Pass offset and limit <= {MAX_LINHAS}")),
     }
 }
 

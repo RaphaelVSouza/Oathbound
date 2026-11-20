@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Benchmark de cold start dos hooks PreToolUse do Oathbound.
-// Mede latência de spawn + execução completa (stdin -> stdout) em ms.
-// Uso: node tools/bench-hooks.cjs [--runs=25] [--bin=<caminho-do-binario-nativo>]
+// Cold-start benchmark for Oathbound PreToolUse hooks.
+// Measure spawn + full execution latency (stdin -> stdout) in ms.
+// Usage: node tools/bench-hooks.cjs [--runs=25] [--bin=<native-binary-path>]
 'use strict';
 
 const fs = require('node:fs');
@@ -57,7 +57,7 @@ function main() {
   const { runs, bin } = parseArgs(process.argv.slice(2));
   const targetBin = bin || defaultBin();
   if (!fs.existsSync(targetBin)) {
-    console.error(`Binário não encontrado: ${targetBin}`);
+    console.error(`Binary not found: ${targetBin}`);
     process.exit(1);
   }
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-bench-'));

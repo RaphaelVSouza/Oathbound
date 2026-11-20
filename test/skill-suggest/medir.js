@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 'use strict';
-// Mede o hook de sugestão (ADR 0001) contra o que o agente fez de fato, na amostra de extrair.js.
-// Envia os prompts (redigidos, truncados) ao Jev: GASTA chamadas externas. Grava resultados em
-// state/medicao-skill-suggest/resultado.json, sem texto de prompt. Rode: node test/skill-suggest/medir.js
+// Measures the suggestion hook (ADR 0001) against actual agent actions in the extrair.js sample.
+// Sends prompts (redacted, truncated) to Jev: USES external calls. Writes results to
+// state/medicao-skill-suggest/resultado.json, without prompt text. Run: node test/skill-suggest/medir.js
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -13,7 +13,7 @@ const raiz = path.join(os.homedir(), '.claude');
 const dir = path.join(raiz, 'state', 'medicao-skill-suggest');
 const amostra = JSON.parse(fs.readFileSync(path.join(dir, 'amostra.json'), 'utf8'));
 const chave = process.env.JEV_API_KEY;
-if (!chave) { console.error('JEV_API_KEY ausente'); process.exit(1); }
+if (!chave) { console.error('JEV_API_KEY missing'); process.exit(1); }
 
 const skills = hook.carregarCatalogo();
 const agentes = new Map();
@@ -25,13 +25,13 @@ try {
     const fm = hook.frontmatter(fs.readFileSync(path.join(pastaAgentes, f), 'utf8'));
     if (fm) agentes.set(fm.nome, fm.descricao.slice(0, 300));
   }
-} catch { /* pasta inexistente ou ilegível */ }
+} catch { /* missing or unreadable directory */ }
 
-// Subagentes embutidos do Claude Code (descrições resumidas da lista de tipos da sessão).
-agentes.set('Explore', 'Busca somente leitura em muitos arquivos para responder onde algo está; devolve conclusão, não revisa nem audita.');
-agentes.set('general-purpose', 'Pesquisa questões complexas e executa tarefas de vários passos quando a busca não é óbvia.');
-agentes.set('Plan', 'Arquiteto de software: planeja estratégia de implementação, passos e trade-offs.');
-agentes.set('claude-code-guide', 'Responde perguntas sobre Claude Code (CLI, hooks, MCP, configurações), Agent SDK e API da Anthropic.');
+// Claude Code built-in subagents (summarized descriptions from the session type list).
+agentes.set('Explore', 'Read-only search across many files to locate something; returns a conclusion, does not review or audit.');
+agentes.set('general-purpose', 'Researches complex questions and executes multi-step tasks when searching is not obvious.');
+agentes.set('Plan', 'Software architect: plans implementation strategy, steps, and trade-offs.');
+agentes.set('claude-code-guide', 'Answers questions about Claude Code (CLI, hooks, MCP, settings), Agent SDK, and Anthropic API.');
 
 async function perguntar(prompt, catalogo, alvo) {
   const estado = redigir(prompt.trim().slice(0, 2000));
@@ -54,5 +54,5 @@ async function perguntar(prompt, catalogo, alvo) {
   };
   await Promise.all([trabalhador(), trabalhador(), trabalhador(), trabalhador()]);
   fs.writeFileSync(path.join(dir, 'resultado.json'), JSON.stringify(saida));
-  console.log('prompts', saida.length, 'erros', saida.filter((x) => x.erro || !x.s || !x.g).length);
+  console.log('prompts', saida.length, 'errors', saida.filter((x) => x.erro || !x.s || !x.g).length);
 })();

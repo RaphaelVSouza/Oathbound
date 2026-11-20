@@ -143,7 +143,7 @@ pub fn run(raw: &str, oversized: bool) -> String {
 
     let mut parts: Vec<String> = Vec::new();
 
-    // 1. Projeto + Branch Git
+    // 1. Project + Git Branch
     let cwd = p
         .get("workspace")
         .and_then(|w| get_str(w, "current_dir").or_else(|| get_str(w, "project_dir")))
@@ -188,7 +188,7 @@ pub fn run(raw: &str, oversized: bool) -> String {
         }
     }
 
-    // 2. Modelo + Effort
+    // 2. Model + Effort
     if let Some(model) = p.get("model") {
         let raw_name = get_str(model, "display_name").or_else(|| get_str(model, "id"));
         if let Some(name) = raw_name {
@@ -261,7 +261,7 @@ pub fn run(raw: &str, oversized: bool) -> String {
         parts.push(format!("{}{}{}", ctx_color, ctx_text, RESET));
     }
 
-    // 4. Cota (janela 5h + semanal)
+    // 4. Quota (5h + weekly windows)
     if let Some(quota) = p.get("quota").filter(|v| v.is_object()) {
         let q5h = quota.get("gemini-5h").or_else(|| quota.get("3p-5h"));
         let qwk = quota
@@ -287,7 +287,7 @@ pub fn run(raw: &str, oversized: bool) -> String {
             if let Some(rem) = get_f64(q, "remaining_fraction") {
                 let pct = (rem * 100.0).round() as i64;
                 let col = color_by_pct(pct, false);
-                q_parts.push(format!("sem:{}{}%{}", col, pct, RESET));
+                q_parts.push(format!("wk:{}{}%{}", col, pct, RESET));
             }
         }
         if !q_parts.is_empty() {
@@ -295,7 +295,7 @@ pub fn run(raw: &str, oversized: bool) -> String {
         }
     }
 
-    // 5. Subagentes ativos
+    // 5. Active subagents
     if let Some(subs) = p.get("subagents").and_then(|v| v.as_array()) {
         let running: Vec<&str> = subs
             .iter()

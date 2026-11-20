@@ -1,5 +1,5 @@
 'use strict';
-// Teste de por-prompt.js: fixtures em diretório temporário via CUSTO_HOME; sem rede.
+// por-prompt.js test: temporary directory fixtures via CUSTO_HOME; offline.
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
@@ -10,10 +10,10 @@ const pp = require('./por-prompt.js');
 const CLI = path.join(__dirname, 'por-prompt.js');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'dif-'));
 const SEGREDO_CMD = 'SEGREDO_COMANDO_QWE';
-const P1 = 'Implemente a função de cobrança com SEGREDO_PROMPT_UNO por favor';
-const P2 = 'não ficou certo, refaça isso com mais cuidado, por favor';
-const P3 = 'Agora documente o resultado final do trabalho feito';
-const P4 = 'Não inclua exemplos na documentação deste outro projeto';
+const P1 = 'Implement the billing function with SEGREDO_PROMPT_UNO please';
+const P2 = 'that is wrong, redo it more carefully please';
+const P3 = 'Now document the final result of the completed work';
+const P4 = 'Do not include examples in this other project documentation';
 
 const jl = (...ls) => ls.map((l) => JSON.stringify(l)).join('\n') + '\n';
 const humano = (txt, promptId) => ({ type: 'user', promptId, message: { role: 'user', content: txt } });
@@ -29,7 +29,7 @@ const dirP = path.join(home, 'projects', 'projA');
 const sessao = 'aaaaaaaa-1111-2222-3333-444444444444';
 fs.mkdirSync(path.join(dirP, sessao, 'subagents'), { recursive: true });
 
-// m1 repete (streaming) com um bloco por linha; usage final prevalece.
+// m1 repeats (streaming) with one block per line; final usage wins.
 fs.writeFileSync(path.join(dirP, sessao + '.jsonl'), jl(
   humano(P1, 'pid-1'),
   asst('m1', [tool('t1', 'Edit', { file_path: 'C:/a.js' })], uso(1, 1)),
@@ -44,12 +44,12 @@ fs.writeFileSync(path.join(dirP, sessao + '.jsonl'), jl(
   humano(P3, 'pid-3'),
   asst('m5', [{ type: 'text', text: 'feito' }], uso(0, 0)),
 ));
-// A primeira mensagem do segundo transcrito parece correção, mas não pertence ao P3.
+// The second transcript first message looks like a correction but does not belong to P3.
 fs.writeFileSync(path.join(dirP, 'bbbbbbbb-1111-2222-3333-444444444444.jsonl'), jl(
   humano(P4, 'pid-4'),
   asst('m6', [], uso(1000000, 0)),
 ));
-// Sidechain ligada ao P1 pelo promptId da 1ª linha do arquivo, com mensagem duplicada; outra sem prompt correspondente.
+// Sidechain linked to P1 by the first file line promptId, with a duplicate message; another without a matching prompt.
 fs.writeFileSync(path.join(dirP, sessao, 'subagents', 'agent-a1.jsonl'), jl(
   { type: 'user', isSidechain: true, promptId: 'pid-1', message: { role: 'user', content: 'tarefa' } },
   asst('s1', [], uso(0, 1000000), { isSidechain: true }),
@@ -67,11 +67,11 @@ const json = fs.readFileSync(path.join(dir, 'por-prompt.json'), 'utf8');
 const regs = JSON.parse(json);
 const csv = fs.readFileSync(path.join(dir, 'rotulos.csv'), 'utf8');
 
-// /clear curto fica de fora: P1, P2, P3, P4.
+// Short /clear is excluded: P1, P2, P3, P4.
 assert.strictEqual(regs.length, 4);
 const [a, b, c, d] = regs;
 
-// Dedup: m1 conta uma vez (1M in = 2, 100K out = 1); m2 1M in = 2; m3 zero. Sonnet 5.5: 2 in / 10 out por M.
+// Dedup: m1 counts once (1M in = 2, 100K out = 1); m2 1M in = 2; m3 zero. Sonnet 5.5: 2 in / 10 out per M.
 assert.strictEqual(a.mensagens_assistente, 3);
 assert.strictEqual(a.chamadas_ferramenta, 5);
 assert.deepStrictEqual(a.ferramentas, { Edit: 2, Write: 1, Bash: 1, Agent: 1 });
@@ -80,7 +80,7 @@ assert.strictEqual(a.subagentes_chamados, 1);
 assert.deepStrictEqual(a.subagentes_por_tipo, { smith: 1 });
 assert.strictEqual(a.turnos, 3);
 assert.ok(Math.abs(a.custo_principal_usd - 5) < 1e-9, String(a.custo_principal_usd));
-// Sidechain: s1 dedup = 10; s2 orfã fica de fora.
+// Sidechain: s1 dedup = 10; orphan s2 is excluded.
 assert.ok(Math.abs(a.custo_subagente_usd - 10) < 1e-9, String(a.custo_subagente_usd));
 assert.ok(Math.abs(a.custo_usd - 15) < 1e-9);
 assert.strictEqual(a.custo_subagente_incluido, true);
@@ -92,12 +92,12 @@ assert.strictEqual(c.custo_usd, 0);
 assert.strictEqual(c.correcao_seguinte, false);
 assert.strictEqual(d.correcao_seguinte, false);
 
-// irreversivel registra categoria, nunca o comando.
+// irreversivel records the category, never the command.
 assert.strictEqual(a.irreversivel, true);
 assert.deepStrictEqual(a.categorias_irreversivel, ['git-push']);
 assert.ok(!json.includes(SEGREDO_CMD) && !csv.includes(SEGREDO_CMD) && !r.stdout.includes(SEGREDO_CMD));
 
-// por-prompt.json e stdout sem texto de prompt; id é hash de 8 hex.
+// por-prompt.json and stdout contain no prompt text; id is an 8-hex hash.
 assert.ok(!json.includes('SEGREDO_PROMPT_UNO') && !r.stdout.includes('SEGREDO_PROMPT_UNO'));
 assert.ok(regs.every((x) => /^[0-9a-f]{8}$/.test(x.id)));
 const stdout = JSON.parse(r.stdout);
@@ -105,7 +105,7 @@ assert.strictEqual(stdout.sidechain_nao_ligadas, 1);
 assert.strictEqual(stdout.prompts_elegiveis, 4);
 assert.strictEqual(stdout.rotulos_csv_criado, true);
 
-// CSV: colunas id,texto,rotulo; rótulo vazio; sem custo.
+// CSV: columns id,texto,rotulo; empty label; no cost.
 const linhas = pp.lerCsv(csv);
 assert.deepStrictEqual(linhas[0], ['id', 'texto', 'rotulo']);
 assert.strictEqual(linhas.length, 5);
@@ -113,7 +113,7 @@ for (const l of linhas.slice(1)) assert.strictEqual(l[2], '');
 assert.ok(linhas.some((l) => l[1].includes('SEGREDO_PROMPT_UNO')));
 assert.ok(!/custo|usd|22\.5|turnos/i.test(csv));
 
-// Truncamento a 240 e redação.
+// Truncation to 240 and redaction.
 {
   const h2 = fs.mkdtempSync(path.join(os.tmpdir(), 'dif2-'));
   const d = path.join(h2, 'projects', 'p');
@@ -125,30 +125,30 @@ assert.ok(!/custo|usd|22\.5|turnos/i.test(csv));
   fs.rmSync(h2, { recursive: true, force: true });
 }
 
-// Spearman em casos conhecidos.
+// Spearman for known cases.
 assert.strictEqual(pp.spearman([1, 2, 3, 4], [10, 20, 30, 99]), 1);
 assert.strictEqual(pp.spearman([1, 2, 3, 4], [9, 7, 5, 1]), -1);
 assert.deepStrictEqual(pp.postos([5, 5, 1, 9]), [2.5, 2.5, 1, 4]);
 assert.strictEqual(pp.spearman([1, 1, 1], [1, 2, 3]), null);
-// Com empates: postos x = [1.5,1.5,3,4], y = [1,2,3,4]; rho = 0.9486832980505138.
+// With ties: ranks x = [1.5,1.5,3,4], y = [1,2,3,4]; rho = 0.9486832980505138.
 assert.ok(Math.abs(pp.spearman([1, 1, 2, 3], [1, 2, 3, 4]) - 0.9486832980505138) < 1e-12);
 
-// Quartis e veredito.
+// Quartiles and verdict.
 assert.deepStrictEqual(pp.quartis([1, 2, 3, 4, 5]), { min: 1, q1: 2, mediana: 3, q3: 4, max: 5 });
 assert.strictEqual(pp.veredito(0.5, 0.1).descartar, false);
 assert.strictEqual(pp.veredito(0.39, 0.1).descartar, true);
 assert.strictEqual(pp.veredito(0.8, 0.16).descartar, true);
 assert.strictEqual(pp.veredito(null, 0).descartar, true);
 
-// Heurísticas.
-assert.strictEqual(pp.indicaCorrecao('Está ERRADO isso'), true);
+// Heuristics.
+assert.strictEqual(pp.indicaCorrecao('This is WRONG'), true);
 assert.strictEqual(pp.indicaCorrecao('x'.repeat(80) + ' erro'), false);
-assert.strictEqual(pp.indicaCorrecao('perfeito, siga adiante'), false);
+assert.strictEqual(pp.indicaCorrecao('perfect, continue'), false);
 assert.deepStrictEqual(pp.categoriasIrreversiveis('DELETE FROM t WHERE id=1'), []);
 assert.deepStrictEqual(pp.categoriasIrreversiveis('DELETE FROM t'), ['delete-from']);
 assert.deepStrictEqual(pp.categoriasIrreversiveis('rm -rf x; Remove-Item y'), ['rm', 'remove-item']);
 
-// --correlacao: rótulos monotônicos com o custo => rho 1.
+// --correlacao: labels monotonic with cost => rho 1.
 {
   const ids = regs.map((x) => x.id);
   const custos = Object.fromEntries(regs.map((x) => [x.id, x.custo_usd]));
@@ -167,10 +167,10 @@ assert.deepStrictEqual(pp.categoriasIrreversiveis('rm -rf x; Remove-Item y'), ['
   assert.strictEqual(o.n, 4);
   assert.ok(Math.abs(o.spearman_rotulo_custo - 1) < 1e-12);
   assert.strictEqual(o.veredito.descartar, false);
-  assert.ok(/±0,2/.test(o.aviso));
+  assert.ok(/±0.2/.test(o.aviso));
 }
 
-// Opção inválida.
+// Invalid option.
 assert.strictEqual(spawnSync(process.execPath, [CLI, '--x'], { encoding: 'utf8' }).status, 2);
 
 fs.rmSync(home, { recursive: true, force: true });

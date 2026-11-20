@@ -1,96 +1,96 @@
-# Como escrever uma ADR
+# How to Write an ADR
 
-- **Caminho:** `docs/adr/como-escrever-adr.md`
+- **Path:** `docs/adr/como-escrever-adr.md`
 - **Template:** [adr-template.md](adr-template.md)
-- **Data:** 2026-11-19
-- **Aplica-se a:** novas decisões de arquitetura do Oathbound.
+- **Date:** 2026-11-19
+- **Applies to:** new Oathbound architecture decisions.
 
-Este guia define quando escrever uma ADR (_Architecture Decision Record_), como redigir cada seção e como ela passa por Git e Pull Requests até virar registro permanente.
-
----
-
-## 1. Quando escrever (e quando não escrever)
-
-ADR é para decisão **arquiteturalmente significativa**. Escrever ADR para tudo gera burocracia e o processo morre. Uma decisão é significativa quando afeta pelo menos um destes cinco eixos (critério de Richards & Ford, _Fundamentals of Software Architecture_, adotado pelo guia da AWS):
-
-| Eixo                          | Exemplos                                                                                            |
-| ----------------------------- | --------------------------------------------------------------------------------------------------- |
-| **Estrutura**                 | Monolito modular vs. microsserviços; mensageria assíncrona vs. chamadas síncronas                   |
-| **Requisitos não funcionais** | Segurança, disponibilidade, tolerância a falhas, latência, observabilidade, custo de infraestrutura |
-| **Dependências**              | Acoplamento entre serviços; escolha de banco, _broker_, provedor de identidade, addons de terceiros |
-| **Interfaces**                | Contratos públicos, versionamento de APIs, esquemas de eventos, escopos de integração               |
-| **Técnicas de construção**    | Linguagem, framework principal, estratégia de _branching_/_deploy_, bibliotecas difíceis de trocar  |
-
-**Teste rápido:** existem **duas ou mais opções viáveis** e **reverter daqui a seis meses seria caro ou arriscado**? Então escreva uma ADR.
-
-**Não escreva ADR para:**
-
-- Decisões fáceis de reverter ou restritas a um único módulo interno.
-- Regras de formatação e estilo: essas ficam no _linter_ (ESLint, Prettier, Ruff, Roslyn), não em documento.
-- Especificação detalhada de implementação: isso é papel de uma **Tech Spec / RFC**. A RFC _explora e desenha_ a solução; a ADR registra o _veredito e os trade-offs_, de forma curta e permanente. Uma RFC pode gerar uma ou mais ADRs, e a ADR aponta para a RFC em _Referências_.
+This guide defines when to write an ADR (_Architecture Decision Record_), how to draft each section and how it moves through Git and Pull Requests into a permanent record.
 
 ---
 
-## 2. Como redigir cada seção
+## 1. When to Write (and When Not to Write)
 
-Uma ADR deve ser lida em **5 a 10 minutos** (1 a 2 páginas). Ela foca no **porquê** da decisão, não no passo a passo da implementação. Se o texto passar muito disso, o excesso provavelmente pertence a uma RFC, a um _runbook_ ou a anexos referenciados.
+An ADR is for an **architecturally significant** decision. Writing ADRs for everything creates bureaucracy and kills the process. A decision is significant when it affects at least one of these five dimensions (Richards & Ford's criterion from _Fundamentals of Software Architecture_, adopted by the AWS guide):
 
-| Seção                         | Obrigatória?        | Regra                                                                                         |
-| ----------------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
-| **Título**                    | Sim                 | Frase curta que **afirma a decisão**, nunca uma pergunta ou um tema.                          |
-| **Metadados**                 | Sim                 | `status`, `date` e `decision-makers`; `consulted` e `informed` quando houver.                 |
-| **Contexto e Problema**       | Sim                 | Fatos, restrições e forças em tensão, em **tom neutro**.                                      |
-| **Fatores de Decisão**        | Opcional            | Critérios que as opções precisam atender (RNFs, custo, prazo, compliance).                    |
-| **Opções Consideradas**       | Sim                 | Todas as alternativas **viáveis** avaliadas, inclusive "não fazer nada" quando fizer sentido. |
-| **Decisão**                   | Sim                 | Opção escolhida, em **voz ativa**, ligada aos fatores.                                        |
-| **Consequências**             | Sim (neste projeto) | Impactos **bons, ruins e neutros**.                                                           |
-| **Confirmação**               | Recomendada         | Como verificar que a decisão foi implementada e continua sendo seguida.                       |
-| **Prós e Contras das Opções** | Opcional            | Detalhe por opção, para decisões com trade-offs não triviais.                                 |
-| **Referências**               | Opcional            | RFC, _benchmarks_, _issues_, ADRs relacionadas.                                               |
+| Dimension | Examples |
+| --- | --- |
+| **Structure** | Modular monolith vs. microservices; asynchronous messaging vs. synchronous calls |
+| **Non-functional requirements** | Security, availability, fault tolerance, latency, observability, infrastructure cost |
+| **Dependencies** | Service coupling; choice of database, _broker_, identity provider, third-party addons |
+| **Interfaces** | Public contracts, API versioning, event schemas, integration scopes |
+| **Construction techniques** | Language, primary framework, _branching_/_deployment_ strategy, hard-to-replace libraries |
 
-### Título
+**Quick test:** are there **two or more viable options**, and **would reversing the decision in six months be expensive or risky**? Then write an ADR.
 
-- _Ruim:_ `Escolha do banco de dados` · `Devemos usar Redis?`
-- _Bom:_ `0004 - Usar PostgreSQL como banco transacional principal`
+**Do not write ADRs for:**
 
-### Metadados
-
-- `status`: um dos estados da seção 3.
-- `date`: data da **última mudança de status** (`AAAA-MM-DD`).
-- `decision-makers`: quem aprova (rastreabilidade).
-- `consulted` / `informed` (opcionais): quem deu opinião técnica e quem só precisa saber da decisão.
-
-### Contexto e Problema
-
-Descreva o cenário como ele era na época: restrições (prazo, orçamento, tamanho da equipe, legado, SLA), números relevantes e o problema que exige decisão. **Não venda a solução aqui.** Quem ler daqui a dois anos precisa entender por que a decisão fazia sentido _naquele_ contexto.
-
-### Opções Consideradas
-
-Liste as alternativas com prós e contras objetivos. Isso evita que o time rediscuta, meses depois, uma opção já descartada por um motivo válido. Opções inventadas só para "perder" (falso dilema) invalidam a ADR — veja a seção 6.
-
-### Decisão
-
-Frases completas em voz ativa: _"Adotaremos X porque..."_. Cada justificativa deve apontar para um fator ou força descrito no Contexto. Se a decisão vale só para código novo, diga isso aqui (seção 4.6).
-
-### Consequências
-
-Liste os efeitos **positivos, negativos e neutros**: débitos técnicos aceitos, custos operacionais, novos riscos e o que muda para quem mantém o sistema. Para cada consequência negativa relevante, registre a mitigação. **Uma ADR que só lista pontos positivos é propaganda, não documentação de engenharia.**
-
-### Confirmação
-
-Diga como a conformidade será verificada: teste automatizado, regra de _lint_ ou de arquitetura, checklist de _code review_, critério de _Go/No-Go_ de uma PoC. Sem confirmação, a decisão tende a ser esquecida.
+- Decisions that are easy to reverse or limited to a single internal module.
+- Formatting and style rules: these belong in the _linter_ (ESLint, Prettier, Ruff, Roslyn), not a document.
+- Detailed implementation specifications: these belong in a **Tech Spec / RFC**. The RFC _explores and designs_ the solution; the ADR records the _verdict and trade-offs_, briefly and permanently. An RFC can produce one or more ADRs, and the ADR links to the RFC under _References_.
 
 ---
 
-## 3. Ciclo de vida (máquina de estados)
+## 2. How to Draft Each Section
 
-| Status                     | Significado                                                   | Próximos estados válidos               |
-| -------------------------- | ------------------------------------------------------------- | -------------------------------------- |
-| **Proposed**               | Em discussão/revisão no PR. Pode ser editada livremente.      | `Accepted`, `Rejected`                 |
-| **Accepted**               | Decisão vigente. Conteúdo imutável.                           | `Deprecated`, `Superseded by ADR-NNNN` |
-| **Rejected**               | Avaliada e descartada; fica como histórico, com o motivo.     | _(estado final)_                       |
-| **Deprecated**             | Não se aplica mais (ex.: serviço ou funcionalidade removida). | _(estado final)_                       |
-| **Superseded by ADR-NNNN** | Substituída por uma decisão mais recente.                     | _(estado final)_                       |
+An ADR should take **5 to 10 minutes** to read (1 to 2 pages). It focuses on **why** the decision was made, not implementation steps. If the text substantially exceeds this, the excess probably belongs in an RFC, _runbook_ or linked appendix.
+
+| Section | Required? | Rule |
+| --- | --- | --- |
+| **Title** | Yes | Short sentence **stating the decision**, never a question or topic. |
+| **Metadata** | Yes | `status`, `date` and `decision-makers`; `consulted` and `informed` when applicable. |
+| **Context and Problem Statement** | Yes | Facts, constraints and competing forces, in a **neutral tone**. |
+| **Decision Drivers** | Optional | Criteria the options must meet (NFRs, cost, deadline, compliance). |
+| **Considered Options** | Yes | All **viable** alternatives evaluated, including "do nothing" when appropriate. |
+| **Decision Outcome** | Yes | Chosen option, in **active voice**, tied to the drivers. |
+| **Consequences** | Yes (in this project) | **Good, bad and neutral** impacts. |
+| **Confirmation** | Recommended | How to verify the decision was implemented and remains followed. |
+| **Pros and Cons of the Options** | Optional | Per-option detail for decisions with nontrivial trade-offs. |
+| **References** | Optional | RFC, _benchmarks_, _issues_, related ADRs. |
+
+### Title
+
+- _Bad:_ `Database choice` · `Should we use Redis?`
+- _Good:_ `0004 - Use PostgreSQL as the primary transactional database`
+
+### Metadata
+
+- `status`: one of the states in section 3.
+- `date`: date of the **last status change** (`YYYY-MM-DD`).
+- `decision-makers`: who approves (traceability).
+- `consulted` / `informed` (optional): who provided technical input and who only needs to know the decision.
+
+### Context and Problem Statement
+
+Describe the situation as it was at the time: constraints (deadline, budget, team size, legacy, SLA), relevant numbers and the problem requiring a decision. **Do not sell the solution here.** Someone reading in two years must understand why the decision made sense in _that_ context.
+
+### Considered Options
+
+List alternatives with objective pros and cons. This prevents the team from reopening an option months later that was already rejected for a valid reason. Options invented just to "lose" (false dilemma) invalidate the ADR — see section 6.
+
+### Decision Outcome
+
+Full sentences in active voice: _"We will adopt X because..."_. Each rationale must point to a driver or force described in Context. If the decision applies only to new code, state that here (section 4.6).
+
+### Consequences
+
+List **positive, negative and neutral** effects: accepted technical debt, operational costs, new risks and what changes for maintainers. For each relevant negative consequence, record mitigation. **An ADR listing only positives is advertising, not engineering documentation.**
+
+### Confirmation
+
+State how compliance will be verified: automated test, _lint_ or architecture rule, _code review_ checklist, PoC _Go/No-Go_ criterion. Without confirmation, the decision tends to be forgotten.
+
+---
+
+## 3. Lifecycle (State Machine)
+
+| Status | Meaning | Valid Next States |
+| --- | --- | --- |
+| **Proposed** | Under discussion/review in a PR. May be freely edited. | `Accepted`, `Rejected` |
+| **Accepted** | Current decision. Immutable content. | `Deprecated`, `Superseded by ADR-NNNN` |
+| **Rejected** | Evaluated and discarded; retained as history, with a reason. | _(final state)_ |
+| **Deprecated** | No longer applies (e.g. service or feature removed). | _(final state)_ |
+| **Superseded by ADR-NNNN** | Replaced by a newer decision. | _(final state)_ |
 
 ```mermaid
 stateDiagram-v2
@@ -106,104 +106,104 @@ stateDiagram-v2
 
 ---
 
-## 4. Fluxo no Git
+## 4. Git Workflow
 
-### 4.1 Onde e como nomear
+### 4.1 Location and Naming
 
-- Arquivos Markdown em **`docs/adr/`**, versionados junto com o código.
-- Decisões que atravessam vários repositórios ficam em um repositório central de arquitetura (ou espelhadas em uma wiki interna), com link a partir dos repositórios afetados.
-- Nome: **quatro dígitos + kebab-case**: `0002-estrategia-de-autenticacao.md`.
-- Numeração **sequencial e monotônica**. Nunca reutilize um número, nem de ADR rejeitada.
+- Markdown files in **`docs/adr/`**, versioned with the code.
+- Decisions spanning several repositories live in a central architecture repository (or mirrored in an internal wiki), linked from affected repositories.
+- Name: **four digits + kebab-case**: `0002-estrategia-de-autenticacao.md`.
+- **Sequential, monotonically increasing** numbering. Never reuse a number, even from a rejected ADR.
 
-### 4.2 Passo a passo
+### 4.2 Step by Step
 
-1. Crie uma _branch_ (`adr/0002-estrategia-de-autenticacao`).
-2. Copie `docs/adr/adr-template.md` para o próximo número livre e preencha com `status: Proposed`.
-3. Abra um PR só com a ADR (ou com a ADR e uma PoC pequena, se ela for evidência da decisão).
-4. **Revisão:** os revisores leem a ADR inteira antes de comentar. Em reunião de revisão, reserve os primeiros 10–15 minutos para leitura silenciosa e comentários no próprio PR; depois, o _owner_ passa pelos comentários com o time.
-5. Se surgirem ações pendentes (ex.: medir algo, consultar alguém), a ADR **continua `Proposed`**: o _owner_ distribui as ações e marca nova revisão.
-6. Aprovada: o _owner_ muda o status para `Accepted`, atualiza `date` e `decision-makers` e faz o _merge_ **no mesmo PR**.
-7. Recusada: o status vira `Rejected`, o motivo é registrado na seção _Decisão_, e o arquivo é mesclado mesmo assim, para que o histórico exista.
+1. Create a _branch_ (`adr/0002-estrategia-de-autenticacao`).
+2. Copy `docs/adr/adr-template.md` to the next available number and fill it with `status: Proposed`.
+3. Open a PR containing only the ADR (or the ADR and a small PoC, if it provides evidence for the decision).
+4. **Review:** reviewers read the entire ADR before commenting. In a review meeting, reserve the first 10–15 minutes for silent reading and comments in the PR; then the _owner_ goes through comments with the team.
+5. If pending actions arise (e.g. measure something, consult someone), the ADR **remains `Proposed`**: the _owner_ assigns actions and schedules another review.
+6. Approved: the _owner_ changes status to `Accepted`, updates `date` and `decision-makers` and merges **in the same PR**.
+7. Rejected: status becomes `Rejected`, the reason is recorded under _Decision Outcome_, and the file is merged anyway to preserve history.
 
 ### 4.3 Ownership
 
-Qualquer engenheiro do time pode propor e ser **owner** de uma ADR — não centralize em arquitetos ou _tech leads_. O _owner_ conduz a revisão, consolida os comentários e aprova as mudanças de conteúdo enquanto a ADR estiver `Proposed`.
+Any team engineer can propose and **own** an ADR — do not centralize ownership in architects or _tech leads_. The _owner_ leads review, consolidates comments and approves content changes while the ADR is `Proposed`.
 
-### 4.4 Imutabilidade
+### 4.4 Immutability
 
-Depois de `Accepted` ou `Rejected`, o **mérito** da ADR não é reescrito.
+After `Accepted` or `Rejected`, the ADR's **substance** is not rewritten.
 
-- **Permitido:** mudar o status (`Deprecated`, `Superseded by ADR-NNNN`), corrigir erro de digitação ou link quebrado, adicionar link para a ADR que a substitui.
-- **Proibido:** mudar opção escolhida, justificativas ou consequências.
-- **Mudou de ideia?** Crie uma nova ADR (ex.: `0018`) que referencia a antiga, e altere **apenas** o status da antiga (`0004`) para `Superseded by ADR-0018`, no mesmo PR.
-- **Nunca apague** uma ADR: é a memória institucional do time.
+- **Allowed:** change status (`Deprecated`, `Superseded by ADR-NNNN`), fix a typo or broken link, add a link to the superseding ADR.
+- **Forbidden:** change the chosen option, rationale or consequences.
+- **Changed your mind?** Create a new ADR (e.g. `0018`) referencing the old one, and change **only** the old one's (`0004`) status to `Superseded by ADR-0018`, in the same PR.
+- **Never delete** an ADR: it is the team's institutional memory.
 
-Enquanto a ADR está `Proposed`, ela pode evoluir livremente. Se as revisões forem muitas (como numa PoC longa), mantenha um _Histórico de revisões_ curto no topo; ele deixa de crescer quando a ADR é aceita.
+While an ADR is `Proposed`, it may evolve freely. If there are many revisions (as in a long PoC), keep a short _Revision History_ at the top; stop extending it when the ADR is accepted.
 
-### 4.5 ADRs no _code review_
+### 4.5 ADRs in _Code Review_
 
-- Se um PR de código viola uma ADR `Accepted`, o revisor pede o ajuste e **cola o link da ADR** no comentário.
-- Se a decisão não faz mais sentido, o autor abre uma **nova ADR** propondo a mudança, em vez de quebrar o padrão em silêncio.
-- PRs que implementam uma decisão citam a ADR na descrição (ex.: `Implementa ADR-0004`).
+- If a code PR violates an `Accepted` ADR, the reviewer requests a correction and **pastes the ADR link** in the comment.
+- If the decision no longer makes sense, the author opens a **new ADR** proposing the change, rather than silently breaking the standard.
+- PRs implementing a decision cite the ADR in their description (e.g. `Implements ADR-0004`).
 
-### 4.6 Código legado não conforme
+### 4.6 Noncompliant Legacy Code
 
-Aprovar uma ADR não obriga a parar a _sprint_ para reescrever o sistema. A ADR deve dizer explicitamente que a regra vale para **código novo** e como o legado será tratado: migração gradual ao mexer no código, ou tarefas explícitas de débito técnico no _backlog_. _(Prática deste time; o guia da AWS não trata do assunto.)_
-
----
-
-## 5. Checklist de revisão
-
-Antes de aprovar, o revisor confere:
-
-- [ ] A decisão passa no teste da seção 1 (significativa, com opções viáveis e reversão cara).
-- [ ] O título afirma a decisão; o nome do arquivo segue `NNNN-kebab-case.md` com número novo.
-- [ ] Metadados completos (`status`, `date`, `decision-makers`).
-- [ ] O Contexto é neutro e traz as restrições reais da época.
-- [ ] As opções são todas viáveis — nenhuma está lá só para perder.
-- [ ] A justificativa da Decisão se conecta aos fatores e ao Contexto.
-- [ ] Há consequências **negativas** registradas, com mitigação quando relevante.
-- [ ] A Confirmação diz como verificar a conformidade.
-- [ ] Cabe em 5–10 minutos de leitura; detalhes de implementação estão na RFC ou em anexos.
-- [ ] Se substitui outra ADR, o status da antiga foi atualizado no mesmo PR.
+Approving an ADR does not require stopping the _sprint_ to rewrite the system. The ADR must explicitly state that the rule applies to **new code** and how legacy code will be handled: gradual migration when touching code, or explicit technical debt tasks in the _backlog_. _(This team's practice; the AWS guide does not address this.)_
 
 ---
 
-## 6. Antipadrões
+## 5. Review Checklist
 
-- **"Eterno Proposed":** a discussão é aberta, o código é implementado e ninguém atualiza o status no _merge_.
-- **Falso dilema:** a solução preferida ao lado de duas opções obviamente absurdas, só para cumprir tabela.
-- **Omitir consequências negativas:** esconder custo de manutenção ou complexidade gera surpresas e destrói a confiança na documentação.
-- **Apagar ADRs antigas:** o time perde a memória e repete erros já superados.
-- **ADR como ata de reunião:** não copie a transcrição do debate; sintetize forças, alternativas, veredito e efeitos.
-- **ADR como especificação:** passo a passo de implementação, configuração completa e cronograma pertencem à RFC, ao _runbook_ ou ao plano do projeto.
-- **Reescrever ADR aceita:** mudar o mérito de uma ADR `Accepted` em vez de criar uma nova que a substitua.
+Before approval, the reviewer checks:
+
+- [ ] The decision passes the section 1 test (significant, with viable options and costly reversal).
+- [ ] The title states the decision; the filename follows `NNNN-kebab-case.md` with a new number.
+- [ ] Complete metadata (`status`, `date`, `decision-makers`).
+- [ ] Context is neutral and includes actual constraints at the time.
+- [ ] All options are viable — none is included only to lose.
+- [ ] Decision Outcome rationale connects to the drivers and Context.
+- [ ] **Negative** consequences are recorded, with mitigation where relevant.
+- [ ] Confirmation states how to verify compliance.
+- [ ] Fits in 5–10 minutes of reading; implementation details are in the RFC or appendices.
+- [ ] If superseding another ADR, the old one's status was updated in the same PR.
+
+---
+
+## 6. Antipatterns
+
+- **"Forever Proposed":** discussion opens, code is implemented and nobody updates status on merge.
+- **False dilemma:** the preferred solution alongside two obviously absurd options, just to check a box.
+- **Omitting negative consequences:** hiding maintenance cost or complexity creates surprises and destroys trust in documentation.
+- **Deleting old ADRs:** the team loses its memory and repeats previously resolved mistakes.
+- **ADR as meeting minutes:** do not copy debate transcripts; synthesize forces, alternatives, verdict and effects.
+- **ADR as specification:** implementation steps, complete configuration and timeline belong in an RFC, _runbook_ or project plan.
+- **Rewriting an accepted ADR:** changing the substance of an `Accepted` ADR instead of creating a new one that supersedes it.
 
 ---
 
 ## 7. Template
 
-O template oficial do projeto está em **`docs/adr/adr-template.md`**. Ele segue o **MADR 4.0** (_Markdown Architectural Decision Records_), com as seções traduzidas e _Consequências_ tornada obrigatória. O MADR une a leveza do formato original de Nygard com a seção estruturada de opções consideradas.
+The project's official template lives in **`docs/adr/adr-template.md`**. It follows **MADR 4.0** (_Markdown Architectural Decision Records_), with adapted section names and mandatory _Consequences_. MADR combines the lightness of Nygard's original format with a structured section for considered options.
 
-| MADR 4.0 (original)           | Este projeto              |
-| ----------------------------- | ------------------------- |
-| Context and Problem Statement | Contexto e Problema       |
-| Decision Drivers              | Fatores de Decisão        |
-| Considered Options            | Opções Consideradas       |
-| Decision Outcome              | Decisão                   |
-| Consequences                  | Consequências             |
-| Confirmation                  | Confirmação               |
-| Pros and Cons of the Options  | Prós e Contras das Opções |
-| More Information              | Referências               |
+| MADR 4.0 (original) | This Project |
+| --- | --- |
+| Context and Problem Statement | Context and Problem Statement |
+| Decision Drivers | Decision Drivers |
+| Considered Options | Considered Options |
+| Decision Outcome | Decision Outcome |
+| Consequences | Consequences |
+| Confirmation | Confirmation |
+| Pros and Cons of the Options | Pros and Cons of the Options |
+| More Information | References |
 
 ---
 
-## 8. Fontes
+## 8. Sources
 
-- **MADR 4.0** — especificação e templates (completo, mínimo e _bare_): <https://adr.github.io/madr/> e <https://github.com/adr/madr>.
-- **AWS Prescriptive Guidance** — _Using architectural decision records to streamline decision-making during development_: <https://docs.aws.amazon.com/prescriptive-guidance/latest/architectural-decision-records/> (processo, _ownership_, revisão, status, imutabilidade e uso em _code review_).
-- **Google Cloud Architecture Center** — _Architecture decision records overview_: <https://docs.cloud.google.com/architecture/architecture-decision-records> (quando criar e onde armazenar).
-- **Michael Nygard (2011)** — _Documenting Architecture Decisions_: artigo original do formato enxuto, da imutabilidade e da voz ativa.
-- **Mark Richards & Neal Ford (2020)** — _Fundamentals of Software Architecture_ (O'Reilly): critérios de significância arquitetural e antipadrões.
-- **Olaf Zimmermann** — _How to create Architectural Decision Records (ADRs) — and how not to_ e _How to review ADRs_ (blog ozimmer.ch): padrões, antipadrões e checklists de revisão.
-- **Joel Parker Henderson** — catálogo de templates e exemplos: <https://github.com/joelparkerhenderson/architecture-decision-record>.
+- **MADR 4.0** — specification and templates (full, minimal and _bare_): <https://adr.github.io/madr/> and <https://github.com/adr/madr>.
+- **AWS Prescriptive Guidance** — _Using architectural decision records to streamline decision-making during development_: <https://docs.aws.amazon.com/prescriptive-guidance/latest/architectural-decision-records/> (process, _ownership_, review, status, immutability and use in _code review_).
+- **Google Cloud Architecture Center** — _Architecture decision records overview_: <https://docs.cloud.google.com/architecture/architecture-decision-records> (when to create and where to store).
+- **Michael Nygard (2011)** — _Documenting Architecture Decisions_: original article on the lightweight format, immutability and active voice.
+- **Mark Richards & Neal Ford (2020)** — _Fundamentals of Software Architecture_ (O'Reilly): architectural significance criteria and antipatterns.
+- **Olaf Zimmermann** — _How to create Architectural Decision Records (ADRs) — and how not to_ and _How to review ADRs_ (ozimmer.ch blog): patterns, antipatterns and review checklists.
+- **Joel Parker Henderson** — catalog of templates and examples: <https://github.com/joelparkerhenderson/architecture-decision-record>.

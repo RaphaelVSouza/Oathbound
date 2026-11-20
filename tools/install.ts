@@ -249,7 +249,7 @@ function findNativeHookBinary(sourceRoot: string): string {
     if (fs.existsSync(candidate)) return candidate;
   }
   throw new Error(
-    `Binário nativo oathbound-hook não encontrado (${platformName}). Compile com "cargo build --release --manifest-path native/oathbound-hook/Cargo.toml" ou defina OATHBOUND_NATIVE_BIN.`
+    `Native oathbound-hook binary not found (${platformName}). Build with "cargo build --release --manifest-path native/oathbound-hook/Cargo.toml" or set OATHBOUND_NATIVE_BIN.`
   );
 }
 
@@ -395,7 +395,7 @@ function install(options: InstallOptions) {
   }
 
   const oldFilesMap = new Map<string, string>();
-  // Manifests anteriores podiam atribuir ao pacote arquivos locais preservados.
+  // Earlier manifests could attribute preserved local files to the package.
   if (oldManifest?.schema === 2 && Array.isArray(oldManifest.files)) {
     for (const f of oldManifest.files) {
       oldFilesMap.set(f.path, f.sha256);
@@ -403,7 +403,7 @@ function install(options: InstallOptions) {
   }
 
   const legacyRemovals: string[] = [];
-  // Planeja a limpeza de agentes legados em --upgrade.
+  // Plan legacy agent cleanup for --upgrade.
   if (options.upgrade && runner !== 'codex') {
     const legacyDirs = isGlobal ? [
       ...(runner !== 'agy' ? [path.join(targetRoot, '.claude', 'agents')] : []),
@@ -432,7 +432,7 @@ function install(options: InstallOptions) {
     }
   }
 
-  // Deduplicação de skills
+  // Skill deduplication
   const skillsSourceDir = path.join(sourceRoot, 'skills');
   const availableSkills = fs.existsSync(skillsSourceDir)
     ? fs.readdirSync(skillsSourceDir, { withFileTypes: true })
@@ -467,7 +467,7 @@ function install(options: InstallOptions) {
         }
       }
 
-      // Se runner all no projeto: se instalou em .claude/skills, desativa duplicata no .agents/skills
+      // For project runner all: disable .agents/skills duplicates when installed in .claude/skills
       if (runner === 'all') {
         for (const skill of availableSkills) {
           skipProjectAgySkills.add(skill);
@@ -593,7 +593,7 @@ function install(options: InstallOptions) {
     }
   }
 
-  // Se --audit-docs no projeto: copia tools/audit-docs.{ts,core.ts,sources.ts} e configura audit-docs.config.js neutro
+  // For project --audit-docs: copy tools/audit-docs.{ts,core.ts,sources.ts} and create a neutral audit-docs.config.js
   if (!isGlobal && options.auditDocs) {
     const auditDocFiles = ['audit-docs.ts', 'audit-docs.core.ts', 'audit-docs.sources.ts'];
     for (const f of auditDocFiles) {
@@ -606,7 +606,7 @@ function install(options: InstallOptions) {
     plannedFiles.set('tools/audit-docs.config.js', { content: cleanConfigContent });
   }
 
-  // Aplicação das mudanças e construção do novo manifesto
+  // Apply changes and build the new manifest
   for (const [from, to] of skillMoves) moveFolderSafely(from, to);
   for (const file of legacyRemovals) fs.unlinkSync(file);
   const newManifestFiles: Array<{ path: string; sha256: string }> = [];
@@ -672,10 +672,10 @@ if (require.main === module) {
   try {
     const options = parseArgs(process.argv.slice(2));
     const result = install(options);
-    console.log(`Oathbound instalado com sucesso em: ${result.targetRoot}`);
-    console.log(`Manifesto gerado em: ${result.manifestPath}`);
+    console.log(`Oathbound successfully installed in: ${result.targetRoot}`);
+    console.log(`Manifest generated at: ${result.manifestPath}`);
   } catch (err: any) {
-    console.error(`Erro na instalação: ${err.message}`);
+    console.error(`Installation error: ${err.message}`);
     process.exit(1);
   }
 }

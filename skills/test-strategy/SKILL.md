@@ -1,21 +1,21 @@
 ---
 name: test-strategy
 description: >-
-  Projeta estratégia e matriz de testes para código crítico, complexo ou legado.
-  Use para escolher o nível certo de teste (unit, integração, contrato, E2E) e
-  cobrir invariantes e modos de falha sem mocks frágeis.
+  Design a test strategy and matrix for critical, complex, or legacy code.
+  Use to choose the right test level (unit, integration, contract, E2E) and
+  cover invariants and failure modes without brittle mocks.
 ---
 
-# Estratégia de Testes
+# Test Strategy
 
-Assuma que quem acionou é um engenheiro de software: priorize risco, invariantes e determinismo, sem repetir conceitos básicos de testes.
+Assume the requester is a software engineer: prioritize risk, invariants, and determinism, without repeating basic testing concepts.
 
-1. **Mapeie risco e invariantes:** leia o código/spec alvo e liste o que não pode falhar (regras de negócio, contratos, estado persistido, segurança, concorrência).
-2. **Construa a matriz de casos:** cubra explicitamente:
-   - Caminho feliz mínimo.
-   - Bordas e limites (vazio, nulo, máximo, ordenação, fuso/encoding).
-   - Modos de falha (erro de rede/IO, timeout, input inválido, falha parcial).
-   - Estado e concorrência (idempotência, retry, ordem de eventos), quando aplicável.
-3. **Escolha o nível mínimo eficaz:** prefira o nível mais rápido e determinístico que prove o comportamento real (unit -> integração -> contrato -> E2E).
-4. **Evite mocks frágeis:** teste comportamento observável nas fronteiras, não detalhes privados de implementação. Só isole dependências externas lentas ou não determinísticas.
-5. **Defina critério de validação:** indique comandos exatos de execução filtrada e o que prova cada bloco de teste.
+1. **Map risk and invariants:** read the target code/spec and list what must not fail (business rules, contracts, persisted state, security, concurrency).
+2. **Build the case matrix:** explicitly cover:
+   - Minimal happy path.
+   - Edges and limits (empty, null, maximum, ordering, time zone/encoding).
+   - Failure modes (network/IO error, timeout, invalid input, partial failure).
+   - State and concurrency (idempotency, retry, event ordering), when applicable.
+3. **Choose the minimum effective level:** prefer the fastest, most deterministic level that proves actual behavior (unit -> integration -> contract -> E2E).
+4. **Avoid brittle mocks:** test observable behavior at boundaries, not private implementation details. Only isolate slow or nondeterministic external dependencies.
+5. **Define validation criteria:** provide exact commands for filtered execution and what each test block proves.

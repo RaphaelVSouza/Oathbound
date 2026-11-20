@@ -5,8 +5,8 @@ const { revisarTeste } = require('./revisar-teste.js');
 
 async function main() {
   const [, , arquivo, ...extras] = process.argv;
-  if (!arquivo || extras.length) throw new Error('Uso: node test/jev/medir-revisao.js <casos.json>');
-  if (!process.env.JEV_API_KEY?.trim()) throw new Error('JEV_API_KEY ausente.');
+  if (!arquivo || extras.length) throw new Error('Usage: node test/jev/medir-revisao.js <casos.json>');
+  if (!process.env.JEV_API_KEY?.trim()) throw new Error('JEV_API_KEY missing.');
 
   const casos = JSON.parse(fs.readFileSync(arquivo, 'utf8'));
   const rotulos = new Set(['enfraquece', 'preserva', 'incerto']);
@@ -15,7 +15,7 @@ async function main() {
     casos.some((caso) => !rotulos.has(caso?.esperado) ||
       campos.some((campo) => typeof caso[campo] !== 'string' || !caso[campo].trim())) ||
     new Set(casos.map((caso) => caso.id)).size !== casos.length) {
-    throw new Error('Cada caso exige ID único, critério, asserção anterior, diff e gabarito válido.');
+    throw new Error('Each case requires a unique ID, criterion, previous assertion, diff, and valid expected label.');
   }
 
   const resultados = [];

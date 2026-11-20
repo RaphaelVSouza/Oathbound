@@ -1,7 +1,7 @@
 {
-  "fonte": "Tabela do skill claude-api (input, output, cache_read); cache_write e cache_read do Haiku estimados pelo padrão Anthropic",
+  "fonte": "claude-api skill table (input, output, cache_read); Haiku cache_write and cache_read estimated from Anthropic conventions",
   "data": "2026-11-14",
-  "unidade": "US$ por milhão de tokens",
+  "unidade": "US$ per million tokens",
   "modelos": {
     "claude-sonnet-5-5": {
       "input": 2.00,

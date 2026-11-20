@@ -1,54 +1,56 @@
-# ADR 0002 — Roteamento de subagentes com o Jev
+# ADR 0002 — Subagent Routing with Jev
 
-Data: 2026-11-14. Estado: **experimento encerrado**. A amostra ficou abaixo do mínimo previsto. As descrições dos agentes continuam em uso. O modo `subagente` permanece inativo.
+Date: 2026-11-14. Status: **experiment closed**. The sample fell below the planned minimum. Agent descriptions remain in use. The `subagente` mode remains inactive.
 
-## Contexto
+Language note: historical measurements used Portuguese prompts and corpora. English translations have not been recalibrated.
 
-O orquestrador (sessão principal) escolhe o subagente pelas `description` de `agents/*.md` e pelas regras do `CLAUDE.md`. O [ADR 0001](0001-sugestao-de-skill-com-jev.md) mediu o Jev `jev-1.14.0` nessa escolha, com o mesmo catálogo do hook de skills mais 4 subagentes embutidos (11 no total):
+## Context
 
-- 11 prompts com subagente real (de 121 elegíveis). O `Choice` acertou o 1º em 6 (55%), com intervalo de confiança de cerca de 25% a 83%.
-- Confusões: `general-purpose` no lugar de `smith`; `scholar` no lugar de `claude-code-guide`.
-- Com os limiares do cookbook de skills, sugeriu e acertou 4, sugeriu errado 3 e ficou calado 4. O `Noul` `acao` foi desenhado para skills e não discrimina subagentes.
-- Sem subagente real, sugeriria em 50 de 110 prompts.
+The orchestrator (main session) selects a subagent through `description` in `agents/*.md` and `CLAUDE.md` rules. [ADR 0001](0001-sugestao-de-skill-com-jev.md) measured Jev `jev-1.14.0` for this choice, with the same catalog as the skills hook plus 4 built-in subagents (11 total):
 
-A TypeSafe não oferece fine-tuning nem treino customizado do Jev (documentação consultada em 2026-11-14). O que se controla é o que se envia: descrições das opções, perguntas e limiares.
+- 11 prompts with an actual subagent (of 121 eligible). `Choice` selected the first correctly in 6 (55%), with a confidence interval of about 25% to 83%.
+- Confusions: `general-purpose` instead of `smith`; `scholar` instead of `claude-code-guide`.
+- With skills cookbook thresholds, it suggested correctly in 4, incorrectly in 3 and stayed silent in 4. The `acao` `Noul` was designed for skills and does not distinguish subagents.
+- Without an actual subagent, it would suggest for 50 of 110 prompts.
 
-## Desenho avaliado
+TypeSafe does not offer Jev fine-tuning or custom training (documentation consulted on 2026-11-14). What can be controlled is the input: option descriptions, questions and thresholds.
 
-1. **Catálogo e descrições contrastivas.** Reescrever a `description` de cada subagente dizendo o que faz e o que não faz, com foco nos pares confundidos. O texto serve ao orquestrador e ao Jev; é uma mudança em `agents/*.md`, sujeita à suíte `tests/agents/executar.js`.
-2. **Uma pergunta por subagente**, no estilo do cookbook `function_calling`: um `Noul` ("este pedido é para o `smith`?") por opção, em um único request, mais um `Choice` entre os subagentes como desempate. Substitui o `Noul` `acao`.
-3. **Limiares por catálogo**, escolhidos na curva de acerto contra cobertura de uma amostra de calibração e conferidos em outra amostra. Não reaproveitar os do cookbook de skills.
-4. **Sem registro automático.** Só vira hook `UserPromptSubmit` (ou entrada no `CLAUDE.md`) se cumprir o critério de aceite. Reaproveita `hooks/skill-suggest.js` (redação de segredos, falha em silêncio, versão fixa, log sem o prompt).
+## Evaluated Design
 
-## Tamanho de amostra previsto
+1. **Catalog and contrastive descriptions.** Rewrite each subagent's `description` to state what it does and does not do, focusing on confused pairs. The text serves the orchestrator and Jev; this changes `agents/*.md`, subject to the `tests/agents/executar.js` suite.
+2. **One question per subagent**, following the `function_calling` cookbook: one `Noul` ("is this request for `smith`?") per option, in a single request, plus a `Choice` among subagents as a tiebreaker. Replaces the `acao` `Noul`.
+3. **Catalog-specific thresholds**, chosen on the accuracy-versus-coverage curve of a calibration sample and checked on another sample. Do not reuse skills cookbook thresholds.
+4. **No automatic registration.** Becomes a `UserPromptSubmit` hook (or `CLAUDE.md` entry) only if acceptance criteria are met. Reuses `hooks/skill-suggest.js` (secret redaction, silent failure, pinned version, no prompt in logs).
 
-O protocolo previa pelo menos **100 prompts humanos com subagente chamado**, separados em calibração (metade) e conferência (metade). A amostra observada teve 11. A fonte é `tests/skill-suggest/extrair.js` (campo `agentes`, vindo do `subagent_type` nos transcritos), não o `agent-audit.jsonl`, que registra o que o subagente fez e não quem o orquestrador escolheu.
+## Planned Sample Size
 
-## Critério de aceite (fixado antes de medir)
+The protocol required at least **100 human prompts with a subagent call**, split into calibration (half) and checking (half). The observed sample had 11. The source is `tests/skill-suggest/extrair.js` (the `agentes` field, from transcript `subagent_type`), not `agent-audit.jsonl`, which records what the subagent did rather than whom the orchestrator chose.
 
-- Acerto do 1º no conjunto de conferência acima do acerto da escolha atual do orquestrador. A referência do orquestrador é o próprio `subagent_type` usado; para comparar, mede-se também um braço "sem sugestão" repetindo a decisão do orquestrador sem a dica, o que exige amostra com execução controlada e não só transcritos.
-- Reportar separado: sugestão certa, sugestão errada e silêncio. Só aceitar se "quebrou" (sugestão errada onde o orquestrador acertaria) ficar abaixo de "corrigiu".
-- Intervalo de confiança reportado; com menos de 100 prompts, o resultado é descartado como inconclusivo.
-- Latência: p95 do hook abaixo do `timeout` configurado, com margem.
+## Acceptance Criteria (Fixed Before Measurement)
 
-## Consequências
+- First-choice accuracy on the checking set above the orchestrator's current selection accuracy. The orchestrator reference is the actual `subagent_type` used; comparison also measures a "no suggestion" arm repeating the orchestrator decision without the hint, which requires a controlled execution sample, not only transcripts.
+- Report separately: correct suggestion, wrong suggestion and silence. Accept only if "broke" (wrong suggestion where the orchestrator would be correct) stays below "fixed".
+- Report confidence interval; with fewer than 100 prompts, discard the result as inconclusive.
+- Latency: hook p95 below configured `timeout`, with margin.
 
-- Reescrever descrições melhora o roteamento mesmo sem o Jev, e é a parte barata e reversível. Pode ser feita antes, com a suíte de regressão como proteção.
-- O hook envia o texto do prompt à TypeSafe, com as mesmas salvaguardas do ADR 0001.
-- Risco de dica errada e confiante sobrescrever uma escolha certa do orquestrador (29 corrigidos contra 7 quebrados no cookbook de skills).
+## Consequences
 
-## Alternativas descartadas
+- Rewriting descriptions improves routing even without Jev and is the cheap, reversible part. It can happen first, protected by the regression suite.
+- The hook sends prompt text to TypeSafe, with the same safeguards as ADR 0001.
+- Risk of a confident wrong hint overriding the orchestrator's correct choice (29 fixed against 7 broken in the skills cookbook).
 
-- **Fine-tuning do Jev**: não existe na oferta da TypeSafe.
-- **Ajustar descrições agora e declarar vitória com 11 prompts**: não tem poder estatístico; qualquer ganho pode ser ajuste à amostra.
-- **Embeddings**: dependência e índice novos para 11 opções.
+## Rejected Alternatives
 
-## Emenda 2026-11-14
+- **Jev fine-tuning**: not offered by TypeSafe.
+- **Adjust descriptions now and declare victory with 11 prompts**: insufficient statistical power; any gain could be overfitting the sample.
+- **Embeddings**: new dependency and index for 11 options.
 
-Ajustes ao passo 2, no modo `subagente` de `hooks/skill-suggest.js` (modo `skill` intacto):
+## Amendment 2026-11-14
 
-- **Opção `inline`** no `Choice`: "resolver na thread principal, sem delegar: resposta já conhecida ou edição trivial de 1 arquivo". Não tem `Noul`. Se o `Choice` escolhe `inline`, o hook fica calado e o log registra `inline: true`.
-- **`criteria` estruturado** em cada `Noul` por subagente, no formato documentado da API (`criteria.true` e `criteria.false` aceitam objeto): `true: { faz }` com a descrição do agente e `false: { nao_faz }` com o par confundido (`PARES_CONFUNDIDOS`: smith e general-purpose, scholar e claude-code-guide, assayer e sentinel, scout e Explore). A `instructions` fica só com a pergunta.
-- **Decisão por faixas** sobre o `Noul` do escolhido (fonte: docs.typesafe.ai/confidence.md): >= 0,7 sugere; <= 0,3 cala; entre os dois cala e registra `faixa: 'meio'`. O `Choice` não usa mais o campo `confidence` (mede concentração da distribuição, não chance de acerto; confidence.md:119): exige a probabilidade da opção escolhida (`probabilities[escolhido]`) >= 0,5, sem calibração. Conferido nas docs em 2026-11-14. O log ganha `faixa` (`alta`, `meio`, `baixa`). A ordem das opções segue embaralhada por prompt, por causa do viés de primeira opção (docs.typesafe.ai/model-jaggedness.md).
-- **Custo estimado**: cerca de US$ 0,00015 por prompt (US$ 0,042 por Mtok de entrada, docs.typesafe.ai/models.md).
-- **Encerramento**: a calibração (passo 3) e o registro (passo 4) foram descartados. O hook segue fora do `settings.json`.
+Adjustments to step 2, in `subagente` mode of `hooks/skill-suggest.js` (`skill` mode unchanged):
+
+- **`inline` option** in `Choice`: "resolve in the main thread, without delegation: answer already known or trivial edit to 1 file". Has no `Noul`. If `Choice` selects `inline`, the hook stays silent and logs `inline: true`.
+- **Structured `criteria`** in each per-subagent `Noul`, using the documented API format (`criteria.true` and `criteria.false` accept objects): `true: { faz }` with the agent description and `false: { nao_faz }` with the confused pair (`PARES_CONFUNDIDOS`: smith and general-purpose, scholar and claude-code-guide, assayer and sentinel, scout and Explore). `instructions` contains only the question.
+- **Band-based decision** over the selected option's `Noul` (source: docs.typesafe.ai/confidence.md): >= 0.7 suggests; <= 0.3 stays silent; between them stays silent and records `faixa: 'meio'`. `Choice` no longer uses `confidence` (measures distribution concentration, not accuracy probability; confidence.md:119): requires the selected option's probability (`probabilities[escolhido]`) >= 0.5, without calibration. Checked in the docs on 2026-11-14. The log gains `faixa` (`alta`, `meio`, `baixa`). Option order remains shuffled per prompt because of first-option bias (docs.typesafe.ai/model-jaggedness.md).
+- **Estimated cost**: about US$ 0.00015 per prompt (US$ 0.042 per input Mtok, docs.typesafe.ai/models.md).
+- **Closure**: calibration (step 3) and registration (step 4) were abandoned. The hook remains outside `settings.json`.

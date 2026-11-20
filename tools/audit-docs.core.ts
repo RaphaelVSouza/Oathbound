@@ -1,7 +1,7 @@
 'use strict';
 
-// Auditor estático de documentação portável. Requer Node >= 24.
-// Sem dependências externas.
+// Portable static documentation auditor. Requires Node >= 24.
+// No external dependencies.
 
 const fs = require('fs');
 const path = require('path');
@@ -9,7 +9,7 @@ const cp = require('child_process');
 const { createSource } = require('./audit-docs.sources.ts');
 
 // ---------------------------------------------------------------------------
-// Utilitários Puros
+// Pure Utilities
 // ---------------------------------------------------------------------------
 
 function escapeRegex(s) {
@@ -209,40 +209,40 @@ function symbolPattern(sym) {
 }
 
 // ---------------------------------------------------------------------------
-// Motor Profundo de Auditoria
+// Audit Engine
 // ---------------------------------------------------------------------------
 
 const SEVERITIES = ['error', 'warn', 'off'];
 const DEFAULT_CHECKS = {
-  anchors: 'warn',      // fragmento #ancora sem cabeçalho/id correspondente
-  portability: 'warn',  // caixa divergente ou barra invertida em link
-  outsideRepo: 'warn'   // link relativo que sai da raiz do repositório
+  anchors: 'warn',      // #anchor fragment without a matching heading/id
+  portability: 'warn',  // case mismatch or backslash in a link
+  outsideRepo: 'warn'   // relative link outside the repository root
 };
 const DEFAULT_LINE_REF_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'cs', 'vb', 'html',
   'aspx', 'ascx', 'cshtml', 'astro', 'scss', 'css', 'json'];
 
 /**
- * Executa auditoria estática completa sobre documentos e contratos.
+ * Run a full static audit of documents and contracts.
  * @param {object} [opts]
- * @param {string} [opts.repoRoot] Raiz do repositório (padrão: diretório atual).
- * @param {object} [opts.config] Objeto de configuração fornecido diretamente.
- * @param {string} [opts.configPath] Caminho para arquivo de configuração caso opts.config não seja fornecido.
- * @param {object} [opts.source] Fonte de leitura personalizada (AuditSource).
- * @param {boolean} [opts.staged] Auditoria no índice Git.
- * @param {boolean} [opts.verbose] Modo verboso.
+ * @param {string} [opts.repoRoot] Repository root (default: current directory).
+ * @param {object} [opts.config] Configuration object supplied directly.
+ * @param {string} [opts.configPath] Configuration file path when opts.config is not supplied.
+ * @param {object} [opts.source] Custom read source (AuditSource).
+ * @param {boolean} [opts.staged] Audit the Git index.
+ * @param {boolean} [opts.verbose] Verbose mode.
  * @returns {{ errors: string[], warnings: string[], stats: { mdFiles: number, sourceFiles: number, ignoredCount: number, errors: number, warnings: number, sourceLabel: string, nothingToAudit?: boolean } }}
  */
 function auditDocs(opts = {}) {
   const repoRoot = path.resolve(opts.repoRoot || '.');
   if (!fs.existsSync(repoRoot) || !fs.statSync(repoRoot).isDirectory()) {
-    throw Error('raiz do projeto não encontrada: ' + repoRoot);
+    throw Error('project root not found: ' + repoRoot);
   }
 
   let config = opts.config;
   if (!config) {
     const configPath = path.resolve(opts.configPath || path.join(repoRoot, 'tools', 'audit-docs.config.js'));
     if (!fs.existsSync(configPath)) {
-      throw Error('configuração não encontrada: ' + configPath);
+      throw Error('configuration not found: ' + configPath);
     }
     config = require(configPath);
   }
@@ -250,7 +250,7 @@ function auditDocs(opts = {}) {
   const checks = Object.assign({}, DEFAULT_CHECKS, config.checks || {});
   for (const key of Object.keys(checks)) {
     if (SEVERITIES.indexOf(checks[key]) === -1) {
-      throw Error("checks." + key + " inválido: '" + checks[key] + "' (use error | warn | off)");
+      throw Error("checks." + key + " invalid: '" + checks[key] + "' (use error | warn | off)");
     }
   }
 
@@ -315,13 +315,13 @@ function auditDocs(opts = {}) {
         }
       }
     } catch (err) {
-      throw Error('erro ao verificar status staged do git: ' + err.message);
+      throw Error('error checking Git staged status: ' + err.message);
     }
     if (!shouldRun) {
       return {
         errors: [],
         warnings: [],
-        stats: { mdFiles: 0, sourceFiles: 0, ignoredCount: 0, errors: 0, warnings: 0, sourceLabel: 'índice do git', nothingToAudit: true }
+        stats: { mdFiles: 0, sourceFiles: 0, ignoredCount: 0, errors: 0, warnings: 0, sourceLabel: 'Git index', nothingToAudit: true }
       };
     }
   }
@@ -334,7 +334,7 @@ function auditDocs(opts = {}) {
   function report(rel, lineNum, checkId, message, severity) {
     const sev = severity || 'error';
     if (sev === 'off') return;
-    const entry = rel + ':' + (lineNum || 1) + ': [' + checkId + '] ' + (sev === 'warn' ? 'aviso: ' : '') + message;
+    const entry = rel + ':' + (lineNum || 1) + ': [' + checkId + '] ' + (sev === 'warn' ? 'warning: ' : '') + message;
     (sev === 'warn' ? warnings : errors).push(entry);
   }
 
@@ -397,7 +397,7 @@ function auditDocs(opts = {}) {
           ignoredCount++;
         }
       } else {
-        report(rel, 1, 'check3', 'arquivo fonte declarado nao encontrado: ' + rel);
+        report(rel, 1, 'check3', 'declared source file not found: ' + rel);
       }
     }
   }
@@ -452,14 +452,14 @@ function auditDocs(opts = {}) {
     if (checks.anchors === 'off') return;
     const anchors = getAnchors(targetRel);
     if (!anchors.has(fragment.toLowerCase())) {
-      report(doc.rel, lineNum, 'check1', 'âncora inexistente em ' + targetRel + ': ' + dest, checks.anchors);
+      report(doc.rel, lineNum, 'check1', 'missing anchor in ' + targetRel + ': ' + dest, checks.anchors);
     }
   }
 
   function checkLink(doc, lineNum, destRaw) {
     const dest = destRaw.trim();
     if (/^(?:[A-Za-z]:[\\/]|file:)/i.test(dest) || /^\\\\/.test(dest)) {
-      report(doc.rel, lineNum, 'check2', 'caminho absoluto ou protocolo file: em link: ' + dest);
+      report(doc.rel, lineNum, 'check2', 'absolute path or file: protocol in link: ' + dest);
       return;
     }
     if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(dest) || dest.startsWith('//')) return;
@@ -475,12 +475,12 @@ function auditDocs(opts = {}) {
     }
 
     if (pathPart.startsWith('/')) {
-      report(doc.rel, lineNum, 'check2', 'caminho absoluto a partir da raiz; use caminho relativo: ' + dest);
+      report(doc.rel, lineNum, 'check2', 'absolute path from root; use a relative path: ' + dest);
       return;
     }
 
     if (pathPart.indexOf('\\') !== -1) {
-      report(doc.rel, lineNum, 'check1', 'barra invertida em link não funciona fora do Windows; use /: ' + dest, checks.portability);
+      report(doc.rel, lineNum, 'check1', 'backslashes in links do not work outside Windows; use /: ' + dest, checks.portability);
       pathPart = pathPart.replace(/\\/g, '/');
     }
 
@@ -489,20 +489,20 @@ function auditDocs(opts = {}) {
     if (target === '.') target = '';
 
     if (target === '..' || target.startsWith('../')) {
-      report(doc.rel, lineNum, 'check1', 'link sai da raiz do repositório: ' + dest, checks.outsideRepo);
+      report(doc.rel, lineNum, 'check1', 'link leaves the repository root: ' + dest, checks.outsideRepo);
       return;
     }
 
     if (!source.exists(target)) {
-      report(doc.rel, lineNum, 'check1', 'link quebrado para: ' + dest);
+      report(doc.rel, lineNum, 'check1', 'broken link to: ' + dest);
       return;
     }
 
     const exact = source.exactCase(target);
     let actualTarget = target;
     if (!exact.ok) {
-      report(doc.rel, lineNum, 'check1', 'caixa divergente (quebra em Linux/GitHub): link aponta para ' + target +
-        ', arquivo real é ' + exact.actual + ': ' + dest, checks.portability);
+      report(doc.rel, lineNum, 'check1', 'case mismatch (breaks on Linux/GitHub): link points to ' + target +
+        ', actual file is ' + exact.actual + ': ' + dest, checks.portability);
       if (exact.actual) actualTarget = exact.actual;
     }
 
@@ -512,7 +512,7 @@ function auditDocs(opts = {}) {
   }
 
   for (const doc of mdFiles) {
-    if (opts.verbose) console.log('[verbose] lendo ' + doc.rel);
+    if (opts.verbose) console.log('[verbose] reading ' + doc.rel);
     const lines = toLines(source.read(doc.rel));
     const info = classifyLines(lines);
     const enforceLineRefs = doc.lineNumberRefs === 'forbid' && lineRefAllowlist.indexOf(doc.rel) === -1;
@@ -541,23 +541,23 @@ function auditDocs(opts = {}) {
         const cells = splitTableCells(line);
         for (const colIdx of tableLineCols) {
           if (cells[colIdx] && cells[colIdx].trim() !== '') {
-            report(doc.rel, lineNum, 'check6', 'coluna de linhas preenchida em tabela: ' + cells[colIdx].trim());
+            report(doc.rel, lineNum, 'check6', 'populated line column in table: ' + cells[colIdx].trim());
           }
         }
         for (const c of cells) {
           const ct = c.trim();
           if (/^\d+\s*[–—]\s*\d+$/.test(ct)) {
-            report(doc.rel, lineNum, 'check6', 'célula contém intervalo de linhas com travessão: ' + ct);
+            report(doc.rel, lineNum, 'check6', 'cell contains a dash-separated line range: ' + ct);
           }
         }
       }
 
       if (enforceLineRefs) {
         if (/#L\d+/i.test(line)) {
-          report(doc.rel, lineNum, 'check6', 'referência a fragmento de linha #L encontrada: ' + trimmed);
+          report(doc.rel, lineNum, 'check6', 'line fragment reference #L found: ' + trimmed);
         }
         if (lineRefRegex.test(line)) {
-          report(doc.rel, lineNum, 'check6', 'referência a arquivo:linha encontrada: ' + trimmed);
+          report(doc.rel, lineNum, 'check6', 'file:line reference found: ' + trimmed);
         }
       }
 
@@ -565,7 +565,7 @@ function auditDocs(opts = {}) {
       if ((config.forbiddenTerms?.paths || []).some(p => doc.rel === p || (p.endsWith('/**') && doc.rel.startsWith(p.slice(0, -3) + '/')))) {
         for (const term of config.forbiddenTerms.terms || []) {
           if (new RegExp('\\b' + escapeRegex(term) + '\\b', 'i').test(visible)) {
-            report(doc.rel, lineNum, 'check1', 'termo revogado em documento ativo: ' + term);
+            report(doc.rel, lineNum, 'check1', 'retired term in active document: ' + term);
           }
         }
       }
@@ -581,7 +581,7 @@ function auditDocs(opts = {}) {
 
     if (src.config.style && src.config.style.requireUtf8NoBom) {
       if (raw.length >= 3 && raw[0] === 0xef && raw[1] === 0xbb && raw[2] === 0xbf) {
-        report(src.rel, 1, 'check1', 'BOM UTF-8 proibido no arquivo: ' + src.rel);
+        report(src.rel, 1, 'check1', 'UTF-8 BOM forbidden in file: ' + src.rel);
       }
     }
 
@@ -590,7 +590,7 @@ function auditDocs(opts = {}) {
       if (!re) continue;
       const found = lines.some(l => re.test(l));
       if (!found) {
-        report(src.rel, 1, 'check2', "símbolo '" + sym.name + "' (" + sym.kind + ') não encontrado em: ' + src.rel);
+        report(src.rel, 1, 'check2', "symbol '" + sym.name + "' (" + sym.kind + ') not found in: ' + src.rel);
       }
     }
 
@@ -601,7 +601,7 @@ function auditDocs(opts = {}) {
         if (re.test(l)) matches.push(idx + 1);
       });
       if (matches.length !== tok.expectedCount) {
-        report(src.rel, 1, 'check4', "token '" + tok.token + "': esperado " + tok.expectedCount + ' ocorrência(s), encontrado ' + matches.length);
+        report(src.rel, 1, 'check4', "token '" + tok.token + "': expected " + tok.expectedCount + ' occurrence(s), found ' + matches.length);
       }
       for (const lineNum of matches) {
         let k = lineNum - 2;
@@ -624,7 +624,7 @@ function auditDocs(opts = {}) {
           }
         }
         if (comment.join(' ').indexOf('WHY:') === -1) {
-          report(src.rel, lineNum, 'check4', "token '" + tok.token + "' na linha " + lineNum + " não possui comentário contendo 'WHY:'");
+          report(src.rel, lineNum, 'check4', "token '" + tok.token + "' at line " + lineNum + " has no comment containing 'WHY:'");
         }
       }
     }

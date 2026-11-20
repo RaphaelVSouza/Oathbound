@@ -1,32 +1,32 @@
-# Antigravity IDE e CLI
+# Antigravity IDE and CLI
 
-Links para documentação oficial do Antigravity IDE e CLI (`agy`). Consulte as fontes oficiais para comportamento e opções atuais.
+Links to official Antigravity IDE and CLI (`agy`) documentation. Consult official sources for current behavior and options.
 
-Revisão dos links: 2026-11-17.
+Links reviewed: 2026-11-17.
 
 ## IDE
 
-- [Visão geral e superfícies](https://antigravity.google/docs/overview?tab=ide) — visão geral e comparação entre app, CLI e extensões de IDE.
-- [Recursos do IDE](https://antigravity.google/docs/features?tab=ide) — recursos disponíveis na experiência IDE.
-- [Configurações do IDE](https://antigravity.google/docs/settings?tab=ide) — preferências, permissões e configuração de projeto.
-- [Plugins](https://antigravity.google/docs/ide/plugins/) — instalar e criar plugins para o IDE.
-- [Skills e regras](https://antigravity.google/docs/skills) — personalizações reutilizáveis.
-- [Subagentes](https://antigravity.google/docs/agents) — agentes especializados.
-- [Permissões e sandbox](https://antigravity.google/docs/permissions) — controle de acesso e execução.
+- [Overview and surfaces](https://antigravity.google/docs/overview?tab=ide) — overview and comparison of the app, CLI and IDE extensions.
+- [IDE features](https://antigravity.google/docs/features?tab=ide) — features available in the IDE experience.
+- [IDE settings](https://antigravity.google/docs/settings?tab=ide) — preferences, permissions and project configuration.
+- [Plugins](https://antigravity.google/docs/ide/plugins/) — install and create IDE plugins.
+- [Skills and rules](https://antigravity.google/docs/skills) — reusable customizations.
+- [Subagents](https://antigravity.google/docs/agents) — specialized agents.
+- [Permissions and sandbox](https://antigravity.google/docs/permissions) — access and execution control.
 
 ## CLI
 
-- [Referência de comandos](https://antigravity.google/docs/cli/reference/) — slash commands, atalhos, flags e chaves de configuração.
-- [Recursos da CLI](https://antigravity.google/docs/features?tab=cli#antigravity-cli-features) — recursos disponíveis na CLI.
-- [Configurações e dicas](https://antigravity.google/docs/settings?tab=cli) — configurações da CLI.
-- [Solução de problemas](https://antigravity.google/docs/cli/troubleshooting/) — diagnóstico de problemas.
-- [Boas práticas](https://antigravity.google/docs/cli/best-practices/) — recomendações de uso.
+- [Command reference](https://antigravity.google/docs/cli/reference/) — slash commands, shortcuts, flags and configuration keys.
+- [CLI features](https://antigravity.google/docs/features?tab=cli#antigravity-cli-features) — features available in the CLI.
+- [Settings and tips](https://antigravity.google/docs/settings?tab=cli) — CLI settings.
+- [Troubleshooting](https://antigravity.google/docs/cli/troubleshooting/) — problem diagnosis.
+- [Best practices](https://antigravity.google/docs/cli/best-practices/) — usage recommendations.
 
-## Extensão e personalização compartilhada
+## Shared Extension and Customization
 
-- [Plugins](https://antigravity.google/docs/plugins) — instalar e criar plugins.
-- [Agent Skills](https://antigravity.google/docs/skills) — skills reutilizáveis.
-- [Custom subagents](https://antigravity.google/docs/agents) — configurar subagentes.
-- [Lifecycle hooks](https://antigravity.google/docs/hooks) — hooks de ciclo de vida.
-- [MCP](https://antigravity.google/docs/mcp) — servidores Model Context Protocol.
-- [Permissões e sandbox](https://antigravity.google/docs/permissions) — controle de acesso e execução.
+- [Plugins](https://antigravity.google/docs/plugins) — install and create plugins.
+- [Agent Skills](https://antigravity.google/docs/skills) — reusable skills.
+- [Custom subagents](https://antigravity.google/docs/agents) — configure subagents.
+- [Lifecycle hooks](https://antigravity.google/docs/hooks) — lifecycle hooks.
+- [MCP](https://antigravity.google/docs/mcp) — Model Context Protocol servers.
+- [Permissions and sandbox](https://antigravity.google/docs/permissions) — access and execution control.

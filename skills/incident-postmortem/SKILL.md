@@ -1,21 +1,21 @@
 ---
 name: incident-postmortem
 description: >-
-  Redige postmortem técnico objetivo após mitigação ou diagnóstico de incidente.
-  Use para registrar linha do tempo, impacto, causa raiz e ações preventivas
-  verificáveis.
+  Write an objective technical postmortem after incident mitigation or diagnosis.
+  Use to record the timeline, impact, root cause, and verifiable preventive
+  actions.
 ---
 
-# Postmortem de Incidente
+# Incident Postmortem
 
-Assuma que quem acionou é um engenheiro de software: mantenha tom factual e sem caça às bruxas (blameless), separando fatos verificados de hipóteses.
+Assume the requester is a software engineer: keep a factual, blameless tone, separating verified facts from hypotheses.
 
-1. **Colete evidências:** reúna logs, métricas, commits, PRs, alertas e horários reais. Não invente timestamps ou causas não comprovadas; marque lacunas como `[A CONFIRMAR]`.
-2. **Estruture o documento:**
-   - **Resumo executivo:** o que falhou, duração e impacto mensurável (usuários, requisições, dados, SLA).
-   - **Linha do tempo (UTC ou fuso explícito):** detecção, triagem, mitigação e recuperação.
-   - **Causa raiz e fatores contribuintes:** mecanismo técnico exato e por que as barreiras existentes não impediram ou não detectaram antes.
-   - **O que funcionou / o que falhou:** detecção, runbooks, rollback, observabilidade.
-   - **Ações corretivas e preventivas:** tabela com tipo (`imediata` | `estrutural`), descrição objetiva, dono, prazo e critério de verificação.
-3. **Conecte com o fluxo:** se uma ação exigir mudança arquitetural, aponte ADR (`create-adr`); se exigir migração ou correção, aponte `migration` ou `surgical-patch`.
-4. **Informe o caminho salvo e lacunas pendentes** para revisão dos envolvidos.
+1. **Collect evidence:** gather logs, metrics, commits, PRs, alerts, and actual times. Do not invent timestamps or unproven causes; mark gaps as `[TO CONFIRM]`.
+2. **Structure the document:**
+   - **Executive summary:** what failed, duration, and measurable impact (users, requests, data, SLA).
+   - **Timeline (UTC or explicit time zone):** detection, triage, mitigation, and recovery.
+   - **Root cause and contributing factors:** the exact technical mechanism and why existing safeguards did not prevent it or detect it earlier.
+   - **What worked / what failed:** detection, runbooks, rollback, observability.
+   - **Corrective and preventive actions:** a table with type (`immediate` | `structural`), objective description, owner, deadline, and verification criterion.
+3. **Connect to the workflow:** if an action requires an architectural change, point to an ADR (`create-adr`); if it requires a migration or fix, point to `migration` or `surgical-patch`.
+4. **Report the saved path and pending gaps** for review by those involved.

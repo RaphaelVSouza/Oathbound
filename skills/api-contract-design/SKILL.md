@@ -1,22 +1,22 @@
 ---
 name: api-contract-design
 description: >-
-  Projeta ou evolui contratos HTTP, RPC ou eventos com foco em compatibilidade
-  retroativa, idempotência, erros padronizados e limites explícitos.
+  Design or evolve HTTP, RPC, or event contracts with a focus on backward
+  compatibility, idempotency, standardized errors, and explicit limits.
 ---
 
-# Design de Contrato de API
+# API Contract Design
 
-Assuma que quem acionou é um engenheiro de software: foque em semântica de contrato, evolução segura e modos de falha, sem teoria genérica de REST/RPC.
+Assume the requester is a software engineer: focus on contract semantics, safe evolution, and failure modes, without generic REST/RPC theory.
 
-1. **Identifique consumidores e compatibilidade:** mapeie clientes internos/externos, versão atual e se a mudança é aditiva ou breaking.
-2. **Defina a superfície do contrato:**
-   - Operações/endpoints ou tópicos/eventos com nomes consistentes ao padrão local.
-   - Schemas de entrada e saída com tipos, obrigatoriedade, defaults, formatos (ISO-8601, UUID, moeda/precisão) e limites de tamanho.
-   - Paginação (cursor vs offset), filtros e ordenação determinística quando retornar coleções.
-3. **Feche semântica operacional:**
-   - **Erros:** formato padronizado, códigos estáveis e distinção clara entre erro de cliente, conflito e falha transitória.
-   - **Idempotência e retry:** chaves de idempotência, semântica de reenvio e comportamento sob concorrência.
-   - **Auth, rate limit e observabilidade:** escopos/permissões, limites e correlation/request ID.
-4. **Documente exemplos concretos:** ao menos 1 payload de sucesso e 1 de erro representativo.
-5. **Se houver mudança breaking:** especifique estratégia de versionamento ou transição compatível (use `migration` e `create-adr` quando aplicável).
+1. **Identify consumers and compatibility:** map internal/external clients, the current version, and whether the change is additive or breaking.
+2. **Define the contract surface:**
+   - Operations/endpoints or topics/events with names consistent with the local standard.
+   - Input and output schemas with types, required fields, defaults, formats (ISO-8601, UUID, currency/precision), and size limits.
+   - Pagination (cursor vs offset), filters, and deterministic ordering when returning collections.
+3. **Settle operational semantics:**
+   - **Errors:** standardized format, stable codes, and a clear distinction between client errors, conflicts, and transient failures.
+   - **Idempotency and retry:** idempotency keys, retry semantics, and behavior under concurrency.
+   - **Auth, rate limit, and observability:** scopes/permissions, limits, and correlation/request ID.
+4. **Document concrete examples:** at least 1 success payload and 1 representative error payload.
+5. **For breaking changes:** specify a versioning strategy or compatible transition (use `migration` and `create-adr` when applicable).

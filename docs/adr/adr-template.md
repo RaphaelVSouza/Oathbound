@@ -1,58 +1,58 @@
 ---
 status: Proposed # Proposed | Accepted | Rejected | Deprecated | Superseded by ADR-NNNN
-date: AAAA-MM-DD # data da última mudança de status
-decision-makers: [Nome 1, Nome 2]
-consulted: [] # opcional: quem deu opinião técnica
-informed: [] # opcional: quem só precisa saber da decisão
+date: YYYY-MM-DD # date of the last status change
+decision-makers: [Name 1, Name 2]
+consulted: [] # optional: who provided technical input
+informed: [] # optional: who only needs to know the decision
 ---
 
-<!-- Guia: docs/adr/como-escrever-adr.md. Leitura alvo: 5 a 10 minutos. -->
+<!-- Guide: docs/adr/como-escrever-adr.md. Target reading time: 5 to 10 minutes. -->
 
-# NNNN - Título curto que afirma a decisão tomada
+# NNNN - Short Title Stating the Decision Made
 
-## Contexto e Problema
+## Context and Problem Statement
 
-Cenário atual, restrições técnicas ou de negócio (prazo, orçamento, equipe, legado, SLA) e o problema que exige decisão. Tom neutro, sem vender a solução (2 a 4 frases).
+Current situation, technical or business constraints (deadline, budget, team, legacy, SLA) and the problem requiring a decision. Neutral tone, without selling the solution (2 to 4 sentences).
 
-## Fatores de Decisão <!-- opcional -->
+## Decision Drivers <!-- optional -->
 
-- [RNF relevante, ex.: latência p99 abaixo de 100 ms]
-- [Custo, curva de aprendizado, prazo ou compliance]
+- [Relevant NFR, e.g. p99 latency below 100 ms]
+- [Cost, learning curve, deadline or compliance]
 
-## Opções Consideradas
+## Considered Options
 
-- [Opção 1]
-- [Opção 2]
-- [Opção 3]
+- [Option 1]
+- [Option 2]
+- [Option 3]
 
-## Decisão
+## Decision Outcome
 
-Opção escolhida: **"[Opção 1]"**, porque [justificativa ligada aos fatores acima].
+Chosen option: **"[Option 1]"**, because [rationale tied to the drivers above].
 
-<!-- Se a regra vale só para código novo, diga aqui como o legado será tratado. -->
+<!-- If the rule applies only to new code, state here how legacy code will be handled. -->
 
-### Consequências
+### Consequences
 
-- **Bom:** [benefício concreto].
-- **Ruim:** [trade-off, custo operacional ou limitação assumida] — _mitigação:_ [como reduzir].
-- **Neutro:** [impacto colateral ou ajuste necessário].
+- **Good:** [concrete benefit].
+- **Bad:** [accepted trade-off, operational cost or limitation] — _mitigation:_ [how to reduce it].
+- **Neutral:** [side effect or required adjustment].
 
-### Confirmação
+### Confirmation
 
-[Como verificar a conformidade: teste automatizado, regra de lint/arquitetura, checklist de code review, critério de Go/No-Go.]
+[How to verify compliance: automated test, lint/architecture rule, code review checklist, Go/No-Go criterion.]
 
-## Prós e Contras das Opções <!-- opcional para decisões simples -->
+## Pros and Cons of the Options <!-- optional for simple decisions -->
 
-### [Opção 1]
+### [Option 1]
 
-- **Bom:** porque [argumento].
-- **Ruim:** porque [argumento].
+- **Good:** because [argument].
+- **Bad:** because [argument].
 
-### [Opção 2]
+### [Option 2]
 
-- **Bom:** porque [argumento].
-- **Ruim:** porque [argumento].
+- **Good:** because [argument].
+- **Bad:** because [argument].
 
-## Referências <!-- opcional -->
+## References <!-- optional -->
 
-- [RFC, benchmark, issue ou ADR relacionada]
+- [Related RFC, benchmark, issue or ADR]

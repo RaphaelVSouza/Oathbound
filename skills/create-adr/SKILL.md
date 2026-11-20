@@ -1,20 +1,20 @@
 ---
 name: create-adr
-description: Redige registros de decisão arquitetural (ADRs). Use para propor uma decisão significativa ou atualizar uma ADR em revisão.
+description: Write architectural decision records (ADRs). Use to propose a significant decision or update an ADR under review.
 ---
 
-# Criar uma ADR
+# Create an ADR
 
-1. Consulte o `AGENTS.md` aplicável. Localize o diretório, o template e o guia de ADRs do projeto. Siga o padrão local. Leia o template e apenas as seções do guia pertinentes à tarefa.
-2. Se houver dúvida sobre registrar a decisão, confira o critério do projeto. Na falta dele, considere o impacto arquitetural, as alternativas viáveis e o custo ou risco de reversão.
-3. Para uma nova ADR, confirme que o caminho está livre e que o número segue a convenção local. Quando faltar convenção, use `docs/adr/NNNN-titulo.md` com o próximo número sequencial, contando também ADRs rejeitadas ou substituídas.
-4. Crie a ADR em `Proposed`. Registre a data, quem decide, o contexto, as alternativas viáveis, a decisão proposta, as consequências e como verificar a conformidade. Marque decisões e informações em aberto com `[DECISÃO PENDENTE]`.
-5. Preserve o mérito de ADRs aceitas ou rejeitadas. Para substituir uma decisão, proponha uma nova ADR que referencie a anterior. Aplique mudanças de status só após a decisão dos responsáveis e conforme o guia local.
-6. Informe o caminho editado e as pendências. Deixe aprovação, commit e publicação para os responsáveis.
+1. Consult the applicable `AGENTS.md`. Locate the project's ADR directory, template, and guide. Follow the local standard. Read the template and only the guide sections relevant to the task.
+2. If unsure whether to record the decision, check the project's criteria. If none exist, consider architectural impact, viable alternatives, and the cost or risk of reversal.
+3. For a new ADR, confirm that the path is available and the number follows the local convention. When no convention exists, use `docs/adr/NNNN-title.md` with the next sequential number, also counting rejected or superseded ADRs.
+4. Create the ADR in `Proposed`. Record the date, decision-makers, context, viable alternatives, proposed decision, consequences, and how to verify compliance. Mark open decisions and information with `[DECISION PENDING]`.
+5. Preserve the substance of accepted or rejected ADRs. To replace a decision, propose a new ADR referencing the previous one. Apply status changes only after the responsible parties decide and according to the local guide.
+6. Report the edited path and pending items. Leave approval, commit, and publication to the responsible parties.
 
-## Esqueleto quando faltar template
+## Outline when no template exists
 
-- Metadados `status: Proposed`, `date` no formato `AAAA-MM-DD` e `decision-makers`. Se os responsáveis estiverem em aberto, use uma lista vazia e marque a pendência no corpo.
-- Título que afirma a decisão proposta.
-- Contexto e problema, opções consideradas e decisão com justificativa.
-- Consequências com trade-offs e mitigação, confirmação e referências aplicáveis.
+- Metadata `status: Proposed`, `date` in `YYYY-MM-DD` format, and `decision-makers`. If decision-makers are undecided, use an empty list and mark the pending item in the body.
+- A title that states the proposed decision.
+- Context and problem, options considered, and decision with rationale.
+- Consequences with trade-offs and mitigation, confirmation, and applicable references.

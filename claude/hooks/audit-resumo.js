@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 'use strict';
-// Resumo da trilha de auditoria por mês e agente.
-//   node ~/.claude/hooks/audit-resumo.js [AAAA-MM] [--json]
-// Lê state/agent-audit.jsonl e rotacionados (.1, .2...). Variável: AGENT_AUDIT_DIR.
+// Audit trail summary by month and agent.
+//   node ~/.claude/hooks/audit-resumo.js [YYYY-MM] [--json]
+// Reads state/agent-audit.jsonl and rotated files (.1, .2...). Variable: AGENT_AUDIT_DIR.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -15,7 +15,7 @@ function lerLinhas(dir) {
   for (const n of nomes) {
     for (const l of fs.readFileSync(path.join(dir, n), 'utf8').split('\n')) {
       if (!l.trim()) continue;
-      try { out.push(JSON.parse(l)); } catch { /* linha corrompida: ignora */ }
+      try { out.push(JSON.parse(l)); } catch { /* corrupt line: skip */ }
     }
   }
   return out;
@@ -30,20 +30,20 @@ function resumir(registros, mes) {
     const e = (a[r.agente || '?'] ||= { chamadas: 0, bloqueios: 0, erros: 0, sessoes: new Set(), agentes: new Set(), ferramentas: {}, motivos: {}, pares: {} });
     if (r.sessao) e.sessoes.add(r.sessao);
     if (r.agent_id) e.agentes.add(r.agent_id);
-    // Chamada negada gera duas linhas (a da chamada, pelo hook global, e a da negação, pelo guard,
-    // com bloqueado:true). A linha com bloqueado:true conta só como bloqueio; a chamada já foi contada.
-    // Negação sem a linha da chamada (dado antigo, hook global que falhou) vira órfã e é somada abaixo.
+    // A denied call generates two lines (the call from the global hook and the denial from the guard,
+    // with bloqueado:true). The bloqueado:true line counts only as a block; the call was already counted.
+    // A denial without the call line (old data, failed global hook) becomes an orphan and is added below.
     const chave = JSON.stringify([r.agent_id, r.ferramenta, r.tool_use_id ?? r.alvo]);
     const p = (e.pares[chave] ||= { chamadas: 0, bloqueios: 0, ferramenta: r.ferramenta });
     if (r.bloqueado) {
       e.bloqueios++;
       p.bloqueios++;
-      const mo = r.motivo || 'sem motivo';
+      const mo = r.motivo || 'no reason';
       e.motivos[mo] = (e.motivos[mo] || 0) + 1;
     } else {
       e.chamadas++;
       p.chamadas++;
-      if (r.erro) e.erros++; // payload ilegível, grande ou lento: a chamada existiu, o conteúdo não foi lido
+      if (r.erro) e.erros++; // unreadable, large, or slow payload: the call existed, its content was not read
       e.ferramentas[r.ferramenta] = (e.ferramentas[r.ferramenta] || 0) + 1;
     }
   }
@@ -73,17 +73,17 @@ function formatar(res) {
   const L = [];
   for (const m of Object.keys(res).sort()) {
     L.push(`## ${m}`);
-    L.push('agente\texecuções\tchamadas\tbloqueios\ttaxa\tferramentas');
+    L.push('agent\truns\tcalls\tblocks\trate\ttools');
     for (const [n, e] of Object.entries(res[m]).sort((a, b) => b[1].chamadas - a[1].chamadas)) {
       const f = Object.entries(e.ferramentas).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}:${v}`).join(' ');
       L.push(`${n}\t${e.execucoes}\t${e.chamadas}\t${e.bloqueios}\t${(e.taxa_bloqueio * 100).toFixed(1)}%\t${f}`);
     }
     const mot = {};
     for (const e of Object.values(res[m])) for (const [k, v] of Object.entries(e.motivos)) mot[k] = (mot[k] || 0) + v;
-    for (const [k, v] of Object.entries(mot).sort((a, b) => b[1] - a[1]).slice(0, 5)) L.push(`  bloqueio x${v}: ${k}`);
+    for (const [k, v] of Object.entries(mot).sort((a, b) => b[1] - a[1]).slice(0, 5)) L.push(`  block x${v}: ${k}`);
     L.push('');
   }
-  return L.join('\n') || 'sem registros\n';
+  return L.join('\n') || 'no records\n';
 }
 
 module.exports = { lerLinhas, resumir, formatar };

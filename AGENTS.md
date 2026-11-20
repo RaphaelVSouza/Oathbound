@@ -1,11 +1,11 @@
-# Instruções do Oathbound
+# Oathbound Instructions
 
-- Mantenha este repositório independente de regras, hosts, caminhos e segredos de um projeto consumidor.
-- Coloque o fluxo comum nas skills, nos agentes e nos hooks; configure exceções no `AGENTS.md` do projeto que instala o pacote.
-- Para redigir ADRs deste repositório, use o [template de ADR](docs/adr/adr-template.md) e consulte as seções pertinentes do [guia de ADRs](docs/adr/como-escrever-adr.md).
-- Ao trabalhar neste repositório, use somente skills e subagentes globais para conduzir tarefas. Os deste repositório estão em desenvolvimento e podem ser inspecionados, editados e validados; execute-os somente quando o usuário solicitar seu teste explicitamente.
-- Ao mudar comportamento, atualize `VERSION`, `CHANGELOG.md` e a referência correspondente na mesma entrega.
-- Não sobrescreva instalações existentes automaticamente. Preserve alterações locais e apresente o diff de atualização.
-- Descreva somente validações realmente executadas.
-- Para auditoria de links e documentos do próprio pacote, consulte `tools/README.md` e a configuração em `tools/audit-docs.config.js`.
-- No Windows, use comandos nativos do RTK: `rtk read <arquivo>` para leitura completa e `rtk rg -n -C 5 <padrão> <arquivo>` para trechos. Não passe cmdlets PowerShell ao `rtk`.
+- Keep this repository independent of consumer project rules, hosts, paths, and secrets.
+- Put shared workflows in skills, agents, and hooks; configure exceptions in the installing project's `AGENTS.md`.
+- When writing ADRs for this repository, use the [ADR template](docs/adr/adr-template.md) and consult relevant sections of the [ADR guide](docs/adr/como-escrever-adr.md).
+- When working in this repository, use only global skills and subagents to carry out tasks. Repository skills and agents are under development and may be inspected, edited, and validated; execute them only when the user explicitly requests testing them.
+- When changing behavior, update `VERSION`, `CHANGELOG.md`, and the corresponding reference in the same delivery.
+- Do not automatically overwrite existing installations. Preserve local changes and present the upgrade diff.
+- Describe only validations actually performed.
+- To audit links and documents in this package, consult `tools/README.md` and the configuration in `tools/audit-docs.config.js`.
+- On Windows, use native RTK commands: `rtk read <file>` for full reads and `rtk rg -n -C 5 <pattern> <file>` for excerpts. Do not pass PowerShell cmdlets to `rtk`.

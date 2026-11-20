@@ -1,9 +1,9 @@
 {
   "name": "oathbound",
   "displayName": "Oathbound",
-  "version": "0.50.0-alpha.37",
+  "version": "0.50.0-alpha.38",
   "logo": "assets/logo.svg",
-  "description": "Governança de subagentes e skills de engenharia para Antigravity CLI (agy).",
+  "description": "Subagent governance and engineering skills for Antigravity CLI (agy).",
   "author": {
     "name": "Raphael Vieira"
   },

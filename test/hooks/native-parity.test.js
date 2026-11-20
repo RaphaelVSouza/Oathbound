@@ -27,7 +27,7 @@ function runHook(subcmd, input, env = process.env) {
   });
 }
 
-test('native hook: plugin-agent-guard aplica guards por agent_type', { skip: !fs.existsSync(BIN) }, () => {
+test('native hook: plugin-agent-guard applies guards by agent_type', { skip: !fs.existsSync(BIN) }, () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-native-test-'));
   const env = { ...process.env, AGENT_AUDIT_DIR: tmpDir };
   try {
@@ -64,7 +64,7 @@ test('native hook: plugin-agent-guard aplica guards por agent_type', { skip: !fs
     }
 
     const assayerCommit = runHook('plugin-agent-guard', { ...commit, agent_type: 'oathbound:assayer' }, env);
-    assert.match(JSON.parse(assayerCommit.stdout).hookSpecificOutput.permissionDecisionReason, /leitura/);
+    assert.match(JSON.parse(assayerCommit.stdout).hookSpecificOutput.permissionDecisionReason, /read-only/);
 
     const other = runHook('plugin-agent-guard', { ...read151, agent_type: 'outro:scout' }, env);
     assert.equal(other.stdout, '');
@@ -76,7 +76,7 @@ test('native hook: plugin-agent-guard aplica guards por agent_type', { skip: !fs
   }
 });
 
-test('native hook: agent-audit grava linha JSONL sem stdout', { skip: !fs.existsSync(BIN) }, () => {
+test('native hook: agent-audit writes a JSONL line without stdout', { skip: !fs.existsSync(BIN) }, () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-native-audit-'));
   const env = { ...process.env, AGENT_AUDIT_DIR: tmpDir };
   try {
@@ -106,7 +106,7 @@ test('native hook: agent-audit grava linha JSONL sem stdout', { skip: !fs.exists
   }
 });
 
-test('hooks Codex registram ciclo de vida e bloqueiam apenas o comando avaliado', { skip: !fs.existsSync(BIN) }, t => {
+test('Codex hooks record lifecycle and block only the evaluated command', { skip: !fs.existsSync(BIN) }, t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-codex-audit-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   const env = { ...process.env, AGENT_AUDIT_DIR: dir };
@@ -129,7 +129,7 @@ test('hooks Codex registram ciclo de vida e bloqueiam apenas o comando avaliado'
   assert.equal(JSON.parse(denied.stdout).hookSpecificOutput.permissionDecision, 'deny');
 });
 
-test('native hook: statusline formata workspace, vcs, modelo, contexto, quota e subagentes', { skip: !fs.existsSync(BIN) }, () => {
+test('native hook: statusline formats workspace, vcs, model, context, quota, and subagents', { skip: !fs.existsSync(BIN) }, () => {
   const repoRoot = path.resolve(__dirname, '..', '..');
   const payload = {
     workspace: { current_dir: repoRoot },

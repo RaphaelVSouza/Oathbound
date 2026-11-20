@@ -1,22 +1,22 @@
 ---
 name: grill-me
 description: >-
-  Entrevista estruturada em rodadas de perguntas para fechar requisitos, plano ou
-  decisões de design antes de implementar. Ative SOMENTE quando o usuário pedir
-  /grill-me, "me sabatine", "faça perguntas" ou quando a arquitetura tiver
-  ambiguidades reais que exijam alinhamento.
+  Conduct a structured interview in question rounds to settle requirements,
+  plans, or design decisions before implementation. Activate ONLY when the user
+  requests /grill-me, "grill me", "ask questions", or when the architecture has
+  genuine ambiguities that require alignment.
 ---
 
 # Grill Me
 
-Entreviste o usuário de forma implacável, uma decisão por vez, até resolver todas as ramificações do plano ou design.
+Interview the user relentlessly, one decision at a time, until every branch of the plan or design is resolved.
 
-Assuma que quem acionou é um engenheiro de software: pule explicações básicas e vá direto a contratos, invariantes, trade-offs, modos de falha e casos de borda.
+Assume the requester is a software engineer: skip basic explanations and go straight to contracts, invariants, trade-offs, failure modes, and edge cases.
 
-## Regras
+## Rules
 
-1. **Explore antes de perguntar:** Se uma dúvida puder ser respondida lendo o código ou docs do projeto, leia primeiro (ou use `scout`) — não pergunte o óbvio ao usuário.
-2. **Uma pergunta / bloco focado por rodada:** Use a ferramenta interativa de perguntas do ambiente (quando disponível) ou perguntas numeradas curtas, percorrendo cada ramo da árvore de decisões e resolvendo dependências uma a uma.
-3. **Dê sua recomendação:** Em cada pergunta com trade-off, indique qual opção recomenda e o motivo em 1 linha.
-4. **Pare quando fechar:** Não invente perguntas extras depois que escopo, contratos, casos de borda e validação estiverem definidos.
-5. **Resumo final:** Ao encerrar, entregue um resumo compacto das decisões fechadas antes de partir para a implementação (ou aguarde `ok`).
+1. **Explore before asking:** If reading project code or docs can answer a question, read first (or use `scout`) — do not ask the user the obvious.
+2. **One question / focused block per round:** Use the environment's interactive question tool (when available) or short numbered questions, traversing each branch of the decision tree and resolving dependencies one at a time.
+3. **Give your recommendation:** For each question involving a trade-off, state which option you recommend and why in 1 line.
+4. **Stop when settled:** Do not invent extra questions once scope, contracts, edge cases, and validation are defined.
+5. **Final summary:** When finished, deliver a compact summary of settled decisions before starting implementation (or wait for `ok`).

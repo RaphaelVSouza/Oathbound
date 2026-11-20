@@ -80,22 +80,22 @@ pub fn avaliar(payload: &Value) -> Option<String> {
         .and_then(|v| v.get("command"))
         .and_then(|v| v.as_str())
     else {
-        return Some("comando vazio ou ausente".to_string());
+        return Some("empty or missing command".to_string());
     };
     if cmd.trim().is_empty() {
-        return Some("comando vazio ou ausente".to_string());
+        return Some("empty or missing command".to_string());
     }
 
     let lower = cmd.to_ascii_lowercase();
 
     if lower.contains("git") {
         if let Some(m) = re_git_mut().captures(cmd) {
-            return Some(format!("git {} muda histórico, estado ou remoto", &m[1]));
+            return Some(format!("git {} changes history, state, or remote", &m[1]));
         }
         if lower.contains("branch") || lower.contains("tag") || lower.contains("reflog") {
             if let Some(m) = re_git_ref().captures(cmd) {
                 let sub = m[1].split_whitespace().next().unwrap_or("");
-                return Some(format!("git {sub} apaga ou move referência"));
+                return Some(format!("git {sub} deletes or moves a reference"));
             }
         }
     }
@@ -110,32 +110,32 @@ pub fn avaliar(payload: &Value) -> Option<String> {
         || lower.contains("shred")
     {
         if let Some(m) = re_remove().captures(cmd) {
-            return Some(format!("{} remove arquivo ou pasta", &m[1]));
+            return Some(format!("{} removes a file or directory", &m[1]));
         }
     }
 
     if lower.contains("find") && re_find().is_match(cmd) {
-        return Some("find com ação de remoção/execução".to_string());
+        return Some("find with a delete/execute action".to_string());
     }
 
     if lower.contains("gh") && re_gh().is_match(cmd) {
-        return Some("gh faz escrita remota".to_string());
+        return Some("gh performs a remote write".to_string());
     }
 
     if lower.contains("publish") && re_publish().is_match(cmd) {
-        return Some("publish é escrita remota".to_string());
+        return Some("publish is a remote write".to_string());
     }
 
     if (lower.contains("sh") || lower.contains("cmd") || lower.contains("powershell"))
         && re_shell_wrapper().is_match(cmd)
     {
-        return Some("wrapper de shell esconde o comando real".to_string());
+        return Some("shell wrapper hides the actual command".to_string());
     }
 
     if (lower.contains("eval") || lower.contains("invoke-expression") || lower.contains("iex"))
         && re_eval().is_match(cmd)
     {
-        return Some("eval/Invoke-Expression esconde o comando real".to_string());
+        return Some("eval/Invoke-Expression hides the actual command".to_string());
     }
 
     None

@@ -1,18 +1,18 @@
 'use strict';
-// Verificadores do contrato de saída de cada agente e leitor do stream-json do `claude -p`.
-// Funções puras: testadas offline em contratos.test.js, sem custo.
+// Output contract checkers for each agent and a stream-json reader for `claude -p`.
+// Pure functions: tested offline in contratos.test.js, at no cost.
 
 const nl = (t) => String(t || '').split(/\r?\n/).filter((l) => l.trim() !== '');
 
 const tem = (re) => (t) => re.test(t);
-const lacunas = tem(/^LACUNAS:[ \t]+\S/m);
+const lacunas = tem(/^GAPS:[ \t]+\S/m);
 
 function revisarCobertura(texto) {
   const linhas = nl(texto);
   const pendencias = linhas.pop();
   const cobertura = linhas.pop();
-  if (!/^COBERTURA: (completa|parcial)$/.test(cobertura) || !lacunas(pendencias)) return false;
-  if (cobertura === 'COBERTURA: parcial' && /^LACUNAS:\s+nenhuma\.?\s*$/i.test(pendencias)) return false;
+  if (!/^COVERAGE: (complete|partial)$/.test(cobertura) || !lacunas(pendencias)) return false;
+  if (cobertura === 'COVERAGE: partial' && /^GAPS:\s+none\.?\s*$/i.test(pendencias)) return false;
   if (linhas.length === 1 && /^No issues\.?$/.test(linhas[0])) return true;
   const total = linhas.pop();
   const achado = /^\S.*:\d+: (🔴 bug|🟡 risk|🔵 nit|❓ question): /;
@@ -20,84 +20,84 @@ function revisarCobertura(texto) {
 }
 
 function conferirContagem(texto, totalAfirmacoes) {
-  const vereditos = [...texto.matchAll(/^[ \t]*(\d+)\. (CONFIRMADA|REFUTADA|INCONCLUSIVA) — \S/gm)];
-  const totais = texto.match(/^TOTAIS: (\d+) confirmadas, (\d+) refutadas, (\d+) inconclusivas[ \t]*$/m);
+  const vereditos = [...texto.matchAll(/^[ \t]*(\d+)\. (CONFIRMED|REFUTED|INCONCLUSIVE) — \S/gm)];
+  const totais = texto.match(/^TOTALS: (\d+) confirmed, (\d+) refuted, (\d+) inconclusive[ \t]*$/m);
   if (!totais || vereditos.length !== totalAfirmacoes) return false;
   if (!vereditos.every((item, i) => Number(item[1]) === i + 1)) return false;
-  return ['CONFIRMADA', 'REFUTADA', 'INCONCLUSIVA'].every((veredito, i) =>
+  return ['CONFIRMED', 'REFUTED', 'INCONCLUSIVE'].every((veredito, i) =>
     vereditos.filter((item) => item[2] === veredito).length === Number(totais[i + 1]));
 }
 
 function verificarColeta(texto, campo, ferramenta, { usos, resultados }) {
-  const informouLimpo = nl(texto).some((linha) => linha.trim().toLowerCase() === campo + ': limpo');
+  const informouLimpo = nl(texto).some((linha) => linha.trim().toLowerCase() === campo + ': clean');
   return !informouLimpo || usos.some((uso) =>
     uso.name === ferramenta && resultados.some((resultado) => resultado.id === uso.id && !resultado.erro));
 }
 
 const CHECKS = {
   scout: [
-    ['RESPOSTA', tem(/^RESPOSTA:/m)],
-    ['EVIDÊNCIA ou "não encontrado"', tem(/^EVIDÊNCIAS?:|^RESPOSTA:\s*não encontrado/m)],
-    ['LACUNAS', tem(/^LACUNAS:/m)],
+    ['ANSWER', tem(/^ANSWER:/m)],
+    ['EVIDENCE or "not found"', tem(/^EVIDENCE:|^ANSWER:\s*not found/m)],
+    ['GAPS', tem(/^GAPS:/m)],
   ],
   scholar: [
-    ['RESPOSTA', tem(/^RESPOSTA:/m)],
-    ['FONTES com URL', (t) => /^FONTES:/m.test(t) && /https?:\/\//.test(t)],
-    ['LACUNAS', tem(/^LACUNAS:/m)],
+    ['ANSWER', tem(/^ANSWER:/m)],
+    ['SOURCES with URL', (t) => /^SOURCES:/m.test(t) && /https?:\/\//.test(t)],
+    ['GAPS', tem(/^GAPS:/m)],
   ],
   assayer: [
-    ['achados e totais ou "No issues.", seguidos de COBERTURA e LACUNAS', revisarCobertura],
+    ['findings and totals or "No issues.", followed by COVERAGE and GAPS', revisarCobertura],
   ],
   sentinel: [
-    ['achados com CWE e totals, ou frase de "sem achados"', (t) => {
+    ['findings with CWE and totals, or a "no findings" sentence', (t) => {
       if (/^No security vulnerabilities found in scope\.?$/m.test(t)) return true;
       const achado = /^\S.*:\d+: (🔴 CRITICAL|🟠 HIGH|🟡 MEDIUM|🔵 LOW) \[CWE-\d+\]: /m;
       return achado.test(t) && /^totals: /m.test(t);
     }],
-    ['LACUNAS', lacunas],
+    ['GAPS', lacunas],
   ],
   scribe: [
-    ['MODO', tem(/^MODO:\s*(spec|release)/m)],
-    ['ARQUIVOS', tem(/^ARQUIVOS:/m)],
-    ['PENDÊNCIAS', tem(/^PEND[ÊE]NCIAS:/m)],
+    ['MODE', tem(/^MODE:\s*(spec|release)/m)],
+    ['FILES', tem(/^FILES:/m)],
+    ['PENDING', tem(/^PENDING:/m)],
   ],
   smith: [
-    ['ARQUIVOS', tem(/^ARQUIVOS:/m)],
-    ['ACEITE', tem(/^ACEITE:/m)],
-    ['NOTA', tem(/^NOTA:/m)],
+    ['FILES', tem(/^FILES:/m)],
+    ['ACCEPTANCE', tem(/^ACCEPTANCE:/m)],
+    ['NOTE', tem(/^NOTE:/m)],
   ],
   breaker: [
     ['STATUS', tem(/^STATUS:\s*(PASS|FAIL|BLOCKED)/m)],
-    ['AMBIENTE', tem(/^AMBIENTE:/m)],
-    ['FLUXO', tem(/^FLUXO:/m)],
+    ['ENVIRONMENT', tem(/^ENVIRONMENT:/m)],
+    ['FLOW', tem(/^FLOW:/m)],
     ['CONSOLE', tem(/^CONSOLE:/m)],
     ['NETWORK', tem(/^NETWORK:/m)],
-    ['EVIDÊNCIA', tem(/^EVIDÊNCIA:/m)],
+    ['EVIDENCE', tem(/^EVIDENCE:/m)],
   ],
 };
 
-// Retorna a lista de itens do contrato que falharam (vazia = contrato cumprido).
+// Return the list of failed contract items (empty = contract fulfilled).
 function verificarContrato(agente, texto, contexto = {}) {
   const checks = CHECKS[agente];
-  if (!checks) return [`agente sem contrato definido: ${agente}`];
+  if (!checks) return [`agent without a defined contract: ${agente}`];
   const saida = String(texto || '');
   const falhas = checks.filter(([, fn]) => !fn(saida)).map(([nome]) => nome);
   if (agente === 'scout' && contexto.totalAfirmacoes !== undefined &&
       !conferirContagem(saida, contexto.totalAfirmacoes)) {
-    falhas.push('vereditos e TOTAIS compatíveis com o lote recebido');
+    falhas.push('verdicts and TOTALS matching the received batch');
   }
   if (agente === 'breaker' && contexto.usos && contexto.resultados) {
     if (!verificarColeta(saida, 'console', 'mcp__playwright__browser_console_messages', contexto)) {
-      falhas.push('CONSOLE limpo exige coleta bem-sucedida');
+      falhas.push('CONSOLE clean requires successful collection');
     }
     if (!verificarColeta(saida, 'network', 'mcp__playwright__browser_network_requests', contexto)) {
-      falhas.push('NETWORK limpo exige coleta bem-sucedida');
+      falhas.push('NETWORK clean requires successful collection');
     }
   }
   return falhas;
 }
 
-// Lê as linhas do `--output-format stream-json` e devolve texto final, usos e resultados de ferramenta.
+// Read `--output-format stream-json` lines and return final text, tool uses, and tool results.
 function lerStream(saida) {
   const usos = [];
   const resultados = [];

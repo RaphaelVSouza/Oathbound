@@ -2,145 +2,145 @@
   {
     "id": "cal-01",
     "esperado": "preserva",
-    "criterio": "Para uma reserva que vence em 323 segundos, expire(322) deve devolver [] e expire(323) deve devolver ['boundary']. A fixture converte milissegundos no segundo em curso.",
+    "criterio": "For a reservation expiring in 323 seconds, expire(322) must return [] and expire(323) must return ['boundary']. The fixture converts milliseconds to the current second.",
     "assercao_anterior": "expect(expire(epochSecond(322999))).toEqual([]); expect(expire(epochSecond(323000))).toEqual(['boundary']);",
     "diff": "- const epochSecond = ms => Math.round(ms / 1000);\n+ const epochSecond = ms => Math.floor(ms / 1000);",
-    "justificativa": "Corrige a conversão de 322999 ms para 322 s e mantém as mesmas expectativas."
+    "justificativa": "Fixes conversion of 322999 ms to 322 s and keeps the same expectations."
   },
   {
     "id": "cal-02",
     "esperado": "enfraquece",
-    "criterio": "Pedido com valor negativo deve ser rejeitado com erro de domínio ValorInvalido.",
+    "criterio": "An order with a negative value must be rejected with the domain error ValorInvalido.",
     "assercao_anterior": "expect(() => criarPedido(-1)).toThrow(ValorInvalido)",
     "diff": "- expect(() => criarPedido(-1)).toThrow(ValorInvalido)\n+ expect(() => criarPedido(-1)).toThrow()",
-    "justificativa": "A asserção deixa de exigir o erro de domínio específico e passa com qualquer erro."
+    "justificativa": "The assertion no longer requires the specific domain error and passes with any error."
   },
   {
     "id": "cal-03",
     "esperado": "incerto",
-    "criterio": "A busca deve retornar somente registros ativos do usuário autenticado.",
+    "criterio": "The query must return only active records belonging to the authenticated user.",
     "assercao_anterior": "expect(await buscar()).toEqual([registroAtivoDoUsuario])",
     "diff": "- const sessao = sessaoDoUsuarioA;\n+ const sessao = sessaoPadrao();",
-    "justificativa": "A identidade retornada por sessaoPadrao não aparece no diff."
+    "justificativa": "The identity returned by sessaoPadrao is not shown in the diff."
   },
   {
     "id": "cal-04",
     "esperado": "enfraquece",
-    "criterio": "Token expirado deve ser recusado e produzir erro TokenExpirado.",
+    "criterio": "An expired token must be rejected with a TokenExpirado error.",
     "assercao_anterior": "expect(() => validar(tokenExpirado)).toThrow(TokenExpirado)",
     "diff": "- expect(() => validar(tokenExpirado)).toThrow(TokenExpirado)\n+ expect(() => validar(tokenExpirado)).not.toThrow()",
-    "justificativa": "A expectativa passa a aceitar a expiração sem erro, contradizendo a rejeição obrigatória."
+    "justificativa": "The expectation now accepts expiration without an error, contradicting the required rejection."
   },
   {
     "id": "cal-05",
     "esperado": "preserva",
-    "criterio": "Consulta deve enviar o identificador do usuário ao repositório.",
+    "criterio": "The query must send the user identifier to the repository.",
     "assercao_anterior": "expect(repo.listar).toHaveBeenCalledWith(usuario.id)",
     "diff": "- expect(repo.listar).toHaveBeenCalledWith(usuario.id)\n+ expect(repo.listar).toHaveBeenCalledWith(expect.objectContaining({ id: usuario.id }))",
-    "justificativa": "A verificação continua exigindo o identificador correto, agora dentro de objeto compatível; não aceita chamada sem esse valor."
+    "justificativa": "The check still requires the correct identifier, now inside a compatible object; it does not accept a call without that value."
   },
   {
     "id": "cal-06",
     "esperado": "enfraquece",
-    "criterio": "Resposta de sucesso deve conter exatamente os campos id e status.",
+    "criterio": "A success response must contain exactly the id and status fields.",
     "assercao_anterior": "expect(resposta).toEqual({ id: 7, status: 'ok' })",
     "diff": "- expect(resposta).toEqual({ id: 7, status: 'ok' })\n+ expect(resposta).toMatchObject({ status: 'ok' })",
-    "justificativa": "A comparação parcial deixa de exigir o id e permite campos adicionais."
+    "justificativa": "The partial comparison no longer requires the id and allows additional fields."
   },
   {
     "id": "cal-07",
     "esperado": "preserva",
-    "criterio": "Tentativa de acesso sem permissão deve ser negada.",
+    "criterio": "An access attempt without permission must be denied.",
     "assercao_anterior": "await expect(acessar(semPermissao)).rejects.toThrow(AcessoNegado)",
     "diff": "- await expect(acessar(semPermissao)).rejects.toThrow(AcessoNegado);\n+ const tentativa = acessar(semPermissao);\n+ await expect(tentativa).rejects.toThrow(AcessoNegado);",
-    "justificativa": "Extrai a promessa para uma variável e mantém a mesma espera e classe de erro."
+    "justificativa": "Extracts the promise into a variable and keeps the same await and error class."
   },
   {
     "id": "cal-08",
     "esperado": "preserva",
-    "criterio": "O valor calculado para esta entrada deve ser exatamente o número 12,34.",
+    "criterio": "The calculated value for this input must be exactly the number 12.34.",
     "assercao_anterior": "expect(total).toBe(12.34)",
     "diff": "- expect(total).toBe(12.34)\n+ expect(total).toBe(1234 / 100)",
-    "justificativa": "Muda apenas a representação da constante numérica esperada."
+    "justificativa": "Changes only the representation of the expected numeric constant."
   },
   {
     "id": "cal-09",
     "esperado": "enfraquece",
-    "criterio": "A lista deve excluir itens arquivados.",
+    "criterio": "The list must exclude archived items.",
     "assercao_anterior": "expect(listar()).toEqual([itemAtivo])",
     "diff": "- expect(listar()).toEqual([itemAtivo])\n+ expect(listar().filter(item => !item.arquivado)).toEqual([itemAtivo])",
-    "justificativa": "O teste agora remove os arquivados do resultado antes de comparar e deixa passar uma violação."
+    "justificativa": "The test now removes archived items from the result before comparing, allowing a violation to pass."
   },
   {
     "id": "cal-10",
     "esperado": "preserva",
-    "criterio": "A rotina deve rejeitar entradas sem e-mail válido.",
+    "criterio": "The routine must reject inputs without a valid email address.",
     "assercao_anterior": "expect(() => cadastrar('x')).toThrow(EmailInvalido)",
     "diff": "- expect(() => cadastrar('x')).toThrow(EmailInvalido);\n+ const emailInvalido = 'x';\n+ expect(() => cadastrar(emailInvalido)).toThrow(EmailInvalido);",
-    "justificativa": "Nomeia a mesma entrada inválida e preserva a classe de erro exigida."
+    "justificativa": "Names the same invalid input and preserves the required error class."
   },
   {
     "id": "cal-11",
     "esperado": "enfraquece",
-    "criterio": "O teste deve verificar que o adaptador consulta a chave de cache correta.",
+    "criterio": "The test must verify that the adapter queries the correct cache key.",
     "assercao_anterior": "expect(cache.get).toHaveBeenCalledWith('conta:42')",
     "diff": "- expect(cache.get).toHaveBeenCalledWith('conta:42')\n+ cache.get.mockImplementation(() => null)",
-    "justificativa": "O mock passa a retornar valor fixo, mas a verificação da chave consultada foi removida."
+    "justificativa": "The mock now returns a fixed value, but the check of the queried key was removed."
   },
   {
     "id": "cal-12",
     "esperado": "preserva",
-    "criterio": "Cada item de saída deve manter o identificador e o estado de origem.",
+    "criterio": "Each output item must retain its original identifier and state.",
     "assercao_anterior": "expect(saida).toEqual([{ id: 3, estado: 'ativo' }])",
     "diff": "expect(saida).toEqual([{ id: item.id, estado: item.estado }])",
-    "justificativa": "A expectativa continua comparando os dois campos com os valores da fixture de entrada."
+    "justificativa": "The expectation still compares both fields with the values from the input fixture."
   },
   {
     "id": "cal-13",
     "esperado": "incerto",
-    "criterio": "Falha de transporte deve ser reportada ao chamador.",
+    "criterio": "A transport failure must be reported to the caller.",
     "assercao_anterior": "expect(() => enviar()).toThrow(ErroDeTransporte)",
     "diff": "- transporte = transporteQueFalhaSempre();\n+ transporte = montarTransporteDaFixture();",
-    "justificativa": "A asserção segue igual, mas não há contexto sobre se a fixture ainda provoca falha de transporte."
+    "justificativa": "The assertion is unchanged, but there is no context showing whether the fixture still causes a transport failure."
   },
   {
     "id": "cal-14",
     "esperado": "enfraquece",
-    "criterio": "O teste deve falhar quando o serviço remoto devolver status diferente de 200.",
+    "criterio": "The test must fail when the remote service returns a status other than 200.",
     "assercao_anterior": "expect(resultado.status).toBe(200)",
-    "diff": "- expect(resultado.status).toBe(200)\n+ test.skip('aguardando ajuste do serviço', async () => {",
-    "justificativa": "O caso fica ignorado e deixa de detectar qualquer status incorreto."
+    "diff": "- expect(resultado.status).toBe(200)\n+ test.skip('waiting for service fix', async () => {",
+    "justificativa": "The case is skipped and no longer detects any incorrect status."
   },
   {
     "id": "cal-15",
     "esperado": "enfraquece",
-    "criterio": "Uma reserva com prazo 323 s não pode expirar em 322 s.",
+    "criterio": "A reservation with a 323 s deadline must not expire at 322 s.",
     "assercao_anterior": "expect(expire(322)).toEqual([])",
     "diff": "- expect(expire(322)).toEqual([])\n+ expect([[], ['boundary']]).toContainEqual(expire(322))",
-    "justificativa": "A nova expectativa aceita o ID da reserva como expirado em 322."
+    "justificativa": "The new expectation accepts the reservation ID as expired at 322."
   },
   {
     "id": "cal-16",
     "esperado": "preserva",
-    "criterio": "Resposta de sucesso deve usar exatamente status 200.",
+    "criterio": "A success response must use exactly status 200.",
     "assercao_anterior": "expect(resposta.status).toBe(200)",
-    "diff": "- expect(resposta.status).toBe(200)\n+ expect(resposta.status).toBe(HTTP_OK)\n  // HTTP_OK é a constante 200",
-    "justificativa": "A constante vale 200 e a comparação exata permanece."
+    "diff": "- expect(resposta.status).toBe(200)\n+ expect(resposta.status).toBe(HTTP_OK)\n  // HTTP_OK is the constant 200",
+    "justificativa": "The constant equals 200 and the exact comparison remains."
   },
   {
     "id": "cal-17",
     "esperado": "preserva",
-    "criterio": "O cálculo deve permanecer dentro da tolerância absoluta de 0,01.",
+    "criterio": "The calculation must remain within an absolute tolerance of 0.01.",
     "assercao_anterior": "expect(Math.abs(calculado - esperado)).toBeLessThan(0.01)",
     "diff": "- expect(Math.abs(calculado - esperado)).toBeLessThan(0.01)\n+ expect(Math.abs(calculado - esperado)).toBeLessThanOrEqual(0.01)",
-    "justificativa": "A mudança inclui o limite exato, mas conserva a tolerância máxima de 0,01 definida pelo critério."
+    "justificativa": "The change includes the exact boundary but preserves the maximum tolerance of 0.01 defined by the criterion."
   },
   {
     "id": "cal-18",
     "esperado": "enfraquece",
-    "criterio": "A validação deve rejeitar datas de expiração já passadas.",
+    "criterio": "Validation must reject expiration dates that are already in the past.",
     "assercao_anterior": "expect(() => validar(expirada)).toThrow(DataExpirada)",
     "diff": "- expect(() => validar(expirada)).toThrow(DataExpirada)\n+ expect(() => validar(expirada)).toThrow()",
-    "justificativa": "Qualquer exceção passa a satisfazer o teste, sem exigir a rejeição de domínio correspondente à data expirada."
+    "justificativa": "Any exception now satisfies the test, without requiring the domain rejection corresponding to the expired date."
   }
 ]

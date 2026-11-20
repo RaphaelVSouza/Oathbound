@@ -20,16 +20,16 @@ function runGit(args, cwd) {
 }
 
 /**
- * Atualiza VERSION e os manifestos de plugin para a versão informada.
- * Opcionalmente cria commit e tag anotada `v<semver>` no Git.
- * @param {string} nextVersion Versão SemVer (ex.: 0.50.0-alpha.5).
- * @param {string} [rootDir] Diretório raiz do repositório.
- * @param {{ commit?: boolean, tag?: boolean }} [options] Opções Git.
- * @returns {string[]} Caminhos relativos atualizados.
+ * Update VERSION and plugin manifests to the specified version.
+ * Optionally create a Git commit and annotated `v<semver>` tag.
+ * @param {string} nextVersion SemVer version (e.g., 0.50.0-alpha.5).
+ * @param {string} [rootDir] Repository root directory.
+ * @param {{ commit?: boolean, tag?: boolean }} [options] Git options.
+ * @returns {string[]} Updated relative paths.
  */
 function bumpVersion(nextVersion, rootDir = path.resolve(__dirname, '..'), options = {}) {
   if (!nextVersion || !SEMVER_RE.test(nextVersion)) {
-    throw new Error('Uso: node tools/bump-version.cjs <semver> [--commit] [--tag]');
+    throw new Error('Usage: node tools/bump-version.cjs <semver> [--commit] [--tag]');
   }
   const shouldTag = Boolean(options.tag);
   const shouldCommit = Boolean(options.commit) || shouldTag;
@@ -38,7 +38,7 @@ function bumpVersion(nextVersion, rootDir = path.resolve(__dirname, '..'), optio
   if (shouldTag) {
     const existing = runGit(['tag', '--list', tagName], rootDir);
     if (existing === tagName) {
-      throw new Error(`Tag Git já existe: ${tagName}`);
+      throw new Error(`Git tag already exists: ${tagName}`);
     }
   }
 
@@ -75,11 +75,11 @@ function parseCliArgs(argv) {
       options.tag = true;
       options.commit = true;
     } else if (arg.startsWith('-')) {
-      throw new Error(`Opção desconhecida: ${arg}`);
+      throw new Error(`Unknown option: ${arg}`);
     } else if (!version) {
       version = arg;
     } else {
-      throw new Error(`Argumento inesperado: ${arg}`);
+      throw new Error(`Unexpected argument: ${arg}`);
     }
   }
   return { version, options };
@@ -91,7 +91,7 @@ if (require.main === module) {
     const updated = bumpVersion(version, path.resolve(__dirname, '..'), options);
     const extras = [options.commit ? 'commit' : '', options.tag ? `tag v${version}` : ''].filter(Boolean);
     const suffix = extras.length > 0 ? ` (${extras.join(' + ')})` : '';
-    console.log(`Versão atualizada em: ${updated.join(', ')}${suffix}`);
+    console.log(`Version updated in: ${updated.join(', ')}${suffix}`);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

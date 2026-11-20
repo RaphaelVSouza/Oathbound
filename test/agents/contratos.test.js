@@ -1,46 +1,46 @@
 'use strict';
-// Teste offline (custo zero) dos verificadores. Rode: node test/agents/contratos.test.js
+// Offline test (zero cost) of the checkers. Run: node test/agents/contratos.test.js
 const assert = require('node:assert');
 const { verificarContrato, lerStream } = require('./contratos.js');
 
 const bons = {
-  scout: 'RESPOSTA: comando X\nEVIDÊNCIA:\n  - a.md:24 — trecho\nLACUNAS: nenhuma',
-  scholar: 'RESPOSTA: sim\nFONTES: https://code.claude.com/docs/x — seção\nLACUNAS: nenhuma',
-  assayer: 'No issues.\nCOBERTURA: completa\nLACUNAS: nenhuma',
-  sentinel: 'No security vulnerabilities found in scope.\nLACUNAS: nenhuma',
-  scribe: 'MODO: release\nARQUIVOS: a.md — criado\nPENDÊNCIAS: nenhuma',
-  smith: 'ARQUIVOS: a — mudança\nACEITE: cmd → ok\nNOTA: nenhuma',
-  breaker: 'STATUS: PASS\nAMBIENTE: x\nFLUXO: y\nCONSOLE: limpo\nNETWORK: não capturado\nEVIDÊNCIA: nenhuma',
+  scout: 'ANSWER: command X\nEVIDENCE:\n  - a.md:24 — excerpt\nGAPS: none',
+  scholar: 'ANSWER: yes\nSOURCES: https://code.claude.com/docs/x — section\nGAPS: none',
+  assayer: 'No issues.\nCOVERAGE: complete\nGAPS: none',
+  sentinel: 'No security vulnerabilities found in scope.\nGAPS: none',
+  scribe: 'MODE: release\nFILES: a.md — created\nPENDING: none',
+  smith: 'FILES: a — change\nACCEPTANCE: cmd → ok\nNOTE: none',
+  breaker: 'STATUS: PASS\nENVIRONMENT: x\nFLOW: y\nCONSOLE: clean\nNETWORK: not captured\nEVIDENCE: none',
 };
 for (const [ag, txt] of Object.entries(bons)) {
-  assert.deepStrictEqual(verificarContrato(ag, txt), [], `${ag} deveria cumprir`);
+  assert.deepStrictEqual(verificarContrato(ag, txt), [], `${ag} should comply`);
 }
 
-// Variações válidas.
-assert.deepStrictEqual(verificarContrato('scout', 'RESPOSTA: não encontrado\nLACUNAS: nenhuma'), []);
+// Valid variations.
+assert.deepStrictEqual(verificarContrato('scout', 'ANSWER: not found\nGAPS: none'), []);
 assert.deepStrictEqual(verificarContrato('assayer',
-  'a/b.py:42: 🔴 bug: erro. corrija.\nc.py:7: ❓ question: intenção?\ntotals: 1🔴 0🟡 1❓\nCOBERTURA: completa\nLACUNAS: nenhuma'), []);
+  'a/b.py:42: 🔴 bug: error. fix it.\nc.py:7: ❓ question: intent?\ntotals: 1🔴 0🟡 1❓\nCOVERAGE: complete\nGAPS: none'), []);
 assert.deepStrictEqual(verificarContrato('assayer',
-  'No issues.\nCOBERTURA: parcial\nLACUNAS: revisei a.py. b.py ficou pendente por falta de acesso.'), []);
+  'No issues.\nCOVERAGE: partial\nGAPS: reviewed a.py. b.py remains pending due to missing access.'), []);
 assert.deepStrictEqual(verificarContrato('sentinel',
-  'x/y.py:10: 🟡 MEDIUM [CWE-682]: texto. Corrija.\ntotals: 0🔴 0🟠 1🟡 0🔵\nLACUNAS: nenhuma'), []);
+  'x/y.py:10: 🟡 MEDIUM [CWE-682]: text. Fix it.\ntotals: 0🔴 0🟠 1🟡 0🔵\nGAPS: none'), []);
 assert.deepStrictEqual(verificarContrato('sentinel',
-  'No security vulnerabilities found in scope.\nLACUNAS: servico.py:10 chama um controle cuja configuração não foi fornecida.'), []);
+  'No security vulnerabilities found in scope.\nGAPS: servico.py:10 calls a control whose configuration was not provided.'), []);
 
-// A contagem deve corresponder aos vereditos e ao tamanho do pedido.
+// The count must match verdicts and request size.
 const lote = { totalAfirmacoes: 2 };
 const conferido = [
-  'RESPOSTA: conferi as duas afirmações.',
-  'EVIDÊNCIAS:',
-  '1. CONFIRMADA — Publica o status em app.js:10.',
-  '2. INCONCLUSIVA — Falta configuração do ambiente.',
-  'TOTAIS: 1 confirmadas, 0 refutadas, 1 inconclusivas',
-  'LACUNAS: configuração do ambiente.',
+  'ANSWER: checked both claims.',
+  'EVIDENCE:',
+  '1. CONFIRMED — Publishes status in app.js:10.',
+  '2. INCONCLUSIVE — Environment configuration is missing.',
+  'TOTALS: 1 confirmed, 0 refuted, 1 inconclusive',
+  'GAPS: environment configuration.',
 ].join('\n');
 assert.deepStrictEqual(verificarContrato('scout', conferido, lote), []);
 assert.ok(verificarContrato('scout', conferido, { totalAfirmacoes: 3 }).length > 0);
-assert.ok(verificarContrato('scout', conferido.replace('2. INCONCLUSIVA', '1. INCONCLUSIVA'), lote).length > 0);
-assert.ok(verificarContrato('scout', conferido.replace('0 refutadas, 1 inconclusivas', '1 refutadas, 0 inconclusivas'), lote).length > 0);
+assert.ok(verificarContrato('scout', conferido.replace('2. INCONCLUSIVE', '1. INCONCLUSIVE'), lote).length > 0);
+assert.ok(verificarContrato('scout', conferido.replace('0 refuted, 1 inconclusive', '1 refuted, 0 inconclusive'), lote).length > 0);
 
 const coleta = {
   usos: [
@@ -54,39 +54,39 @@ const coleta = {
 };
 assert.deepStrictEqual(verificarContrato('breaker', bons.breaker, coleta), []);
 assert.deepStrictEqual(verificarContrato('breaker', bons.breaker, { usos: [], resultados: [] }),
-  ['CONSOLE limpo exige coleta bem-sucedida']);
-assert.deepStrictEqual(verificarContrato('breaker', bons.breaker.replace('NETWORK: não capturado', 'NETWORK: limpo'), coleta),
-  ['NETWORK limpo exige coleta bem-sucedida']);
+  ['CONSOLE clean requires successful collection']);
+assert.deepStrictEqual(verificarContrato('breaker', bons.breaker.replace('NETWORK: not captured', 'NETWORK: clean'), coleta),
+  ['NETWORK clean requires successful collection']);
 
-// Violações devem falhar.
-assert.ok(verificarContrato('assayer', 'Achei um problema no código.').length > 0, 'prosa não é achado');
-assert.ok(verificarContrato('assayer', 'a.py:1: 🔴 bug: x. y.\nCOBERTURA: completa\nLACUNAS: nenhuma').length > 0, 'achado sem totals');
-assert.ok(verificarContrato('assayer', 'Resumo:\n' + bons.assayer).length > 0, 'prosa antes de No issues');
-assert.ok(verificarContrato('assayer', 'No issues.\nCOBERTURA: parcial').length > 0, 'cobertura parcial sem lacunas');
-assert.ok(verificarContrato('assayer', bons.assayer.replace('completa', 'parcial')).length > 0, 'cobertura parcial exige lacuna concreta');
-assert.ok(verificarContrato('sentinel', 'a.py:1: 🔴 CRITICAL: sem CWE. x\ntotals: 1\nLACUNAS: nenhuma').length > 0, 'sem CWE');
-assert.deepStrictEqual(verificarContrato('sentinel', 'No security vulnerabilities found in scope.'), ['LACUNAS']);
-assert.ok(verificarContrato('scout', 'Resposta: x').length > 0);
-assert.ok(verificarContrato('scholar', 'RESPOSTA: x\nFONTES: nenhuma\nLACUNAS: x').length > 0, 'sem URL');
-assert.ok(verificarContrato('breaker', 'STATUS: OK\nAMBIENTE: x').length > 0);
+// Violations must fail.
+assert.ok(verificarContrato('assayer', 'Found a problem in the code.').length > 0, 'prose is not a finding');
+assert.ok(verificarContrato('assayer', 'a.py:1: 🔴 bug: x. y.\nCOVERAGE: complete\nGAPS: none').length > 0, 'finding without totals');
+assert.ok(verificarContrato('assayer', 'Summary:\n' + bons.assayer).length > 0, 'prose before No issues');
+assert.ok(verificarContrato('assayer', 'No issues.\nCOVERAGE: partial').length > 0, 'partial coverage without gaps');
+assert.ok(verificarContrato('assayer', bons.assayer.replace('complete', 'partial')).length > 0, 'partial coverage requires a concrete gap');
+assert.ok(verificarContrato('sentinel', 'a.py:1: 🔴 CRITICAL: without CWE. x\ntotals: 1\nGAPS: none').length > 0, 'without CWE');
+assert.deepStrictEqual(verificarContrato('sentinel', 'No security vulnerabilities found in scope.'), ['GAPS']);
+assert.ok(verificarContrato('scout', 'Answer: x').length > 0);
+assert.ok(verificarContrato('scholar', 'ANSWER: x\nSOURCES: none\nGAPS: x').length > 0, 'without URL');
+assert.ok(verificarContrato('breaker', 'STATUS: OK\nENVIRONMENT: x').length > 0);
 assert.ok(verificarContrato('inexistente', 'x').length > 0);
-assert.ok(verificarContrato('smith', '').length === 3, 'vazio falha nos 3 itens');
+assert.ok(verificarContrato('smith', '').length === 3, 'empty fails all 3 items');
 
-// Leitor de stream-json.
+// Stream-json reader.
 const stream = [
   '{"type":"system","subtype":"init"}',
   '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"Read","input":{"file_path":"a","limit":50}}]}}',
-  '{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1","is_error":true,"content":"negado"}]}}',
-  '{"type":"assistant","message":{"content":[{"type":"text","text":"rascunho"}]}}',
-  'linha que não é json',
-  '{"type":"result","result":"texto final","total_cost_usd":0.0123}',
+  '{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1","is_error":true,"content":"denied"}]}}',
+  '{"type":"assistant","message":{"content":[{"type":"text","text":"draft"}]}}',
+  'line that is not JSON',
+  '{"type":"result","result":"final text","total_cost_usd":0.0123}',
 ].join('\n');
 const s = lerStream(stream);
-assert.strictEqual(s.texto, 'texto final');
+assert.strictEqual(s.texto, 'final text');
 assert.strictEqual(s.custo, 0.0123);
 assert.strictEqual(s.usos.length, 1);
 assert.strictEqual(s.usos[0].input.limit, 50);
 assert.strictEqual(s.resultados[0].erro, true);
-assert.strictEqual(lerStream('{"type":"assistant","message":{"content":[{"type":"text","text":"so isto"}]}}').texto, 'so isto');
+assert.strictEqual(lerStream('{"type":"assistant","message":{"content":[{"type":"text","text":"only this"}]}}').texto, 'only this');
 
-console.log('ok: contratos');
+console.log('ok: contracts');

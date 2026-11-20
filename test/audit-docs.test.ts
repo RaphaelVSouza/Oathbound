@@ -16,10 +16,10 @@ function createTempWorkspace(t) {
   return dir;
 }
 
-test('auditDocs: valida documentos corretos sem erros nem avisos', t => {
+test('auditDocs: validates correct documents without errors or warnings', t => {
   const dir = createTempWorkspace(t);
-  fs.writeFileSync(path.join(dir, 'README.md'), '# Titulo\n\nVeja o [Guia](guia.md#introducao).\n', 'utf8');
-  fs.writeFileSync(path.join(dir, 'guia.md'), '# Guia\n\n## Introducao\n\nTexto do guia.\n', 'utf8');
+  fs.writeFileSync(path.join(dir, 'README.md'), '# Title\n\nSee the [Guide](guia.md#introduction).\n', 'utf8');
+  fs.writeFileSync(path.join(dir, 'guia.md'), '# Guide\n\n## Introduction\n\nGuide text.\n', 'utf8');
 
   const config = {
     rootDocs: ['README.md', 'guia.md'],
@@ -32,9 +32,9 @@ test('auditDocs: valida documentos corretos sem erros nem avisos', t => {
   assert.equal(res.stats.mdFiles, 2);
 });
 
-test('auditDocs: detecta link quebrado', t => {
+test('auditDocs: detects broken links', t => {
   const dir = createTempWorkspace(t);
-  fs.writeFileSync(path.join(dir, 'README.md'), '# Titulo\n\nVeja o [Arquivo](arquivo-inexistente.md).\n', 'utf8');
+  fs.writeFileSync(path.join(dir, 'README.md'), '# Title\n\nSee the [File](arquivo-inexistente.md).\n', 'utf8');
 
   const config = {
     rootDocs: ['README.md']
@@ -42,12 +42,12 @@ test('auditDocs: detecta link quebrado', t => {
 
   const res = auditDocs({ repoRoot: dir, config });
   assert.equal(res.errors.length, 1);
-  assert.ok(res.errors[0].includes('link quebrado para: arquivo-inexistente.md'));
+  assert.ok(res.errors[0].includes('broken link to: arquivo-inexistente.md'));
 });
 
-test('auditDocs: detecta âncora inexistente', t => {
+test('auditDocs: detects missing anchors', t => {
   const dir = createTempWorkspace(t);
-  fs.writeFileSync(path.join(dir, 'README.md'), '# Titulo\n\nVeja [esta secao](#secao-fantasma).\n', 'utf8');
+  fs.writeFileSync(path.join(dir, 'README.md'), '# Title\n\nSee [this section](#secao-fantasma).\n', 'utf8');
 
   const config = {
     rootDocs: ['README.md'],
@@ -56,12 +56,12 @@ test('auditDocs: detecta âncora inexistente', t => {
 
   const res = auditDocs({ repoRoot: dir, config });
   assert.equal(res.errors.length, 1);
-  assert.ok(res.errors[0].includes('âncora inexistente em README.md: #secao-fantasma'));
+  assert.ok(res.errors[0].includes('missing anchor in README.md: #secao-fantasma'));
 });
 
-test('auditDocs: proíbe referências a arquivo:linha em rootDocs', t => {
+test('auditDocs: forbids file:line references in rootDocs', t => {
   const dir = createTempWorkspace(t);
-  fs.writeFileSync(path.join(dir, 'README.md'), '# Titulo\n\nConsulte o código em app.js:42 para detalhes.\n', 'utf8');
+  fs.writeFileSync(path.join(dir, 'README.md'), '# Title\n\nSee code in app.js:42 for details.\n', 'utf8');
 
   const config = {
     rootDocs: ['README.md']
@@ -69,17 +69,17 @@ test('auditDocs: proíbe referências a arquivo:linha em rootDocs', t => {
 
   const res = auditDocs({ repoRoot: dir, config });
   assert.equal(res.errors.length, 1);
-  assert.ok(res.errors[0].includes('referência a arquivo:linha encontrada'));
+  assert.ok(res.errors[0].includes('file:line reference found'));
 });
 
-test('auditDocs: detecta tabela com coluna de linhas preenchida', t => {
+test('auditDocs: detects tables with populated line columns', t => {
   const dir = createTempWorkspace(t);
   const tableContent = [
-    '# Tabela',
+    '# Table',
     '',
-    '| Arquivo | Linhas | Descrição |',
+    '| File | Lines | Description |',
     '| --- | --- | --- |',
-    '| index.js | 10-20 | Ponto de entrada |'
+    '| index.js | 10-20 | Entry point |'
   ].join('\n');
   fs.writeFileSync(path.join(dir, 'README.md'), tableContent, 'utf8');
 
@@ -89,12 +89,12 @@ test('auditDocs: detecta tabela com coluna de linhas preenchida', t => {
 
   const res = auditDocs({ repoRoot: dir, config });
   assert.equal(res.errors.length, 1);
-  assert.ok(res.errors[0].includes('coluna de linhas preenchida em tabela: 10-20'));
+  assert.ok(res.errors[0].includes('populated line column in table: 10-20'));
 });
 
-test('auditDocs: opera sobre source customizado in-memory (costura)', () => {
+test('auditDocs: works with a custom in-memory source (seam)', () => {
   const virtualFiles = {
-    'DOC.md': Buffer.from('# Doc Virtual\n\nLink quebrado: [X](inexistente.md)\n')
+    'DOC.md': Buffer.from('# Virtual Doc\n\nBroken link: [X](inexistente.md)\n')
   };
 
   const fakeSource = {
@@ -121,12 +121,12 @@ test('auditDocs: opera sobre source customizado in-memory (costura)', () => {
 
   assert.equal(res.stats.sourceLabel, 'virtual source');
   assert.equal(res.errors.length, 1);
-  assert.ok(res.errors[0].includes('link quebrado para: inexistente.md'));
+  assert.ok(res.errors[0].includes('broken link to: inexistente.md'));
 });
 
-test('auditDocs: rejeita termos revogados somente nos documentos ativos configurados', t => {
+test('auditDocs: rejects retired terms only in configured active documents', t => {
   const dir = createTempWorkspace(t);
-  fs.writeFileSync(path.join(dir, 'README.md'), '# Histórico\n\nO antigo mimic foi substituído.\n');
+  fs.writeFileSync(path.join(dir, 'README.md'), '# History\n\nThe former mimic was replaced.\n');
   fs.mkdirSync(path.join(dir, 'guild'));
   fs.writeFileSync(path.join(dir, 'guild', 'paladino.md'), '# Paladino\n\nmimic\n');
   const result = auditDocs({
@@ -138,5 +138,5 @@ test('auditDocs: rejeita termos revogados somente nos documentos ativos configur
     }
   });
   assert.equal(result.errors.length, 1);
-  assert.match(result.errors[0], /guild\/paladino\.md.*termo revogado/);
+  assert.match(result.errors[0], /guild\/paladino\.md.*retired term/);
 });
