@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 128" width="960" height="128" role="img" aria-labelledby="title">
+  <title id="title">Subagentes Oathbound: scout, scholar, scribe, smith, assayer, sentinel, breaker</title>
+  <rect width="960" height="128" rx="16" fill="#1B1A17"/>
+  <rect x="8" y="8" width="944" height="112" rx="11" fill="none" stroke="#7E6134"/>
+  <g fill="#F2ECDF" font-family="monospace" font-size="21" text-anchor="middle">
+  <g transform="translate(96 20)">
+    <g transform="translate(-32)"><path d="M15 6H49A9 9 0 0 0 58 15V49A9 9 0 0 0 49 58H15A9 9 0 0 0 6 49V15A9 9 0 0 0 15 6Z" fill="#2E7A73"/><g stroke="#F2ECDF" stroke-width="3" stroke-linejoin="round"><circle cx="32" cy="32" r="16" fill="none"/><path d="m39 23-3 13-11 5 3-13z" fill="#F2ECDF"/></g></g>
+    <text y="88">scout</text>
+  </g>
+  <g transform="translate(224 20)">
+    <g transform="translate(-32)"><path d="M15 6H49A9 9 0 0 0 58 15V49A9 9 0 0 0 49 58H15A9 9 0 0 0 6 49V15A9 9 0 0 0 15 6Z" fill="#4A4394"/><rect x="19" y="14" width="26" height="36" fill="#F2ECDF"></rect><path d="M24.5 14V50" stroke="#4A4394" stroke-width="2.5"></path><path d="M34 14V31L37.5 27.5L41 31V14Z" fill="#4A4394"></path></g>
+    <text y="88">scholar</text>
+  </g>
+  <g transform="translate(352 20)">
+    <g transform="translate(-32)"><path d="M15 6H49A9 9 0 0 0 58 15V49A9 9 0 0 0 49 58H15A9 9 0 0 0 6 49V15A9 9 0 0 0 15 6Z" fill="#2C5D8F"/><g fill="#F2ECDF"><rect x="17" y="35" width="24" height="15" rx="2"></rect><rect x="23" y="29" width="12" height="7"></rect><rect x="21" y="26.5" width="16" height="3.5" rx="1"></rect></g><ellipse cx="42" cy="17" rx="4.5" ry="10" transform="rotate(34 42 17)" fill="#F2ECDF"></ellipse><path d="M36.5 25L46.5 10" stroke="#2C5D8F" stroke-width="1.6" stroke-linecap="round"></path><path d="M36.6 24.8L32 31" stroke="#F2ECDF" stroke-width="2.5" stroke-linecap="round"></path><path d="M21 40H37" stroke="#2C5D8F" stroke-width="2"></path></g>
+    <text y="88">scribe</text>
+  </g>
+  <g transform="translate(480 20)">
+    <g transform="translate(-32)"><path d="M15 6H49A9 9 0 0 0 58 15V49A9 9 0 0 0 49 58H15A9 9 0 0 0 6 49V15A9 9 0 0 0 15 6Z" fill="#B4502A"/><path d="M14 22H48C48 29 44 32 39 32V38H45V45H19V38H25V32C20 32 16 28 14 22Z" fill="#F2ECDF"></path></g>
+    <text y="88">smith</text>
+  </g>
+  <g transform="translate(608 20)">
+    <g transform="translate(-32)"><path d="M15 6H49A9 9 0 0 0 58 15V49A9 9 0 0 0 49 58H15A9 9 0 0 0 6 49V15A9 9 0 0 0 15 6Z" fill="#5C7F2E"/><circle cx="32" cy="32" r="16" fill="#F2ECDF"></circle><path d="M45.20 32.00L49.00 32.00M41.33 41.33L44.02 44.02M32.00 45.20L32.00 49.00M22.67 41.33L19.98 44.02M18.80 32.00L15.00 32.00M22.67 22.67L19.98 19.98M32.00 18.80L32.00 15.00M41.33 22.67L44.02 19.98" stroke="#5C7F2E" stroke-width="2.2"></path><circle cx="32" cy="32" r="9" fill="#5C7F2E"></circle><path d="M26.5 31A6 6 0 0 1 31 26.5" fill="none" stroke="#F2ECDF" stroke-width="2.2" stroke-linecap="round"></path></g>
+    <text y="88">assayer</text>
+  </g>
+  <g transform="translate(736 20)">
+    <g transform="translate(-32)"><path d="M15 6H49A9 9 0 0 0 58 15V49A9 9 0 0 0 49 58H15A9 9 0 0 0 6 49V15A9 9 0 0 0 15 6Z" fill="#4E5D6C"/><g fill="none" stroke="#F2ECDF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M32 15l13 5v11c0 8-6 14-13 18-7-4-13-10-13-18V20z"/><path d="m26 32 4 4 8-9"/></g></g>
+    <text y="88">sentinel</text>
+  </g>
+  <g transform="translate(864 20)">
+    <g transform="translate(-32)"><path d="M15 6H49A9 9 0 0 0 58 15V49A9 9 0 0 0 49 58H15A9 9 0 0 0 6 49V15A9 9 0 0 0 15 6Z" fill="#7E3B8A"/><path d="M13 43L20 23H44L51 43Z" fill="#F2ECDF"></path><path d="M34 20L29 30L36 35L31 46" fill="none" stroke="#7E3B8A" stroke-width="3.5" stroke-linejoin="bevel"></path></g>
+    <text y="88">breaker</text>
+  </g>
+  </g>
+</svg>

@@ -14,8 +14,14 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 
 1. **Regras de Governança:** O `oathkeeper` aplica o fluxo comum como agente no Claude Code e no Antigravity CLI, e como perfil no Codex CLI. Cada projeto define suas exceções locais.
 2. **Subagentes Especializados:** O `oathkeeper` coordena 7 subagentes: `scout`, `scholar`, `scribe`, `smith`, `assayer`, `sentinel` e `breaker`.
+
+   ![Ícones dos sete subagentes Oathbound](assets/readme-agents.svg)
+
 3. **Skills de Engenharia:** [`api-contract-design`](skills/api-contract-design/SKILL.md), [`create-adr`](skills/create-adr/SKILL.md), [`create-spec`](skills/create-spec/SKILL.md), `diagnosing-bugs`, `grill-me`, [`incident-postmortem`](skills/incident-postmortem/SKILL.md), `migration`, [`refactor-safely`](skills/refactor-safely/SKILL.md), `surgical-patch` e [`test-strategy`](skills/test-strategy/SKILL.md). Skills com tools específicas de CLI suportam override opcional `SKILL.<runner>.md` (ADR 0006). O `scribe` carrega `create-adr` e `create-spec` sob demanda.
 4. **Hooks Determinísticos:** Auditoria e proteção em tempo de execução com `agent-audit`, `readonly-guard`, `read-size-guard` e `destructive-guard` no binário nativo Rust (`native/oathbound-hook`), que também fornece `statusline`. A reescrita de comandos usa os hooks oficiais do RTK.
+
+   ![PreToolUse avalia a ferramenta e permite ou bloqueia sua execução. A auditoria registra eventos dos subagentes.](assets/readme-hooks.svg)
+
 5. **Telemetria, Relatórios e Protótipos:** Inclui `audit-resumo`, módulos de custo e dificuldade (`test/custo`, `test/dificuldade`) e protótipos inativos com Jev (`claude/hooks/skill-suggest.js`, `test/jev/revisar-teste.js`) documentados nos ADRs [docs/adr/0001-sugestao-de-skill-com-jev.md](docs/adr/0001-sugestao-de-skill-com-jev.md), [docs/adr/0002-roteamento-de-subagentes-com-jev.md](docs/adr/0002-roteamento-de-subagentes-com-jev.md) e [docs/adr/0003-jev-revisao-de-testes.md](docs/adr/0003-jev-revisao-de-testes.md).
 
 ---
