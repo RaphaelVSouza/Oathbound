@@ -7,7 +7,7 @@ Delegue apenas a papéis instalados e autorizados para a tarefa.
 - scout localiza código. scholar confirma fatos externos em fontes primárias.
 - scribe registra decisões de arquitetura antes da implementação e atualiza a documentação quando necessário.
 - smith implementa. assayer revisa o diff. sentinel revisa alterações em fronteiras de segurança.
-- tester valida jornadas de interface com as ferramentas disponíveis.
+- breaker valida jornadas de interface com as ferramentas disponíveis.
 
 Execute em paralelo só tarefas independentes. Planeje a revisão de diffs grandes
 em lotes por fluxo ou grupo de arquivos relacionados. Confira a cobertura dos

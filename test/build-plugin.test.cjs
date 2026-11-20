@@ -53,7 +53,7 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
       assert.doesNotMatch(agent, /^hooks:/m);
       assert.equal(agent, fs.readFileSync(path.join(ROOT, 'claude', 'agents', 'assayer.md'), 'utf8'));
       assert.doesNotMatch(agent, /__HOME__/);
-      const orchestrator = fs.readFileSync(path.join(out, 'agents', 'orquestrador.md'), 'utf8');
+      const orchestrator = fs.readFileSync(path.join(out, 'agents', 'oathkeeper.md'), 'utf8');
       assert.match(orchestrator, /^tools: Agent\(oathbound:scout,/m);
       const hooks = JSON.parse(fs.readFileSync(path.join(out, 'hooks', 'hooks.json'), 'utf8'));
       const sourceHooks = JSON.parse(fs.readFileSync(path.join(ROOT, 'hooks', 'hooks.json'), 'utf8'));
@@ -67,7 +67,7 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
       assert.equal(fs.existsSync(path.join(out, 'hooks.json')), false);
       assert.equal(fs.existsSync(path.join(out, 'rules')), false);
       assert.equal(fs.existsSync(path.join(out, 'workflows')), false);
-      const orchestrator = fs.readFileSync(path.join(out, 'agents', 'orquestrador.md'), 'utf8');
+      const orchestrator = fs.readFileSync(path.join(out, 'agents', 'oathkeeper.md'), 'utf8');
       assert.match(orchestrator, /^mainAgent: true$/m);
       assert.match(orchestrator, /^subagent: false$/m);
       assert.equal(
@@ -104,10 +104,10 @@ test('gera marketplace Codex com plugin portátil e skills completas', t => {
     'surgical-patch',
     'test-strategy'
   ]);
-  assert.deepEqual(fs.readFileSync(path.join(out, 'setup/oathbound.config.toml')),
-    fs.readFileSync(path.join(ROOT, 'codex/oathbound.config.toml')));
+  assert.deepEqual(fs.readFileSync(path.join(out, 'setup/oathkeeper.config.toml')),
+    fs.readFileSync(path.join(ROOT, 'codex/oathkeeper.config.toml')));
   assert.deepEqual(fs.readdirSync(path.join(out, 'setup/agents')).sort(),
-    ['assayer', 'scholar', 'scout', 'scribe', 'sentinel', 'smith', 'tester'].map(name => name + '.toml'));
+    ['assayer', 'breaker', 'scholar', 'scout', 'scribe', 'sentinel', 'smith'].map(name => name + '.toml'));
   const { verificar } = require('./agents/sincronia.js');
   const contracts = require('./agents/regras-comuns.json');
   for (const role of Object.keys(contracts.regras)) {

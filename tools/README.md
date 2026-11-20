@@ -57,7 +57,7 @@ node tools/install.ts [opções]
 Opções suportadas:
 - `--global`: Instala agentes do Claude e do agy e guarda o manifesto e os guards dos agentes Claude em `~/.oathbound/`.
 - `--project <dir>`: Instala em um diretório de projeto específico.
-- `--runner all|claude|agy|codex`: Seleciona o runner alvo. Selecione `codex` para instalar seus agentes. Com `--global`, instala também o perfil para `codex -p oathbound`. `all` inclui Claude e agy.
+- `--runner all|claude|agy|codex`: Seleciona o runner alvo. Selecione `codex` para instalar seus agentes. Com `--global`, instala também o perfil para `codex -p oathkeeper`. `all` inclui Claude e agy.
 - `--upgrade`: Atualiza uma instalação existente apresentando o diff.
 - `--statusline`: Configura a barra de status.
 - `--audit-docs`: Instala a configuração de auditoria de documentação.
@@ -83,15 +83,15 @@ Para Codex CLI, execute `node tools/build-plugin.cjs codex dist/codex`.
 O destino gerado é a raiz do marketplace local e contém o plugin em
 `plugins/oathbound/`. Siga a [instalação manual](../README.md#2-plugin-local-para-codex-cli).
 
-## Smoke tests pagos do orquestrador Claude
+## Smoke tests pagos do oathkeeper Claude
 
-Execute apenas o caso necessário após mudanças relevantes no orquestrador,
+Execute apenas o caso necessário após mudanças relevantes no oathkeeper,
 na delegação ou no guard do plugin. Estes testes usam a conta autenticada
 da CLI e consomem cota. A suíte principal e o CI seguem com validações locais.
 
 ```sh
-node tools/smoke-orquestrador.cjs --listar
-node tools/smoke-orquestrador.cjs --caso guard --pago
+node tools/smoke-oathkeeper.cjs --listar
+node tools/smoke-oathkeeper.cjs --caso guard --pago
 ```
 
 `--listar` roda offline. Uma execução paga exige um caso explícito e

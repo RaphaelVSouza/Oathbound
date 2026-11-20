@@ -53,9 +53,13 @@ test('Codex instala sete agentes e preserva edição local no upgrade', t => {
   assert.deepEqual(install({ ...options, upgrade: true }).manifest.preservedFiles, ['.codex/agents/scout.toml']);
   assert.match(fs.readFileSync(scout, 'utf8'), /alteração local/);
   assert.equal(fs.existsSync(path.join(root, '.claude')), false);
-  assert.equal(fs.existsSync(path.join(root, '.codex/oathbound.config.toml')), false);
-  const globalInstall = install({ ...options, global: true });
-  assert.ok(globalInstall.manifest.files.some(file => file.path === '.codex/oathbound.config.toml'));
+  assert.equal(fs.existsSync(path.join(root, '.codex/oathkeeper.config.toml')), false);
+  const previousProfile = path.join(root, '.codex/oathbound.config.toml');
+  const customProfile = '# perfil anterior personalizado\n';
+  fs.writeFileSync(previousProfile, customProfile);
+  const globalInstall = install({ ...options, global: true, upgrade: true });
+  assert.equal(fs.readFileSync(previousProfile, 'utf8'), customProfile);
+  assert.ok(globalInstall.manifest.files.some(file => file.path === '.codex/oathkeeper.config.toml'));
 });
 
 test('instalação global inclui agentes, skills, guards e manifesto sem tocar settings', t => {
@@ -143,7 +147,7 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
   assert.ok(fs.existsSync(path.join(projectRoot, 'tools', 'audit-docs.core.ts')));
   const smith = fs.readFileSync(path.join(projectRoot, '.claude', 'agents', 'smith.md'), 'utf8');
   assert.ok(smith.includes(`command: '"${projectRoot.split(path.sep).join('/')}/.claude/hooks/${binName}" destructive-guard'`));
-  const orchestrator = fs.readFileSync(path.join(projectRoot, '.claude', 'agents', 'orquestrador.md'), 'utf8');
+  const orchestrator = fs.readFileSync(path.join(projectRoot, '.claude', 'agents', 'oathkeeper.md'), 'utf8');
   assert.match(orchestrator, /^tools: Agent\(scout,/m);
   const auditDocsConfigPath = path.join(projectRoot, 'tools', 'audit-docs.config.js');
   assert.ok(fs.existsSync(auditDocsConfigPath));
@@ -197,13 +201,13 @@ test('--upgrade preserva edições locais e limpa agentes legados não modificad
   fs.writeFileSync(agentPath, userEdit);
 
   // Registra um legado gerenciado e deixa outro sob controle local.
-  const legacyPath = path.join(projectRoot, '.claude', 'agents', 'oathkeeper.md');
-  fs.writeFileSync(legacyPath, '# Legacy Oathkeeper\n');
+  const legacyPath = path.join(projectRoot, '.claude', 'agents', 'mimic.md');
+  fs.writeFileSync(legacyPath, '# Legacy Mimic\n');
   const localLegacy = path.join(projectRoot, '.claude', 'agents', 'qa.md');
   fs.writeFileSync(localLegacy, '# Local QA\n');
   const manifestPath = path.join(projectRoot, '.oathbound', 'manifest.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  manifest.files.push({ path: '.claude/agents/oathkeeper.md', sha256: sha256(fs.readFileSync(legacyPath)) });
+  manifest.files.push({ path: '.claude/agents/mimic.md', sha256: sha256(fs.readFileSync(legacyPath)) });
   fs.writeFileSync(manifestPath, JSON.stringify(manifest));
 
   // Segunda instalação com --upgrade

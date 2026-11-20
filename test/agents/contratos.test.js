@@ -10,7 +10,7 @@ const bons = {
   sentinel: 'No security vulnerabilities found in scope.\nLACUNAS: nenhuma',
   scribe: 'MODO: release\nARQUIVOS: a.md — criado\nPENDÊNCIAS: nenhuma',
   smith: 'ARQUIVOS: a — mudança\nACEITE: cmd → ok\nNOTA: nenhuma',
-  tester: 'STATUS: PASS\nAMBIENTE: x\nFLUXO: y\nCONSOLE: limpo\nNETWORK: não capturado\nEVIDÊNCIA: nenhuma',
+  breaker: 'STATUS: PASS\nAMBIENTE: x\nFLUXO: y\nCONSOLE: limpo\nNETWORK: não capturado\nEVIDÊNCIA: nenhuma',
 };
 for (const [ag, txt] of Object.entries(bons)) {
   assert.deepStrictEqual(verificarContrato(ag, txt), [], `${ag} deveria cumprir`);
@@ -52,10 +52,10 @@ const coleta = {
     { id: 'rede', erro: true },
   ],
 };
-assert.deepStrictEqual(verificarContrato('tester', bons.tester, coleta), []);
-assert.deepStrictEqual(verificarContrato('tester', bons.tester, { usos: [], resultados: [] }),
+assert.deepStrictEqual(verificarContrato('breaker', bons.breaker, coleta), []);
+assert.deepStrictEqual(verificarContrato('breaker', bons.breaker, { usos: [], resultados: [] }),
   ['CONSOLE limpo exige coleta bem-sucedida']);
-assert.deepStrictEqual(verificarContrato('tester', bons.tester.replace('NETWORK: não capturado', 'NETWORK: limpo'), coleta),
+assert.deepStrictEqual(verificarContrato('breaker', bons.breaker.replace('NETWORK: não capturado', 'NETWORK: limpo'), coleta),
   ['NETWORK limpo exige coleta bem-sucedida']);
 
 // Violações devem falhar.
@@ -68,7 +68,7 @@ assert.ok(verificarContrato('sentinel', 'a.py:1: 🔴 CRITICAL: sem CWE. x\ntota
 assert.deepStrictEqual(verificarContrato('sentinel', 'No security vulnerabilities found in scope.'), ['LACUNAS']);
 assert.ok(verificarContrato('scout', 'Resposta: x').length > 0);
 assert.ok(verificarContrato('scholar', 'RESPOSTA: x\nFONTES: nenhuma\nLACUNAS: x').length > 0, 'sem URL');
-assert.ok(verificarContrato('tester', 'STATUS: OK\nAMBIENTE: x').length > 0);
+assert.ok(verificarContrato('breaker', 'STATUS: OK\nAMBIENTE: x').length > 0);
 assert.ok(verificarContrato('inexistente', 'x').length > 0);
 assert.ok(verificarContrato('smith', '').length === 3, 'vazio falha nos 3 itens');
 

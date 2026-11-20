@@ -67,7 +67,7 @@ function buildPlugin(runner, destination) {
   if (runner === 'codex') {
     write('plugins/oathbound/plugin.json', loadManifest('codex/plugin.json'));
     copySkillsForRunner('codex', path.join(out, 'plugins/oathbound/skills'));
-    copy('codex/oathbound.config.toml', 'setup/oathbound.config.toml');
+    copy('codex/oathkeeper.config.toml', 'setup/oathkeeper.config.toml');
     copy('codex/agents', 'setup/agents');
     copy('codex/hooks.json', 'setup/hooks.json');
     write('.agents/plugins/marketplace.json', JSON.parse(fs.readFileSync(path.join(source, 'codex/marketplace.json'), 'utf8')));

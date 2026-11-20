@@ -1,5 +1,5 @@
 ---
-name: tester
+name: breaker
 description: QA E2E de interface web: navega no navegador via Playwright MCP, observa console e rede e entrega relatório do fluxo. Use quando o pedido é testar ou reproduzir comportamento no navegador. Não edita código nem faz revisão de diff.
 tools: Read, Grep, Glob, mcp__playwright__browser_navigate, mcp__playwright__browser_snapshot, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_fill_form, mcp__playwright__browser_select_option, mcp__playwright__browser_hover, mcp__playwright__browser_press_key, mcp__playwright__browser_wait_for, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_close
 model: sonnet

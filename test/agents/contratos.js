@@ -66,7 +66,7 @@ const CHECKS = {
     ['ACEITE', tem(/^ACEITE:/m)],
     ['NOTA', tem(/^NOTA:/m)],
   ],
-  tester: [
+  breaker: [
     ['STATUS', tem(/^STATUS:\s*(PASS|FAIL|BLOCKED)/m)],
     ['AMBIENTE', tem(/^AMBIENTE:/m)],
     ['FLUXO', tem(/^FLUXO:/m)],
@@ -86,7 +86,7 @@ function verificarContrato(agente, texto, contexto = {}) {
       !conferirContagem(saida, contexto.totalAfirmacoes)) {
     falhas.push('vereditos e TOTAIS compatíveis com o lote recebido');
   }
-  if (agente === 'tester' && contexto.usos && contexto.resultados) {
+  if (agente === 'breaker' && contexto.usos && contexto.resultados) {
     if (!verificarColeta(saida, 'console', 'mcp__playwright__browser_console_messages', contexto)) {
       falhas.push('CONSOLE limpo exige coleta bem-sucedida');
     }

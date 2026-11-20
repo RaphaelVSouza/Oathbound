@@ -10,8 +10,8 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 
 ## O que o projeto faz
 
-1. **Regras de Governança:** O orquestrador aplica o fluxo comum do pacote. Cada projeto define suas exceções locais.
-2. **Subagentes Especializados:** Orquestrador principal complementado por 7 papéis: `scout`, `scholar`, `scribe`, `smith`, `assayer`, `sentinel` e `tester`.
+1. **Regras de Governança:** O `oathkeeper` aplica o fluxo comum do pacote. Cada projeto define suas exceções locais.
+2. **Subagentes Especializados:** O `oathkeeper` coordena 7 subagentes: `scout`, `scholar`, `scribe`, `smith`, `assayer`, `sentinel` e `breaker`.
 3. **Skills de Engenharia:** [`api-contract-design`](skills/api-contract-design/SKILL.md), [`create-adr`](skills/create-adr/SKILL.md), [`create-spec`](skills/create-spec/SKILL.md), `diagnosing-bugs`, `grill-me`, [`incident-postmortem`](skills/incident-postmortem/SKILL.md), `migration`, [`refactor-safely`](skills/refactor-safely/SKILL.md), `surgical-patch` e [`test-strategy`](skills/test-strategy/SKILL.md). Skills com tools específicas de CLI suportam override opcional `SKILL.<runner>.md` (ADR 0006). O `scribe` carrega `create-adr` e `create-spec` sob demanda.
 4. **Hooks Determinísticos:** Auditoria e proteção em tempo de execução com `agent-audit`, `readonly-guard`, `read-size-guard` e `destructive-guard` no binário nativo Rust (`native/oathbound-hook`), que também fornece `statusline`. A reescrita de comandos usa os hooks oficiais do RTK.
 5. **Telemetria, Relatórios e Protótipos:** Inclui `audit-resumo`, módulos de custo e dificuldade (`test/custo`, `test/dificuldade`) e protótipos inativos com Jev (`claude/hooks/skill-suggest.js`, `test/jev/revisar-teste.js`) documentados nos ADRs [docs/adr/0001-sugestao-de-skill-com-jev.md](docs/adr/0001-sugestao-de-skill-com-jev.md), [docs/adr/0002-roteamento-de-subagentes-com-jev.md](docs/adr/0002-roteamento-de-subagentes-com-jev.md) e [docs/adr/0003-jev-revisao-de-testes.md](docs/adr/0003-jev-revisao-de-testes.md).
@@ -28,7 +28,7 @@ No Claude Code, instale pelo marketplace com `/plugin install oathbound --market
 
 Se já usa o marketplace, atualize-o e recarregue o plugin pelo painel `/plugin`. Se usa o pacote de release, gere ou extraia a nova versão em outro diretório e aponte o Claude para ele.
 
-Para iniciar uma sessão Oathbound no Claude, use `claude --agent oathbound:orquestrador`. No agy, use `agy agents` para conferir os agentes disponíveis e selecione o orquestrador com `agy --agent orquestrador`.
+Para iniciar uma sessão Oathbound no Claude, use `claude --agent oathbound:oathkeeper`. No agy, use `agy agents` para conferir os agentes disponíveis e selecione o `oathkeeper` com `agy --agent oathkeeper`.
 
 Inicie a CLI normalmente para manter o agente padrão. Na sessão, peça pelo subagente desejado, por exemplo, `oathbound:scout` no plugin Claude ou `scout` no agy.
 
@@ -59,13 +59,13 @@ codex plugin list --marketplace oathbound-local --json
 ```
 
 Para instalar os sete agentes no projeto, execute `node tools/install.ts --runner codex --project .`.
-Os prompts ficam em `codex/agents/`, no campo `developer_instructions` de cada TOML. Os agentes indicam as evidências, validações e lacunas esperadas em cada papel. O perfil `oathbound` planeja revisões grandes em lotes e leva lacunas abertas ao relatório final.
+Os prompts ficam em `codex/agents/`, no campo `developer_instructions` de cada TOML. Os agentes indicam as evidências, validações e lacunas esperadas em cada papel. O perfil `oathkeeper` planeja revisões grandes em lotes e leva lacunas abertas ao relatório final.
 Use `--global` no lugar de `--project .` para instalá-los em `~/.codex/agents/`.
 Se você usa um `CODEX_HOME` personalizado, copie os TOMLs para a pasta `agents/` desse perfil.
 Quem instala a partir do GitHub Release encontra os TOMLs em `setup/agents/` e pode copiá-los para `.codex/agents/`, preservando arquivos existentes.
 
-Inicie `codex -p oathbound` para carregar o orquestrador na sessão principal.
-A instalação global inclui o perfil. Na instalação por projeto ou pelo GitHub Release, copie `codex/oathbound.config.toml` ou `setup/oathbound.config.toml` para o diretório `CODEX_HOME` (padrão `~/.codex/`), preservando arquivos existentes.
+Inicie `codex -p oathkeeper` para carregar as instruções da sessão principal. Se você personalizou o perfil anterior, revise e incorpore suas alterações de `oathbound.config.toml` ao novo perfil.
+A instalação global inclui o perfil. Na instalação por projeto ou pelo GitHub Release, copie `codex/oathkeeper.config.toml` ou `setup/oathkeeper.config.toml` para o diretório `CODEX_HOME` (padrão `~/.codex/`), preservando arquivos existentes.
 Para ativar os hooks opcionais, coloque o binário nativo da sua plataforma no PATH com o nome `oathbound-hook`.
 Copie `setup/hooks.json` para `.codex/hooks.json` ou acrescente suas entradas ao arquivo existente.
 Revise e confie nas definições com `/hooks`. O guard Bash se aplica à sessão inteira.
@@ -96,7 +96,7 @@ node tools/install.ts [opções]
 
 O instalador valida manifestos SHA-256 (`.oathbound/manifest.json`), preserva alterações locais e desativa skills duplicadas sem utilizar symlinks (através de marcação e mapeamento em `_disabled` / `skills.json`).
 
-Na instalação avulsa do Claude, use `claude --agent orquestrador`. O instalador global preserva instruções, configurações, hooks compartilhados e skills existentes. Se uma versão anterior registrou regras ou hooks globais do Oathbound, revise esses registros antes de removê-los manualmente.
+Na instalação avulsa do Claude, use `claude --agent oathkeeper`. Ao atualizar instalações avulsas, revise as cópias locais de `orquestrador.md`, `tester.md` e `tester.toml` antes de arquivá-las manualmente. O instalador global preserva instruções, configurações, hooks compartilhados e skills existentes. Se uma versão anterior registrou regras ou hooks globais do Oathbound, revise esses registros antes de removê-los manualmente.
 
 Use os hooks oficiais `rtk hook claude`, `rtk hook codex` e `rtk hook antigravity` em `PreToolUse`. O upgrade de projeto Antigravity migra o registro legado do Oathbound. Em PowerShell sem um executável `ls` no PATH, preserve o alias com `ls` em `[hooks].exclude_commands` na configuração do RTK.
 

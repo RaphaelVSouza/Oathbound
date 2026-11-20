@@ -1,19 +1,19 @@
 {
   "proibido": ["GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM"],
   "nomes": {
-    "codex": { "scribe": "docs", "tester": "qa" },
-    "gemini": { "scribe": "scribe", "tester": "tester" }
+    "codex": { "scribe": "docs" },
+    "gemini": { "scribe": "scribe" }
   },
   "mapa": {
-    "codex": { "scribe": "docs", "tester": "qa" },
-    "gemini": { "scribe": "scribe", "tester": "tester" }
+    "codex": { "scribe": "docs" },
+    "gemini": { "scribe": "scribe" }
   },
   "regras": {
     "assayer": ["Segredos: nunca leia, imprima ou cite `.env`, credenciais, tokens ou valores de chave. Se aparecerem no diff, reporte só o caminho e a linha, sem o valor."],
     "sentinel": ["Segredos: nunca leia, imprima ou cite `.env`, credenciais, tokens ou valores de chave. Segredo hardcoded no código vira achado só com caminho, linha e CWE, sem o valor."],
     "scout": ["Segredos: nunca leia, imprima ou cite `.env`, credenciais, tokens ou valores de chave. Se a pergunta exigir isso, registre o bloqueio em LACUNAS e pare."],
     "scholar": ["Segredos: nunca leia, imprima ou cite `.env`, credenciais, tokens ou valores de chave, nem os envie em consultas externas."],
-    "tester": ["Segredos: nunca digite, imprima ou registre credenciais, tokens ou valores de chave; se o fluxo exigir login, pare e retorne `STATUS: BLOCKED`. Mascare segredos que apareçam em console, network ou screenshot."],
+    "breaker": ["Segredos: nunca digite, imprima ou registre credenciais, tokens ou valores de chave; se o fluxo exigir login, pare e retorne `STATUS: BLOCKED`. Mascare segredos que apareçam em console, network ou screenshot."],
     "smith": [
       "Segredos: nunca leia, imprima, registre em log ou passe pelo terminal `.env`, credenciais, tokens ou valores de chave; quem edita segredo é o humano.",
       {

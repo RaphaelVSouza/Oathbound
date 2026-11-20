@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.37] - 2026-11-20
+
+- Renomeia o agente principal para `oathkeeper` no Claude e no agy. No Codex, o perfil da sessão principal passa a `oathkeeper` (`codex -p oathkeeper`). Renomeia o agente de QA de navegador para `breaker` no Claude, no agy e no Codex.
+
 ## [0.50.0-alpha.36] - 2026-11-20
 
 - Remove o hook RTK customizado do binário nativo e do benchmark. O instalador continua migrando registros antigos para o hook oficial.

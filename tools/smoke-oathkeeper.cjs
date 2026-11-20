@@ -9,7 +9,7 @@ const path = require('node:path');
 const { buildPlugin } = require('./build-plugin.cjs');
 
 const modelo = 'claude-haiku-5-5';
-const orquestrador = 'oathbound:orquestrador';
+const oathkeeper = 'oathbound:oathkeeper';
 const assayer = 'oathbound:assayer';
 const fixture = 'frete.test.js';
 const regra = '// Frete grátis acima de 100.\n';
@@ -54,7 +54,7 @@ function eventos(stdout) {
 function conferir(id, caso, fluxo, resultado, auditoria) {
   const inicio = fluxo.find((evento) => evento.type === 'system' && evento.subtype === 'init');
   assert.ok(inicio?.plugins?.some((plugin) => plugin.name === 'oathbound'), 'Plugin Oathbound ausente');
-  assert.ok(inicio.agents?.includes(orquestrador), 'Orquestrador ausente');
+  assert.ok(inicio.agents?.includes(oathkeeper), 'Oathkeeper ausente');
   const mensagens = fluxo.filter((evento) => evento.type === 'assistant');
   assert.ok(mensagens.length, 'Nenhum evento do modelo');
   const modelos = Object.keys(resultado.modelUsage || {});
@@ -105,7 +105,7 @@ function executar(id, caso, projeto, plugin) {
     AGENT_AUDIT_DIR: auditDir,
   };
   const processo = spawnSync(process.env.CLAUDE_BIN || 'claude', [
-    '-p', caso.pedido, '--model', modelo, '--agent', orquestrador,
+    '-p', caso.pedido, '--model', modelo, '--agent', oathkeeper,
     '--setting-sources', '', '--strict-mcp-config', '--no-session-persistence',
     '--permission-mode', 'dontAsk', '--tools', caso.delega ? 'Read,Glob,Grep,Agent' : 'Read,Glob,Grep',
     '--output-format', 'stream-json', '--verbose', '--max-turns', '8',
@@ -127,7 +127,7 @@ const id = args[1];
 if (args.length === 1 && args[0] === '--listar') {
   console.log(Object.keys(casos).join('\n'));
 } else if (args.length !== 3 || args[0] !== '--caso' || !Object.hasOwn(casos, id) || args[2] !== '--pago') {
-  console.error('Uso: node tools/smoke-orquestrador.cjs --listar | --caso <id> --pago');
+  console.error('Uso: node tools/smoke-oathkeeper.cjs --listar | --caso <id> --pago');
   process.exitCode = 2;
 } else {
   try {

@@ -149,7 +149,7 @@ const CASOS = [
     ],
   },
   {
-    id: 'tester-snapshot', agente: 'tester',
+    id: 'breaker-snapshot', agente: 'breaker',
     // Doc (headless): em `claude -p` só servidores de --mcp-config são esperados antes do 1º turno;
     // o Playwright da config de usuário às vezes ainda "conecta" e o agente devolve BLOCKED sem ferramentas.
     args: ['--mcp-config', '{"mcpServers":{"playwright":{"command":"npx","args":["-y","@playwright/mcp@latest","--browser","chromium","--headless","--isolated"]}}}'],
@@ -157,7 +157,7 @@ const CASOS = [
     infra: (c) => c.usos.length === 0 && /^STATUS:\s*BLOCKED/m.test(c.texto),
     prompt: () => 'Teste o fluxo: navegue para `data:text/html,<h1>QA</h1><button onclick="console.log(\'ok\')">Ok</button>`, clique no botão, colete o console no fim e feche o browser. Devolva o recibo.',
     checks: [
-      contrato('tester'),
+      contrato('breaker'),
       ['browser_snapshot antes do primeiro clique', (c) => {
         const nomes = c.usos.map((u) => u.name);
         if (!nomes.length) return 'nenhuma ferramenta chamada (MCP indisponível ou recusa?); ver "saida" no relatório';

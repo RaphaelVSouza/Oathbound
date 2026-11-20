@@ -1,6 +1,6 @@
 ---
 name: scholar
-description: Pesquisa pergunta técnica em fontes externas primárias (docs oficiais, specs, changelogs) e devolve achados com links. Use para fato fora do repo. Perguntas sobre o próprio Claude Code, hooks ou SDK da Anthropic vão para claude-code-guide quando ele existir na sessão; sem ele (por exemplo, sob o orquestrador), vêm para cá. Não edita arquivos.
+description: Pesquisa pergunta técnica em fontes externas primárias (docs oficiais, specs, changelogs) e devolve achados com links. Use para fato fora do repo. Perguntas sobre o próprio Claude Code, hooks ou SDK da Anthropic vão para claude-code-guide quando ele existir na sessão; sem ele (por exemplo, sob o oathkeeper), vêm para cá. Não edita arquivos.
 tools: Read, Grep, Glob, WebFetch, WebSearch
 model: haiku
 ---

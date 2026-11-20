@@ -11,7 +11,7 @@ const os = require('node:os');
 const crypto = require('node:crypto');
 
 const LEGACY_IDS = [
-  'oathkeeper', 'mimic', 'tracker', 'herald', 'notary',
+  'mimic', 'tracker', 'herald', 'notary',
   'paladino', 'artesao', 'patrulheiro', 'inquisidor', 'sentinela',
   'mago', 'cacador', 'sabio', 'bardo', 'escriba', 'docs', 'qa'
 ];
@@ -280,7 +280,7 @@ function renderClaudeAgent(raw: string, file: string, hookPath: string): string 
     const hooks = ['hooks:', '  PreToolUse:', ...groups].join('\n');
     content = raw.replace(/^(---\r?\n[\s\S]*?)(?=^---\r?$)/m, (_, header) => `${header}${hooks}\n`);
   }
-  return file === 'orquestrador.md' ? content.replaceAll('oathbound:', '') : content;
+  return file === 'oathkeeper.md' ? content.replaceAll('oathbound:', '') : content;
 }
 
 function readExistingJson(filePath: string, fallback: any): any {
@@ -483,8 +483,8 @@ function install(options: InstallOptions) {
 
   if (runner === 'codex') {
     if (isGlobal) {
-      plannedFiles.set('.codex/oathbound.config.toml', {
-        content: fs.readFileSync(path.join(sourceRoot, 'codex', 'oathbound.config.toml'))
+      plannedFiles.set('.codex/oathkeeper.config.toml', {
+        content: fs.readFileSync(path.join(sourceRoot, 'codex', 'oathkeeper.config.toml'))
       });
     }
     const agentsDir = path.join(sourceRoot, 'codex', 'agents');

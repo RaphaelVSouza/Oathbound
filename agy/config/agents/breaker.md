@@ -1,5 +1,5 @@
 ---
-name: tester
+name: breaker
 description: QA E2E de interface web: navega no navegador via Playwright MCP, observa console e rede e entrega relatório do fluxo. Use quando o pedido é testar ou reproduzir comportamento no navegador. Não edita código nem faz revisão de diff.
 model: flash
 ---

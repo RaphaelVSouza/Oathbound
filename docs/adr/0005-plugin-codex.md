@@ -17,8 +17,8 @@ plugin por caminho relativo. O manifesto usa a versão do pacote.
 ## Consequências
 
 A instalação usa os comandos nativos de marketplace do Codex CLI.
-O perfil `oathbound` injeta instruções na sessão principal quando selecionado
-por `codex -p oathbound`. Os TOMLs acompanham o
+O perfil `oathkeeper` injeta instruções na sessão principal quando selecionado
+por `codex -p oathkeeper`. Os TOMLs acompanham o
 marketplace em `setup/agents/` e são instalados no escopo nativo do Codex.
 O GitHub Release distribui o marketplace completo.
 
