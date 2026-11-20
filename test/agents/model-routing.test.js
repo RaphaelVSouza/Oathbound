@@ -1,0 +1,79 @@
+'use strict';
+
+// Offline instruction contracts. These do not execute agents or prove runtime routing.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = path.resolve(__dirname, '../..');
+const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+const profiles = {
+  codex: read('codex/oathkeeper.config.toml'),
+  claude: read('claude/agents/oathkeeper.md'),
+  agy: read('agy/config/agents/oathkeeper.md'),
+};
+const roles = ['scout', 'scholar', 'scribe', 'smith', 'assayer', 'sentinel', 'breaker'];
+
+function section(profile, heading) {
+  const start = profile.indexOf(heading + '\n');
+  assert.notEqual(start, -1, `Missing ${heading}`);
+  return profile.slice(start + heading.length + 1).split(/\n#{2,3} /)[0].trim();
+}
+
+test('all orchestrators preserve the same adaptive safety and reporting contract', () => {
+  const shared = section(profiles.codex, '### Adaptive selection');
+  for (const [runner, profile] of Object.entries(profiles)) {
+    assert.equal(section(profile, '### Adaptive selection'), shared, runner);
+    assert.doesNotMatch(profile, /Do not change an agent's model to retry/);
+    assert.doesNotMatch(profile, /\| Need \| Agent \| Model \|/);
+    for (const role of roles) assert.match(profile, new RegExp(`\\b${role}\\b`));
+  }
+  // Safety clauses are release contracts, independent of provider wording.
+  assert.match(shared, /User\/project pins, organization restrictions, environment-forced settings/);
+  assert.match(shared, /Never skip required review or security steps/);
+  assert.match(shared, /Allow at most one escalation per subtask across all children/);
+  assert.match(shared, /Smith still stops after two identical errors/);
+  assert.match(shared, /missing access,[\s\S]*not escalation/);
+  assert.match(shared, /runtime metadata, not subagent self-identification/);
+  for (const field of ['role', 'tier', 'model', 'effort', 'reason', 'attempt']) {
+    assert.match(shared, new RegExp(`${field}=<`));
+  }
+  assert.match(shared, /ROUTING RESULT: model=<observed\|unverified>; effort=<observed\|unverified>/);
+});
+
+test('one role can use different complexity tiers without duplicating role definitions', () => {
+  for (const [runner, profile] of Object.entries(profiles)) {
+    const provider = section(profile, '### Provider selection');
+    const rows = provider.split('\n').filter(line => /^\| /.test(line)).slice(1);
+    const preference = term => rows.find(row => row.toLowerCase().includes(term))?.split('|').map(s => s.trim());
+    const routine = preference('routine');
+    const standard = preference('standard');
+    const complex = preference('complex') || preference('deep cross-system');
+    assert.ok(routine && standard && complex, runner);
+    assert.notEqual(routine[2], standard[2], runner);
+    assert.notDeepEqual(standard.slice(2, 4), complex.slice(2, 4), runner);
+    // Scribe stays one role; release notes and architecture are task classifications.
+    const agentDir = runner === 'codex' ? 'codex/agents' : runner === 'claude' ? 'claude/agents' : 'agy/config/agents';
+    const files = fs.readdirSync(path.join(root, agentDir));
+    assert.equal(files.filter(file => file.startsWith('scribe.')).length, 1);
+  }
+});
+
+test('runner adapters retain capability checks instead of inventing invocation support', () => {
+  assert.match(profiles.codex, /fork_turns="none"/);
+  for (const role of roles) {
+    assert.doesNotMatch(read(`codex/agents/${role}.toml`), /^(model|model_reasoning_effort)\s*=/m);
+  }
+  assert.match(profiles.claude, /model alias, not a full version ID or inherit/);
+  assert.match(profiles.claude, /per-invocation effort requires Claude Code v2\.1\.292/);
+  assert.match(profiles.agy, /session model slugs do not prove child invocation support/);
+  assert.match(profiles.agy, /tier-only invocation support, request flash for routine and pro for/);
+  assert.match(profiles.agy, /Without a child effort field, retain inherited effort/);
+  assert.match(profiles.agy, /Orchestrator has fixed effort/);
+  for (const role of roles) {
+    const frontmatter = read(`agy/config/agents/${role}.md`).split('---')[1];
+    assert.doesNotMatch(frontmatter, /^(effort|reasoning_effort):/m);
+    assert.doesNotMatch(frontmatter, /^model:.*gemini-4-/m);
+  }
+});

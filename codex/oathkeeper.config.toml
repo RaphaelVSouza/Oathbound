@@ -9,6 +9,69 @@ Delegate only to roles installed and authorized for the task.
 - smith implements. assayer reviews the diff. sentinel reviews changes at security boundaries.
 - breaker validates interface journeys with available tools.
 
+### Adaptive selection
+
+Choose the role by responsibility, then choose model and effort for each subtask.
+Classify complex first, then standard, then routine:
+- complex: conflicting constraints, uncertain cross-system causes, architectural
+  tradeoffs or sensitive trust-boundary reasoning;
+- standard: cross-file synthesis or bounded implementation with an established design;
+- routine: clear instructions, local evidence and mechanical work.
+File count alone does not determine complexity. Gather missing evidence first;
+missing access or permissions is a blocker, not a reason to buy more reasoning.
+If classification remains uncertain, use standard. Reviews and security audits
+require at least standard; sensitive trust-boundary reasoning is complex.
+Keep trivial work in the main session. Never skip required review or security steps.
+
+User/project pins, organization restrictions, environment-forced settings and
+approved budgets constrain selection. Preserve role tools, output contracts,
+sandbox and authorization. Treat explicit local role pins as binding unless
+their owner authorizes adaptive selection; shipped role defaults are fallbacks.
+Inspect the installed invocation schema and permitted models before passing
+overrides. Never rewrite configuration, redefine roles or launch another CLI
+to bypass a restriction. Session flags are not child invocation parameters.
+If a setting is unsupported, unavailable or rejected, retain the configured
+default only when permitted, sufficient and within budget. Otherwise handle
+the task in the main session when permitted and capable, or report PENDING.
+Never silently substitute a more expensive model.
+
+Before spawning, include this compact record in the plan:
+ROUTING: role=<role>; tier=<routine|standard|complex>; model=<requested>; effort=<requested|inherited>; reason=<one sentence>; attempt=<1|2>
+Pass objective, files, constraints, applicable project rules and acceptance criteria.
+After invocation, include this record in the final agent report:
+ROUTING RESULT: model=<observed|unverified>; effort=<observed|unverified>; fallback=<reason|none>
+Use runtime metadata, not subagent self-identification, as evidence. Never report
+a requested model or effort as observed without runtime confirmation.
+
+Allow at most one escalation per subtask across all children and model/effort
+changes. Require a concrete failed acceptance criterion caused by reasoning,
+sufficient evidence and remaining authorized budget. Carry forward previous
+findings, evidence, failed criterion and bounded scope. If resume cannot change
+settings, spawn a fresh child; stop its predecessor before mutation resumes.
+Never run competing writers. After a second reasoning failure, report the
+diagnosis and unresolved criterion. Repeated tool errors, missing access,
+credentials or rate limits require diagnosis or PENDING, not escalation.
+Smith still stops after two identical errors. Existing approval requirements
+apply to increases in agent count or cost outside the authorized plan.
+
+### Provider selection
+
+| Task | Model | Effort |
+|---|---|---|
+| Routine extraction, lookup or mechanical release notes | gpt-6-luna | low |
+| Routine work requiring several tool steps | gpt-6-luna | medium |
+| Standard implementation, specs, ADRs or reviews | gpt-6.2-sol | medium |
+| Complex bounded debugging or refactoring | gpt-6.2-sol | high |
+| Complex architecture, cross-system investigation or security audit | gpt-6.2-astra | high |
+| Standard browser or desktop inspection | gpt-6.1-terra | medium |
+
+Use spawn_agent model and reasoning_effort overrides only when exposed.
+Prefer fork_turns="none" with delimited context; full-history forks inherit
+settings and may reject overrides. Never discard relevant constraints to fit
+an override. Custom agent TOML model/model_reasoning_effort settings take
+precedence; respect local pins. Shipped role TOMLs leave both unset.
+If a role fixes model or effort, retain it and report the constraint.
+
 Run only independent tasks in parallel. Plan large diff reviews
 in batches by flow or related file group. Check batch coverage
 and record agent gaps that remain open in the final report.

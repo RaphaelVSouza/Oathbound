@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.50.0-alpha.39] - 2026-11-20
+
+- Oathkeeper selects subagent models and effort by task complexity across Codex, Claude and Antigravity, with capability-aware fallback, one evidence-backed escalation and requested-versus-observed routing reports.
+- Preserves role defaults, project pins, permissions and existing installation customizations. Antigravity named-model preferences require invocation support; session model availability alone is insufficient.
+
 ## [0.50.0-alpha.38] - 2026-11-20
 
 - Translates repository documentation, agent and skill prompts, and CLI diagnostics into English while preserving stable machine identifiers, commands and paths.

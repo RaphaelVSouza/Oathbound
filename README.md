@@ -110,7 +110,22 @@ The global installer preserves existing instructions, configuration, shared hook
 
 Use official `rtk hook claude`, `rtk hook codex` and `rtk hook antigravity` hooks in `PreToolUse`. Antigravity project upgrades migrate the legacy Oathbound entry. In PowerShell without an `ls` executable on PATH, preserve the alias by adding `ls` to `[hooks].exclude_commands` in RTK configuration.
 
-### 4. Updating Global Installations to 0.50.0-alpha.38
+### Adaptive Model Routing
+
+Oathkeeper chooses the role by responsibility and model/effort by each subtask's
+complexity: routine, standard or complex. The same scribe can handle mechanical
+release notes on a lighter model or architecture work on a stronger one.
+Runner support, project pins and approved budgets constrain selection. Defaults
+remain fallbacks; requested settings are reported separately from observed ones.
+One evidence-backed escalation is allowed per subtask. Missing access and
+repeated tool errors require diagnosis, not stronger models.
+
+See [routing policy, provider preferences and validation](docs/adaptive-model-routing.md).
+Antigravity named models require invocation support; `agy models` only confirms
+session availability. Unsupported settings retain permitted defaults or become
+pending work. This policy does not guarantee model compliance or cost savings.
+
+### 4. Updating Global Installations to 0.50.0-alpha.39
 
 From the updated repository root, run:
 

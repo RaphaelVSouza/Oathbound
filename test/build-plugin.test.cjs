@@ -55,6 +55,7 @@ test('generates isolated plugins with agents and portable hooks without overwrit
       assert.doesNotMatch(agent, /__HOME__/);
       const orchestrator = fs.readFileSync(path.join(out, 'agents', 'oathkeeper.md'), 'utf8');
       assert.match(orchestrator, /^tools: Agent\(oathbound:scout,/m);
+      assert.equal(orchestrator, fs.readFileSync(path.join(ROOT, 'claude/agents/oathkeeper.md'), 'utf8'));
       const hooks = JSON.parse(fs.readFileSync(path.join(out, 'hooks', 'hooks.json'), 'utf8'));
       const sourceHooks = JSON.parse(fs.readFileSync(path.join(ROOT, 'hooks', 'hooks.json'), 'utf8'));
       assert.deepEqual(hooks, sourceHooks);
@@ -70,6 +71,7 @@ test('generates isolated plugins with agents and portable hooks without overwrit
       const orchestrator = fs.readFileSync(path.join(out, 'agents', 'oathkeeper.md'), 'utf8');
       assert.match(orchestrator, /^mainAgent: true$/m);
       assert.match(orchestrator, /^subagent: false$/m);
+      assert.equal(orchestrator, fs.readFileSync(path.join(ROOT, 'agy/config/agents/oathkeeper.md'), 'utf8'));
       assert.equal(
         fs.readFileSync(path.join(out, 'assets', 'logo.svg'), 'utf8'),
         fs.readFileSync(path.join(ROOT, 'assets', 'logo.svg'), 'utf8')

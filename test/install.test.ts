@@ -60,6 +60,14 @@ test('Codex installs seven agents and preserves local edits during upgrade', t =
   const globalInstall = install({ ...options, global: true, upgrade: true });
   assert.equal(fs.readFileSync(previousProfile, 'utf8'), customProfile);
   assert.ok(globalInstall.manifest.files.some(file => file.path === '.codex/oathkeeper.config.toml'));
+  const profilePath = path.join(root, '.codex/oathkeeper.config.toml');
+  const profile = fs.readFileSync(profilePath, 'utf8');
+  assert.match(profile, /### Adaptive selection/);
+  const customized = profile + '\n# Local model selection remains binding\n';
+  fs.writeFileSync(profilePath, customized);
+  const upgraded = install({ ...options, global: true, upgrade: true });
+  assert.ok(upgraded.manifest.preservedFiles.includes('.codex/oathkeeper.config.toml'));
+  assert.equal(fs.readFileSync(profilePath, 'utf8'), customized);
 });
 
 test('global installation includes agents, skills, guards, and manifest without touching settings', t => {
