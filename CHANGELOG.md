@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.50.0-alpha.33] - 2026-11-20
+
+- Correlaciona invocações isoladas do Antigravity com sessões filhas e contabiliza lotes ambíguos.
+
+## [0.50.0-alpha.32] - 2026-11-20
+
+- Adiciona extrator local de auditoria para Claude, Codex e Antigravity, com eventos normalizados, inventário de fontes e métricas por CLI.
+
 ## [0.50.0-alpha.31] - 2026-11-20
 
 - Adiciona 5 skills de engenharia (`create-spec`, `refactor-safely`, `test-strategy`, `incident-postmortem`, `api-contract-design`) calibradas para engenheiros de software.

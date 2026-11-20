@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "oathbound",
-  "version": "0.50.0-alpha.31",
+  "version": "0.50.0-alpha.33",
   "description": "Skills de engenharia do Oathbound para Codex.",
   "author": {
     "name": "Raphael Vieira"

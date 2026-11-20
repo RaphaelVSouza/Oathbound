@@ -1,5 +1,34 @@
 # Auditor de documentação e instalador
 
+## Extração de auditoria (`extract-audit.ts`)
+
+Node.js 24 ou superior. Informe datas inclusivas e um diretório de saída novo.
+
+```sh
+node tools/extract-audit.ts --inicio 2026-11-14 --fim 2026-11-19 --saida ./auditoria-local
+```
+
+`--claude`, `--codex` e `--gemini` sobrescrevem os diretórios de origem.
+
+Nas invocações do Antigravity, `correlacao_filha` informa se o vínculo foi
+confirmado, ficou ambíguo ou carece de evidência. O extrator preenche
+`sessao_filha` quando a resposta de criação imediatamente seguinte identifica
+uma filha inédita para uma chamada isolada. Preserva todas as chamadas em lotes.
+Consultas de status não geram novos vínculos.
+Por padrão, o extrator lê `AGENT_AUDIT_DIR` ou `~/.claude/state`,
+`$CODEX_HOME/state` ou `~/.codex/state`, e `~/.gemini`.
+`--fuso` altera o recorte de datas, que usa `America/Sao_Paulo` por padrão.
+
+`eventos.jsonl` contém eventos e referências ao arquivo e à linha.
+`metricas.json` traz inventário de arquivos e contagens por CLI. A taxa de
+bloqueio do Claude exige chaves para todas as chamadas e bloqueios da janela,
+com correspondência para cada bloqueio. Registros históricos do Codex sem
+eventos de início ou fim aparecem como chamadas, bloqueios ou erros de auditoria.
+No Antigravity, o extrator conta invocações nos transcripts por superfície.
+O histórico da CLI mede a cobertura de bancos e transcripts pelos IDs de conversa.
+Nomes coincidentes indicam compatibilidade com o catálogo atual de agentes.
+Guarde os artefatos localmente, pois incluem identificadores de sessões e chamadas.
+
 ## Auditor de Documentação (`audit-docs.ts`)
 
 `audit-docs.ts` verifica documentos configurados sem dependências npm. Requer
