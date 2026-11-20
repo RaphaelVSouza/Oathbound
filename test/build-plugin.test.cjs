@@ -35,7 +35,7 @@ test('gera plugins isolados com agentes, hooks portáteis e sem sobrescrever des
   for (const runner of ['claude', 'agy']) {
     const out = buildPlugin(runner, path.join(tmp, runner));
     assert.equal(fs.readdirSync(path.join(out, 'agents')).length, 8);
-    assert.equal(fs.readdirSync(path.join(out, 'skills')).length, 5);
+    assert.equal(fs.readdirSync(path.join(out, 'skills')).length, 10);
     assert.deepEqual(
       fs.readFileSync(path.join(out, 'skills/create-adr/SKILL.md')),
       fs.readFileSync(path.join(ROOT, 'skills/create-adr/SKILL.md'))
@@ -92,7 +92,18 @@ test('gera marketplace Codex com plugin portátil e skills completas', t => {
   assert.equal(manifest.name, entry.name);
   assert.equal(manifest.version, fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim());
   const skills = path.join(plugin, 'skills');
-  assert.deepEqual(fs.readdirSync(skills).sort(), ['create-adr', 'diagnosing-bugs', 'grill-me', 'migration', 'surgical-patch']);
+  assert.deepEqual(fs.readdirSync(skills).sort(), [
+    'api-contract-design',
+    'create-adr',
+    'create-spec',
+    'diagnosing-bugs',
+    'grill-me',
+    'incident-postmortem',
+    'migration',
+    'refactor-safely',
+    'surgical-patch',
+    'test-strategy'
+  ]);
   assert.deepEqual(fs.readFileSync(path.join(out, 'setup/oathbound.config.toml')),
     fs.readFileSync(path.join(ROOT, 'codex/oathbound.config.toml')));
   assert.deepEqual(fs.readdirSync(path.join(out, 'setup/agents')).sort(),
@@ -108,7 +119,14 @@ test('gera marketplace Codex com plugin portátil e skills completas', t => {
   for (const file of fs.readdirSync(path.join(ROOT, 'skills'), { recursive: true, withFileTypes: true })) {
     if (!file.isFile()) continue;
     const original = path.join(file.parentPath, file.name);
-    assert.deepEqual(fs.readFileSync(path.join(skills, path.relative(path.join(ROOT, 'skills'), original))), fs.readFileSync(original));
+    const rel = path.relative(path.join(ROOT, 'skills'), original);
+    if (/^SKILL\.(claude|agy|codex)\.md$/.test(file.name)) {
+      assert.equal(fs.existsSync(path.join(skills, rel)), false, `Override não deve vazar: ${rel}`);
+      continue;
+    }
+    const override = path.join(file.parentPath, 'SKILL.codex.md');
+    const expected = file.name === 'SKILL.md' && fs.existsSync(override) ? override : original;
+    assert.deepEqual(fs.readFileSync(path.join(skills, rel)), fs.readFileSync(expected));
   }
   assert.deepEqual(fs.readdirSync(plugin).sort(), ['plugin.json', 'skills']);
   assert.throws(() => buildPlugin('codex', out), /EEXIST/);
@@ -195,4 +213,22 @@ test('bumpVersion --commit e --tag cria commit e tag no Git e rejeita tag duplic
   assert.equal(git(['log', '-1', '--pretty=%s']), 'chore(release): v0.2.0-alpha.1');
   assert.equal(git(['tag', '--list', 'v0.2.0-alpha.1']), 'v0.2.0-alpha.1');
   assert.throws(() => bumpVersion('0.2.0-alpha.1', tmp, { tag: true }), /Tag Git já existe: v0.2.0-alpha.1/);
+});
+
+test('buildPlugin resolve SKILL.<runner>.md para SKILL.md sem vazar overrides', t => {
+  const tmp = fixtureDir('skill-override-test-');
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const cases = [
+    { runner: 'claude', relSkill: 'skills/grill-me/SKILL.md', expected: 'skills/grill-me/SKILL.claude.md', dir: 'skills/grill-me' },
+    { runner: 'agy', relSkill: 'skills/grill-me/SKILL.md', expected: 'skills/grill-me/SKILL.agy.md', dir: 'skills/grill-me' },
+    { runner: 'codex', relSkill: 'plugins/oathbound/skills/grill-me/SKILL.md', expected: 'skills/grill-me/SKILL.codex.md', dir: 'plugins/oathbound/skills/grill-me' }
+  ];
+  for (const c of cases) {
+    const out = buildPlugin(c.runner, path.join(tmp, c.runner));
+    assert.deepEqual(
+      fs.readFileSync(path.join(out, c.relSkill)),
+      fs.readFileSync(path.join(ROOT, c.expected))
+    );
+    assert.deepEqual(fs.readdirSync(path.join(out, c.dir)), ['SKILL.md']);
+  }
 });

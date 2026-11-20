@@ -93,8 +93,19 @@ test('instalação global inclui agentes, skills, guards e manifesto sem tocar s
     assert.equal(fs.readFileSync(path.join(root, file), 'utf8'), 'conteúdo local\n');
   }
   const binName = process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
-  const skillFileCount = walkAllFiles(path.join(__dirname, '..', 'skills')).length;
+  const skillFileCount = walkAllFiles(path.join(__dirname, '..', 'skills'))
+    .filter(f => !/^SKILL\.(claude|agy|codex)\.md$/.test(path.basename(f))).length;
   assert.equal(walkAllFiles(root).length, settings.length + 16 + 1 + skillFileCount * 2 + 1);
+  assert.deepEqual(
+    fs.readFileSync(path.join(root, '.claude/skills/grill-me/SKILL.md')),
+    fs.readFileSync(path.join(__dirname, '..', 'skills/grill-me/SKILL.claude.md'))
+  );
+  assert.deepEqual(
+    fs.readFileSync(path.join(root, '.gemini/config/skills/grill-me/SKILL.md')),
+    fs.readFileSync(path.join(__dirname, '..', 'skills/grill-me/SKILL.agy.md'))
+  );
+  assert.equal(fs.existsSync(path.join(root, '.claude/skills/grill-me/SKILL.agy.md')), false);
+  assert.equal(fs.existsSync(path.join(root, '.gemini/config/skills/grill-me/SKILL.claude.md')), false);
   const smith = fs.readFileSync(path.join(root, '.claude/agents/smith.md'), 'utf8');
   const guard = path.join(root, `.oathbound/claude-hooks/${binName}`);
   assert.ok(smith.includes(`command: '"${guard.split(path.sep).join('/')}" destructive-guard'`));

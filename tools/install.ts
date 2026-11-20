@@ -17,6 +17,24 @@ const LEGACY_IDS = [
 ];
 
 const ALLOWED_RUNNERS = ['all', 'claude', 'agy', 'codex'];
+const SKILL_RUNNER_OVERRIDE_RE = /^SKILL\.(claude|agy|codex)\.md$/;
+
+function collectSkillFilesForRunner(skillDir: string, runner: 'claude' | 'agy' | 'codex'): Array<{ rel: string; full: string }> {
+  const overrideName = `SKILL.${runner}.md`;
+  const hasOverride = fs.existsSync(path.join(skillDir, overrideName));
+  const result: Array<{ rel: string; full: string }> = [];
+  for (const full of walkFiles(skillDir)) {
+    const relInside = path.relative(skillDir, full).split(path.sep).join('/');
+    if (relInside === overrideName) {
+      result.push({ rel: 'SKILL.md', full });
+      continue;
+    }
+    if (SKILL_RUNNER_OVERRIDE_RE.test(relInside)) continue;
+    if (hasOverride && relInside === 'SKILL.md') continue;
+    result.push({ rel: relInside, full });
+  }
+  return result;
+}
 
 function sha256(content: Buffer | string): string {
   return crypto.createHash('sha256').update(content).digest('hex');
@@ -513,9 +531,8 @@ function install(options: InstallOptions) {
     for (const skill of availableSkills) {
       if (!isGlobal && skipProjectClaudeSkills.has(skill)) continue;
       const skillDir = path.join(skillsSourceDir, skill);
-      for (const full of walkFiles(skillDir)) {
-        const relInside = path.relative(skillDir, full).split(path.sep).join('/');
-        plannedFiles.set(`.claude/skills/${skill}/${relInside}`, { content: fs.readFileSync(full) });
+      for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'claude')) {
+        plannedFiles.set(`.claude/skills/${skill}/${rel}`, { content: fs.readFileSync(full) });
       }
     }
     if (!isGlobal) {
@@ -556,9 +573,8 @@ function install(options: InstallOptions) {
     for (const skill of availableSkills) {
       if (!isGlobal && skipProjectAgySkills.has(skill)) continue;
       const skillDir = path.join(skillsSourceDir, skill);
-      for (const full of walkFiles(skillDir)) {
-        const relInside = path.relative(skillDir, full).split(path.sep).join('/');
-        plannedFiles.set(`${agySkillDir}/${skill}/${relInside}`, { content: fs.readFileSync(full) });
+      for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'agy')) {
+        plannedFiles.set(`${agySkillDir}/${skill}/${rel}`, { content: fs.readFileSync(full) });
       }
     }
     if (!isGlobal) {

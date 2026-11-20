@@ -4,6 +4,40 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const source = path.resolve(__dirname, '..');
+const SKILL_RUNNER_OVERRIDE_RE = /^SKILL\.(claude|agy|codex)\.md$/;
+
+function copySkillsForRunner(runner, destDir) {
+  const skillsSrc = path.join(source, 'skills');
+  const overrideName = `SKILL.${runner}.md`;
+  for (const entry of fs.readdirSync(skillsSrc, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const skillSrc = path.join(skillsSrc, entry.name);
+    const skillDest = path.join(destDir, entry.name);
+    const hasOverride = fs.existsSync(path.join(skillSrc, overrideName));
+    const walk = (dir) => {
+      for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, item.name);
+        if (item.isDirectory()) {
+          walk(full);
+          continue;
+        }
+        const rel = path.relative(skillSrc, full).split(path.sep).join('/');
+        let targetRel = rel;
+        if (rel === overrideName) {
+          targetRel = 'SKILL.md';
+        } else if (SKILL_RUNNER_OVERRIDE_RE.test(rel)) {
+          continue;
+        } else if (hasOverride && rel === 'SKILL.md') {
+          continue;
+        }
+        const targetFull = path.join(skillDest, ...targetRel.split('/'));
+        fs.mkdirSync(path.dirname(targetFull), { recursive: true });
+        fs.copyFileSync(full, targetFull, fs.constants.COPYFILE_EXCL);
+      }
+    };
+    walk(skillSrc);
+  }
+}
 
 function buildPlugin(runner, destination) {
   if (!['claude', 'agy', 'codex'].includes(runner) || !destination) {
@@ -32,14 +66,14 @@ function buildPlugin(runner, destination) {
   };
   if (runner === 'codex') {
     write('plugins/oathbound/plugin.json', loadManifest('codex/plugin.json'));
-    copy('skills', 'plugins/oathbound/skills');
+    copySkillsForRunner('codex', path.join(out, 'plugins/oathbound/skills'));
     copy('codex/oathbound.config.toml', 'setup/oathbound.config.toml');
     copy('codex/agents', 'setup/agents');
     copy('codex/hooks.json', 'setup/hooks.json');
     write('.agents/plugins/marketplace.json', JSON.parse(fs.readFileSync(path.join(source, 'codex/marketplace.json'), 'utf8')));
     return out;
   }
-  copy('skills', 'skills');
+  copySkillsForRunner(runner, path.join(out, 'skills'));
   if (runner === 'claude') {
     const manifest = loadManifest('.claude-plugin/plugin.json');
     write('.claude-plugin/plugin.json', manifest);

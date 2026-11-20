@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.50.0-alpha.31] - 2026-11-20
+
+- Adiciona 5 skills de engenharia (`create-spec`, `refactor-safely`, `test-strategy`, `incident-postmortem`, `api-contract-design`) calibradas para engenheiros de software.
+- Suporte a override opcional de skills por CLI (`SKILL.<runner>.md`, ADR 0006) em `tools/install.ts` e `tools/build-plugin.cjs`.
+- Adapta `grill-me` com overrides para `claude` (`AskUserQuestion`), `agy` (`ask_question`) e `codex` (`request_user_input` / `request_user_input_async`) e calibração para engenheiro de software.
+- Atualiza `scribe` nos três runners para carregar `create-spec` além de `create-adr`.
+
 ## [0.50.0-alpha.30] - 2026-11-19
 
 - Adiciona `create-adr` aos três plugins. O `scribe` carrega a skill sob demanda e usa o guia e o template do projeto.

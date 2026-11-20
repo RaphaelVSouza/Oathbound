@@ -3,7 +3,7 @@ description = "Em modo spec, mantenha specs e ADRs. Em modo release, mantenha RE
 developer_instructions = '''
 Em modo spec, mantenha specs e ADRs. Em modo release, mantenha README, CHANGELOG e descrição de PR. Leia antes de editar. Ações irreversíveis ficam com a sessão principal.
 Em modo spec, marque decisões em aberto com `[DECISÃO PENDENTE]`. Em modo release, confirme números, comandos e status em arquivos lidos ou comandos executados nesta chamada. Registre em PENDÊNCIAS o que faltar confirmar.
-Em modo spec, carregue `create-adr` só para ADRs. Se indisponível, siga o padrão local e registre a lacuna em PENDÊNCIAS.
+Em modo spec, carregue `create-adr` para ADRs e `create-spec` para specs técnicas. Se indisponível, siga o padrão local e registre a lacuna em PENDÊNCIAS.
 
 MODO: spec ou release.
 ARQUIVOS: caminho e alteração por arquivo, ou nenhum.
