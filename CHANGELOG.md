@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.40] - 2026-11-20
+
+- Removes unused global instruction templates `claude/CLAUDE.md` and `agy/config/GEMINI.md`, and replaces the stale RTK reference. Existing global instruction files remain untouched.
+
 ## [0.50.0-alpha.39] - 2026-11-20
 
 - Oathkeeper selects subagent models and effort by task complexity across Codex, Claude and Antigravity, with capability-aware fallback, one evidence-backed escalation and requested-versus-observed routing reports.
