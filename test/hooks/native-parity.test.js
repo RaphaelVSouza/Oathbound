@@ -129,26 +129,6 @@ test('hooks Codex registram ciclo de vida e bloqueiam apenas o comando avaliado'
   assert.equal(JSON.parse(denied.stdout).hookSpecificOutput.permissionDecision, 'deny');
 });
 
-test('native hook: rtk-hook bloqueia find e gci -Recurse e ajusta WaitMsBeforeAsync', { skip: !fs.existsSync(BIN) }, () => {
-  const findRes = runHook('rtk-hook', { toolCall: { args: { CommandLine: 'find . -name "*.js"' } } });
-  assert.equal(JSON.parse(findRes.stdout).decision, 'deny');
-
-  const gciRes = runHook('rtk-hook', { toolCall: { args: { CommandLine: 'Get-ChildItem -Recurse .' } } });
-  assert.equal(JSON.parse(gciRes.stdout).decision, 'deny');
-
-  const nodeGci = runHook('rtk-hook', {
-    toolCall: { args: { CommandLine: 'node -e "console.log(\'Get-ChildItem -Recurse\')"' } },
-  });
-  assert.equal(JSON.parse(nodeGci.stdout).decision, 'allow');
-
-  const waitRes = runHook('rtk-hook', {
-    toolCall: { args: { CommandLine: 'echo ok\necho 2', WaitMsBeforeAsync: 5000 } },
-  });
-  const parsed = JSON.parse(waitRes.stdout);
-  assert.equal(parsed.decision, 'allow');
-  assert.equal(parsed.overwrite.WaitMsBeforeAsync, 10000);
-});
-
 test('native hook: statusline formata workspace, vcs, modelo, contexto, quota e subagentes', { skip: !fs.existsSync(BIN) }, () => {
   const repoRoot = path.resolve(__dirname, '..', '..');
   const payload = {

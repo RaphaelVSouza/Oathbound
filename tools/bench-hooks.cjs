@@ -95,13 +95,6 @@ function main() {
         tool_use_id: 'tu-1',
       }),
     },
-    {
-      name: 'rtk-hook (deny find)',
-      subcmd: 'rtk-hook',
-      input: JSON.stringify({
-        toolCall: { args: { CommandLine: 'find . -name "*.js"' } },
-      }),
-    },
   ];
 
   try {

@@ -69,7 +69,7 @@ Quando instala hooks, o instalador exige o binário nativo `oathbound-hook` (res
 
 ## Benchmark de hooks (`bench-hooks.cjs`)
 
-Mede latência (p50/p95/min/max) dos hooks `plugin-agent-guard`, `agent-audit` e `rtk-hook` no binário nativo Rust:
+Mede latência (p50/p95/min/max) dos hooks `plugin-agent-guard` e `agent-audit` no binário nativo Rust:
 
 ```sh
 node tools/bench-hooks.cjs --runs=15

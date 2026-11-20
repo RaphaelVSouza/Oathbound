@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.50.0-alpha.36] - 2026-11-20
+
+- Remove o hook RTK customizado do binário nativo e do benchmark. O instalador continua migrando registros antigos para o hook oficial.
+
+## [0.50.0-alpha.35] - 2026-11-20
+
+- Usa hooks oficiais do RTK em Claude Code, Codex e Antigravity CLI. Migra registros legados do RTK customizado em projetos Antigravity.
+
+## [0.50.0-alpha.34] - 2026-11-20
+
+- Remove o subcomando RTK inválido do fallback de instalação do Antigravity. O fallback usa o hook nativo do Oathbound.
+
 ## [0.50.0-alpha.33] - 2026-11-20
 
 - Correlaciona invocações isoladas do Antigravity com sessões filhas e contabiliza lotes ambíguos.

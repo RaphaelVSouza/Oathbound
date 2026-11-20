@@ -223,28 +223,6 @@ function mergeClaudeSettings(existing: any, incoming: any, enableStatusline: boo
   return result;
 }
 
-function rewriteHookCommands(obj: any, replacementCommand?: string, homePosix?: string): any {
-  if (!obj || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) {
-    return obj.map(item => rewriteHookCommands(item, replacementCommand, homePosix));
-  }
-  const result: any = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (key === 'command' && typeof value === 'string') {
-      if (replacementCommand && (value.includes('oathbound-hook') || value.includes('antigravity-cli'))) {
-        result[key] = replacementCommand;
-      } else if (homePosix && value.includes('__HOME__')) {
-        result[key] = value.replaceAll('__HOME__', homePosix);
-      } else {
-        result[key] = value;
-      }
-    } else {
-      result[key] = rewriteHookCommands(value, replacementCommand, homePosix);
-    }
-  }
-  return result;
-}
-
 function escapeJsonString(val: string): string {
   return JSON.stringify(val).slice(1, -1);
 }
@@ -352,9 +330,20 @@ function mergeDeep(target: any, source: any): any {
   return output;
 }
 
-function mergeHooksJson(existing: any, incoming: any, hookCommandOverride?: string, homePosix?: string): any {
-  const rewrittenIncoming = rewriteHookCommands(incoming, hookCommandOverride, homePosix);
-  return mergeDeep(existing, rewrittenIncoming);
+function removeLegacyAgyRtkHooks(config: any): void {
+  for (const group of [config, config.hooks, config['rtk-rewrite']]) {
+    if (!Array.isArray(group?.PreToolUse)) continue;
+    group.PreToolUse = group.PreToolUse.flatMap((entry: any) => {
+      if (!Array.isArray(entry?.hooks)) return [entry];
+      const hooks = entry.hooks.filter((hook: any) => {
+        const command = hook?.command;
+        return typeof command !== 'string' ||
+          !(command.trim() === 'rtk hook agy' ||
+            /(?:^|[\\/])oathbound-hook(?:\.exe)?"?\s+rtk-hook\s*$/i.test(command));
+      });
+      return hooks.length === 0 && entry.hooks.length > 0 ? [] : [{ ...entry, hooks }];
+    });
+  }
 }
 
 function moveFolderSafely(srcDir: string, destDir: string): void {
@@ -578,28 +567,12 @@ function install(options: InstallOptions) {
       }
     }
     if (!isGlobal) {
-      const nativeHookSrc = findNativeHookBinary(sourceRoot);
-      const nativeBinName = nativeHookBinName();
-      plannedFiles.set(`.agents/${nativeBinName}`, { content: fs.readFileSync(nativeHookSrc) });
-
-      // Merge em .agents/hooks.json apontando para o binário nativo oathbound-hook
-      const hookCommand = `"${targetPosix}/.agents/${nativeBinName}" rtk-hook`;
       const incomingHooksPath = path.join(sourceRoot, 'agy', 'config', 'hooks.json');
-      let incomingHooks: any = {
-        hooks: {
-          PreToolUse: [
-            { matcher: 'Bash|PowerShell', hooks: [{ type: 'command', command: 'rtk hook agy' }] },
-            { matcher: '*', hooks: [{ type: 'command', command: hookCommand }] }
-          ]
-        }
-      };
-      if (fs.existsSync(incomingHooksPath)) {
-        const raw = fs.readFileSync(incomingHooksPath, 'utf8').replaceAll('__HOME__', escapeJsonString(targetPosix));
-        try { incomingHooks = JSON.parse(raw); } catch (_) {}
-      }
+      const incomingHooks = readExistingJson(incomingHooksPath, {});
       const destHooksPath = path.join(targetRoot, '.agents', 'hooks.json');
       const existingHooks: any = readExistingJson(destHooksPath, {});
-      const mergedHooks = mergeHooksJson(existingHooks, incomingHooks, hookCommand);
+      removeLegacyAgyRtkHooks(existingHooks);
+      const mergedHooks = mergeDeep(existingHooks, incomingHooks);
       plannedFiles.set('.agents/hooks.json', {
         content: JSON.stringify(mergedHooks, null, 2) + '\n',
         isMerge: true

@@ -1,13 +1,13 @@
 mod guards;
 
 use guards::audit::{registrar, registrar_falha, AuditExtra};
-use guards::{destructive, read_size, readonly, rtk_hook, statusline};
+use guards::{destructive, read_size, readonly, statusline};
 use serde_json::{json, Value};
 use std::env;
 use std::io::{self, Read, Write};
 
 const MAX_STDIN_AUDIT: usize = 16 * 1024 * 1024;
-const MAX_STDIN_RTK: usize = 1024 * 1024;
+const MAX_STDIN_STATUSLINE: usize = 1024 * 1024;
 
 fn read_stdin_limited(limit: usize) -> (String, bool) {
     let mut buf = Vec::new();
@@ -137,14 +137,8 @@ fn run_codex_agent_audit() {
     }
 }
 
-fn run_rtk_hook() {
-    let (raw, oversized) = read_stdin_limited(MAX_STDIN_RTK);
-    let out = rtk_hook::run(&raw, oversized);
-    let _ = io::stdout().write_all(out.as_bytes());
-}
-
 fn run_statusline() {
-    let (raw, oversized) = read_stdin_limited(MAX_STDIN_RTK);
+    let (raw, oversized) = read_stdin_limited(MAX_STDIN_STATUSLINE);
     let out = statusline::run(&raw, oversized);
     let _ = io::stdout().write_all(out.as_bytes());
 }
@@ -158,13 +152,12 @@ fn main() {
         "destructive-guard" => run_destructive_guard(),
         "agent-audit" => run_agent_audit(),
         "codex-agent-audit" => run_codex_agent_audit(),
-        "rtk-hook" => run_rtk_hook(),
         "statusline" => run_statusline(),
         "--version" | "-V" => {
             println!("oathbound-hook {}", env!("CARGO_PKG_VERSION"));
         }
         _ => {
-            eprintln!("Usage: oathbound-hook <plugin-agent-guard|readonly-guard|read-size-guard|destructive-guard|agent-audit|codex-agent-audit|rtk-hook|statusline>");
+            eprintln!("Usage: oathbound-hook <plugin-agent-guard|readonly-guard|read-size-guard|destructive-guard|agent-audit|codex-agent-audit|statusline>");
             std::process::exit(2);
         }
     }
@@ -231,21 +224,6 @@ mod tests {
         }
         let safe = json!({ "tool_name": "Bash", "tool_input": { "command": "cargo test -q" } });
         assert!(destructive::avaliar(&safe).is_none());
-    }
-
-    #[test]
-    fn rtk_hook_blocks_find_and_gci_and_adjusts_wait() {
-        let find_out = rtk_hook::run(r#"{"toolCall":{"args":{"CommandLine":"find . -name '*.js'"}}}"#, false);
-        assert!(find_out.contains(r#""decision":"deny""#));
-
-        let gci_out = rtk_hook::run(r#"{"toolCall":{"args":{"CommandLine":"Get-ChildItem -Recurse ."}}}"#, false);
-        assert!(gci_out.contains(r#""decision":"deny""#));
-
-        let node_out = rtk_hook::run(r#"{"toolCall":{"args":{"CommandLine":"node -e \"console.log('Get-ChildItem -Recurse')\""}}}"#, false);
-        assert!(!node_out.contains(r#""decision":"deny""#));
-
-        let wait_out = rtk_hook::run(r#"{"toolCall":{"args":{"CommandLine":"git status","WaitMsBeforeAsync":5000}}}"#, false);
-        assert!(wait_out.contains(r#""WaitMsBeforeAsync":10000"#));
     }
 
     #[test]

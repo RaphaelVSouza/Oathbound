@@ -13,7 +13,7 @@ Conjunto portátil de governança, regras de execução, subagentes especializad
 1. **Regras de Governança:** O orquestrador aplica o fluxo comum do pacote. Cada projeto define suas exceções locais.
 2. **Subagentes Especializados:** Orquestrador principal complementado por 7 papéis: `scout`, `scholar`, `scribe`, `smith`, `assayer`, `sentinel` e `tester`.
 3. **Skills de Engenharia:** [`api-contract-design`](skills/api-contract-design/SKILL.md), [`create-adr`](skills/create-adr/SKILL.md), [`create-spec`](skills/create-spec/SKILL.md), `diagnosing-bugs`, `grill-me`, [`incident-postmortem`](skills/incident-postmortem/SKILL.md), `migration`, [`refactor-safely`](skills/refactor-safely/SKILL.md), `surgical-patch` e [`test-strategy`](skills/test-strategy/SKILL.md). Skills com tools específicas de CLI suportam override opcional `SKILL.<runner>.md` (ADR 0006). O `scribe` carrega `create-adr` e `create-spec` sob demanda.
-4. **Hooks Determinísticos:** Mecanismos de proteção em tempo de execução incluindo `agent-audit`, `readonly-guard`, `read-size-guard`, `destructive-guard`, `rtk-hook` e `statusline`, implementados em binário nativo Rust (`native/oathbound-hook`), conforme [docs/adr/0004-hooks-nativos.md](docs/adr/0004-hooks-nativos.md).
+4. **Hooks Determinísticos:** Auditoria e proteção em tempo de execução com `agent-audit`, `readonly-guard`, `read-size-guard` e `destructive-guard` no binário nativo Rust (`native/oathbound-hook`), que também fornece `statusline`. A reescrita de comandos usa os hooks oficiais do RTK.
 5. **Telemetria, Relatórios e Protótipos:** Inclui `audit-resumo`, módulos de custo e dificuldade (`test/custo`, `test/dificuldade`) e protótipos inativos com Jev (`claude/hooks/skill-suggest.js`, `test/jev/revisar-teste.js`) documentados nos ADRs [docs/adr/0001-sugestao-de-skill-com-jev.md](docs/adr/0001-sugestao-de-skill-com-jev.md), [docs/adr/0002-roteamento-de-subagentes-com-jev.md](docs/adr/0002-roteamento-de-subagentes-com-jev.md) e [docs/adr/0003-jev-revisao-de-testes.md](docs/adr/0003-jev-revisao-de-testes.md).
 
 ---
@@ -98,7 +98,7 @@ O instalador valida manifestos SHA-256 (`.oathbound/manifest.json`), preserva al
 
 Na instalação avulsa do Claude, use `claude --agent orquestrador`. O instalador global preserva instruções, configurações, hooks compartilhados e skills existentes. Se uma versão anterior registrou regras ou hooks globais do Oathbound, revise esses registros antes de removê-los manualmente.
 
-O hook RTK usa apenas `PreToolUse`. Remova manualmente registros `Stop` antigos do `rtk-hook.js` em instalações existentes para evitar loops de encerramento.
+Use os hooks oficiais `rtk hook claude`, `rtk hook codex` e `rtk hook antigravity` em `PreToolUse`. O upgrade de projeto Antigravity migra o registro legado do Oathbound. Em PowerShell sem um executável `ls` no PATH, preserve o alias com `ls` em `[hooks].exclude_commands` na configuração do RTK.
 
 ---
 

@@ -134,7 +134,7 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
 
   const binName = process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
   assert.ok(fs.existsSync(path.join(projectRoot, '.claude', 'agents', 'assayer.md')));
-  assert.ok(fs.existsSync(path.join(projectRoot, '.agents', binName)));
+  assert.equal(fs.existsSync(path.join(projectRoot, '.agents', binName)), false);
   assert.ok(fs.existsSync(path.join(projectRoot, '.agents', 'hooks.json')));
   assert.ok(fs.existsSync(path.join(projectRoot, '.agents', 'skills.json')));
 
@@ -151,14 +151,23 @@ test('instalação --project cria estrutura do projeto e audit-docs sem symlinks
   assert.equal(auditDocsConfigContent.includes('caipora'), false);
   assert.equal(auditDocsConfigContent.includes('oathbound.dev'), false);
 
-  // Verifica que os hooks do agy apontam para .agents/oathbound-hook[.exe] do projeto
   const hooks = JSON.parse(fs.readFileSync(path.join(projectRoot, '.agents', 'hooks.json'), 'utf8'));
-  const rawHooksText = JSON.stringify(hooks);
-  assert.ok(rawHooksText.includes(`.agents/${binName}`));
-  const preToolUse = hooks['rtk-rewrite']?.PreToolUse || hooks.hooks?.PreToolUse || hooks.PreToolUse || [];
-  const hookMatcher = preToolUse.find((m: any) => m.matcher === 'run_command' || m.matcher === '*');
-  assert.ok(hookMatcher);
-  assert.ok(hookMatcher.hooks.some((h: any) => h.command.includes(`.agents/${binName}`) && h.command.includes('rtk-hook')));
+  assert.equal(hooks['rtk-rewrite'].PreToolUse[0].hooks[0].command, 'rtk hook antigravity');
+  const hookPath = path.join(projectRoot, '.agents', 'hooks.json');
+  const localHook = { type: 'command', command: 'local-hook' };
+  hooks['rtk-rewrite'].PreToolUse[0].hooks = [
+    { type: 'command', command: `"C:/project/.agents/${binName}" rtk-hook` },
+    localHook,
+  ];
+  hooks.hooks = { PreToolUse: [{ matcher: 'Bash|PowerShell', hooks: [
+    { type: 'command', command: 'rtk hook agy' },
+  ] }] };
+  fs.writeFileSync(hookPath, JSON.stringify(hooks));
+  install({ project: projectRoot, homeDir: fakeHome, runner: 'agy', upgrade: true });
+  const upgradedHooks = JSON.parse(fs.readFileSync(hookPath, 'utf8'));
+  assert.deepEqual(upgradedHooks.hooks.PreToolUse, []);
+  assert.deepEqual(upgradedHooks['rtk-rewrite'].PreToolUse[0].hooks.map((hook: any) => hook.command),
+    [localHook.command, 'rtk hook antigravity']);
 
   // Zero symlinks
   for (const f of walkAllFiles(projectRoot)) {
