@@ -1,6 +1,6 @@
 mod guards;
 
-use guards::audit::{registrar, registrar_falha, AuditExtra};
+use guards::audit::{registrar, registrar_evento, registrar_falha, AuditExtra, AuditSource};
 use guards::{destructive, read_size, readonly, statusline};
 use serde_json::{json, Value};
 use std::env;
@@ -47,15 +47,7 @@ fn avaliar_plugin_agent_guard(payload: &Value) -> Option<String> {
     }
 }
 
-fn emit_deny(payload: &Value, motivo_audit: &'static str, reason: &str) {
-    registrar(
-        payload,
-        Some(AuditExtra {
-            bloqueado: true,
-            motivo: Some(motivo_audit),
-            erro: None,
-        }),
-    );
+fn emit_deny(reason: &str) {
     let out = json!({
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
@@ -66,7 +58,7 @@ fn emit_deny(payload: &Value, motivo_audit: &'static str, reason: &str) {
     let _ = io::stdout().write_all(out.to_string().as_bytes());
 }
 
-fn run_guard(motivo_audit: &'static str, eval: fn(&Value) -> Option<String>) {
+fn run_guard(motivo_audit: &'static str, eval: fn(&Value) -> Option<String>, plugin: bool) {
     let (raw, _) = read_stdin_limited(MAX_STDIN_AUDIT);
     let mut payload = Value::Null;
     let motivo = match serde_json::from_str::<Value>(&raw) {
@@ -76,8 +68,28 @@ fn run_guard(motivo_audit: &'static str, eval: fn(&Value) -> Option<String>) {
         }
         _ => Some("invalid hook input".to_string()),
     };
-    if let Some(m) = motivo {
-        emit_deny(&payload, motivo_audit, &m);
+    let plugin_decision = plugin
+        && payload
+            .get("agent_type")
+            .and_then(Value::as_str)
+            .is_some_and(|name| name.starts_with("oathbound:"));
+    if motivo.is_some() || plugin_decision {
+        registrar_evento(
+            &payload,
+            Some(AuditExtra {
+                bloqueado: motivo.is_some(),
+                motivo: motivo.as_ref().map(|_| motivo_audit),
+                erro: None,
+            }),
+            if plugin_decision {
+                AuditSource::ClaudePlugin
+            } else {
+                AuditSource::Unspecified
+            },
+        );
+    }
+    if let Some(reason) = motivo {
+        emit_deny(&reason);
     }
 }
 
@@ -90,19 +102,19 @@ fn avaliar_readonly_payload(payload: &Value) -> Option<String> {
 }
 
 fn run_plugin_agent_guard() {
-    run_guard("politica_do_agente", avaliar_plugin_agent_guard);
+    run_guard("politica_do_agente", avaliar_plugin_agent_guard, true);
 }
 
 fn run_readonly_guard() {
-    run_guard("somente_leitura", avaliar_readonly_payload);
+    run_guard("somente_leitura", avaliar_readonly_payload, false);
 }
 
 fn run_read_size_guard() {
-    run_guard("limite_de_leitura", read_size::avaliar);
+    run_guard("limite_de_leitura", read_size::avaliar, false);
 }
 
 fn run_destructive_guard() {
-    run_guard("comando_destrutivo", destructive::avaliar);
+    run_guard("acao_destrutiva", destructive::avaliar, false);
 }
 
 fn run_agent_audit() {
@@ -133,7 +145,7 @@ fn run_codex_agent_audit() {
             _ => return,
         };
         payload["tool_name"] = json!(event);
-        registrar(&payload, None);
+        registrar_evento(&payload, None, AuditSource::Codex);
     }
 }
 
@@ -176,7 +188,10 @@ mod tests {
                 "tool_name": "Read",
                 "tool_input": { "file_path": "a.js", "limit": 151 }
             });
-            assert!(avaliar_plugin_agent_guard(&p).is_some(), "expected deny for {agent}");
+            assert!(
+                avaliar_plugin_agent_guard(&p).is_some(),
+                "expected deny for {agent}"
+            );
         }
     }
 
@@ -195,7 +210,10 @@ mod tests {
                 "tool_name": "Bash",
                 "tool_input": { "command": "git commit -m x" }
             });
-            assert!(avaliar_plugin_agent_guard(&commit).is_some(), "expected deny for {agent}");
+            assert!(
+                avaliar_plugin_agent_guard(&commit).is_some(),
+                "expected deny for {agent}"
+            );
         }
 
         let other = json!({
@@ -220,7 +238,10 @@ mod tests {
         ];
         for cmd in cases {
             let p = json!({ "tool_name": "Bash", "tool_input": { "command": cmd } });
-            assert!(destructive::avaliar(&p).is_some(), "expected deny for {cmd}");
+            assert!(
+                destructive::avaliar(&p).is_some(),
+                "expected deny for {cmd}"
+            );
         }
         let safe = json!({ "tool_name": "Bash", "tool_input": { "command": "cargo test -q" } });
         assert!(destructive::avaliar(&safe).is_none());

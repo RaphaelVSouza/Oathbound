@@ -31,7 +31,8 @@ test('native hook: plugin-agent-guard applies guards by agent_type', { skip: !fs
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-native-test-'));
   const env = { ...process.env, AGENT_AUDIT_DIR: tmpDir };
   try {
-    const read151 = { agent_id: 'a1', tool_name: 'Read', tool_input: { limit: 151 } };
+    const read151 = { agent_id: 'a1', session_id: 'session-fixture', tool_use_id: 'read-denied',
+      tool_name: 'Read', tool_input: { limit: 151 } };
     for (const agente of ['assayer', 'sentinel', 'scout']) {
       const deny = runHook('plugin-agent-guard', { ...read151, agent_type: `oathbound:${agente}` }, env);
       assert.equal(deny.status, 0);
@@ -41,7 +42,7 @@ test('native hook: plugin-agent-guard applies guards by agent_type', { skip: !fs
 
       const allow = runHook(
         'plugin-agent-guard',
-        { ...read151, agent_type: `oathbound:${agente}`, tool_input: { limit: 150 } },
+        { ...read151, agent_type: `oathbound:${agente}`, tool_use_id: 'read-allowed', tool_input: { limit: 150 } },
         env
       );
       assert.equal(allow.status, 0);
@@ -71,6 +72,14 @@ test('native hook: plugin-agent-guard applies guards by agent_type', { skip: !fs
 
     const invalid = runHook('plugin-agent-guard', '{not-json', env);
     assert.equal(JSON.parse(invalid.stdout).hookSpecificOutput.permissionDecision, 'deny');
+    const rows = fs.readFileSync(path.join(tmpDir, 'agent-audit.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
+    const scout = rows.filter(row => row.agente === 'oathbound:scout');
+    assert.deepEqual(scout.map(row => [row.tool_use_id, row.bloqueado === true]), [
+      ['read-denied', true], ['read-allowed', false],
+    ]);
+    const version = fs.readFileSync(path.resolve(__dirname, '../../VERSION'), 'utf8').trim();
+    assert.ok(scout.every(row => row.tentativa === true && row.sessao_id === 'session-fixture'
+      && row.modo_instalacao === 'plugin' && row.produtor.versao === version));
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }

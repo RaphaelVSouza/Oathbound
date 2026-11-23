@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.50.0-alpha.41] - 2026-11-23
+
+- Keep asynchronous Grill Me questionnaires open until the user replies or cancels.
+- Record Claude plugin guard attempts and decisions together, add native audit producer versions, and report Antigravity creation evidence.
+- Write Codex lifecycle audit records to the Codex state directory by default.
+
 ## [0.50.0-alpha.40] - 2026-11-20
 
 - Removes unused global instruction templates `claude/CLAUDE.md` and `agy/config/GEMINI.md`, and replaces the stale RTK reference. Existing global instruction files remain untouched.

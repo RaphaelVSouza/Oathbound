@@ -22,13 +22,20 @@ fn home_dir() -> Option<PathBuf> {
         .map(PathBuf::from)
 }
 
-fn dir_auditoria() -> Option<PathBuf> {
+fn dir_auditoria(source: AuditSource) -> Option<PathBuf> {
     if let Some(dir) = env::var_os("AGENT_AUDIT_DIR") {
         if !dir.is_empty() {
             return Some(PathBuf::from(dir));
         }
     }
-    home_dir().map(|h| h.join(".claude").join("state"))
+    match source {
+        AuditSource::Codex => env::var_os("CODEX_HOME")
+            .filter(|dir| !dir.is_empty())
+            .map(PathBuf::from)
+            .or_else(|| home_dir().map(|h| h.join(".codex")))
+            .map(|dir| dir.join("state")),
+        _ => home_dir().map(|h| h.join(".claude").join("state")),
+    }
 }
 
 fn iso_now_utc() -> String {
@@ -74,7 +81,11 @@ fn com_trava<F: FnOnce()>(arquivo: &Path, f: F) {
                 .unwrap_or(false);
             if expired {
                 let _ = fs::remove_file(&trava);
-                OpenOptions::new().write(true).create_new(true).open(&trava).ok()
+                OpenOptions::new()
+                    .write(true)
+                    .create_new(true)
+                    .open(&trava)
+                    .ok()
             } else {
                 None
             }
@@ -126,19 +137,47 @@ pub struct AuditExtra<'a> {
     pub erro: Option<&'a str>,
 }
 
+const RELEASE_VERSION: &str = include_str!("../../../../VERSION");
+
+#[derive(Clone, Copy)]
+pub enum AuditSource {
+    Unspecified,
+    ClaudePlugin,
+    Codex,
+}
+
 pub fn registrar(payload: &Value, extra: Option<AuditExtra<'_>>) -> bool {
+    registrar_evento(payload, extra, AuditSource::Unspecified)
+}
+
+pub fn registrar_evento(
+    payload: &Value,
+    extra: Option<AuditExtra<'_>>,
+    source: AuditSource,
+) -> bool {
     let Some(agent_id) = payload.get("agent_id").and_then(|v| v.as_str()) else {
         return false;
     };
     if agent_id.is_empty() {
         return false;
     }
-    let Some(dir) = dir_auditoria() else {
+    let Some(dir) = dir_auditoria(source) else {
         return false;
     };
 
     let mut linha = Map::new();
     linha.insert("ts".into(), json!(iso_now_utc()));
+    linha.insert(
+        "produtor".into(),
+        json!({
+            "nome": "oathbound",
+            "versao": RELEASE_VERSION.trim()
+        }),
+    );
+    if matches!(source, AuditSource::ClaudePlugin) {
+        linha.insert("tentativa".into(), json!(true));
+        linha.insert("modo_instalacao".into(), json!("plugin"));
+    }
     let agente = payload
         .get("agent_type")
         .and_then(|v| v.as_str())
@@ -154,6 +193,9 @@ pub fn registrar(payload: &Value, extra: Option<AuditExtra<'_>>) -> bool {
         .take(8)
         .collect();
     linha.insert("sessao".into(), json!(sessao));
+    if let Some(session_id) = payload.get("session_id").and_then(Value::as_str) {
+        linha.insert("sessao_id".into(), json!(session_id));
+    }
     let ferramenta = payload
         .get("tool_name")
         .and_then(|v| v.as_str())

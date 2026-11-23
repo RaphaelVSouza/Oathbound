@@ -15,6 +15,7 @@ confirmed, ambiguous or lacks evidence. The extractor fills `sessao_filha`
 when the immediately following creation response identifies a previously unseen
 child for an isolated call. It preserves all calls in batches.
 Status queries do not create new links.
+Confirmed adjacent links include `evidencia_filha` with the creation record's source and line.
 By default, the extractor reads `AGENT_AUDIT_DIR` or `~/.claude/state`,
 `$CODEX_HOME/state` or `~/.codex/state`, and `~/.gemini`.
 `--fuso` changes the date boundaries, which default to `America/Sao_Paulo`.
@@ -22,7 +23,12 @@ By default, the extractor reads `AGENT_AUDIT_DIR` or `~/.claude/state`,
 `eventos.jsonl` contains events and file and line references.
 `metricas.json` contains a file inventory and counts by CLI. Claude's block
 rate requires keys for all calls and blocks in the window, with a match for
-each block. Historical Codex records without start or end events appear as
+each block. `decisoes_plugin` reports the separate cohort observed by the
+Claude plugin guard. Each decision is one attempt, including denials. Its
+rate is null when decision keys are missing or conflicting. Native records
+can carry the producing release and, for plugin decisions, the installation mode.
+Codex lifecycle hooks default to `$CODEX_HOME/state` or `~/.codex/state` unless
+`AGENT_AUDIT_DIR` is set. Historical Codex records without start or end events appear as
 calls, blocks or audit errors.
 For Antigravity, the extractor counts transcript invocations by surface.
 CLI history measures database and transcript coverage through conversation IDs.

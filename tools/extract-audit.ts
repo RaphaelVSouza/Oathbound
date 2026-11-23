@@ -15,6 +15,11 @@ type Event = {
   ferramenta: string | null; atribuicao: 'confirmada' | 'compativel-por-nome' | 'desconhecida';
   sessao_filha?: string;
   correlacao_filha?: 'confirmada' | 'ambigua' | 'sem_evidencia';
+  evidencia_filha?: { metodo: 'criacao_adjacente'; fonte: number; linha: number };
+  produtor?: { nome: 'oathbound'; versao: string; modo: 'plugin' | null };
+  sessao_id?: string;
+  tentativa?: true;
+  motivo?: string;
   origem: { fonte: number; linha: number; indice?: number };
 };
 
@@ -112,11 +117,21 @@ function readAudit(cli: 'claude' | 'codex', row: Row, time: string, origem: Even
   else if (row.bloqueado === true) tipo = 'bloqueio';
   else if (cli === 'codex' && ferramenta === 'SubagentStart') tipo = 'inicio';
   else if (cli === 'codex' && ferramenta === 'SubagentStop') tipo = 'fim';
+  const version = record(row.produtor) && row.produtor.nome === 'oathbound'
+    ? token(row.produtor.versao) : null;
+  const sessionId = token(row.sessao_id);
+  const reason = tipo === 'bloqueio' ? token(row.motivo) : null;
   return {
     cli, tipo, timestamp: time, agente, sessao: token(row.sessao),
     agente_id: token(row.agent_id), chamada_id: token(row.tool_use_id), ferramenta, origem,
     atribuicao: agente?.startsWith('oathbound:') && known.has(agente.slice('oathbound:'.length))
       ? 'confirmada' : agente && known.has(agente) ? 'compativel-por-nome' : 'desconhecida',
+    ...(version ? { produtor: { nome: 'oathbound' as const, versao: version,
+      modo: row.modo_instalacao === 'plugin' ? 'plugin' as const : null } } : {}),
+    ...(sessionId ? { sessao_id: sessionId } : {}),
+    ...(version && cli === 'claude' && row.tentativa === true && row.modo_instalacao === 'plugin'
+      && (tipo === 'chamada' || tipo === 'bloqueio') ? { tentativa: true as const } : {}),
+    ...(reason ? { motivo: reason } : {}),
   };
 }
 
@@ -171,6 +186,7 @@ async function extract(source: Source, id: number, groups: Map<Cli, Event[]>,
           if (previous && row.step_index === previous.step + 1 && child !== source.session) {
             previous.event.sessao_filha = child;
             previous.event.correlacao_filha = 'confirmada';
+            previous.event.evidencia_filha = { metodo: 'criacao_adjacente', fonte: id, linha: counts.lidas };
           }
         }
       }
@@ -226,12 +242,15 @@ function summarize(cli: Cli, events: Event[]) {
     por_sessao: countBy(events.map(event => event.sessao)),
     por_ferramenta: countBy(events.map(event => event.ferramenta)),
     por_atribuicao: countBy(events.map(event => event.atribuicao)),
+    por_versao_produtor: countBy(events.map(event => event.produtor?.versao ?? null)),
+    por_modo_instalacao: countBy(events.map(event => event.produtor?.modo ?? null)),
     sem_agente: events.filter(event => !event.agente).length,
     sem_sessao: events.filter(event => !event.sessao).length,
     invocacoes_sem_id: events.filter(event => event.tipo === 'invocacao' && !event.chamada_id).length,
     ...(cli === 'agy' || cli === 'antigravity-desktop' ? {
       correlacao_sessoes_filhas: countBy(events.map(event => event.correlacao_filha ?? null)),
     } : {}),
+    ...(cli === 'claude' ? { decisoes_plugin: summarizePluginDecisions(events) } : {}),
     correlacao_bloqueios: cli === 'claude' || cli === 'codex' ? {
       chamadas_distintas_identificadas: callIds.size,
       bloqueios_distintos_identificados: blockIds.size,
@@ -241,6 +260,36 @@ function summarize(cli: Cli, events: Event[]) {
       denominador_taxa: canComputeRate ? callIds.size : null,
       taxa: canComputeRate ? blockIds.size / callIds.size : null,
     } : null,
+  };
+}
+
+function summarizePluginDecisions(events: Event[]) {
+  const decisions = events.filter(event => event.tentativa);
+  const keyed = new Map<string, Set<Kind>>();
+  let unkeyed = 0;
+  for (const event of decisions) {
+    if (!event.sessao_id || !event.agente_id || !event.chamada_id) {
+      unkeyed++;
+      continue;
+    }
+    const key = JSON.stringify([event.sessao_id, event.agente_id, event.chamada_id]);
+    const kinds = keyed.get(key) ?? new Set<Kind>();
+    kinds.add(event.tipo);
+    keyed.set(key, kinds);
+  }
+  const kinds = [...keyed.values()];
+  const conflicting = kinds.filter(values => values.size > 1).length;
+  const blocked = kinds.filter(values => values.size === 1 && values.has('bloqueio')).length;
+  const denominator = keyed.size && !unkeyed && !conflicting ? keyed.size : null;
+  return {
+    registros: decisions.length,
+    sem_chave: unkeyed,
+    chaves_distintas: keyed.size,
+    registros_duplicados: decisions.length - unkeyed - kinds.reduce((total, values) => total + values.size, 0),
+    chaves_conflitantes: conflicting,
+    bloqueios_distintos: blocked,
+    denominador_taxa: denominator,
+    taxa: denominator === null ? null : blocked / denominator,
   };
 }
 
