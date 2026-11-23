@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.42] - 2026-11-23
+
+- Builds the native hook with Rust edition 2024 using the existing Rust 1.100.0 toolchain.
+
 ## [0.50.0-alpha.41] - 2026-11-23
 
 - Keep asynchronous Grill Me questionnaires open until the user replies or cancels.
