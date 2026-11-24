@@ -54,7 +54,7 @@ claude plugin validate dist/claude
 agy plugin validate dist/agy
 ```
 
-Create `dist/` before generating packages. The generator requires new destinations. Each package contains the skills and eight agents. The Claude package includes per-agent guards, which require Node.js.
+Create `dist/` before generating packages. The generator requires new destinations. Each package contains the skills and eight agents. The Claude package includes per-agent guards and bundles the native hook as `native/bin/oathbound-hook`. Build the hook first with `cargo build --locked --release --manifest-path native/oathbound-hook/Cargo.toml`, or set `OATHBOUND_NATIVE_BIN`. The Claude build fails when no binary is found. Packages from `agy` and `codex` do not bundle it. See [tools/README.md](tools/README.md) for the lookup order.
 
 ### 2. Local Plugin for Codex CLI
 
@@ -125,7 +125,7 @@ Antigravity named models require invocation support; `agy models` only confirms
 session availability. Unsupported settings retain permitted defaults or become
 pending work. This policy does not guarantee model compliance or cost savings.
 
-### 4. Updating Global Installations to 0.50.0-alpha.42
+### 4. Updating Global Installations to 0.50.0-alpha.50
 
 From the updated repository root, run:
 
