@@ -9,6 +9,7 @@ Official documentation indexes for supported harnesses. Links point to vendor so
 Package policies and architecture:
 - [Adaptive subagent model routing](adaptive-model-routing.md)
 - [ADR-0008: Layered portability and harness-exclusive skills](adr/0008-portable-and-harness-exclusive-skills.md)
+- [ADR-0009: Per-platform packaging of the native hook binary (Proposed)](adr/0009-per-platform-native-hook-packaging.md)
 
 ## Reusable Prompts
 
