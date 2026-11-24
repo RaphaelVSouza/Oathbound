@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.50.0-alpha.49] - 2026-11-24
+
+- Fixes the Claude plugin package missing `native/bin/oathbound-hook` (hook `plugin-agent-guard` failed with exit 127): `tools/build-plugin.cjs claude` now copies the native binary (`.exe` on win32) using the same lookup as `tools/install.ts` (`OATHBOUND_NATIVE_BIN`, `native/bin/oathbound-hook-<platform>-<arch>`, `native/oathbound-hook/target/release`) and fails with an explicit error when none is found.
+
+- `.github/workflows/release.yml` now builds the hook with cargo before tests and packaging.
+- Not validated: Windows resolution of the extensionless hook command.
+- Release tarballs carry a single-platform (Linux) binary.
+
+## [0.50.0-alpha.48] - 2026-11-24
+
+- Version bump only (`VERSION` and plugin manifests).
+
 ## [0.50.0-alpha.47] - 2026-11-24
 
 - Adapts `skills/grill-me/` (`SKILL.md`, `SKILL.agy.md`, `SKILL.claude.md`, `SKILL.codex.md`) so the base `SKILL.md` stays harness-agnostic while each `SKILL.<runner>.md` override uses its native question and discovery tools (`ask_question` + `invoke_subagent`/`scout`, `AskUserQuestion` + `scout`, `request_user_input` / `request_user_input_async`).

@@ -85,6 +85,14 @@ node tools/bench-hooks.cjs --runs=15
 
 Create the parent directory and run `node tools/build-plugin.cjs claude <destination>` or `node tools/build-plugin.cjs agy <destination>`. The destination must be new and inside the repository. The generator does not overwrite existing files and injects the version from `VERSION` into generated manifests. Validate with `claude plugin validate <destination>` or `agy plugin validate <destination>`.
 
+The `claude` build requires the native hook binary and fails with `Native hook binary not found` when none exists; `agy` and `codex` builds do not use it. Lookup order:
+
+1. `OATHBOUND_NATIVE_BIN`
+2. `native/bin/oathbound-hook-<platform>-<arch>[.exe]`
+3. `native/oathbound-hook/target/release/oathbound-hook[.exe]`
+
+Build it with `cargo build --locked --release --manifest-path native/oathbound-hook/Cargo.toml`. The binary only works on the OS it was built on.
+
 For Codex CLI, run `node tools/build-plugin.cjs codex dist/codex`.
 The generated destination is the local marketplace root and contains the plugin
 in `plugins/oathbound/`. Follow the [manual installation](../README.md#2-local-plugin-for-codex-cli).

@@ -28,6 +28,29 @@ const AGY_ALLOWED_FIELDS = new Set([
   'disabled',
 ]);
 
+test('fails the claude build when the native hook binary is missing', t => {
+  const tmp = fixtureDir('plugin-nonative-');
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const saved = process.env.OATHBOUND_NATIVE_BIN;
+  const fake = path.join(tmp, 'missing-bin');
+  const { findNativeHookBinary } = require('../tools/build-plugin.cjs');
+  t.after(() => { if (saved === undefined) delete process.env.OATHBOUND_NATIVE_BIN; else process.env.OATHBOUND_NATIVE_BIN = saved; });
+  process.env.OATHBOUND_NATIVE_BIN = fake;
+  assert.throws(() => findNativeHookBinary(tmp), /Native hook binary not found/);
+});
+
+test('agy and codex builds succeed without a native binary and omit native/bin', t => {
+  const tmp = fixtureDir('plugin-agy-codex-');
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const saved = process.env.OATHBOUND_NATIVE_BIN;
+  t.after(() => { if (saved === undefined) delete process.env.OATHBOUND_NATIVE_BIN; else process.env.OATHBOUND_NATIVE_BIN = saved; });
+  process.env.OATHBOUND_NATIVE_BIN = path.join(tmp, 'missing-bin');
+  for (const runner of ['agy', 'codex']) {
+    const out = buildPlugin(runner, path.join(tmp, runner));
+    assert.equal(fs.existsSync(path.join(out, 'native', 'bin')), false);
+  }
+});
+
 test('generates isolated plugins with agents and portable hooks without overwriting the destination', t => {
   const version = fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim();
   const tmp = fixtureDir('plugin-test-');
@@ -63,6 +86,8 @@ test('generates isolated plugins with agents and portable hooks without overwrit
       assert.equal(hooks.hooks.PreToolUse.length, 1);
       assert.match(hooks.hooks.PreToolUse[0].hooks[0].command, /oathbound-hook.*plugin-agent-guard/);
       assert.equal(fs.existsSync(path.join(out, 'claude/hooks/redigir.js')), true);
+      const nativeName = process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
+      assert.equal(fs.existsSync(path.join(out, 'native', 'bin', nativeName)), true);
     } else {
       const manifest = JSON.parse(fs.readFileSync(path.join(out, '.antigravity-plugin', 'plugin.json'), 'utf8'));
       assert.equal(manifest.version, version);

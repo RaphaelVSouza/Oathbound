@@ -55,6 +55,25 @@ function copySkillsForRunner(runner, destDir, sourceRoot = source) {
   }
 }
 
+// Same lookup order as findNativeHookBinary in tools/install.ts.
+function findNativeHookBinary(sourceRoot = source) {
+  if (process.env.OATHBOUND_NATIVE_BIN && fs.existsSync(process.env.OATHBOUND_NATIVE_BIN)) {
+    return process.env.OATHBOUND_NATIVE_BIN;
+  }
+  const ext = process.platform === 'win32' ? '.exe' : '';
+  const candidates = [
+    path.join(sourceRoot, 'native', 'bin', `oathbound-hook-${process.platform}-${process.arch}${ext}`),
+    path.join(sourceRoot, 'native', 'oathbound-hook', 'target', 'release', `oathbound-hook${ext}`),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  throw new Error(
+    'Native hook binary not found. Set OATHBOUND_NATIVE_BIN, add native/bin/oathbound-hook-<platform>-<arch>, ' +
+    'or run `cargo build --release` in native/oathbound-hook. Checked: ' + candidates.join(', ')
+  );
+}
+
 function buildPlugin(runner, destination) {
   if (!['claude', 'agy', 'codex'].includes(runner) || !destination) {
     throw new Error('Usage: node tools/build-plugin.cjs <claude|agy|codex> <new-directory>');
@@ -65,6 +84,7 @@ function buildPlugin(runner, destination) {
   if (relative.startsWith('..' + path.sep) || relative === '..' || path.isAbsolute(relative)) {
     throw new Error('The destination must be a new directory inside the repository.');
   }
+  const nativeBin = runner === 'claude' ? findNativeHookBinary() : null;
   fs.mkdirSync(out, { recursive: false });
   const copy = (from, to) => fs.cpSync(path.join(source, from), path.join(out, to), { recursive: true, errorOnExist: true, force: false });
   const write = (file, value) => {
@@ -97,6 +117,10 @@ function buildPlugin(runner, destination) {
     copy('workflows', 'workflows');
     copy('claude/hooks', 'claude/hooks');
     copy('hooks', 'hooks');
+    const nativeDest = path.join(out, 'native', 'bin', process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook');
+    fs.mkdirSync(path.dirname(nativeDest), { recursive: true });
+    fs.copyFileSync(nativeBin, nativeDest);
+    fs.chmodSync(nativeDest, 0o755);
   } else {
     const manifest = loadManifest('.antigravity-plugin/plugin.json');
     write('.antigravity-plugin/plugin.json', manifest);
@@ -110,4 +134,4 @@ if (require.main === module) {
   try { console.log(buildPlugin(process.argv[2], process.argv[3])); }
   catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { buildPlugin, copySkillsForRunner, RUNNER_EXCLUSIVE_SKILL_DIRS };
+module.exports = { buildPlugin, findNativeHookBinary, copySkillsForRunner, RUNNER_EXCLUSIVE_SKILL_DIRS };

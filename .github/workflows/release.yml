@@ -18,6 +18,11 @@ jobs:
         with:
           node-version: '26.13.1'
 
+      - uses: dtolnay/rust-toolchain@1.100.0
+
+      - name: Build oathbound-hook
+        run: cargo build --locked --release --manifest-path native/oathbound-hook/Cargo.toml
+
       - name: Verify tag matches VERSION
         run: |
           TAG_VER="${GITHUB_REF_NAME#v}"
