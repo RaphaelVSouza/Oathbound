@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.50.0-alpha.44] - 2026-11-24
+
+- Adds a compact handoff block rule (`STATE`, `FILES`, `DECISIONS`, `NEXT`) to Antigravity's `oathkeeper` for long sessions or manual compaction requests when `/compact` is unavailable in custom `mainAgent` menus.
+
+## [0.50.0-alpha.43] - 2026-11-23
+
+- Selects the Claude Code or Antigravity CLI questionnaire tool in the shared `grill-me` entry point used by source plugins.
+
 ## [0.50.0-alpha.42] - 2026-11-23
 
 - Builds the native hook with Rust edition 2024 using the existing Rust 1.100.0 toolchain.
