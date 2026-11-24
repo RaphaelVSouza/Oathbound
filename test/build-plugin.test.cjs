@@ -39,6 +39,25 @@ test('fails the claude build when the native hook binary is missing', t => {
   assert.throws(() => findNativeHookBinary(tmp), /Native hook binary not found/);
 });
 
+test('names the packaged native binary from the source binary extension, not the host', t => {
+  const tmp = fixtureDir('plugin-native-name-');
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const saved = process.env.OATHBOUND_NATIVE_BIN;
+  t.after(() => { if (saved === undefined) delete process.env.OATHBOUND_NATIVE_BIN; else process.env.OATHBOUND_NATIVE_BIN = saved; });
+  const cases = [
+    { source: 'fake-hook.exe', present: 'oathbound-hook.exe', absent: 'oathbound-hook' },
+    { source: 'fake-hook', present: 'oathbound-hook', absent: 'oathbound-hook.exe' }
+  ];
+  for (const c of cases) {
+    const fake = path.join(tmp, c.source);
+    fs.writeFileSync(fake, 'fake');
+    process.env.OATHBOUND_NATIVE_BIN = fake;
+    const out = buildPlugin('claude', path.join(tmp, 'out-' + c.source));
+    assert.equal(fs.existsSync(path.join(out, 'native', 'bin', c.present)), true);
+    assert.equal(fs.existsSync(path.join(out, 'native', 'bin', c.absent)), false);
+  }
+});
+
 test('agy and codex builds succeed without a native binary and omit native/bin', t => {
   const tmp = fixtureDir('plugin-agy-codex-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));

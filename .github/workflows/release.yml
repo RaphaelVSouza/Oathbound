@@ -9,21 +9,13 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  check-version:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '26.13.1'
-
-      - uses: dtolnay/rust-toolchain@1.100.0
-
-      - name: Build oathbound-hook
-        run: cargo build --locked --release --manifest-path native/oathbound-hook/Cargo.toml
-
       - name: Verify tag matches VERSION
+        shell: bash
         run: |
           TAG_VER="${GITHUB_REF_NAME#v}"
           FILE_VER="$(tr -d '[:space:]' < VERSION)"
@@ -32,27 +24,112 @@ jobs:
             exit 1
           fi
 
+  build-hook:
+    name: build-hook (${{ matrix.platform }}-${{ matrix.arch }})
+    needs: check-version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            ext: ''
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            ext: '.exe'
+          - os: macos-latest # Apple Silicon (arm64) runner
+            platform: darwin
+            arch: arm64
+            ext: ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@1.100.0
+
+      - name: Build oathbound-hook
+        run: cargo build --locked --release --manifest-path native/oathbound-hook/Cargo.toml
+
+      - name: Stage binary
+        shell: bash
+        run: |
+          mkdir -p staged
+          cp "native/oathbound-hook/target/release/oathbound-hook${{ matrix.ext }}" \
+            "staged/oathbound-hook-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.ext }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oathbound-hook-${{ matrix.platform }}-${{ matrix.arch }}
+          path: staged/oathbound-hook-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.ext }}
+          if-no-files-found: error
+
+  release:
+    needs: build-hook
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26.13.1'
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: hooks
+          pattern: oathbound-hook-*
+
+      - name: Prepare hook binaries
+        shell: bash
+        run: |
+          chmod +x hooks/oathbound-hook-linux-x64/oathbound-hook-linux-x64 \
+                   hooks/oathbound-hook-darwin-arm64/oathbound-hook-darwin-arm64
+          ls -R hooks
+
       - name: Run unit tests
+        shell: bash
+        env:
+          OATHBOUND_NATIVE_BIN: ${{ github.workspace }}/hooks/oathbound-hook-linux-x64/oathbound-hook-linux-x64
+          OATHBOUND_HOOK_BIN: ${{ github.workspace }}/hooks/oathbound-hook-linux-x64/oathbound-hook-linux-x64
         run: node --test "test/*.test.ts" "test/*.test.cjs" "test/*/*.test.js"
 
       - name: Audit documentation
+        shell: bash
         run: node tools/audit-docs.ts
 
       - name: Build and archive plugins
+        shell: bash
         run: |
           TAG_VER="${GITHUB_REF_NAME#v}"
           mkdir -p dist
-          node tools/build-plugin.cjs claude dist/claude
+          build_claude() {
+            target="$1"; bin="$2"
+            OATHBOUND_NATIVE_BIN="${GITHUB_WORKSPACE}/${bin}" node tools/build-plugin.cjs claude "dist/claude-${target}"
+            tar -czf "dist/oathbound-claude-${TAG_VER}-${target}.tar.gz" -C "dist/claude-${target}" .
+          }
+          build_claude linux-x64 hooks/oathbound-hook-linux-x64/oathbound-hook-linux-x64
+          build_claude win32-x64 hooks/oathbound-hook-win32-x64/oathbound-hook-win32-x64.exe
+          build_claude darwin-arm64 hooks/oathbound-hook-darwin-arm64/oathbound-hook-darwin-arm64
           node tools/build-plugin.cjs agy dist/agy
           node tools/build-plugin.cjs codex dist/codex
-          tar -czf "dist/oathbound-claude-${TAG_VER}.tar.gz" -C dist/claude .
           tar -czf "dist/oathbound-agy-${TAG_VER}.tar.gz" -C dist/agy .
           tar -czf "dist/oathbound-codex-${TAG_VER}.tar.gz" -C dist/codex .
 
-      - name: Validate Claude release artifact
-        run: npx --yes @anthropic-ai/claude-code@2.1.327 plugin validate dist/claude
+      - name: Validate Claude release artifacts
+        shell: bash
+        run: |
+          for target in linux-x64 win32-x64 darwin-arm64; do
+            npx --yes @anthropic-ai/claude-code@2.1.327 plugin validate "dist/claude-${target}"
+          done
+
+      - name: Generate checksums
+        shell: bash
+        working-directory: dist
+        run: sha256sum ./*.tar.gz | sed 's# \./# #' > SHA256SUMS
 
       - name: Publish GitHub Release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -62,9 +139,12 @@ jobs:
             *-*) PRERELEASE_FLAG="--prerelease" ;;
           esac
           gh release create "$GITHUB_REF_NAME" \
-            "dist/oathbound-claude-${TAG_VER}.tar.gz" \
+            dist/oathbound-claude-"${TAG_VER}"-linux-x64.tar.gz \
+            dist/oathbound-claude-"${TAG_VER}"-win32-x64.tar.gz \
+            dist/oathbound-claude-"${TAG_VER}"-darwin-arm64.tar.gz \
             "dist/oathbound-agy-${TAG_VER}.tar.gz" \
             "dist/oathbound-codex-${TAG_VER}.tar.gz" \
+            dist/SHA256SUMS \
             --title "$GITHUB_REF_NAME" \
             --generate-notes \
             $PRERELEASE_FLAG

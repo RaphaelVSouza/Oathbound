@@ -1,5 +1,6 @@
 {
   "name": "oathbound",
+  "description": "Subagent governance, preventive/detective hooks, and skills for Claude Code.",
   "owner": {
     "name": "Raphael Vieira"
   },

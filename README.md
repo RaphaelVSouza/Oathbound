@@ -54,7 +54,9 @@ claude plugin validate dist/claude
 agy plugin validate dist/agy
 ```
 
-Create `dist/` before generating packages. The generator requires new destinations. Each package contains the skills and eight agents. The Claude package includes per-agent guards and bundles the native hook as `native/bin/oathbound-hook`. Build the hook first with `cargo build --locked --release --manifest-path native/oathbound-hook/Cargo.toml`, or set `OATHBOUND_NATIVE_BIN`. The Claude build fails when no binary is found. Packages from `agy` and `codex` do not bundle it. See [tools/README.md](tools/README.md) for the lookup order.
+Create `dist/` before generating packages. The generator requires new destinations. Each package contains the skills and eight agents. The Claude package includes per-agent guards and bundles the native hook as `native/bin/oathbound-hook` (`.exe` when the source binary is a `.exe`). Build the hook first with `cargo build --locked --release --manifest-path native/oathbound-hook/Cargo.toml`, or set `OATHBOUND_NATIVE_BIN`. The Claude build fails when no binary is found. Packages from `agy` and `codex` do not bundle it. See [tools/README.md](tools/README.md) for the lookup order.
+
+Releases publish one Claude package per target, `oathbound-claude-<version>-<platform>-<arch>.tar.gz` (`linux-x64`, `win32-x64`, `darwin-arm64`), each with the hook for its own OS. Pick the one that matches your system. `oathbound-agy-<version>.tar.gz` and `oathbound-codex-<version>.tar.gz` carry no binary. Verify downloads with `sha256sum -c SHA256SUMS`.
 
 ### 2. Local Plugin for Codex CLI
 

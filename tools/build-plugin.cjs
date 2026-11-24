@@ -118,7 +118,8 @@ function buildPlugin(runner, destination) {
     copy('workflows', 'workflows');
     copy('claude/hooks', 'claude/hooks');
     copy('hooks', 'hooks');
-    const nativeDest = path.join(out, 'native', 'bin', process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook');
+    // Name from the source binary, not the build host, so cross-built targets keep the right suffix.
+    const nativeDest = path.join(out, 'native', 'bin', path.extname(nativeBin).toLowerCase() === '.exe' ? 'oathbound-hook.exe' : 'oathbound-hook');
     fs.mkdirSync(path.dirname(nativeDest), { recursive: true });
     fs.copyFileSync(nativeBin, nativeDest);
     fs.chmodSync(nativeDest, 0o755);

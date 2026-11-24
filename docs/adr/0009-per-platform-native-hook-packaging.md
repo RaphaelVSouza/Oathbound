@@ -1,5 +1,5 @@
 ---
-status: Proposed # Proposed | Accepted | Rejected | Deprecated | Superseded by ADR-NNNN
+status: Accepted # Proposed | Accepted | Rejected | Deprecated | Superseded by ADR-NNNN
 date: 2026-11-24 # date of the last status change
 decision-makers: [Oathbound Maintainers]
 consulted: []
@@ -10,17 +10,17 @@ informed: []
 
 # 0009 - Per-Platform Packaging of the Native Hook Binary
 
-> **Awaiting confirmation:** the recommendation below is not yet chosen by the decision-makers. Status stays `Proposed`.
+> The maintainer accepted Option A on 2026-11-24.
 
 ## Context and Problem Statement
 
-[ADR-0004](0004-hooks-nativos.md) moved the hot-path hooks to the Rust `oathbound-hook` binary and removed the `.js` fallback, so the Claude plugin cannot run its hooks without that binary. `hooks/hooks.json` calls `"${CLAUDE_PLUGIN_ROOT}/native/bin/oathbound-hook" plugin-agent-guard` (`PreToolUse`, matcher `Bash|PowerShell|Read`), with no `.exe` suffix. `tools/build-plugin.cjs claude <dir>` copies exactly one binary into `native/bin/oathbound-hook[.exe]`, chosen by `findNativeHookBinary` for the **build host** (env `OATHBOUND_NATIVE_BIN`, then `native/bin/oathbound-hook-<platform>-<arch>[.exe]`, then `native/oathbound-hook/target/release/oathbound-hook[.exe]`); it fails if none is found.
+[ADR-0004](0004-hooks-nativos.md) moved the hot-path hooks to the Rust `oathbound-hook` binary and removed the `.js` fallback, so the Claude plugin cannot run its hooks without that binary. `hooks/hooks.json` calls `"${CLAUDE_PLUGIN_ROOT}/native/bin/oathbound-hook" plugin-agent-guard` (`PreToolUse`, matcher `Bash|PowerShell|Read`), with no `.exe` suffix. `tools/build-plugin.cjs claude <dir>` copies exactly one binary into `native/bin/oathbound-hook[.exe]`, chosen by `findNativeHookBinary` (until 0.50.0-alpha.50 it was named after the **build host**; since 0.50.0-alpha.51 it is named after the source binary's extension) (env `OATHBOUND_NATIVE_BIN`, then `native/bin/oathbound-hook-<platform>-<arch>[.exe]`, then `native/oathbound-hook/target/release/oathbound-hook[.exe]`); it fails if none is found.
 
 `.github/workflows/release.yml` runs on `ubuntu-latest` only, so release tarballs carry a Linux ELF binary. Windows and macOS users of a release package get a hook that cannot run. `ci.yml` validates on `ubuntu-latest` and `windows-latest` but does not produce release artifacts. Motivating incident: the alpha.48 package shipped without the binary and hooks failed with exit 127; alpha.49 added bundling and alpha.50 added `marketplace.json`. The `agy` and `codex` packages do not bundle the binary.
 
 ## Decision Drivers
 
-- **Windows/Git Bash resolution:** Claude Code runs hooks through Git Bash on Windows. An extensionless command resolved to `oathbound-hook.exe` in a manual Git Bash test (exit 0). Not validated via PowerShell or other runners (unverified).
+- **Windows/Git Bash resolution:** Claude Code runs hooks through Git Bash on Windows. An extensionless command resolved to `oathbound-hook.exe` in a manual Git Bash test (exit 0). PowerShell and cmd.exe also resolved it in a direct test against an installed 0.50.0-alpha.50 package (exit 0, allowed-command payload). Other runners are unverified.
 - **No network at runtime:** hooks run on every tool call and must work offline.
 - **Hot-path latency:** ADR-0004 target is p95 < 15 ms; extra process layers cost against it (cost of a launcher not measured).
 - **Supply chain and integrity:** artifacts must be built by project CI and be verifiable (checksums).
@@ -37,7 +37,7 @@ informed: []
 
 ## Decision Outcome
 
-**Recommended (awaiting the user's confirmation): Option A**, because it keeps `hooks.json` unchanged and the hook a direct native exec (no launcher on the hot path), needs no network at runtime, and fits the artifact naming already set by ADR-0004 (`oathbound-hook-<platform>-<arch>[.exe]`). It fixes the actual defect (wrong-OS binary in release) at the cost of more CI jobs and more release assets. Option B is the fallback if a single installable artifact is a hard requirement.
+**Accepted: Option A**, because it keeps `hooks.json` unchanged and the hook a direct native exec (no launcher on the hot path), needs no network at runtime, and fits the artifact naming already set by ADR-0004 (`oathbound-hook-<platform>-<arch>[.exe]`). It fixes the actual defect (wrong-OS binary in release) at the cost of more CI jobs and more release assets. Option B is the fallback if a single installable artifact is a hard requirement.
 
 If accepted, implementation would be: build the binary per target in a CI matrix, pass it to `build-plugin.cjs` via `OATHBOUND_NATIVE_BIN`, name tarballs per platform, publish a checksum file (e.g. `SHA256SUMS`) with the release, and keep the `findNativeHookBinary` fail-if-missing behavior. Per ADR rules for this repo, the change would also update `VERSION`, `CHANGELOG.md`, and the README install section.
 
@@ -52,7 +52,7 @@ If accepted, implementation would be: build the binary per target in a CI matrix
 ### Confirmation
 
 - For each target, extract the packaged tarball on that OS and run `native/bin/oathbound-hook plugin-agent-guard` with a sample hook payload; expect exit 0 for allow and the documented deny result for a blocked command.
-- On Windows, run the same through Git Bash (the Claude Code hook path); PowerShell is an extra check, not yet validated.
+- On Windows, run the same through Git Bash (the Claude Code hook path); PowerShell and cmd.exe are extra checks (resolution already tested on alpha.50; see Open Questions).
 - `claude plugin validate` on each package (not yet run for this ADR).
 - Release workflow check: each artifact contains the binary for its own OS/arch, and checksums match.
 - `node tools/audit-docs.ts` for links and traceability.
@@ -90,7 +90,7 @@ If accepted, implementation would be: build the binary per target in a CI matrix
 - Does the Claude plugin marketplace flow support choosing a per-platform asset? Unverified.
 - If B is chosen: launcher behavior on Windows without Git Bash.
 - Should `agy` and `codex` packages bundle the binary, and under which option?
-- Extensionless resolution to `.exe` outside Git Bash (PowerShell, cmd) is unvalidated.
+- Result: PowerShell and cmd.exe resolve the extensionless command to the `.exe` on Windows (tested against an installed 0.50.0-alpha.50 package with an allowed-command payload; exit 0).
 
 ## References
 

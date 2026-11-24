@@ -91,6 +91,8 @@ The `claude` build requires the native hook binary and fails with `Native hook b
 2. `native/bin/oathbound-hook-<platform>-<arch>[.exe]`
 3. `native/oathbound-hook/target/release/oathbound-hook[.exe]`
 
+The packaged file is named `native/bin/oathbound-hook.exe` when the source binary has a `.exe` extension, otherwise `native/bin/oathbound-hook`; the build host platform is not used. To package another target, build the hook on that OS and set `OATHBOUND_NATIVE_BIN` to it (the release workflow does this once per target).
+
 Build it with `cargo build --locked --release --manifest-path native/oathbound-hook/Cargo.toml`. The binary only works on the OS it was built on.
 
 For Codex CLI, run `node tools/build-plugin.cjs codex dist/codex`.

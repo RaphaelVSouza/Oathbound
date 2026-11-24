@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.50.0-alpha.51] - 2026-11-24
+
+- `.github/workflows/release.yml` now builds the hook per OS (linux-x64, win32-x64, darwin-arm64) in a matrix and publishes one Claude tarball per target (`oathbound-claude-<ver>-<platform>-<arch>.tar.gz`) plus `SHA256SUMS`; agy and codex tarballs are unchanged (no binary). Implements ADR-0009 Option A.
+- `tools/build-plugin.cjs claude` names the packaged binary from the source binary extension (`.exe` or none) instead of the build host platform, so cross-built targets keep the right name.
+- The tag-versus-`VERSION` check now runs in its own `check-version` job before the matrix build.
+- Adds a top-level `description` to `.claude-plugin/marketplace.json`.
+- Validated locally: PowerShell and cmd.exe resolve the extensionless hook command to `oathbound-hook.exe` on Windows (alpha.50 install, allowed-command payload, exit 0).
+- Not validated: the release workflow was not run on GitHub; the darwin-arm64 binary and the Windows/macOS packages were not executed locally.
+
 ## [0.50.0-alpha.50] - 2026-11-24
 
 - Fixes the Claude plugin package missing `.claude-plugin/marketplace.json`: `tools/build-plugin.cjs claude` now writes it from the repository source, so a built package or release tarball can be added with `claude plugin marketplace add <dir>`.
