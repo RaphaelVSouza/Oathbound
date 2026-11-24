@@ -10,7 +10,7 @@ description: >-
 
 Assume the requester is a software engineer: go straight to contracts, invariants, trade-offs, and failure modes, without introductory explanations.
 
-1. Consult the applicable `AGENTS.md` and check whether the project has a specs directory or template. Follow the local convention.
+1. Consult the applicable `AGENTS.md` and check whether the project has a specs directory or template. Follow the local convention; if none exists, fall back to [spec-template.md](references/spec-template.md).
 2. Explore relevant code and docs before writing (or delegate to `scout`) to ground the spec in actual paths, types, and boundaries.
 3. Structure the spec with objective, verifiable decisions:
    - **Problem and objective:** what changes and why, in a few lines.

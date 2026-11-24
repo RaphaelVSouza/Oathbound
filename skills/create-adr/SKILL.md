@@ -5,8 +5,8 @@ description: Write architectural decision records (ADRs). Use to propose a signi
 
 # Create an ADR
 
-1. Consult the applicable `AGENTS.md`. Locate the project's ADR directory, template, and guide. Follow the local standard. Read the template and only the guide sections relevant to the task.
-2. If unsure whether to record the decision, check the project's criteria. If none exist, consider architectural impact, viable alternatives, and the cost or risk of reversal.
+1. Consult the applicable `AGENTS.md`. Locate the project's ADR directory, template, and guide. Follow the local standard. Read the template and only the guide sections relevant to the task. When the project has no guide or template, fall back to [how-to-create-adrs.md](references/how-to-create-adrs.md) and [adr-template.md](references/adr-template.md).
+2. If unsure whether to record the decision, check the project's criteria. If none exist, use section 1 of [how-to-create-adrs.md](references/how-to-create-adrs.md) (architectural impact, viable alternatives, and cost or risk of reversal).
 3. For a new ADR, confirm that the path is available and the number follows the local convention. When no convention exists, use `docs/adr/NNNN-title.md` with the next sequential number, also counting rejected or superseded ADRs.
 4. Create the ADR in `Proposed`. Record the date, decision-makers, context, viable alternatives, proposed decision, consequences, and how to verify compliance. Mark open decisions and information with `[DECISION PENDING]`.
 5. Preserve the substance of accepted or rejected ADRs. To replace a decision, propose a new ADR referencing the previous one. Apply status changes only after the responsible parties decide and according to the local guide.
