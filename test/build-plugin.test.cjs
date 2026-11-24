@@ -279,7 +279,7 @@ test('buildPlugin resolves SKILL.<runner>.md to SKILL.md without leaking overrid
       fs.readFileSync(path.join(out, c.relSkill)),
       fs.readFileSync(path.join(ROOT, c.expected))
     );
-    assert.deepEqual(fs.readdirSync(path.join(out, c.dir)), c.entries);
+    assert.deepEqual(fs.readdirSync(path.join(out, c.dir)).sort(), [...c.entries].sort());
   }
 });
 
