@@ -7,4 +7,9 @@ Official documentation indexes for supported harnesses. Links point to vendor so
 
 Package policy: [Adaptive subagent model routing](adaptive-model-routing.md).
 
+## Reusable Prompts
+
+- [Generic prompt: create a harness-native skill from a spec](prompts/create-skill-from-spec.md)
+- [Target spec: `agents-md-builder`](prompts/agents-md-builder-spec.md)
+
 Links reviewed: 2026-11-17.
