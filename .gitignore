@@ -11,3 +11,4 @@ state/
 .agents/
 brand/
 native/oathbound-hook/target/
+.claude/skills/
