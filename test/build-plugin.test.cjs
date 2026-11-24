@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { buildPlugin } = require('../tools/build-plugin.cjs');
+const { buildPlugin, copySkillsForRunner } = require('../tools/build-plugin.cjs');
 const { bumpVersion, parseCliArgs } = require('../tools/bump-version.cjs');
 const { execFileSync } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
@@ -233,5 +233,31 @@ test('buildPlugin resolves SKILL.<runner>.md to SKILL.md without leaking overrid
       fs.readFileSync(path.join(ROOT, c.expected))
     );
     assert.deepEqual(fs.readdirSync(path.join(out, c.dir)), ['SKILL.md']);
+  }
+});
+
+test('copySkillsForRunner isolates runner-exclusive skill directories across agy, claude, and codex', t => {
+  const tmp = fixtureDir('exclusive-skills-test-');
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const sourceRoot = path.join(tmp, 'src');
+  const writeSkill = (relParts, content) => {
+    const file = path.join(sourceRoot, ...relParts, 'SKILL.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content);
+  };
+  writeSkill(['skills', 'shared-skill'], '# shared\n');
+  writeSkill(['agy', 'config', 'skills', 'agy-only'], '# agy\n');
+  writeSkill(['claude', 'skills', 'claude-only'], '# claude\n');
+  writeSkill(['codex', 'skills', 'codex-only'], '# codex\n');
+
+  const expectedByRunner = {
+    agy: ['agy-only', 'shared-skill'],
+    claude: ['claude-only', 'shared-skill'],
+    codex: ['codex-only', 'shared-skill']
+  };
+  for (const [runner, expected] of Object.entries(expectedByRunner)) {
+    const dest = path.join(tmp, `out-${runner}`);
+    copySkillsForRunner(runner, dest, sourceRoot);
+    assert.deepEqual(fs.readdirSync(dest).sort(), expected);
   }
 });

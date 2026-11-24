@@ -4,8 +4,11 @@ Official documentation indexes for supported harnesses. Links point to vendor so
 
 - [Claude Code](claude/README.md)
 - [Antigravity CLI](antigravity/README.md)
+- [Codex CLI and OpenAI Skills](codex/README.md)
 
-Package policy: [Adaptive subagent model routing](adaptive-model-routing.md).
+Package policies and architecture:
+- [Adaptive subagent model routing](adaptive-model-routing.md)
+- [ADR-0008: Layered portability and harness-exclusive skills](adr/0008-portable-and-harness-exclusive-skills.md)
 
 ## Reusable Prompts
 

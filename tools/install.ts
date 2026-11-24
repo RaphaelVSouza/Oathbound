@@ -435,6 +435,7 @@ function install(options: InstallOptions) {
   // Skill deduplication
   const skillsSourceDir = path.join(sourceRoot, 'skills');
   const agyExclusiveSkillsDir = path.join(sourceRoot, 'agy', 'config', 'skills');
+  const claudeExclusiveSkillsDir = path.join(sourceRoot, 'claude', 'skills');
   const listSkillDirs = (dir: string) => (fs.existsSync(dir)
     ? fs.readdirSync(dir, { withFileTypes: true })
         .filter((d: any) => d.isDirectory())
@@ -442,6 +443,7 @@ function install(options: InstallOptions) {
     : []);
   const availableSkills = listSkillDirs(skillsSourceDir);
   const availableAgyExclusiveSkills = listSkillDirs(agyExclusiveSkillsDir);
+  const availableClaudeExclusiveSkills = listSkillDirs(claudeExclusiveSkillsDir);
 
   const dedupeActive = options.dedupeSkills !== false;
   const skipProjectClaudeSkills = new Set<string>();
@@ -466,6 +468,16 @@ function install(options: InstallOptions) {
             const looseAgy = path.join(targetRoot, '.agents', 'skills', skill);
             skillMoves.push([looseAgy, path.join(targetRoot, '.agents', 'skills', '_disabled', skill)]);
             disabledSkillsForAgy.add(skill);
+          }
+        }
+      }
+
+      if (runner === 'claude' || runner === 'all') {
+        for (const skill of availableClaudeExclusiveSkills) {
+          if (fs.existsSync(path.join(userHome, '.claude', 'skills', skill))) {
+            skipProjectClaudeSkills.add(skill);
+            const looseClaude = path.join(targetRoot, '.claude', 'skills', skill);
+            skillMoves.push([looseClaude, path.join(targetRoot, '.claude', 'skills', '_disabled', skill)]);
           }
         }
       }
@@ -531,11 +543,16 @@ function install(options: InstallOptions) {
         }
       }
     }
-    for (const skill of availableSkills) {
-      if (!isGlobal && skipProjectClaudeSkills.has(skill)) continue;
-      const skillDir = path.join(skillsSourceDir, skill);
-      for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'claude')) {
-        plannedFiles.set(`.claude/skills/${skill}/${rel}`, { content: fs.readFileSync(full) });
+    for (const [baseDir, skillList] of [
+      [skillsSourceDir, availableSkills],
+      [claudeExclusiveSkillsDir, availableClaudeExclusiveSkills],
+    ] as Array<[string, string[]]>) {
+      for (const skill of skillList) {
+        if (!isGlobal && skipProjectClaudeSkills.has(skill)) continue;
+        const skillDir = path.join(baseDir, skill);
+        for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'claude')) {
+          plannedFiles.set(`.claude/skills/${skill}/${rel}`, { content: fs.readFileSync(full) });
+        }
       }
     }
     if (!isGlobal) {

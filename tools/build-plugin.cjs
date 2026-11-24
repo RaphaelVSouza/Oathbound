@@ -39,10 +39,17 @@ function copySkillsFromDir(skillsSrc, runner, destDir) {
   }
 }
 
-function copySkillsForRunner(runner, destDir) {
-  copySkillsFromDir(path.join(source, 'skills'), runner, destDir);
-  if (runner === 'agy') {
-    copySkillsFromDir(path.join(source, 'agy', 'config', 'skills'), runner, destDir);
+const RUNNER_EXCLUSIVE_SKILL_DIRS = {
+  agy: ['agy', 'config', 'skills'],
+  claude: ['claude', 'skills'],
+  codex: ['codex', 'skills'],
+};
+
+function copySkillsForRunner(runner, destDir, sourceRoot = source) {
+  copySkillsFromDir(path.join(sourceRoot, 'skills'), runner, destDir);
+  const exclusiveParts = RUNNER_EXCLUSIVE_SKILL_DIRS[runner];
+  if (exclusiveParts) {
+    copySkillsFromDir(path.join(sourceRoot, ...exclusiveParts), runner, destDir);
   }
 }
 
@@ -101,4 +108,4 @@ if (require.main === module) {
   try { console.log(buildPlugin(process.argv[2], process.argv[3])); }
   catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { buildPlugin };
+module.exports = { buildPlugin, copySkillsForRunner, RUNNER_EXCLUSIVE_SKILL_DIRS };

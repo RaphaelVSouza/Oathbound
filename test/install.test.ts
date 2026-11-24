@@ -382,3 +382,44 @@ test('readExistingJson throws a clear error for invalid existing settings.json a
   assert.equal(fs.readFileSync(settingsPath, 'utf8'), corruptContent);
   assert.equal(fs.readFileSync(localSkill, 'utf8'), 'fixture');
 });
+
+test('installs claude-exclusive skills from claude/skills and deduplicates against global ~/.claude/skills', t => {
+  const sourceRoot = fixtureDir('claude-exclusive-src-');
+  const projectRoot = fixtureDir('claude-exclusive-proj-');
+  const fakeHome = fixtureDir('claude-exclusive-home-');
+  t.after(() => {
+    fs.rmSync(sourceRoot, { recursive: true, force: true });
+    fs.rmSync(projectRoot, { recursive: true, force: true });
+    fs.rmSync(fakeHome, { recursive: true, force: true });
+  });
+
+  fs.writeFileSync(path.join(sourceRoot, 'VERSION'), '0.0.0-test\n');
+  const ext = process.platform === 'win32' ? '.exe' : '';
+  const binName = `oathbound-hook-${process.platform}-${process.arch}${ext}`;
+  const hookBin = path.join(sourceRoot, 'native', 'bin', binName);
+  fs.mkdirSync(path.dirname(hookBin), { recursive: true });
+  fs.writeFileSync(hookBin, 'stub');
+
+  const claudeOnlySkill = path.join(sourceRoot, 'claude', 'skills', 'claude-only', 'SKILL.md');
+  fs.mkdirSync(path.dirname(claudeOnlySkill), { recursive: true });
+  fs.writeFileSync(claudeOnlySkill, '# Claude Only\n');
+
+  const claudeAlsoGlobal = path.join(sourceRoot, 'claude', 'skills', 'claude-dedup', 'SKILL.md');
+  fs.mkdirSync(path.dirname(claudeAlsoGlobal), { recursive: true });
+  fs.writeFileSync(claudeAlsoGlobal, '# Claude Dedup\n');
+
+  const globalExisting = path.join(fakeHome, '.claude', 'skills', 'claude-dedup', 'SKILL.md');
+  fs.mkdirSync(path.dirname(globalExisting), { recursive: true });
+  fs.writeFileSync(globalExisting, '# Global Copy\n');
+
+  install({
+    root: projectRoot,
+    homeDir: fakeHome,
+    project: projectRoot,
+    runner: 'claude',
+    sourceRoot
+  });
+
+  assert.equal(fs.existsSync(path.join(projectRoot, '.claude', 'skills', 'claude-only', 'SKILL.md')), true);
+  assert.equal(fs.existsSync(path.join(projectRoot, '.claude', 'skills', 'claude-dedup', 'SKILL.md')), false);
+});

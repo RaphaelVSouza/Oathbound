@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.50.0-alpha.46] - 2026-11-24
+
+- Adds `ADR-0008` documenting the 3-layer skill portability model (`skills/` portable core, symmetric runner-exclusive skill directories, and `.agents/skills/` universal bus).
+- Updates `docs/prompts/create-skill-from-spec.md`, `docs/prompts/agents-md-builder-spec.md`, and `docs/codex/README.md` with per-harness official skill guides, open Agent Skills compliance (`skills-ref validate`, 1-level depth), and context-aware `.agents/skills/` bus installation.
+- Generalizes `build-plugin.cjs` (`RUNNER_EXCLUSIVE_SKILL_DIRS`) and `install.ts` to support `claude/skills/` and `codex/skills/` exclusive directories symmetrically alongside `agy/config/skills/`.
+
 ## [0.50.0-alpha.45] - 2026-11-24
 
 - Adds `agents-md-builder` as an Antigravity-exclusive skill under `agy/config/skills/agents-md-builder/` and updates `build-plugin.cjs` and `install.ts` to package and install `agy`-exclusive skills only for the `agy` runner.

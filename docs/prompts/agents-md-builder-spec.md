@@ -9,6 +9,7 @@ Paste the invariants and `<spec>` below into [create-skill-from-spec.md](create-
 4. The draft is **validated** (commands executed, paths verified, no secrets) and **approved by the user** before writing.
 5. The generated `AGENTS.md` **never mentions harness-specific tools**. For legacy filenames, use a symlink or pointer only when explicitly requested.
 6. **Portability fallbacks** remain present (no question tool, no shell, no repo access).
+7. **Agent Skills compliance:** keep the portable frontmatter (`name`, `description`), keep any `references/`/`scripts/` at most one directory level deep from `SKILL.md`, and validate with `skills-ref validate` when available.
 
 ## Spec (copy into `<spec>`)
 
