@@ -15,7 +15,7 @@ Assume the requester is a software engineer: skip basic explanations and go stra
 
 ## Rules
 
-1. **Explore before asking:** If reading project code or docs can answer a question, read first (or use `scout`) — do not ask the user the obvious.
+1. **Explore before asking:** If reading project code or docs can answer a question, read first (or delegate to a read-only explorer subagent if available) — do not ask the user the obvious.
 2. **One question / focused block per round:** Use the environment's interactive question tool (when available) or short numbered questions, traversing each branch of the decision tree and resolving dependencies one at a time.
    - Prefer a blocking question tool when available. If the tool only acknowledges submission, keep the turn active using the host's wait mechanism until the user replies or cancels. An acknowledgment is not an answer.
    - If the host cannot keep an asynchronous questionnaire open, ask in chat and await the next turn.

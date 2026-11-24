@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.47] - 2026-11-24
+
+- Adapts `skills/grill-me/` (`SKILL.md`, `SKILL.agy.md`, `SKILL.claude.md`, `SKILL.codex.md`) so the base `SKILL.md` stays harness-agnostic while each `SKILL.<runner>.md` override uses its native question and discovery tools (`ask_question` + `invoke_subagent`/`scout`, `AskUserQuestion` + `scout`, `request_user_input` / `request_user_input_async`).
+
 ## [0.50.0-alpha.46] - 2026-11-24
 
 - Adds `ADR-0008` documenting the 3-layer skill portability model (`skills/` portable core, symmetric runner-exclusive skill directories, and `.agents/skills/` universal bus).

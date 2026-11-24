@@ -15,8 +15,8 @@ Assume the requester is a software engineer: skip basic explanations and go stra
 
 ## Rules
 
-1. **Explore before asking:** If reading project code or docs can answer a question, read first (or use `scout`) — do not ask the user the obvious.
-2. **One question / focused block per round:** Use `request_user_input` / `request_user_input_async` (or short numbered questions when the tool is unavailable), traversing each branch of the decision tree and resolving dependencies between decisions one at a time.
+1. **Explore before asking:** If reading project code or docs can answer a question, read first or delegate to a read-only `scout` subagent when available — do not ask the user the obvious.
+2. **One question / focused block per round:** Use `request_user_input` (preferring blocking calls; if using `request_user_input_async`, keep the turn active with the host's wait mechanism until the user replies or cancels — an acknowledgment is not an answer), traversing each branch of the decision tree and resolving dependencies one at a time. Fall back to short numbered chat questions when the tool is unavailable or unsuitable.
 3. **Give your recommendation:** For each question involving a trade-off, state which option you recommend and why in 1 line.
 4. **Stop when settled:** Do not invent extra questions once scope, contracts, edge cases, and validation are defined.
 5. **Final summary:** When finished, deliver a compact summary of settled decisions before starting implementation (or wait for `ok`).
