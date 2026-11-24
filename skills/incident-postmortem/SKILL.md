@@ -4,6 +4,7 @@ description: >-
   Write an objective technical postmortem after incident mitigation or diagnosis.
   Use to record the timeline, impact, root cause, and verifiable preventive
   actions.
+disable-model-invocation: true
 ---
 
 # Incident Postmortem

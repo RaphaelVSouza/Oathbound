@@ -6,6 +6,7 @@ description: >-
   requests /grill-me, "grill me", "ask questions", or when the architecture has
   genuine ambiguities that require alignment.
 allowed-tools: Read, Grep, Glob, AskUserQuestion, Agent
+disable-model-invocation: true
 ---
 
 # Grill Me

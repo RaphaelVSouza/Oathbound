@@ -30,6 +30,7 @@ function collectSkillFilesForRunner(skillDir: string, runner: 'claude' | 'agy' |
       continue;
     }
     if (SKILL_RUNNER_OVERRIDE_RE.test(relInside)) continue;
+    if (runner !== 'codex' && relInside === 'agents/openai.yaml') continue;
     if (hasOverride && relInside === 'SKILL.md') continue;
     result.push({ rel: relInside, full });
   }
@@ -88,6 +89,7 @@ interface InstallOptions {
   statusline?: boolean;
   auditDocs?: boolean;
   dedupeSkills?: boolean;
+  hooksOnly?: boolean;
   root?: string;
   homeDir?: string;
   sourceRoot?: string;
@@ -100,6 +102,7 @@ function parseArgs(args: string[]): InstallOptions {
     statusline: false,
     auditDocs: false,
     dedupeSkills: true,
+    hooksOnly: false,
     global: false
   };
 
@@ -137,8 +140,10 @@ function parseArgs(args: string[]): InstallOptions {
       options.auditDocs = true;
     } else if (arg === '--no-dedupe-skills') {
       options.dedupeSkills = false;
+    } else if (arg === '--hooks-only') {
+      options.hooksOnly = true;
     } else if (arg === '--help' || arg === '-h') {
-      console.log('Usage: node tools/install.ts [--project <dir> | --global] [--runner <all|claude|agy|codex>] [--upgrade] [--statusline] [--audit-docs] [--no-dedupe-skills]');
+      console.log('Usage: node tools/install.ts [--project <dir> | --global] [--runner <all|claude|agy|codex>] [--upgrade] [--statusline] [--audit-docs] [--no-dedupe-skills] [--hooks-only]');
       process.exit(0);
     } else {
       throw new Error(`Unknown or incomplete option: ${arg}`);
@@ -522,8 +527,10 @@ function install(options: InstallOptions) {
   // --- Runner Claude ---
   if (runner === 'all' || runner === 'claude') {
     const hookDir = isGlobal ? '.oathbound/claude-hooks' : '.claude/hooks';
+    const claudePluginInstalled = isGlobal && fs.existsSync(path.join(targetRoot, '.claude', 'plugins', 'cache', 'oathbound'));
+    const skipGlobalClaudePluginAssets = isGlobal && (Boolean(options.hooksOnly) || claudePluginInstalled);
     const agentsDir = path.join(sourceRoot, 'claude', 'agents');
-    if (fs.existsSync(agentsDir)) {
+    if (!skipGlobalClaudePluginAssets && fs.existsSync(agentsDir)) {
       for (const file of fs.readdirSync(agentsDir)) {
         if (file.endsWith('.md')) {
           const raw = fs.readFileSync(path.join(agentsDir, file), 'utf8');
@@ -543,15 +550,17 @@ function install(options: InstallOptions) {
         }
       }
     }
-    for (const [baseDir, skillList] of [
-      [skillsSourceDir, availableSkills],
-      [claudeExclusiveSkillsDir, availableClaudeExclusiveSkills],
-    ] as Array<[string, string[]]>) {
-      for (const skill of skillList) {
-        if (!isGlobal && skipProjectClaudeSkills.has(skill)) continue;
-        const skillDir = path.join(baseDir, skill);
-        for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'claude')) {
-          plannedFiles.set(`.claude/skills/${skill}/${rel}`, { content: fs.readFileSync(full) });
+    if (!skipGlobalClaudePluginAssets) {
+      for (const [baseDir, skillList] of [
+        [skillsSourceDir, availableSkills],
+        [claudeExclusiveSkillsDir, availableClaudeExclusiveSkills],
+      ] as Array<[string, string[]]>) {
+        for (const skill of skillList) {
+          if (!isGlobal && skipProjectClaudeSkills.has(skill)) continue;
+          const skillDir = path.join(baseDir, skill);
+          for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'claude')) {
+            plannedFiles.set(`.claude/skills/${skill}/${rel}`, { content: fs.readFileSync(full) });
+          }
         }
       }
     }
@@ -578,9 +587,11 @@ function install(options: InstallOptions) {
 
   // --- Runner Agy ---
   if (runner === 'all' || runner === 'agy') {
+    const agyPluginInstalled = isGlobal && fs.existsSync(path.join(targetRoot, '.gemini', 'config', 'plugins', 'oathbound'));
+    const skipGlobalAgyPluginAssets = isGlobal && (Boolean(options.hooksOnly) || agyPluginInstalled);
     const agentDir = isGlobal ? '.gemini/config/agents' : '.agents/agents';
     const agyAgentsDir = path.join(sourceRoot, 'agy', 'config', 'agents');
-    if (fs.existsSync(agyAgentsDir)) {
+    if (!skipGlobalAgyPluginAssets && fs.existsSync(agyAgentsDir)) {
       for (const file of fs.readdirSync(agyAgentsDir)) {
         if (file.endsWith('.md')) {
           const raw = fs.readFileSync(path.join(agyAgentsDir, file), 'utf8');
@@ -590,15 +601,17 @@ function install(options: InstallOptions) {
       }
     }
     const agySkillDir = isGlobal ? '.gemini/config/skills' : '.agents/skills';
-    for (const [baseDir, skillList] of [
-      [skillsSourceDir, availableSkills],
-      [agyExclusiveSkillsDir, availableAgyExclusiveSkills],
-    ] as Array<[string, string[]]>) {
-      for (const skill of skillList) {
-        if (!isGlobal && skipProjectAgySkills.has(skill)) continue;
-        const skillDir = path.join(baseDir, skill);
-        for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'agy')) {
-          plannedFiles.set(`${agySkillDir}/${skill}/${rel}`, { content: fs.readFileSync(full) });
+    if (!skipGlobalAgyPluginAssets) {
+      for (const [baseDir, skillList] of [
+        [skillsSourceDir, availableSkills],
+        [agyExclusiveSkillsDir, availableAgyExclusiveSkills],
+      ] as Array<[string, string[]]>) {
+        for (const skill of skillList) {
+          if (!isGlobal && skipProjectAgySkills.has(skill)) continue;
+          const skillDir = path.join(baseDir, skill);
+          for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'agy')) {
+            plannedFiles.set(`${agySkillDir}/${skill}/${rel}`, { content: fs.readFileSync(full) });
+          }
         }
       }
     }

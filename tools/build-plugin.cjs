@@ -27,6 +27,8 @@ function copySkillsFromDir(skillsSrc, runner, destDir) {
           targetRel = 'SKILL.md';
         } else if (SKILL_RUNNER_OVERRIDE_RE.test(rel)) {
           continue;
+        } else if (runner !== 'codex' && rel === 'agents/openai.yaml') {
+          continue;
         } else if (hasOverride && rel === 'SKILL.md') {
           continue;
         }

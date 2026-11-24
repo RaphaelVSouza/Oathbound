@@ -106,7 +106,7 @@ test('global installation includes agents, skills, guards, and manifest without 
   }
   const binName = process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
   const skillFileCount = walkAllFiles(path.join(__dirname, '..', 'skills'))
-    .filter(f => !/^SKILL\.(claude|agy|codex)\.md$/.test(path.basename(f))).length;
+    .filter(f => !/^SKILL\.(claude|agy|codex)\.md$/.test(path.basename(f)) && !f.endsWith(`${path.sep}agents${path.sep}openai.yaml`)).length;
   const agyExclusiveSkillFileCount = walkAllFiles(path.join(__dirname, '..', 'agy', 'config', 'skills')).length;
   assert.equal(walkAllFiles(root).length, settings.length + 16 + 1 + skillFileCount * 2 + agyExclusiveSkillFileCount + 1);
   assert.equal(fs.existsSync(path.join(root, '.gemini/config/skills/agents-md-builder/SKILL.md')), true);
@@ -422,4 +422,30 @@ test('installs claude-exclusive skills from claude/skills and deduplicates again
 
   assert.equal(fs.existsSync(path.join(projectRoot, '.claude', 'skills', 'claude-only', 'SKILL.md')), true);
   assert.equal(fs.existsSync(path.join(projectRoot, '.claude', 'skills', 'claude-dedup', 'SKILL.md')), false);
+});
+
+test('--global skips loose agents and skills when plugin exists or --hooks-only is set', t => {
+  const root = fixtureDir('oathbound-hooks-only-');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  fs.mkdirSync(path.join(root, '.claude', 'plugins', 'cache', 'oathbound'), { recursive: true });
+  fs.mkdirSync(path.join(root, '.gemini', 'config', 'plugins', 'oathbound'), { recursive: true });
+
+  const res = install({ root, global: true, runner: 'all', upgrade: true });
+  const binName = process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
+
+  assert.equal(fs.existsSync(path.join(root, '.oathbound', 'claude-hooks', binName)), true);
+  assert.equal(fs.existsSync(path.join(root, '.claude', 'agents')), false);
+  assert.equal(fs.existsSync(path.join(root, '.claude', 'skills')), false);
+  assert.equal(fs.existsSync(path.join(root, '.gemini', 'config', 'agents')), false);
+  assert.equal(fs.existsSync(path.join(root, '.gemini', 'config', 'skills')), false);
+  assert.equal(res.manifest.files.length, 1);
+
+  const root2 = fixtureDir('oathbound-hooks-flag-');
+  t.after(() => fs.rmSync(root2, { recursive: true, force: true }));
+  const res2 = install({ root: root2, global: true, runner: 'claude', hooksOnly: true });
+  assert.equal(fs.existsSync(path.join(root2, '.oathbound', 'claude-hooks', binName)), true);
+  assert.equal(fs.existsSync(path.join(root2, '.claude', 'agents')), false);
+  assert.equal(fs.existsSync(path.join(root2, '.claude', 'skills')), false);
+  assert.equal(res2.manifest.files.length, 1);
 });

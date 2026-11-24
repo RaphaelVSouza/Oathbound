@@ -5,6 +5,7 @@ description: >-
   plans, or design decisions before implementation. Activate ONLY when the user
   requests /grill-me, "grill me", "ask questions", or when the architecture has
   genuine ambiguities that require alignment.
+disable-model-invocation: true
 ---
 
 # Grill Me

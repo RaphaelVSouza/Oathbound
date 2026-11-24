@@ -222,9 +222,9 @@ test('buildPlugin resolves SKILL.<runner>.md to SKILL.md without leaking overrid
   const tmp = fixtureDir('skill-override-test-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
   const cases = [
-    { runner: 'claude', relSkill: 'skills/grill-me/SKILL.md', expected: 'skills/grill-me/SKILL.claude.md', dir: 'skills/grill-me' },
-    { runner: 'agy', relSkill: 'skills/grill-me/SKILL.md', expected: 'skills/grill-me/SKILL.agy.md', dir: 'skills/grill-me' },
-    { runner: 'codex', relSkill: 'plugins/oathbound/skills/grill-me/SKILL.md', expected: 'skills/grill-me/SKILL.codex.md', dir: 'plugins/oathbound/skills/grill-me' }
+    { runner: 'claude', relSkill: 'skills/grill-me/SKILL.md', expected: 'skills/grill-me/SKILL.claude.md', dir: 'skills/grill-me', entries: ['SKILL.md'] },
+    { runner: 'agy', relSkill: 'skills/grill-me/SKILL.md', expected: 'skills/grill-me/SKILL.agy.md', dir: 'skills/grill-me', entries: ['SKILL.md'] },
+    { runner: 'codex', relSkill: 'plugins/oathbound/skills/grill-me/SKILL.md', expected: 'skills/grill-me/SKILL.codex.md', dir: 'plugins/oathbound/skills/grill-me', entries: ['agents', 'SKILL.md'] }
   ];
   for (const c of cases) {
     const out = buildPlugin(c.runner, path.join(tmp, c.runner));
@@ -232,7 +232,7 @@ test('buildPlugin resolves SKILL.<runner>.md to SKILL.md without leaking overrid
       fs.readFileSync(path.join(out, c.relSkill)),
       fs.readFileSync(path.join(ROOT, c.expected))
     );
-    assert.deepEqual(fs.readdirSync(path.join(out, c.dir)), ['SKILL.md']);
+    assert.deepEqual(fs.readdirSync(path.join(out, c.dir)), c.entries);
   }
 });
 
