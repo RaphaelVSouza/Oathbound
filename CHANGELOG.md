@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.45] - 2026-11-24
+
+- Adds `agents-md-builder` as an Antigravity-exclusive skill under `agy/config/skills/agents-md-builder/` and updates `build-plugin.cjs` and `install.ts` to package and install `agy`-exclusive skills only for the `agy` runner.
+
 ## [0.50.0-alpha.44] - 2026-11-24
 
 - Adds a compact handoff block rule (`STATE`, `FILES`, `DECISIONS`, `NEXT`) to Antigravity's `oathkeeper` for long sessions or manual compaction requests when `/compact` is unavailable in custom `mainAgent` menus.

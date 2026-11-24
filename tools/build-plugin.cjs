@@ -6,8 +6,8 @@ const path = require('node:path');
 const source = path.resolve(__dirname, '..');
 const SKILL_RUNNER_OVERRIDE_RE = /^SKILL\.(claude|agy|codex)\.md$/;
 
-function copySkillsForRunner(runner, destDir) {
-  const skillsSrc = path.join(source, 'skills');
+function copySkillsFromDir(skillsSrc, runner, destDir) {
+  if (!fs.existsSync(skillsSrc)) return;
   const overrideName = `SKILL.${runner}.md`;
   for (const entry of fs.readdirSync(skillsSrc, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
@@ -36,6 +36,13 @@ function copySkillsForRunner(runner, destDir) {
       }
     };
     walk(skillSrc);
+  }
+}
+
+function copySkillsForRunner(runner, destDir) {
+  copySkillsFromDir(path.join(source, 'skills'), runner, destDir);
+  if (runner === 'agy') {
+    copySkillsFromDir(path.join(source, 'agy', 'config', 'skills'), runner, destDir);
   }
 }
 

@@ -434,11 +434,14 @@ function install(options: InstallOptions) {
 
   // Skill deduplication
   const skillsSourceDir = path.join(sourceRoot, 'skills');
-  const availableSkills = fs.existsSync(skillsSourceDir)
-    ? fs.readdirSync(skillsSourceDir, { withFileTypes: true })
+  const agyExclusiveSkillsDir = path.join(sourceRoot, 'agy', 'config', 'skills');
+  const listSkillDirs = (dir: string) => (fs.existsSync(dir)
+    ? fs.readdirSync(dir, { withFileTypes: true })
         .filter((d: any) => d.isDirectory())
         .map((d: any) => d.name)
-    : [];
+    : []);
+  const availableSkills = listSkillDirs(skillsSourceDir);
+  const availableAgyExclusiveSkills = listSkillDirs(agyExclusiveSkillsDir);
 
   const dedupeActive = options.dedupeSkills !== false;
   const skipProjectClaudeSkills = new Set<string>();
@@ -459,6 +462,17 @@ function install(options: InstallOptions) {
             skillMoves.push([looseClaude, path.join(targetRoot, '.claude', 'skills', '_disabled', skill)]);
           }
           if (inAgyGlobal && runner === 'agy') {
+            skipProjectAgySkills.add(skill);
+            const looseAgy = path.join(targetRoot, '.agents', 'skills', skill);
+            skillMoves.push([looseAgy, path.join(targetRoot, '.agents', 'skills', '_disabled', skill)]);
+            disabledSkillsForAgy.add(skill);
+          }
+        }
+      }
+
+      if (runner === 'agy' || runner === 'all') {
+        for (const skill of availableAgyExclusiveSkills) {
+          if (fs.existsSync(path.join(userHome, '.gemini', 'config', 'skills', skill))) {
             skipProjectAgySkills.add(skill);
             const looseAgy = path.join(targetRoot, '.agents', 'skills', skill);
             skillMoves.push([looseAgy, path.join(targetRoot, '.agents', 'skills', '_disabled', skill)]);
@@ -559,11 +573,16 @@ function install(options: InstallOptions) {
       }
     }
     const agySkillDir = isGlobal ? '.gemini/config/skills' : '.agents/skills';
-    for (const skill of availableSkills) {
-      if (!isGlobal && skipProjectAgySkills.has(skill)) continue;
-      const skillDir = path.join(skillsSourceDir, skill);
-      for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'agy')) {
-        plannedFiles.set(`${agySkillDir}/${skill}/${rel}`, { content: fs.readFileSync(full) });
+    for (const [baseDir, skillList] of [
+      [skillsSourceDir, availableSkills],
+      [agyExclusiveSkillsDir, availableAgyExclusiveSkills],
+    ] as Array<[string, string[]]>) {
+      for (const skill of skillList) {
+        if (!isGlobal && skipProjectAgySkills.has(skill)) continue;
+        const skillDir = path.join(baseDir, skill);
+        for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'agy')) {
+          plannedFiles.set(`${agySkillDir}/${skill}/${rel}`, { content: fs.readFileSync(full) });
+        }
       }
     }
     if (!isGlobal) {

@@ -35,7 +35,8 @@ test('generates isolated plugins with agents and portable hooks without overwrit
   for (const runner of ['claude', 'agy']) {
     const out = buildPlugin(runner, path.join(tmp, runner));
     assert.equal(fs.readdirSync(path.join(out, 'agents')).length, 8);
-    assert.equal(fs.readdirSync(path.join(out, 'skills')).length, 10);
+    assert.equal(fs.readdirSync(path.join(out, 'skills')).length, runner === 'agy' ? 11 : 10);
+    assert.equal(fs.existsSync(path.join(out, 'skills/agents-md-builder/SKILL.md')), runner === 'agy');
     assert.deepEqual(
       fs.readFileSync(path.join(out, 'skills/create-adr/SKILL.md')),
       fs.readFileSync(path.join(ROOT, 'skills/create-adr/SKILL.md'))

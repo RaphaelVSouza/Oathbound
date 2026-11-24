@@ -107,7 +107,10 @@ test('global installation includes agents, skills, guards, and manifest without 
   const binName = process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
   const skillFileCount = walkAllFiles(path.join(__dirname, '..', 'skills'))
     .filter(f => !/^SKILL\.(claude|agy|codex)\.md$/.test(path.basename(f))).length;
-  assert.equal(walkAllFiles(root).length, settings.length + 16 + 1 + skillFileCount * 2 + 1);
+  const agyExclusiveSkillFileCount = walkAllFiles(path.join(__dirname, '..', 'agy', 'config', 'skills')).length;
+  assert.equal(walkAllFiles(root).length, settings.length + 16 + 1 + skillFileCount * 2 + agyExclusiveSkillFileCount + 1);
+  assert.equal(fs.existsSync(path.join(root, '.gemini/config/skills/agents-md-builder/SKILL.md')), true);
+  assert.equal(fs.existsSync(path.join(root, '.claude/skills/agents-md-builder')), false);
   assert.deepEqual(
     fs.readFileSync(path.join(root, '.claude/skills/grill-me/SKILL.md')),
     fs.readFileSync(path.join(__dirname, '..', 'skills/grill-me/SKILL.claude.md'))
