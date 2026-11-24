@@ -69,6 +69,9 @@ test('generates isolated plugins with agents and portable hooks without overwrit
     if (runner === 'claude') {
       const manifest = JSON.parse(fs.readFileSync(path.join(out, '.claude-plugin', 'plugin.json'), 'utf8'));
       assert.equal(manifest.version, version);
+      const marketplace = JSON.parse(fs.readFileSync(path.join(out, '.claude-plugin', 'marketplace.json'), 'utf8'));
+      assert.deepEqual(marketplace, JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'marketplace.json'), 'utf8')));
+      assert.equal(marketplace.plugins[0].source, './');
       assert.equal(
         fs.readFileSync(path.join(out, 'workflows', 'revisao-arquitetura.js'), 'utf8'),
         fs.readFileSync(path.join(ROOT, 'workflows', 'revisao-arquitetura.js'), 'utf8')

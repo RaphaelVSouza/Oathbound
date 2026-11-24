@@ -113,6 +113,7 @@ function buildPlugin(runner, destination) {
   if (runner === 'claude') {
     const manifest = loadManifest('.claude-plugin/plugin.json');
     write('.claude-plugin/plugin.json', manifest);
+    write('.claude-plugin/marketplace.json', JSON.parse(fs.readFileSync(path.join(source, '.claude-plugin/marketplace.json'), 'utf8')));
     copy('claude/agents', 'agents');
     copy('workflows', 'workflows');
     copy('claude/hooks', 'claude/hooks');

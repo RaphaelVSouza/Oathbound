@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.50.0-alpha.50] - 2026-11-24
+
+- Fixes the Claude plugin package missing `.claude-plugin/marketplace.json`: `tools/build-plugin.cjs claude` now writes it from the repository source, so a built package or release tarball can be added with `claude plugin marketplace add <dir>`.
+
 ## [0.50.0-alpha.49] - 2026-11-24
 
 - Fixes the Claude plugin package missing `native/bin/oathbound-hook` (hook `plugin-agent-guard` failed with exit 127): `tools/build-plugin.cjs claude` now copies the native binary (`.exe` on win32) using the same lookup as `tools/install.ts` (`OATHBOUND_NATIVE_BIN`, `native/bin/oathbound-hook-<platform>-<arch>`, `native/oathbound-hook/target/release`) and fails with an explicit error when none is found.
