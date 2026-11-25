@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Removes the `attach-release` job from `.github/workflows/native-hooks.yml`. It ran `gh release upload` without a checkout or `--repo` and failed with `fatal: not a git repository` on the `v0.50.0-alpha.51` and `v0.50.0-alpha.52` tags; it also raced `release.yml`, which creates the release and already packages each per-OS binary. The `build` job (Rust tests, build, integration test) is unchanged.
+- README: the global-update heading now targets `0.50.0-alpha.52`.
+- Rewrites `AGENTS.md` with commands, limits and pitfalls.
 - `.gitattributes` now starts with `* text=auto eol=lf`, so every checkout uses LF regardless of `core.autocrlf` (previously only `*.sh`, `*.md`, `*.ps1` and `*.js` were forced). The index was already LF; `git add --renormalize .` changed nothing.
 - Adds `test/repo-eol.test.cjs`, which fails when a tracked text file has CRLF or mixed endings in the index or the working tree.
 - Validated locally on Windows: the new test fails with the 7 CRLF files before the change and passes after re-checkout. Not validated: the `windows-latest` CI run.

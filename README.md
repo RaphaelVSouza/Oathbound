@@ -127,7 +127,7 @@ Antigravity named models require invocation support; `agy models` only confirms
 session availability. Unsupported settings retain permitted defaults or become
 pending work. This policy does not guarantee model compliance or cost savings.
 
-### 4. Updating Global Installations to 0.50.0-alpha.50
+### 4. Updating Global Installations to 0.50.0-alpha.52
 
 From the updated repository root, run:
 

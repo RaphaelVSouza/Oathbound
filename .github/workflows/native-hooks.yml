@@ -54,23 +54,3 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: dist-native/${{ matrix.artifact }}
-
-  attach-release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: dist-native
-          merge-multiple: true
-
-      - name: Upload native binaries to GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload "$GITHUB_REF_NAME" \
-            dist-native/oathbound-hook-win32-x64.exe \
-            dist-native/oathbound-hook-linux-x64 \
-            dist-native/oathbound-hook-darwin-arm64 \
-            --clobber
