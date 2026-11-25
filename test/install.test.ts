@@ -590,9 +590,12 @@ test('Windows Codex reinstall replaces old native hooks and preserves custom set
   const correctedCommand = (name: string) => `& '${hookPath.replaceAll("'", "''")}' ${name}`;
   const custom = { type: 'command', command: 'custom-codex-hook' };
   const rtk = { type: 'command', command: 'rtk hook codex' };
-  const guard = { type: 'command', command: oldCommand('destructive-guard'), timeout: 7 };
+  const guard = {
+    type: 'command', command: oldCommand('destructive-guard'), timeout: 7,
+    statusMessage: 'Oathbound destructive command guard'
+  };
   const start = { type: 'command', command: oldCommand('codex-agent-audit'), timeout: 9 };
-  const stop = { type: 'command', command: `& "${hookPath}" codex-agent-audit` };
+  const stop = { type: 'command', command: `& "${hookPath}" codex-agent-audit`, statusMessage: 'My stop audit label' };
   fs.mkdirSync(path.dirname(hooksPath), { recursive: true });
   fs.writeFileSync(hooksPath, JSON.stringify({ hooks: {
     PreToolUse: [{ matcher: 'Bash', hooks: [custom, rtk, guard] }],
@@ -604,8 +607,12 @@ test('Windows Codex reinstall replaces old native hooks and preserves custom set
   install(options);
   const installed = fs.readFileSync(hooksPath, 'utf8');
   assert.deepEqual(JSON.parse(installed).hooks, {
-    PreToolUse: [{ matcher: 'Bash', hooks: [custom, rtk, { ...guard, command: correctedCommand('codex-subagent-guard') }] }],
-    SubagentStart: [{ hooks: [{ ...start, command: correctedCommand('codex-agent-audit') }] }],
+    PreToolUse: [{ matcher: 'Bash', hooks: [
+      custom,
+      { ...rtk, statusMessage: 'RTK shell command rewrite' },
+      { ...guard, command: correctedCommand('codex-subagent-guard'), statusMessage: 'Oathbound guard (subagents only)' }
+    ] }],
+    SubagentStart: [{ hooks: [{ ...start, command: correctedCommand('codex-agent-audit'), statusMessage: 'Oathbound subagent start audit' }] }],
     SubagentStop: [{ hooks: [{ ...stop, command: correctedCommand('codex-agent-audit') }] }]
   });
   install(options);
@@ -615,6 +622,7 @@ test('Windows Codex reinstall replaces old native hooks and preserves custom set
   const legacy = fs.readFileSync(hooksPath, 'utf8');
   const expected = JSON.parse(installed);
   expected.hooks.PreToolUse[0].hooks[2].command = correctedCommand('destructive-guard');
+  expected.hooks.PreToolUse[0].hooks[2].statusMessage = 'Oathbound guard (all agents)';
   assert.deepEqual(JSON.parse(legacy), expected);
   install(legacyOptions);
   assert.equal(fs.readFileSync(hooksPath, 'utf8'), legacy);

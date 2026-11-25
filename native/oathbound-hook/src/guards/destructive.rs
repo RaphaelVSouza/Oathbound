@@ -90,7 +90,10 @@ pub fn avaliar(payload: &Value) -> Option<String> {
 
     if lower.contains("git") {
         if let Some(m) = re_git_mut().captures(cmd) {
-            return Some(format!("git {} changes history, state, or remote", &m[1]));
+            return Some(format!(
+                "Matched the git {} rule for commands that can change Git history, local state, or remotes.",
+                &m[1]
+            ));
         }
         if lower.contains("branch") || lower.contains("tag") || lower.contains("reflog") {
             if let Some(m) = re_git_ref().captures(cmd) {

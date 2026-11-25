@@ -166,6 +166,13 @@ function parseArgs(args: string[]): InstallOptions {
   return options;
 }
 
+const CODEX_SESSION_GUARD_LABEL = 'Oathbound guard (all agents)';
+const DEFAULT_CODEX_GUARD_LABELS = new Set([
+  CODEX_SESSION_GUARD_LABEL,
+  'Oathbound guard (subagents only)',
+  'Oathbound destructive command guard'
+]);
+
 function mergeHookEvents(existingHooksInput: any, incomingHooksInput: any): Record<string, any[]> {
   const merged: Record<string, any[]> = { ...(existingHooksInput || {}) };
   const incomingHooks = incomingHooksInput || {};
@@ -183,8 +190,16 @@ function mergeHookEvents(existingHooksInput: any, incomingHooksInput: any): Reco
           : [];
         const inSubHooks = Array.isArray(inHookItem.hooks) ? inHookItem.hooks : [];
         for (const sub of inSubHooks) {
-          if (!targetSubHooks.some((sh: any) => sh.command === sub.command)) {
+          const existingIndex = targetSubHooks.findIndex((sh: any) => sh.command === sub.command);
+          if (existingIndex === -1) {
             targetSubHooks.push(sub);
+          } else if (sub.statusMessage) {
+            const existingHook = targetSubHooks[existingIndex];
+            const label = existingHook.statusMessage;
+            if (typeof label !== 'string' || !label.trim()
+                || (DEFAULT_CODEX_GUARD_LABELS.has(sub.statusMessage) && DEFAULT_CODEX_GUARD_LABELS.has(label))) {
+              targetSubHooks[existingIndex] = { ...existingHook, statusMessage: sub.statusMessage };
+            }
           }
         }
         existingEventHooks[matchIdx] = {
@@ -600,6 +615,7 @@ function install(options: InstallOptions) {
                 const subcommand = hook.command.slice('oathbound-hook '.length);
                 hook.command = `${codexHookBin} ${subcommand === 'codex-subagent-guard' ? guard : subcommand}`;
                 if (subcommand === 'codex-subagent-guard') {
+                  if (guard === 'destructive-guard') hook.statusMessage = CODEX_SESSION_GUARD_LABEL;
                   for (const previous of ['destructive-guard', 'codex-subagent-guard']) {
                     for (const bin of ['oathbound-hook', oldCodexHookBin, codexHookBin, `& "${codexHookPath}"`]) {
                       nativeCommands.set(`${bin} ${previous}`, hook.command);

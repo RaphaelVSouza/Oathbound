@@ -6,6 +6,14 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.71] - 2026-11-25
+
+- Shows whether the Codex guard covers subagents only or all agents in `/hooks`. Denials identify the Oathbound guard and the matched Git rule.
+
+## [0.50.0-alpha.70] - 2026-11-25
+
+- Adds Codex `/hooks` labels for the Oathbound guard, subagent audits and RTK. Upgrades fill in missing labels and preserve custom labels.
+
 ## [0.50.0-alpha.69] - 2026-11-25
 
 - Defaults Codex to the subagent-only destructive guard and migrates existing global Oathbound hooks on upgrade. Oathkeeper and the default main agent can run Git writes through Codex approval. The installer accepts `--codex-session-wide-guard` for older Codex versions. [ADR-0013](docs/adr/0013-scope-codex-destructive-guard.md)

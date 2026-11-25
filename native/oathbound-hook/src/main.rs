@@ -130,7 +130,10 @@ fn run_read_size_guard() {
 fn run_destructive_guard() {
     run_guard(
         "acao_destrutiva",
-        destructive::avaliar,
+        |payload| {
+            destructive::avaliar(payload)
+                .map(|reason| format!("Oathbound command guard blocked this request. {reason}"))
+        },
         AuditSource::Unspecified,
     );
 }
@@ -143,6 +146,7 @@ fn evaluate_codex_subagent_guard(payload: &Value) -> Option<String> {
         return None;
     }
     destructive::avaliar(payload)
+        .map(|reason| format!("Oathbound subagent guard blocked this request. {reason}"))
 }
 
 fn run_agent_audit() {

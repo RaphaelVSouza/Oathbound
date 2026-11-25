@@ -135,7 +135,9 @@ test('Codex hooks record lifecycle and block only the evaluated command', { skip
   assert.equal(allowed.status, 0);
   assert.equal(allowed.stdout, '');
   const denied = runHook('destructive-guard', bash('git commit -m x'), env);
-  assert.equal(JSON.parse(denied.stdout).hookSpecificOutput.permissionDecision, 'deny');
+  const sessionDecision = JSON.parse(denied.stdout).hookSpecificOutput;
+  assert.equal(sessionDecision.permissionDecision, 'deny');
+  assert.match(sessionDecision.permissionDecisionReason, /Oathbound command guard.*Matched the git commit rule/);
 
   const codexEnv = { ...process.env, CODEX_HOME: dir };
   delete codexEnv.AGENT_AUDIT_DIR;
@@ -146,7 +148,9 @@ test('Codex hooks record lifecycle and block only the evaluated command', { skip
     ...bash('git commit -m x'), agent_id: 'sub-42', agent_type: 'scout', session_id: 'parent',
   }, codexEnv);
   assert.equal(subagent.status, 0);
-  assert.equal(JSON.parse(subagent.stdout).hookSpecificOutput.permissionDecision, 'deny');
+  const decision = JSON.parse(subagent.stdout).hookSpecificOutput;
+  assert.equal(decision.permissionDecision, 'deny');
+  assert.match(decision.permissionDecisionReason, /Oathbound subagent guard.*Matched the git commit rule/);
   const block = JSON.parse(fs.readFileSync(path.join(dir, 'state', 'agent-audit.jsonl'), 'utf8'));
   assert.equal(block.sessao_id, 'parent');
   assert.equal(block.bloqueado, true);
