@@ -185,18 +185,15 @@ pending work. This policy does not guarantee model compliance or cost savings.
 
 ### 4. Updating Global Installations
 
-From the updated repository root, run the all-in-one updater (builds plugins, reinstalls CLI plugins, upgrades global configs/hooks, and prunes old versions):
+From the updated repository root, run one command. It rebuilds the native hook, builds and reinstalls the Claude, agy and Codex plugins, upgrades global configs and hooks, and prunes old versions:
 
 ```sh
 node tools/upgrade-global.ts --build-hook
 ```
 
-Or upgrade configs/hooks directly with `install.ts`:
+Options: `--runner claude|agy|codex|all` limits the CLIs, `--no-prune` keeps old versions, and `--home <dir>` targets another home directory. Omit `--build-hook` to reuse an existing hook binary.
 
-```sh
-node tools/install.ts --global --runner all --upgrade
-node tools/install.ts --global --runner codex --upgrade --prune
-```
+To upgrade only configs and hooks, without rebuilding plugins, run `node tools/install.ts --global --runner all --upgrade`.
 
 Open a new session to load the new names:
 
