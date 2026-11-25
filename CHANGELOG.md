@@ -4,6 +4,10 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.67] - 2026-11-25
+
+- Adds `assets/glyphs/`: `OathboundIcons.ttf` with the logo and the seven subagent icons as monochrome Private Use Area glyphs (`U+EF00` to `U+EF07`), plus the offline generator and a preview. Opt-in, per-machine font; the status line does not use it yet.
+
 ## [0.50.0-alpha.66] - 2026-11-25
 
 - The Claude plugin now declares `displayName` and `icon` (`assets/logo.svg`) in `plugin.json`, and the Claude build ships the logo. Claude Code ignores `icon` at load time; Anthropic's directory reads it at submission.
