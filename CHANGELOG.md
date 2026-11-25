@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- `.gitattributes` now starts with `* text=auto eol=lf`, so every checkout uses LF regardless of `core.autocrlf` (previously only `*.sh`, `*.md`, `*.ps1` and `*.js` were forced). The index was already LF; `git add --renormalize .` changed nothing.
+- Adds `test/repo-eol.test.cjs`, which fails when a tracked text file has CRLF or mixed endings in the index or the working tree.
+- Validated locally on Windows: the new test fails with the 7 CRLF files before the change and passes after re-checkout. Not validated: the `windows-latest` CI run.
+
 ## [0.50.0-alpha.52] - 2026-11-24
 
 - Fixes the release workflow: the `Generate checksums` step ran `sed 's# \./# #'` in a plain YAML scalar, where ` #` starts a comment, so the command was truncated and failed with exit 2. It now uses a block scalar with `sha256sum -- *.tar.gz > SHA256SUMS` followed by `sha256sum -c SHA256SUMS`.
