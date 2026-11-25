@@ -76,6 +76,7 @@ Supported options:
 
 The installer validates SHA-256 manifests and disables duplicate skills without symlinks.
 The global installer preserves existing instructions, configuration, non-Oathbound hooks and skills; on `--upgrade` it migrates legacy Oathbound `.js` hook commands in `~/.claude/settings.json` and `~/.codex/hooks.json` to the native `oathbound-hook` binary. Use `--statusline` for local Claude installation.
+On Windows, the global Codex installer updates existing Oathbound native hook commands in `~/.codex/hooks.json` to use PowerShell's `&` call operator. Review and trust the updated hooks in `/hooks`.
 When installing hooks, the installer requires the native `oathbound-hook` binary (resolved through `OATHBOUND_NATIVE_BIN`, `native/bin/oathbound-hook-<platform>-<arch>[.exe]` or a local build in `native/oathbound-hook/target/release/`), copies it to the destination and points hooks directly to it. Project/manual Codex hook configuration remains manual.
 
 ## Global Upgrade (`upgrade-global.ts`)

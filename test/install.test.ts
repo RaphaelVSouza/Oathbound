@@ -517,13 +517,47 @@ test('--global --upgrade migrates legacy Oathbound JS hooks in Claude and Codex 
   install({ root, global: true, runner: 'codex', upgrade: true });
   assert.equal(fs.existsSync(path.join(root, '.codex', 'hooks', binName)), true);
   const migratedCodex = JSON.parse(fs.readFileSync(codexHooksPath, 'utf8'));
-  const codexBin = `"${rootPosix}/.codex/hooks/${binName}"`;
+  const hookPath = `${rootPosix}/.codex/hooks/${binName}`;
+  const codexBin = process.platform === 'win32' ? `& '${hookPath}'` : `"${hookPath}"`;
   assert.equal(migratedCodex.hooks.SubagentStart[0].hooks[0].command, `${codexBin} codex-agent-audit`);
   assert.equal(migratedCodex.hooks.SubagentStop[0].hooks[0].command, `${codexBin} codex-agent-audit`);
   assert.deepEqual(
     migratedCodex.hooks.PreToolUse.flatMap((g: any) => g.hooks.map((h: any) => h.command)),
     ['custom-codex-hook', 'rtk hook codex', `${codexBin} destructive-guard`]
   );
+});
+
+test('Windows Codex reinstall replaces old native hooks and preserves custom settings', {
+  skip: process.platform !== 'win32'
+}, t => {
+  const root = fixtureDir("codex John's $home-");
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const hooksPath = path.join(root, '.codex', 'hooks.json');
+  const hookPath = path.join(root, '.codex', 'hooks', 'oathbound-hook.exe').split(path.sep).join('/');
+  const oldCommand = (name: string) => `"${hookPath.replace(/["`$\\]/g, '\\$&')}" ${name}`;
+  const correctedCommand = (name: string) => `& '${hookPath.replaceAll("'", "''")}' ${name}`;
+  const custom = { type: 'command', command: 'custom-codex-hook' };
+  const rtk = { type: 'command', command: 'rtk hook codex' };
+  const guard = { type: 'command', command: oldCommand('destructive-guard'), timeout: 7 };
+  const start = { type: 'command', command: oldCommand('codex-agent-audit'), timeout: 9 };
+  const stop = { type: 'command', command: `& "${hookPath}" codex-agent-audit` };
+  fs.mkdirSync(path.dirname(hooksPath), { recursive: true });
+  fs.writeFileSync(hooksPath, JSON.stringify({ hooks: {
+    PreToolUse: [{ matcher: 'Bash', hooks: [custom, rtk, guard] }],
+    SubagentStart: [{ hooks: [start] }],
+    SubagentStop: [{ hooks: [stop] }]
+  } }));
+  const options = { root, global: true, runner: 'codex' as const, upgrade: true };
+
+  install(options);
+  const installed = fs.readFileSync(hooksPath, 'utf8');
+  assert.deepEqual(JSON.parse(installed).hooks, {
+    PreToolUse: [{ matcher: 'Bash', hooks: [custom, rtk, { ...guard, command: correctedCommand('destructive-guard') }] }],
+    SubagentStart: [{ hooks: [{ ...start, command: correctedCommand('codex-agent-audit') }] }],
+    SubagentStop: [{ hooks: [{ ...stop, command: correctedCommand('codex-agent-audit') }] }]
+  });
+  install(options);
+  assert.equal(fs.readFileSync(hooksPath, 'utf8'), installed);
 });
 
 test('--prune requires --global and removes old versions only when --prune is passed', t => {

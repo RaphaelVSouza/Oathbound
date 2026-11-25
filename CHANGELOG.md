@@ -4,6 +4,10 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.62] - 2026-11-25
+
+- Fixes Windows Codex hook launches by invoking the native guard and audit hooks with PowerShell's call operator. Reinstalling migrates the existing commands in `~/.codex/hooks.json`.
+
 ## [0.50.0-alpha.61] - 2026-11-25
 
 - Bundles and registers an opt-in MCP footer in the Oathbound Codex plugin. Selecting it in `/statusline` shows the Oathbound mark, live subagent role glyphs, model, and remaining context. The package also includes `setup/statusline.cjs` for standalone registration. [ADR-0011](docs/adr/0011-use-mcp-for-the-codex-footer.md)

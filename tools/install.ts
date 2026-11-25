@@ -211,7 +211,8 @@ const LEGACY_OATHBOUND_JS_HOOK_RE = /(?:^|\s|["'])[^\s"']*[\\/](agent-audit|read
 
 function migrateLegacyOathboundHooks(
   config: any,
-  replacements: Record<string, string | null>
+  replacements: Record<string, string | null>,
+  nativeCommands?: ReadonlyMap<string, string>
 ): { changed: boolean; config: any } {
   if (!config || typeof config !== 'object' || !config.hooks || typeof config.hooks !== 'object') {
     return { changed: false, config };
@@ -228,7 +229,11 @@ function migrateLegacyOathboundHooks(
       }
       const nextSubHooks: any[] = [];
       const seenCommands = new Set<string>();
-      for (const hook of entry.hooks) {
+      for (const existingHook of entry.hooks) {
+        const oldCommand = existingHook?.command;
+        const nativeCommand = nativeCommands?.get(oldCommand);
+        const hook = nativeCommand ? { ...existingHook, command: nativeCommand } : existingHook;
+        if (nativeCommand) changed = true;
         const cmd = hook?.command;
         const match = typeof cmd === 'string' ? LEGACY_OATHBOUND_JS_HOOK_RE.exec(cmd) : null;
         if (!match) {
@@ -586,7 +591,13 @@ function install(options: InstallOptions) {
 
       const codexHooksTemplatePath = path.join(sourceRoot, 'codex', 'hooks.json');
       if (fs.existsSync(codexHooksTemplatePath)) {
-        const codexHookBin = `"${claudeHookPath}/.codex/hooks/${nativeBinName}"`;
+        const codexHookPath = `${targetPosix}/.codex/hooks/${nativeBinName}`;
+        const oldCodexHookBin = `"${claudeHookPath}/.codex/hooks/${nativeBinName}"`;
+        const isWindows = process.platform === 'win32';
+        const codexHookBin = isWindows
+          ? `& '${codexHookPath.replace(/['\u2018\u2019]/g, '$&$&')}'`
+          : oldCodexHookBin;
+        const nativeCommands = new Map<string, string>();
         const templateHooks = JSON.parse(fs.readFileSync(codexHooksTemplatePath, 'utf8'));
         for (const groups of Object.values(templateHooks.hooks || {}) as any[]) {
           if (!Array.isArray(groups)) continue;
@@ -594,7 +605,12 @@ function install(options: InstallOptions) {
             if (!Array.isArray(entry?.hooks)) continue;
             for (const hook of entry.hooks) {
               if (typeof hook?.command === 'string' && hook.command.startsWith('oathbound-hook ')) {
-                hook.command = `${codexHookBin} ${hook.command.slice('oathbound-hook '.length)}`;
+                const subcommand = hook.command.slice('oathbound-hook '.length);
+                hook.command = `${codexHookBin} ${subcommand}`;
+                if (isWindows) {
+                  nativeCommands.set(`${oldCodexHookBin} ${subcommand}`, hook.command);
+                  nativeCommands.set(`& "${codexHookPath}" ${subcommand}`, hook.command);
+                }
               }
             }
           }
@@ -606,7 +622,7 @@ function install(options: InstallOptions) {
           'readonly-guard': null,
           'read-size-guard': null,
           'destructive-guard': `${codexHookBin} destructive-guard`
-        });
+        }, nativeCommands);
         const mergedCodexHooks = {
           ...migrated.config,
           hooks: mergeHookEvents(migrated.config?.hooks, templateHooks.hooks)
