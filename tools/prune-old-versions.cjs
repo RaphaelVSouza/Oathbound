@@ -48,6 +48,42 @@ function compareVersions(a, b) {
   return 0;
 }
 
+// CLI files that record install paths. A directory named in any of them is still in use.
+const CONFIG_FILES = [
+  '.claude/settings.json',
+  '.claude/plugins/known_marketplaces.json',
+  '.claude/plugins/installed_plugins.json',
+  '.codex/config.toml',
+];
+
+const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+function readConfigs(home) {
+  const configs = [];
+  for (const rel of CONFIG_FILES) {
+    const file = path.join(home, rel);
+    try {
+      configs.push({ rel, text: fs.readFileSync(file, 'utf8').toLowerCase() });
+    } catch {
+      // A missing or unreadable file references nothing.
+    }
+  }
+  return configs;
+}
+
+/** Return the config file that still names `dir`, or '' when none does. */
+function referencedBy(dir, configs) {
+  const lower = dir.toLowerCase();
+  const variants = new Set([lower, lower.replace(/\\/g, '/'), lower.replace(/\\/g, '\\\\')]);
+  for (const { rel, text } of configs) {
+    for (const variant of variants) {
+      // The lookahead stops `alpha.5` from matching a reference to `alpha.53`.
+      if (new RegExp(`${escapeRegExp(variant)}(?![0-9a-z.-])`).test(text)) return rel;
+    }
+  }
+  return '';
+}
+
 function isInside(parent, child) {
   const rel = path.relative(parent, child);
   return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
@@ -57,6 +93,7 @@ function isInside(parent, child) {
  * Remove version directories older than `keep` from the known install locations.
  * A root is skipped when its `keep` directory is missing, so the last copy is never removed.
  * Only real directories named `<prefix><semver>` are touched; symlinks are skipped.
+ * A directory still named in a CLI config file (`CONFIG_FILES`) is skipped.
  * @param {{ keep: string, home?: string, apply?: boolean }} options
  * @returns {{ removed: string[], kept: string[], skipped: string[] }}
  */
@@ -65,6 +102,7 @@ function pruneOldVersions({ keep, home = os.homedir(), apply = false }) {
     throw new Error('Usage: node tools/prune-old-versions.cjs [--keep <semver>] [--home <dir>] [--apply]');
   }
   const result = { removed: [], kept: [], skipped: [] };
+  const configs = readConfigs(home);
 
   for (const { dir, prefix } of ROOTS) {
     const root = path.join(home, dir);
@@ -90,6 +128,11 @@ function pruneOldVersions({ keep, home = os.homedir(), apply = false }) {
       const stat = fs.lstatSync(full);
       if (!stat.isDirectory() || stat.isSymbolicLink() || !isInside(root, full)) {
         result.skipped.push(`${full}: not a plain directory`);
+        continue;
+      }
+      const owner = referencedBy(full, configs);
+      if (owner) {
+        result.skipped.push(`${full}: still referenced by ~/${owner}`);
         continue;
       }
       if (apply) fs.rmSync(full, { recursive: true, force: true });

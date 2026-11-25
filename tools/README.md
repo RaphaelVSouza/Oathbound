@@ -141,7 +141,7 @@ node tools/prune-old-versions.cjs --apply         # removes
 node tools/prune-old-versions.cjs --keep <semver> # keep another version
 ```
 
-Safety rules: it is a dry run unless `--apply` is passed. A location is skipped when the kept version is not there, so the last copy is never removed. It never touches newer versions, names that are not `<prefix><semver>`, files or symlinks. It does not read CLI configuration, so reinstall first: a marketplace that still points at an old directory breaks once that directory is gone.
+Safety rules: it is a dry run unless `--apply` is passed. A location is skipped when the kept version is not there, so the last copy is never removed. It never touches newer versions, names that are not `<prefix><semver>`, files or symlinks. It also skips a directory still named in `~/.claude/settings.json`, `~/.claude/plugins/known_marketplaces.json`, `~/.claude/plugins/installed_plugins.json` or `~/.codex/config.toml`, so a marketplace that points at an old directory is never broken. agy copies the plugin into `~/.gemini/config/plugins/oathbound` and keeps no old versions.
 
 To enable automatic local validation before each commit, configure the versioned hooks:
 ```sh

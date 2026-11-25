@@ -70,6 +70,26 @@ test('newer versions, unrelated names and plain files are never removed', () => 
   assert.ok(exists(home, `${CACHE}/0.50.0-alpha.1`));
 });
 
+test('a directory still named in a CLI config file is kept, whatever the path style', () => {
+  const home = makeHome([
+    `${MARKET}/oathbound-0.50.0-alpha.48`, `${MARKET}/oathbound-0.50.0-alpha.49`,
+    `${MARKET}/oathbound-0.50.0-alpha.5`, `${MARKET}/oathbound-0.50.0-alpha.53`,
+  ]);
+  const plugins = path.join(home, '.claude/plugins');
+  fs.mkdirSync(plugins, { recursive: true });
+  const old48 = path.join(home, MARKET, 'oathbound-0.50.0-alpha.48', 'claude');
+  fs.writeFileSync(path.join(plugins, 'known_marketplaces.json'), JSON.stringify({ installLocation: old48 }));
+  fs.mkdirSync(path.join(home, '.codex'), { recursive: true });
+  const old49 = path.join(home, MARKET, 'oathbound-0.50.0-alpha.49').replace(/\\/g, '/');
+  fs.writeFileSync(path.join(home, '.codex/config.toml'), `source = '${old49}'\n`);
+  const result = pruneOldVersions({ keep: '0.50.0-alpha.53', home, apply: true });
+  assert.ok(exists(home, `${MARKET}/oathbound-0.50.0-alpha.48`));
+  assert.ok(exists(home, `${MARKET}/oathbound-0.50.0-alpha.49`));
+  assert.equal(result.skipped.filter(item => item.includes('still referenced')).length, 2);
+  // `alpha.5` is a prefix of `alpha.53` but nothing names it, so it is removed.
+  assert.ok(!exists(home, `${MARKET}/oathbound-0.50.0-alpha.5`));
+});
+
 test('rejects an invalid version and unknown arguments', () => {
   assert.throws(() => pruneOldVersions({ keep: '../x', home: os.tmpdir() }), /Usage/);
   assert.throws(() => parseCliArgs(['--force']), /Unknown argument/);
