@@ -1,19 +1,21 @@
 ---
-status: Proposed
+status: Accepted
 date: 2026-11-25
-decision-makers: []
+decision-makers: [Raphael Vieira]
 ---
 
 # 0020 - Use host-specific strategies to build plugin packages
 
 ## Context and Problem Statement
 
-`buildPlugin(runner, destination)` validates the destination, resolves Claude's native binary, provides file helpers, and writes three host-specific package layouts. Codex takes an early branch, while Claude Code and Antigravity share part of the write sequence. Both the build CLI and global upgrade depend on the builder. Maintainers adding a host-specific artifact must trace the shared flow and the relevant branches to find the correct place to write it.
+`buildPlugin(runner, destination)` validates the destination, resolves Claude's native binary, provides file helpers, and writes three host-specific package layouts. Codex takes an early branch, while Claude Code and Antigravity share part of the write sequence. Maintainers adding a host-specific artifact must trace the shared flow and the relevant branches to find the correct place to write it.
+
+This is an architectural decision, not a local refactor, because the builder is a shared build contract. The build CLI, global upgrade (`tools/upgrade-global.ts`), the install tests (`test/install.test.ts`), `tools/smoke-oathkeeper.cjs`, and the CI and release workflows all consume it, and its structure sets the pattern for adding future hosts.
 
 ## Decision Drivers
 
 - Make a host-specific package change local to that host's writer and package tests.
-- Give version, manifest, and skill selection rules one implementation.
+- Keep version, manifest (`loadManifest`), and skill selection (`copySkillsForRunner`) single implementations. They are single today, and the change must not split them per host. The remaining duplication is the repeated `JSON.parse(readFileSync(...))` of the marketplace files and the `codex/statusline.cjs` copy written to two places.
 - Preserve generated artifacts and the builder's CLI and module contracts, including failure behavior.
 - Keep the design small enough to follow in one file and use the existing Node APIs.
 
@@ -22,52 +24,43 @@ decision-makers: []
 | Option | Benefit | Cost |
 | --- | --- | --- |
 | Keep the inline branches | No transition effort. The full flow is visible in one function. | Host layout changes still require tracing shared and host-specific branches. |
-| Extract three writers and dispatch with a `switch` | Isolates each layout with straightforward control flow. | Claude's preflight and writer selection happen at different points in the shared flow, so the builder must coordinate both. |
-| Use a function-based Strategy per host | Each writer shows the full host layout. The builder owns sequencing and shared rules. | Adds an internal interface and one level of dispatch. |
+| Extract one writer per host and dispatch to it | Isolates each layout. Each writer shows the full host layout, and the builder keeps sequencing and shared rules. | Adds one level of dispatch. Claude's preflight and writer selection happen at different points of the shared flow, so the builder must coordinate both. |
 | Describe packages through a declarative file map | Plain copies become easy to scan and compare. | Native binary preflight, executable permissions, skill selection, and generated manifests need special operations. |
+
+A `switch` and a function map are two spellings of the second option, so they are not listed separately.
 
 ## Decision Outcome
 
-Use a fixed strategy map in `tools/build-plugin.cjs`. A single lookup pairs each host's writer with its optional preflight, so the builder can run the same sequence for all three hosts. This keeps Claude's native input requirement next to its layout and gives shared version and skill rules one home. Keep the writers in the builder during the initial extraction. Accept only the three explicit keys `claude`, `agy`, and `codex`.
+We will extract one writer per host in `tools/build-plugin.cjs` and select it through a fixed lookup that pairs each host's writer with its optional preflight. The builder then runs the same sequence for all three hosts: validate the runner and destination, run the preflight, create the destination exclusively, call the writer, and return the absolute path. This keeps Claude's native input requirement next to its layout and keeps the shared version, manifest, and skill rules in one place.
 
-```mermaid
-flowchart TD
-    Entry["CLI or global upgrade"] --> Build["buildPlugin(runner, destination)"]
-    Build --> Validate["Validate runner and destination parent"]
-    Validate --> Preflight["Run selected preflight when defined"]
-    Preflight --> Context["Create destination exclusively and prepare shared helpers"]
-    Context --> Write{"Call selected writer"}
-    Write --> Claude["Claude Code manifest, skills, hooks and native binary"]
-    Write --> Agy["Agy manifest, skills, agents and assets"]
-    Write --> Codex["Codex marketplace plugin and setup files"]
-    Claude --> Done["Return absolute destination"]
-    Agy --> Done
-    Codex --> Done
-```
+Invariants:
 
-| Owner | Responsibility |
-| --- | --- |
-| Builder | Validate the supported runner and destination, call preflight before creating the output, create the directory exclusively, read `VERSION`, and return the absolute output path. |
-| Shared helpers | Copy source files, write JSON exclusively, normalize plugin manifests, and copy shared and runner-specific skills using the writer's destination. |
-| Claude Code strategy | Resolve the native binary during preflight. Write the Claude layout, derive the packaged filename from the input binary's extension, and explicitly set the output mode to `0o755`. |
-| Agy strategy | Write the Antigravity manifest, skills, agents, and assets. |
-| Codex strategy | Write the marketplace layout, MCP footer, skills, and setup files. Keep both footer copies. |
-
-The internal interface is `write(context, preparedInputs)` with optional `prepare()`. The context supplies the shared file operations and output directory. Claude's prepared input contains the binary path. The writer owns relative output paths, including where its skills go. Existing CommonJS exports remain available to callers, including `findNativeHookBinary` and `copySkillsForRunner`.
+- The lookup is own-key only (`Object.hasOwn` or a `Map`). Prototype keys such as `constructor` are rejected with the existing usage error, and only `claude`, `agy`, and `codex` are accepted.
+- Only Claude defines a preflight, because only Claude needs an input that can be missing. The preflight runs before the destination is created, and its result is passed to the writer, so a missing binary leaves no output.
+- The Codex footer stays as `codex/statusline.cjs`, copied to both `plugins/oathbound/` and `setup/`. Both copies are kept.
+- Existing CommonJS exports stay available: `buildPlugin`, `findNativeHookBinary`, `copySkillsForRunner`, and `RUNNER_EXCLUSIVE_SKILL_DIRS`.
 
 ### Consequences
 
-- **Good.** Adding a Codex setup file changes the Codex writer and its package test. A manifest versioning change belongs in the shared helper.
-- **Bad.** The strategy map introduces another call boundary, and writes can still fail partway through a build. Keep the interface small and preserve existing sequencing and failure behavior during extraction.
-- **Neutral.** Apply the pattern to package generation. Host installation, hook execution, and release orchestration continue through their existing entry points.
+- **Good:** Adding a Codex setup file changes the Codex writer and its package test. A manifest versioning change stays in the shared helper.
+- **Bad:** The lookup adds a call boundary, and writes can still fail partway through a build, as they do today. _Mitigation:_ keep the interface small and preserve the existing sequencing and failure behavior, including partial output on a failed write.
+- **Neutral:** The CLI and module contracts, the generated artifacts, and the failure behavior stay unchanged. The pattern applies to package generation only. Host installation, hook execution, and release orchestration keep their existing entry points.
 
 ### Confirmation
 
-- Compare relative paths and file contents for all three packages before and after extraction using the same inputs. Check executable mode on a POSIX runner.
-- Run the package and global upgrade tests. Verify runner-specific skills, manifest versions, and the Codex plugin and setup trees. Supplement the upgrade test with a staging smoke check that uses the real exported builder and native lookup with a temporary home. The package builder supports Agy and Codex without a binary. Global Codex upgrade resolves a native binary separately.
-- Exercise the real builder with an unsupported runner such as `constructor` and expect the usage error. Check that destination-parent validation precedes Claude binary lookup. With a valid parent and no binary, expect the missing-binary error for both a new and an existing destination, with no output created or overwritten. With a valid binary and an existing destination, expect `EEXIST` and preserve its contents.
-- Verify that Claude's packaged filename follows the input extension across build hosts.
-- Review the next host-only packaging change. Its layout changes should fit in one writer and the corresponding package assertions.
+Characterization tests must land before the extraction and remain as the ongoing guard for every later host change. `test/build-plugin.test.cjs` currently has no test for:
+
+- an unsupported runner (such as `constructor`) through `buildPlugin`, expecting the usage error;
+- the preflight running before the destination is created, with a missing binary and both a new and an existing destination;
+- the `0o755` mode of the packaged binary (POSIX only).
+
+`test/upgrade-global.test.ts` stubs `buildPlugin`, so the global upgrade path also needs a smoke check against the real builder.
+
+The test named "names the packaged native binary from the source binary extension, not the host" already covers the packaged filename and stays in place.
+
+As a one-time migration check, compare relative paths and file contents of all three packages before and after the extraction, using the same inputs.
+
+The next host-only packaging change should fit in one writer and its package assertions. If it does not, review this decision.
 
 ## References
 
