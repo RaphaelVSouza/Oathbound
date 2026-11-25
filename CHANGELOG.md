@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.50.0-alpha.75] - 2026-11-25
+
+- Oathkeeper (Claude, agy, Codex) gains two shared subsections, "Reading requests" and "Limits and handoffs", calibrated from session feedback:
+  - For ambiguous wording, it asks first when a wrong guess risks heavy rework, data or deletion. When both answers are cheap, it answers both readings.
+  - It flags conflicting instructions and takes the safer reading for the conflicting item only.
+  - Before acting on destructive wording such as "clean install", it states what will and will not be deleted. If deletion was not named, it does only the non-destructive part and asks in the same turn.
+  - Numbered replies approve exactly the options they select.
+  - It runs the cheapest real test before planning a fix, and writes one line before calls longer than about 30 seconds.
+  - Out-of-repository causes are closed with evidence. Interactive or human-only steps become `blocked` items. An unexpected tool error is retried once when a safe retry is obvious.
+- Oathkeeper also uses a short plan form when no agents are spawned, confirms that the CI run started after pushing a release tag, and reports `AGENTS: none (main thread only)` when no agents ran. `test/agents/model-routing.test.js` asserts the new subsections are identical across runners.
+- Oathkeeper triage delegates simple edits to `smith` when target files are large and not yet in context, when the same edit repeats across files, or when the main context is near compaction; only hand-edited files count toward the ~3-file limit.
+
 ## [0.50.0-alpha.74] - 2026-11-25
 
 - The Codex footer (`codex/statusline.cjs`) shows input/output tokens, 5h and weekly quota remaining (expired windows hidden), cost in USD and a `/compact` hint at 15% context or less, each only when the Codex snapshot reports it. Duration and line counts are not in the Codex snapshot and stay out. agy needs no change: the native renderer already hides cost, duration and lines when its payload lacks them; its payload was inspected statically (binary strings), not captured live.

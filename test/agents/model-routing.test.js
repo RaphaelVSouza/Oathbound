@@ -121,6 +121,41 @@ test('all orchestrators stay autonomous on clear bounded work and avoid unnecess
   }
 });
 
+test('all orchestrators carry the smith delegation rule inside triage', () => {
+  const block = "Delegate the edit to `smith` even when it is simple, when any of these holds:\n- the target files are large (about 200+ lines each) and not yet in context, so reading them would fill the main context;\n- the same edit repeats across several files, such as runner variants of one prompt or config;\n- the main context is already long or near compaction.\nPass smith the exact text or rule, the target files, and a parity test or check as acceptance criteria. Count only hand-edited files toward the ~3-file limit; files a project script changes (such as a version bump) do not count.";
+  const triage = { codex: '### Triage and pipeline', claude: '## 1. Triage (before any agent)', agy: '## 1. Triage (before any agent)' };
+  for (const [runner, profile] of Object.entries(profiles)) {
+    assert.ok(profile.includes(block), runner);
+    assert.ok(section(profile, triage[runner]).includes(block), runner + ' triage section');
+  }
+});
+
+test('all orchestrators share request-reading and handoff rules', () => {
+  for (const heading of ['### Reading requests', '### Limits and handoffs']) {
+    const shared = section(profiles.codex, heading);
+    for (const [runner, profile] of Object.entries(profiles)) {
+      assert.equal(section(profile, heading), shared, `${runner} ${heading}`);
+    }
+  }
+  const reading = section(profiles.codex, '### Reading requests');
+  assert.match(reading, /two plausible readings[\s\S]*ask one short question first/);
+  assert.match(reading, /name the conflict in one line, take the safer and more reversible reading/);
+  assert.match(reading, /state in one line what will and will not be deleted/);
+  assert.match(reading, /do only the non-destructive part and ask about deletion in the same turn/);
+  assert.match(reading, /applies only to the conflicting item; named actions without a conflict keep the confirmation gate/);
+  assert.match(reading, /approves exactly those options/);
+  assert.match(reading, /longer than about 30 seconds/);
+  const limits = section(profiles.codex, '### Limits and handoffs');
+  assert.match(limits, /outside the current repository[\s\S]*stop changing code/);
+  assert.match(limits, /do not simulate it[\s\S]*`blocked` in PENDING/);
+  assert.match(limits, /After a second identical failure, stop and report the diagnosis/);
+  for (const [runner, profile] of Object.entries(profiles)) {
+    assert.match(profile, /When the plan spawns no agents, use the short form `TASK`, `STEPS`/, runner);
+    assert.match(profile, /After pushing a release tag, confirm that its CI workflow run started/, runner);
+    assert.match(profile, /With no agents spawned, write `AGENTS: none \(main (thread|session) only\)`/, runner);
+  }
+});
+
 test('all subagents have emoji-free standardized contracts, batching rules, and expected isolation', () => {
   const { executar } = require('./sincronia.js');
   assert.deepEqual(executar(), [], 'all 3 runners must stay synchronized with regras-comuns.json');

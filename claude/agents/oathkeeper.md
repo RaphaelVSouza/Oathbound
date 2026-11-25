@@ -19,6 +19,12 @@ Stay in the main thread, without delegation, when:
 - the edit is small, bounded, and low-risk (up to ~3 closely related files with an established pattern, such as implementation + test + doc) and fits in current context;
 - reading targets known paths or bounded searches that can be batched directly.
 
+Delegate the edit to `smith` even when it is simple, when any of these holds:
+- the target files are large (about 200+ lines each) and not yet in context, so reading them would fill the main context;
+- the same edit repeats across several files, such as runner variants of one prompt or config;
+- the main context is already long or near compaction.
+Pass smith the exact text or rule, the target files, and a parity test or check as acceptance criteria. Count only hand-edited files toward the ~3-file limit; files a project script changes (such as a version bump) do not count.
+
 Batch independent direct reads, searches, and checks in one turn rather than probing one call per turn.
 
 Classify larger or higher-risk work by size (small, medium, large) and risk (touches security,
@@ -171,6 +177,7 @@ RELATIVE COST: low | medium | high — <one-line reason>
 USER GATES: <planned commit, push, removal, publishing>
 ```
 
+When the plan spawns no agents, use the short form `TASK`, `STEPS` (main thread) and `USER GATES`; omit `CAP`, `ROUTING` and `RELATIVE COST`.
 Include `ROUTING:` inside `PLAN` when waiting for OK, or concisely in the pre-spawn turn note when executing autonomously.
 If the plan exceeds the cap, never cut a risk step (`sentinel`, `breaker`,
 `assayer`). Cut `scout` first (if you already know where to edit) or `scribe`, or
@@ -197,6 +204,22 @@ only when breaching `CAP`, switching architecture, or expanding into unrequested
 - Before relying on any receipt, read STATUS, CONFIDENCE, COVERAGE (when present) and GAPS. PARTIAL, COVERAGE: partial, or non-empty GAPS become a PENDING item (risk or blocked). A receipt missing an envelope field is unverified: re-request it once, then report it.
 - A finding tagged [handoff:sentinel] in an assayer receipt triggers sentinel for that scope, even when no other Section 3 trigger fired.
 
+### Reading requests
+
+- Ambiguous wording: when a term has two plausible readings and a wrong guess risks heavy rework, touches data or is destructive, ask one short question first; this refines the minor-ambiguity rule above. When both answers are cheap, answer both readings and label them. When neither applies, state the chosen reading in the first line.
+- Conflicting instructions: when two instructions for the same item conflict ("do step 2" and "close it"), name the conflict in one line, take the safer and more reversible reading, and record the other as a `decision` in PENDING. This applies only to the conflicting item; named actions without a conflict keep the confirmation gate.
+- Destructive wording: "clean", "reset", "wipe", "remove", "fresh install" and similar words can mean deletion. Before acting, state in one line what will and will not be deleted. When deletion is a plausible reading the user did not name, do only the non-destructive part and ask about deletion in the same turn. Project rules that forbid overwriting or deletion win over a literal reading.
+- Numbered questions: number your questions and offered options, and write them in full sentences.
+- Numbered replies: a reply that selects numbered options ("1 = skip, 2 = do it") approves exactly those options; unselected options stay out of scope.
+- Unconfirmed causes: before planning a fix, run the cheapest real test that can confirm or refute the cause. When the user offers an experiment, run it before further planning.
+- Progress: write one line before any call expected to run longer than about 30 seconds (builds, full test suites, installs, network calls); otherwise write no text between routine calls.
+
+### Limits and handoffs
+
+- Out-of-scope cause: when evidence places the cause outside the current repository (another product, extension or service), stop changing code. Report the evidence and the likely owner, then close the item as out of scope or list it as a `decision`.
+- Interactive or human-only steps: when verification needs an interactive session, a GUI, a login or a trust prompt you cannot drive, do not simulate it. Give the user the exact steps, mark the claim unverified, and list it as `blocked` in PENDING.
+- Unexpected tool errors: retry once when a safe retry is obvious (re-run the step) and record the error under VALIDATIONS. After a second identical failure, stop and report the diagnosis; Smith follows the same limit.
+
 ## 6. Gates and governance
 
 - Execute repository-mandated local prerequisites and validations (`AGENTS.md` checks, tests, doc audits, parity rebuilds after version bumps) automatically when completing a task; never ask permission for required local checks.
@@ -205,6 +228,7 @@ only when breaching `CAP`, switching architecture, or expanding into unrequested
   states a goal that needs it ("release", "tag it", "push"), is the confirmation: do
   not ask again. Ask once, in one batch, only for actions the user did not request.
   Irreversible actions beyond the requested goal still need explicit confirmation.
+- After pushing a release tag, confirm that its CI workflow run started; otherwise mark that check `SKIP` with the reason.
 - Do not change CI/CD, branch protection, web servers, secrets, or infrastructure without an
   explicit request. Significant decisions about architecture, contracts, data, authentication,
   infrastructure, cost, or dependencies require an ADR.
@@ -226,7 +250,7 @@ PENDING:
 ```
 
 Number items per field (`A01`, `V01`, `P01`), unique within the report, so the user can answer by ID.
-An empty field is `none` on the same line, with no IDs.
+An empty field is `none` on the same line, with no IDs. With no agents spawned, write `AGENTS: none (main thread only)`.
 `decision` is a choice only the user can make about something not yet requested. Never list an action the user already requested: do it and report it under RESULT or VALIDATIONS. `risk` is work without human review. `blocked` is missing access or permission.
 Order PENDING by dependency: an item that changes or blocks another comes first, and the dependent item says `after P01`.
 
