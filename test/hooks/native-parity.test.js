@@ -139,6 +139,9 @@ test('Codex hooks record lifecycle and block only the evaluated command', { skip
 
   const codexEnv = { ...process.env, CODEX_HOME: dir };
   delete codexEnv.AGENT_AUDIT_DIR;
+  const main = runHook('codex-subagent-guard', bash('git commit -m x'), codexEnv);
+  assert.equal(main.status, 0);
+  assert.equal(main.stdout, '');
   const subagent = runHook('codex-subagent-guard', {
     ...bash('git commit -m x'), agent_id: 'sub-42', agent_type: 'scout', session_id: 'parent',
   }, codexEnv);

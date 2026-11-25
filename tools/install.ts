@@ -129,10 +129,12 @@ function parseArgs(args: string[]): InstallOptions {
       options.hooksOnly = true;
     } else if (arg === '--codex-subagent-guard') {
       options.codexSubagentGuard = true;
+    } else if (arg === '--codex-session-wide-guard') {
+      options.codexSubagentGuard = false;
     } else if (arg === '--prune') {
       options.prune = true;
     } else if (arg === '--help' || arg === '-h') {
-      console.log('Usage: node tools/install.ts [--project <dir> | --global] [--runner <all|claude|agy|codex>] [--upgrade] [--statusline] [--audit-docs] [--no-dedupe-skills] [--hooks-only] [--prune] [--codex-subagent-guard]');
+      console.log('Usage: node tools/install.ts [--project <dir> | --global] [--runner <all|claude|agy|codex>] [--upgrade] [--statusline] [--audit-docs] [--no-dedupe-skills] [--hooks-only] [--prune] [--codex-subagent-guard | --codex-session-wide-guard]');
       process.exit(0);
     } else {
       throw new Error(`Unknown or incomplete option: ${arg}`);
@@ -143,8 +145,8 @@ function parseArgs(args: string[]): InstallOptions {
     throw new Error('--global and --project cannot be combined.');
   }
 
-  if (options.codexSubagentGuard && (!options.global || options.runner !== 'codex')) {
-    throw new Error('--codex-subagent-guard requires --global --runner codex.');
+  if (options.codexSubagentGuard !== undefined && (!options.global || options.runner !== 'codex')) {
+    throw new Error('Codex guard options require --global --runner codex.');
   }
 
   if (options.global && options.auditDocs) {
@@ -587,7 +589,7 @@ function install(options: InstallOptions) {
           ? `& '${codexHookPath.replace(/['\u2018\u2019]/g, '$&$&')}'`
           : oldCodexHookBin;
         const nativeCommands = new Map<string, string>();
-        const guard = options.codexSubagentGuard ? 'codex-subagent-guard' : 'destructive-guard';
+        const guard = options.codexSubagentGuard === false ? 'destructive-guard' : 'codex-subagent-guard';
         const templateHooks = JSON.parse(fs.readFileSync(codexHooksTemplatePath, 'utf8'));
         for (const groups of Object.values(templateHooks.hooks || {}) as any[]) {
           if (!Array.isArray(groups)) continue;
@@ -596,8 +598,8 @@ function install(options: InstallOptions) {
             for (const hook of entry.hooks) {
               if (typeof hook?.command === 'string' && hook.command.startsWith('oathbound-hook ')) {
                 const subcommand = hook.command.slice('oathbound-hook '.length);
-                hook.command = `${codexHookBin} ${subcommand === 'destructive-guard' ? guard : subcommand}`;
-                if (subcommand === 'destructive-guard') {
+                hook.command = `${codexHookBin} ${subcommand === 'codex-subagent-guard' ? guard : subcommand}`;
+                if (subcommand === 'codex-subagent-guard') {
                   for (const previous of ['destructive-guard', 'codex-subagent-guard']) {
                     for (const bin of ['oathbound-hook', oldCodexHookBin, codexHookBin, `& "${codexHookPath}"`]) {
                       nativeCommands.set(`${bin} ${previous}`, hook.command);

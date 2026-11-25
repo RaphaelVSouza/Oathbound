@@ -18,12 +18,12 @@ The session-wide destructive guard blocks authorized Git operations from Oathkee
 
 ## Decision Outcome
 
-Use explicit opt-in. In this mode, a PreToolUse event with both identity fields absent proceeds through normal Codex approval. Events carrying either identity field remain subject to the guard. The session-wide guard remains the default for installations of unknown compatibility.
+Use subagent-only enforcement by default in the Codex hook template and global installer. A PreToolUse event with both identity fields absent proceeds through normal Codex approval. Events carrying either identity field remain subject to the guard. This supersedes the original opt-in default, which allowed a regular upgrade to restore session-wide blocking.
 
 ### Consequences
 
-- Oathkeeper can use the normal approval flow for Git writes with the scoped mode enabled.
-- Maintainers must verify the Codex version before selecting scoped mode and repeat the flag when upgrading.
+- Oathkeeper and the default main agent use the normal Codex approval flow for Git writes.
+- Older Codex versions can omit subagent identity. Select `--codex-session-wide-guard` on each install or upgrade when the CLI lacks this metadata.
 
 ### Confirmation
 

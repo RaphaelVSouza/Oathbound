@@ -575,7 +575,7 @@ test('--global --upgrade migrates legacy Oathbound JS hooks in Claude and Codex 
   assert.equal(migratedCodex.hooks.SubagentStop[0].hooks[0].command, `${codexBin} codex-agent-audit`);
   assert.deepEqual(
     migratedCodex.hooks.PreToolUse.flatMap((g: any) => g.hooks.map((h: any) => h.command)),
-    ['custom-codex-hook', 'rtk hook codex', `${codexBin} destructive-guard`]
+    ['custom-codex-hook', 'rtk hook codex', `${codexBin} codex-subagent-guard`]
   );
 });
 
@@ -604,20 +604,20 @@ test('Windows Codex reinstall replaces old native hooks and preserves custom set
   install(options);
   const installed = fs.readFileSync(hooksPath, 'utf8');
   assert.deepEqual(JSON.parse(installed).hooks, {
-    PreToolUse: [{ matcher: 'Bash', hooks: [custom, rtk, { ...guard, command: correctedCommand('destructive-guard') }] }],
+    PreToolUse: [{ matcher: 'Bash', hooks: [custom, rtk, { ...guard, command: correctedCommand('codex-subagent-guard') }] }],
     SubagentStart: [{ hooks: [{ ...start, command: correctedCommand('codex-agent-audit') }] }],
     SubagentStop: [{ hooks: [{ ...stop, command: correctedCommand('codex-agent-audit') }] }]
   });
   install(options);
   assert.equal(fs.readFileSync(hooksPath, 'utf8'), installed);
-  const scopedOptions = { ...options, codexSubagentGuard: true };
-  install(scopedOptions);
-  const scoped = fs.readFileSync(hooksPath, 'utf8');
+  const legacyOptions = { ...options, ...parseArgs(['--global', '--runner', 'codex', '--upgrade', '--codex-session-wide-guard']) };
+  install(legacyOptions);
+  const legacy = fs.readFileSync(hooksPath, 'utf8');
   const expected = JSON.parse(installed);
-  expected.hooks.PreToolUse[0].hooks[2].command = correctedCommand('codex-subagent-guard');
-  assert.deepEqual(JSON.parse(scoped), expected);
-  install(scopedOptions);
-  assert.equal(fs.readFileSync(hooksPath, 'utf8'), scoped);
+  expected.hooks.PreToolUse[0].hooks[2].command = correctedCommand('destructive-guard');
+  assert.deepEqual(JSON.parse(legacy), expected);
+  install(legacyOptions);
+  assert.equal(fs.readFileSync(hooksPath, 'utf8'), legacy);
   install(options);
   assert.equal(fs.readFileSync(hooksPath, 'utf8'), installed);
 });

@@ -81,13 +81,13 @@ When installing hooks, the installer requires the native `oathbound-hook` binary
 
 ## Global Upgrade (`upgrade-global.ts`)
 
-With Codex CLI 0.172.0 and the rebuilt native hook, apply the scoped mode to an existing global installation:
+With Codex CLI 0.172.0 and the rebuilt native hook, upgrade an existing global installation to the default subagent-only guard:
 
 ```sh
-node tools/install.ts --global --runner codex --upgrade --codex-subagent-guard
+node tools/install.ts --global --runner codex --upgrade
 ```
 
-The installer reports the hook configuration diff during the upgrade. Repeat `--codex-subagent-guard` on later upgrades to retain subagent-only enforcement. For older or unverified Codex versions, omit the flag to select the session-wide guard.
+The installer reports the hook configuration diff during the upgrade. For older or unverified Codex versions, pass `--codex-session-wide-guard` on each install or upgrade. The existing `--codex-subagent-guard` option explicitly selects the default.
 
 Builds plugin packages into `~/.oathbound/marketplaces/oathbound-<version>/`, reinstalls plugins for installed CLIs (`claude`, `agy`, `codex`), runs `install.ts --global --upgrade` for those runners, and prunes older versions at the end:
 

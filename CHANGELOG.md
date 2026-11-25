@@ -6,6 +6,10 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.69] - 2026-11-25
+
+- Defaults Codex to the subagent-only destructive guard and migrates existing global Oathbound hooks on upgrade. Oathkeeper and the default main agent can run Git writes through Codex approval. The installer accepts `--codex-session-wide-guard` for older Codex versions. [ADR-0013](docs/adr/0013-scope-codex-destructive-guard.md)
+
 ## [0.50.0-alpha.68] - 2026-11-25
 
 - The native status line (Claude, agy) reads `OATHBOUND_STATUSLINE_ICONS`: `unicode` (default, unchanged output), `nerd`, `oathbound` (PUA glyphs of `assets/glyphs/OathboundIcons.ttf`) or `ascii`. Records ADR-0019. The Codex provider (`codex/statusline.cjs`) reads the same variable. Nerd Font code points are unverified against an installed font. `statusline-setup` (Claude and agy) now offers the choice.
