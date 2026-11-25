@@ -57,7 +57,7 @@ function revisarCobertura(texto) {
   if (!corpo || corpo.length === 0) return false;
   if (corpo.length === 1 && /^No issues\.?$/.test(corpo[0])) return true;
   const total = corpo.pop();
-  const achado = /^\S.*:\d+: (?:(?:BUG|RISK) \[(?:CRITICAL|HIGH|MEDIUM|LOW)\]|(?:NIT|QUESTION)): \S/;
+  const achado = /^\S.*:\d+: (?:(?:BUG|RISK) \[(?:CRITICAL|HIGH|MEDIUM|LOW)\](?: \[handoff:sentinel\])?|(?:NIT|QUESTION)): \S/;
   return /^totals: \d+ BUG, \d+ RISK, \d+ NIT, \d+ QUESTION$/.test(total) &&
     corpo.length > 0 && corpo.every((linha) => achado.test(linha));
 }

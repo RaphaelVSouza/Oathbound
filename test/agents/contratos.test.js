@@ -22,7 +22,7 @@ for (const [ag, txt] of Object.entries(bons)) {
 // Valid variations.
 assert.deepStrictEqual(verificarContrato('scout', `${env('scout')}\nANSWER: not found\nGAPS: none`), []);
 assert.deepStrictEqual(verificarContrato('assayer',
-  `${env('assayer')}\na/b.py:42: BUG [HIGH]: error. fix it.\nc.py:7: QUESTION: intent?\ntotals: 1 BUG, 0 RISK, 0 NIT, 1 QUESTION\nCOVERAGE: complete\nGAPS: none`), []);
+  `${env('assayer')}\na/b.py:42: BUG [HIGH]: error. fix it.\na/c.py:9: BUG [HIGH] [handoff:sentinel]: auth gap. delegate.\nc.py:7: QUESTION: intent?\ntotals: 2 BUG, 0 RISK, 0 NIT, 1 QUESTION\nCOVERAGE: complete\nGAPS: none`), []);
 assert.deepStrictEqual(verificarContrato('assayer',
   `AGENT: assayer\nSCOPE: a.py\nSTATUS: PARTIAL\nCONFIDENCE: MEDIUM\nNo issues.\nCOVERAGE: partial\nGAPS: reviewed a.py. b.py remains pending due to missing access.`), []);
 assert.deepStrictEqual(verificarContrato('sentinel', [

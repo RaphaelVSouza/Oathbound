@@ -27,7 +27,7 @@
       "Secrets: never read, print, or cite `.env`, credentials, tokens, or key values, or send them in external queries."
     ],
     "breaker": [
-      "Secrets: never type, print, or record credentials, tokens, or key values; if the flow requires login, stop and return `STATUS: BLOCKED` with `RESULT: none`. Redact tokens, cookies, and PII in screenshots, console, and network."
+      "Secrets: never type, print, or record credentials, tokens, or key values; if the flow requires login, stop and return `STATUS: BLOCKED` with `RESULT: none`. Redact tokens, cookies, and PII in CONSOLE and NETWORK text."
     ],
     "smith": [
       "Secrets: never read, print, log, or pass `.env`, credentials, tokens, or key values through the terminal; humans edit secrets.",

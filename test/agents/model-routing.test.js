@@ -165,3 +165,56 @@ test('all subagents have emoji-free standardized contracts, batching rules, and 
   }
   assert.doesNotMatch(read('codex/agents/scholar.toml'), /^sandbox_mode = "read-only"$/m);
 });
+
+test('all runners preserve E1-E6 subagent alignment and orchestrator receipt gates', () => {
+  const confLine = 'CONFIDENCE (envelope): HIGH = every claim is backed by evidence read or executed in this call; MEDIUM = some claims rest on inference or unread context; LOW = mostly inference or incomplete evidence. Never HIGH when STATUS is PARTIAL.';
+  const gapsLine = 'GAPS is never "none" when STATUS is PARTIAL or BLOCKED.';
+  const plainLine = 'Respond in plain text: no code fence, no heading, no preamble, and no emojis. The receipt block shown here is only an example.';
+  const count = (text, needle) => text.split(needle).length - 1;
+
+  for (const file of ['claude/agents/assayer.md', 'agy/config/agents/assayer.md']) {
+    const content = read(file);
+    assert.equal(content.split('\n')[0], '---', `${file} must start with --- at col 0`);
+    assert.doesNotMatch(content, /^ +---$/m, `${file} must not indent frontmatter delimiters`);
+  }
+
+  for (const role of roles) {
+    for (const file of [`claude/agents/${role}.md`, `agy/config/agents/${role}.md`, `codex/agents/${role}.toml`]) {
+      const content = read(file);
+      assert.equal(count(content, confLine), 1, `${file} CONFIDENCE rubric count`);
+      if (['smith', 'scribe', 'breaker'].includes(role)) {
+        assert.equal(count(content, gapsLine), 1, `${file} GAPS never-none count`);
+        assert.doesNotMatch(content, /Return only the receipt block/, `${file} legacy receipt phrasing`);
+      } else {
+        assert.equal(count(content, gapsLine), 0, `${file} should not duplicate GAPS never-none line`);
+      }
+      if (['scout', 'scholar', 'smith', 'scribe', 'breaker'].includes(role)) {
+        assert.equal(count(content, plainLine), 1, `${file} plain-text line count`);
+      }
+    }
+  }
+
+  for (const file of ['claude/agents/sentinel.md', 'agy/config/agents/sentinel.md', 'codex/agents/sentinel.toml']) {
+    const content = read(file);
+    assert.ok(content.includes('LOW 0.1-3.9, MEDIUM 4.0-6.9, HIGH 7.0-8.9, CRITICAL 9.0-10.0'), `${file} CVSS bands`);
+    assert.ok(content.includes('Envelope CONFIDENCE is the agent\'s certainty about the whole output; the finding tag [CONFIRMED|LIKELY|POSSIBLE] is the proof level of one finding. Do not mix them.'), `${file} confidence vs tag`);
+    assert.ok(content.includes('CWE IDs 22, 798, 862 and 863 are "allowed with review" at MITRE'), `${file} MITRE mapping note`);
+  }
+
+  for (const file of ['claude/agents/breaker.md', 'agy/config/agents/breaker.md', 'codex/agents/breaker.toml']) {
+    const content = read(file);
+    assert.ok(content.includes('.gitignore'), `${file} must mention .gitignore`);
+    assert.ok(content.includes('EVIDENCE: <persistent path under .scratch/breaker/ for a screen free of sensitive data, or "none">'), `${file} EVIDENCE receipt line`);
+    assert.ok(content.includes('SCOPE: <journey and repo commit/build under test>'), `${file} SCOPE receipt line`);
+    assert.doesNotMatch(content, /redacted screenshots/i, `${file} must not claim redacted screenshots`);
+  }
+
+  for (const file of ['claude/agents/assayer.md', 'agy/config/agents/assayer.md', 'codex/agents/assayer.toml']) {
+    assert.ok(read(file).includes('[handoff:sentinel]'), `${file} must document [handoff:sentinel]`);
+  }
+
+  for (const [runner, profile] of Object.entries(profiles)) {
+    assert.ok(profile.includes('Before relying on any receipt, read STATUS, CONFIDENCE, COVERAGE (when present) and GAPS.'), `${runner} receipt gate`);
+    assert.ok(profile.includes('A finding tagged [handoff:sentinel] in an assayer receipt triggers sentinel'), `${runner} handoff trigger`);
+  }
+});

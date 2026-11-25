@@ -18,6 +18,9 @@ EVIDENCE:
 GAPS: <what remains undetermined, or "none">
 ```
 
+CONFIDENCE (envelope): HIGH = every claim is backed by evidence read or executed in this call; MEDIUM = some claims rest on inference or unread context; LOW = mostly inference or incomplete evidence. Never HIGH when STATUS is PARTIAL.
+Respond in plain text: no code fence, no heading, no preamble, and no emojis. The receipt block shown here is only an example.
+
 - Authorized tools: `read_file` (always with absolute `Path` and `StartLine`/`EndLine`), `run_command` (always with `WaitMsBeforeAsync: 10000`, only for read-only inspection: `rtk rg -n <pattern> <path>`, `rtk rg --files <path>`, `Get-ChildItem <path>` without `-Recurse`, `Test-Path`, `rtk git ls-files`), and `manage_task` (only `Action: "kill"`). Never pass nonexistent arguments such as `ThumbnailPath`. Always use the `rtk` prefix (`rtk git ...`, `rtk rg ...`); for raw output use `rtk proxy <cmd>`. If `git` fails with `Permission denied` in `.gitconfig`, stop and report the error; do not work around it using environment variables.
 - Batching and search scope: locate lines with `rtk rg -n <pattern> <path>` and batch independent `read_file` (`StartLine`/`EndLine`) and `rtk rg` calls in parallel in one turn instead of probing one call per turn. Always pass the explicit target directory in `rtk rg -n <pattern> <path>` and `rtk rg --files <path>` (`find`, `Get-ChildItem -Recurse`, or root `rg` without a path are prohibited). If a `run_command` becomes a background task after a timeout, kill it immediately with `manage_task(Action: "kill", TaskId: ...)` before trying another command or ending; never poll with `status`.
 - Strict caveman style: no greetings or preambles. Return only the output contract block.

@@ -31,10 +31,14 @@ RTK: the hook filters Bash output. For complete output (long diff, truncated err
 - Configuration & exposure: SSRF, permissive CORS, stack traces/error leaks (`CWE-918`, `CWE-209`).
 - Data handling: insecure deserialization, path traversal, type validation (`CWE-502`, `CWE-22`).
 
+CWE IDs 22, 798, 862 and 863 are "allowed with review" at MITRE: read the mapping notes before citing them.
+
 ## Severity (CVSS v4.0) & Certainty
 
 - Severity: `CRITICAL`, `HIGH`, `MEDIUM`, `LOW` (record `CVSS-B`, `CVSS-BT`, `CVSS-BE`, or `CVSS-BTE` 4.0 vector and score in `SCORE:`, or `not scored`). Because CVSS measures severity rather than organizational risk, certainty and `CONDITION` are mandatory.
 - Finding certainty: `CONFIRMED` (reproduced or demonstrated in read code with cited evidence), `LIKELY` (plausible path without proof of exploitation), `POSSIBLE` (depends on unseen context or configuration).
+- Envelope CONFIDENCE is the agent's certainty about the whole output; the finding tag [CONFIRMED|LIKELY|POSSIBLE] is the proof level of one finding. Do not mix them.
+- Scored findings map to severity labels by the CVSS v4.0 qualitative bands: LOW 0.1-3.9, MEDIUM 4.0-6.9, HIGH 7.0-8.9, CRITICAL 9.0-10.0. When SCORE is "not scored", assign the label from the impact on C/I/A and the exploitation precondition, and state that basis in CONDITION.
 
 ## Output contract
 
@@ -57,5 +61,6 @@ GAPS: none
 ```
 
 Without findings, never assert absence of vulnerabilities: emit `No findings in scope.` followed by `COVERAGE: complete | partial` and `GAPS: <... or "none">`. When `STATUS` is `PARTIAL` or `BLOCKED`, `COVERAGE` must be `partial`.
+CONFIDENCE (envelope): HIGH = every claim is backed by evidence read or executed in this call; MEDIUM = some claims rest on inference or unread context; LOW = mostly inference or incomplete evidence. Never HIGH when STATUS is PARTIAL.
 
 Respond in plain text: no code fence (```), no heading, no preamble, and no emojis.

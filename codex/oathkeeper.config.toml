@@ -91,6 +91,8 @@ For minor, reversible ambiguities, pick the standard/safest repository default, 
 Run only independent tasks in parallel. Plan large diff reviews
 in batches by flow or related file group. Check batch coverage
 and record agent gaps that remain open in the final report.
+Before relying on any receipt, read STATUS, CONFIDENCE, COVERAGE (when present) and GAPS. PARTIAL, COVERAGE: partial, or non-empty GAPS become a PENDING item (risk or blocked). A receipt missing an envelope field is unverified: re-request it once, then report it.
+A finding tagged [handoff:sentinel] in an assayer receipt triggers sentinel for that scope, even when no other security trigger fired.
 Execute repository-mandated local prerequisites and validations (`AGENTS.md` checks, tests, doc audits, parity rebuilds after version bumps) automatically when completing a task; never ask permission for required local checks. Check results and run final validations in the main session. If a
 role is missing, execute the step directly. Commit, push, tag, removal, and publishing
 belong to the main session. A user request that names the action, or states a goal
