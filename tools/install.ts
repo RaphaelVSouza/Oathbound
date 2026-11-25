@@ -258,7 +258,7 @@ function migrateLegacyOathboundHooks(
   return { changed: true, config: { ...config, hooks: nextHooks } };
 }
 
-function mergeClaudeSettings(existing: any, incoming: any, enableStatusline: boolean, homePosix: string): any {
+function mergeClaudeSettings(existing: any, incoming: any, statuslineCommand?: string): any {
   const result = { ...(existing || {}) };
 
   // Permissions merge
@@ -280,10 +280,10 @@ function mergeClaudeSettings(existing: any, incoming: any, enableStatusline: boo
   };
 
   // statusLine
-  if (enableStatusline && !result.statusLine) {
+  if (statuslineCommand && !Object.hasOwn(result, 'statusLine')) {
     result.statusLine = {
       type: 'command',
-      command: 'npx -y ccstatusline@latest',
+      command: statuslineCommand,
       padding: 0
     };
   }
@@ -700,7 +700,10 @@ function install(options: InstallOptions) {
       }
       const destSettingsPath = path.join(targetRoot, '.claude', 'settings.json');
       const existingSettings: any = readExistingJson(destSettingsPath, {});
-      const mergedClaude = mergeClaudeSettings(existingSettings, incomingSettings, Boolean(options.statusline), claudeHomePosix);
+      const statuslineCommand = options.statusline
+        ? `"${claudeHookPath}/${hookDir}/${nativeBinName}" statusline`
+        : undefined;
+      const mergedClaude = mergeClaudeSettings(existingSettings, incomingSettings, statuslineCommand);
 
       plannedFiles.set('.claude/settings.json', {
         content: JSON.stringify(mergedClaude, null, 2) + '\n',

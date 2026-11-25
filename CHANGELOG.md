@@ -4,6 +4,22 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.60] - 2026-11-24
+
+- Claude project installs with `--statusline` use the installed native Oathbound renderer and preserve existing status-line settings. Claude Code and agy share a compact layout with context and quota remaining. agy adds running subagent glyphs and shortens optional details in narrow terminals.
+- Standardizes subagent output contracts across Claude Code, Antigravity, and Codex per [ADR-0010](docs/adr/0010-standardize-subagent-output-contracts.md) (Phase 2 SARIF export deferred): adds the common `AGENT`/`SCOPE`/`STATUS`/`CONFIDENCE`/`GAPS` envelope to all 7 subagents, replaces legacy `NOTE:`/`PENDING:` with `GAPS:`, adds `[CRITICAL|HIGH|MEDIUM|LOW]` severity ranks to `assayer` `BUG`/`RISK` with security handoff to `sentinel`, updates `sentinel` to structured findings (`CWE-862`/`863` instead of `CWE-285`, certainty `[CONFIRMED|LIKELY|POSSIBLE]`, `CONDITION`/`IMPACT`/`FIX`/`EVIDENCE`/CVSS v4.0 `SCORE`, `COVERAGE`, and `No findings in scope.`), updates `breaker` to `RESULT: PASS|FAIL|none` + numbered `FLOW` reproduction on `FAIL` + redacted persistent evidence under `.scratch/breaker/`, and updates `test/agents/contratos.js`, `test/agents/contratos.test.js`, `test/agents/regras-comuns.json`, and `test/agents/model-routing.test.js`.
+
+## [0.50.0-alpha.59] - 2026-11-24
+
+- Adds a Codex status line to the opt-in `oathkeeper` profile with project, branch, model and reasoning effort, remaining context, and primary usage limit. The README shows the Oathbound and agent SVGs and explains how to enable the footer in an existing profile.
+
+## [0.50.0-alpha.58] - 2026-11-24
+
+- Audits and standardizes all 7 subagents (`scout`, `scholar`, `smith`, `scribe`, `assayer`, `sentinel`, `breaker`) across Claude Code (`claude/agents/*.md`), Antigravity (`agy/config/agents/*.md`), and Codex (`codex/agents/*.toml`):
+  - Removes all emojis from instructions and output contracts, unifying plain-text contracts (`BUG`/`RISK`/`NIT`/`QUESTION` + `totals:` for `assayer`, `CRITICAL`/`HIGH`/`MEDIUM`/`LOW` `[CWE-...]` + `totals:` for `sentinel`, `CONFIRMED|REFUTED|INCONCLUSIVE` + `TOTALS:` for `scout` claim verification, standardized `SOURCES:`/`ANSWER:`/`FILES:`/`MODE:`/`STATUS:` blocks across all runners).
+  - Expands Codex subagents (`scholar`, `smith`, `scribe`, `breaker`, `assayer`, `sentinel`, `scout`) to operational parity with Claude/Antigravity, adds `sandbox_mode = "read-only"` to `scout.toml`, `assayer.toml`, and `sentinel.toml` (leaving `model` and `model_reasoning_effort` unset per ADR-0007), and adds single-turn parallel batching guidance across all 21 subagents.
+  - Updates `test/agents/contratos.js`, `test/agents/contratos.test.js`, `test/agents/regras-comuns.json` (removing stale `destructive-guard.js` and `codex.scribe -> docs` references), `test/agents/sincronia.js` (defaulting Codex dir to `codex/agents/`), `skills/architecture-advisor/references/current-architecture.md`, and `test/agents/model-routing.test.js`.
+
 ## [0.50.0-alpha.57] - 2026-11-24
 
 - Streamlines `oathkeeper` instructions (`claude/agents/oathkeeper.md`, `agy/config/agents/oathkeeper.md`, `codex/oathkeeper.config.toml`) to reduce unnecessary turns and over-asking while keeping Oathbound governance: handles small bounded edits (up to ~3 closely related files) and batched reads in the main session, treats the default pipeline as logical stages rather than mandatory separate subagents, allows read-only/clear-scope delegation and post-diff risk checks within `CAP` without extra plan pauses, applies safe reversible defaults while recording open choices in `PENDING`, and runs repo-mandated local checks automatically. Covered by `test/agents/model-routing.test.js`.

@@ -128,6 +128,26 @@ test('global installation includes agents, skills, guards, and manifest without 
   assert.throws(() => install({ root, global: true, statusline: true }), /--statusline/);
 });
 
+test('Claude project status line uses the installed native hook and preserves custom settings', t => {
+  const root = fixtureDir('claude status line-');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const options = { root, runner: 'claude' as const, statusline: true };
+  const settingsPath = path.join(root, '.claude', 'settings.json');
+  const bin = path.join(root, '.claude', 'hooks', process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook');
+  const readSettings = () => JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+
+  install(options);
+  assert.ok(fs.existsSync(bin));
+  assert.deepEqual(readSettings().statusLine, {
+    type: 'command', command: `"${bin.split(path.sep).join('/')}" statusline`, padding: 0
+  });
+
+  const custom = { type: 'command', command: 'my-statusline', padding: 2 };
+  fs.writeFileSync(settingsPath, JSON.stringify({ ...readSettings(), statusLine: custom }));
+  install({ ...options, upgrade: true });
+  assert.deepEqual(readSettings().statusLine, custom);
+});
+
 test('--project installation creates project structure and audit-docs without symlinks', t => {
   const projectRoot = fixtureDir('oathbound project test-');
   const fakeHome = fixtureDir('oathbound-home-test-');

@@ -254,6 +254,6 @@ mod tests {
             false,
         );
         assert!(out.contains("2.5 Pro"));
-        assert!(out.contains("42%"));
+        assert!(out.contains("58% left"));
     }
 }

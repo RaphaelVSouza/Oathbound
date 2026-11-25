@@ -69,7 +69,7 @@ Supported options:
 - `--project <dir>`: Installs into a specific project directory.
 - `--runner all|claude|agy|codex`: Selects the target runner. Select `codex` to install its agents. With `--global`, also installs the profile for `codex -p oathkeeper`, `oathbound-hook` under `~/.codex/hooks/` and merges `~/.codex/hooks.json`. `all` includes Claude and agy.
 - `--upgrade`: Updates an existing installation, displaying the diff.
-- `--statusline`: Configures the status bar.
+- `--statusline`: Enables the native Oathbound status line for Claude project installations with no existing `statusLine` entry.
 - `--audit-docs`: Installs documentation audit configuration.
 - `--no-dedupe-skills`: Disables automatic skill deduplication.
 - `--prune`: With `--global`, removes older version directories under `~/.oathbound/` and CLI plugin caches via `prune-old-versions.cjs --apply`. Without `--prune`, `--global --upgrade` prints a hint when removable versions exist.

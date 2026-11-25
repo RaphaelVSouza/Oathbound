@@ -120,3 +120,48 @@ test('all orchestrators stay autonomous on clear bounded work and avoid unnecess
     assert.match(profile, /record the open choice in `PENDING`/i, runner);
   }
 });
+
+test('all subagents have emoji-free standardized contracts, batching rules, and expected isolation', () => {
+  const { executar } = require('./sincronia.js');
+  assert.deepEqual(executar(), [], 'all 3 runners must stay synchronized with regras-comuns.json');
+  const emojiRe = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+  const envelopeContracts = [
+    /^AGENT:\s+/m,
+    /^SCOPE:\s+/m,
+    /^STATUS:\s+DONE \| PARTIAL \| BLOCKED/m,
+    /^CONFIDENCE:\s+HIGH \| MEDIUM \| LOW/m,
+    /^GAPS:\s+/m,
+  ];
+  const requiredContracts = {
+    scout: [/ANSWER:/, /EVIDENCE:/, /CONFIRMED\|REFUTED\|INCONCLUSIVE/, /TOTALS:/],
+    scholar: [/ANSWER:/, /SOURCES:/],
+    smith: [/FILES:/, /ACCEPTANCE:/],
+    scribe: [/MODE:/, /FILES:/],
+    assayer: [/BUG \[CRITICAL\|HIGH\|MEDIUM\|LOW\]/, /RISK \[CRITICAL\|HIGH\|MEDIUM\|LOW\]/, /NIT/, /QUESTION/, /totals:.*BUG.*RISK.*NIT.*QUESTION/, /COVERAGE:/, /No issues\./],
+    sentinel: [/CRITICAL/, /HIGH/, /MEDIUM/, /LOW/, /CWE-862/, /CWE-863/, /\bCONFIRMED\b/, /\bLIKELY\b/, /\bPOSSIBLE\b/, /CONDITION:/, /IMPACT:/, /FIX:/, /EVIDENCE:/, /SCORE:/, /totals:.*CRITICAL.*HIGH.*MEDIUM.*LOW/, /COVERAGE:/, /No findings in scope\./],
+    breaker: [/RESULT: PASS \| FAIL \| none/, /ENVIRONMENT:/, /FLOW:/, /CONSOLE:/, /NETWORK:/, /EVIDENCE:/, /\.scratch\/breaker\//],
+  };
+  for (const role of roles) {
+    const files = [
+      read(`claude/agents/${role}.md`),
+      read(`agy/config/agents/${role}.md`),
+      read(`codex/agents/${role}.toml`),
+    ];
+    for (const content of files) {
+      assert.doesNotMatch(content, emojiRe, `${role} must not contain emojis`);
+      assert.doesNotMatch(content, /^(?:NOTE|PENDING):/m, `${role} must not use legacy NOTE/PENDING fields`);
+      assert.doesNotMatch(content, /CWE-285|No security vulnerabilities found in scope/, `${role} must not use legacy sentinel CWE-285 or absence claim`);
+      assert.match(content, /\bparallel\b/i, `${role} should batch independent operations`);
+      for (const re of envelopeContracts) {
+        assert.match(content, re, `${role} missing ADR-0010 envelope marker ${re}`);
+      }
+      for (const re of requiredContracts[role]) {
+        assert.match(content, re, `${role} missing standardized contract marker ${re}`);
+      }
+    }
+  }
+  for (const roRole of ['scout', 'assayer', 'sentinel']) {
+    assert.match(read(`codex/agents/${roRole}.toml`), /^sandbox_mode = "read-only"$/m, roRole);
+  }
+  assert.doesNotMatch(read('codex/agents/scholar.toml'), /^sandbox_mode = "read-only"$/m);
+});

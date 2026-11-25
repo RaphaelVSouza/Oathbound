@@ -162,7 +162,21 @@ test('native hook: statusline formats workspace, vcs, model, context, quota, and
   const rustRes = runHook('statusline', payload);
   assert.equal(rustRes.status, 0);
   assert.match(rustRes.stdout, /2\.5 Pro/);
-  assert.match(rustRes.stdout, /55%/);
+  assert.match(rustRes.stdout, /45% left/);
   assert.match(rustRes.stdout, /main/);
-  assert.match(rustRes.stdout, /scout/);
+  assert.match(rustRes.stdout, /⌖ scout/);
+  assert.doesNotMatch(rustRes.stdout, /smith|\/compact/);
+});
+
+test('native statusline accepts Claude effort and rate limits', { skip: !fs.existsSync(BIN) }, () => {
+  const result = runHook('statusline', {
+    model: { display_name: 'Opus' },
+    effort: { level: 'high' },
+    context_window: { remaining_percentage: 10, used_percentage: 90 },
+    rate_limits: { five_hour: { used_percentage: 16 }, seven_day: { used_percentage: 35 } },
+  });
+  assert.equal(result.status, 0);
+  for (const text of ['Oathbound', 'Opus', '(high)', '10% left', '84% left', '65% left', '/compact']) {
+    assert.ok(result.stdout.includes(text), text);
+  }
 });

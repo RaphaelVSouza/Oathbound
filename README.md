@@ -85,6 +85,42 @@ Review and trust definitions with `/hooks`. The Bash guard applies to the entire
 Run authorized actions blocked by the guard in an external terminal.
 [Codex plugin ADR](docs/adr/0005-plugin-codex.md)
 
+### Oathbound status lines
+
+<img src="brand/svg/oathbound-symbol-mono.svg" width="24" height="24" alt="Oathbound">
+<img src="brand/svg/agents/scholar.svg" width="24" height="24" alt="Scholar">
+<img src="brand/svg/agents/smith.svg" width="24" height="24" alt="Smith">
+<img src="brand/svg/agents/breaker.svg" width="24" height="24" alt="Breaker">
+
+#### Codex CLI
+
+Launch with `codex -p oathkeeper` to see the project, Git branch, model with reasoning effort, remaining context, and primary usage limit when available. Codex renders the footer using its built-in text fields.
+
+```text
+oathbound · main · model (high) · 72% context left · 5h quota 84% left
+```
+
+For an existing Oathkeeper profile, merge this setting into its `[tui]` table in `$CODEX_HOME/oathkeeper.config.toml` (default `~/.codex/oathkeeper.config.toml`). Add the table if it is missing.
+
+```toml
+[tui]
+status_line = ["project-name", "git-branch", "model-with-reasoning", "context-remaining", "five-hour-limit"]
+```
+
+Use `/statusline` to customize the fields, for example to add weekly quota or Fast mode. [Codex footer controls](https://learn.chatgpt.com/docs/developer-commands?surface=cli#configure-footer-items-with-statusline)
+
+#### Claude Code and Antigravity CLI
+
+Both clients can run `oathbound-hook statusline` for the branded text footer. The renderer displays context and quota as percentages remaining. On agy, running subagents use Unicode glyphs inspired by the artwork above, and the footer shortens optional details as the terminal narrows.
+
+```text
+◆ Oathbound | project · main | Gemini (high) | ctx 72% left | 5h 84% left | ⚒ smith · ◇ scholar
+```
+
+For Claude Code, run `node tools/install.ts --project . --runner claude --statusline`. The installer preserves any existing `statusLine` entry. To switch an existing entry yourself, set its `command` to the quoted absolute path of the installed `.claude/hooks/oathbound-hook` followed by `statusline`. Use `oathbound-hook.exe` on Windows.
+
+For agy, place the rebuilt native binary at the path configured in your status-line command. The [agy settings template](agy/antigravity-cli/settings.json) uses `~/.gemini/antigravity-cli/oathbound-hook`. Merge its `statusLine` entry into your agy settings if needed, replacing `__HOME__` with your home directory and using the `.exe` suffix on Windows.
+
 ### 3. Project and Environment Installer (`install.ts`)
 
 When migrating old manifests, the installer preserves divergent files and displays the diff for review. Automatic cleanup requires a source record in the current manifest.
@@ -103,7 +139,7 @@ node tools/install.ts [options]
 - `--project <dir>`: Installs into a specific directory, generating `.claude/`, `.agents/`, `.oathbound/manifest.json`, `.agents/skills.json` and `_disabled/`.
 - `--runner all|claude|agy|codex`: Selects the runner. `all` includes Claude Code and Antigravity CLI. With `--global`, the `codex` runner installs agents, the profile, `oathbound-hook` under `~/.codex/hooks/` and merges `~/.codex/hooks.json`.
 - `--upgrade`: Updates an existing installation, displaying the change diff.
-- `--statusline`: Configures Claude's status bar in project installations.
+- `--statusline`: Enables the native Oathbound footer for Claude project installations that have no existing status-line setting.
 - `--audit-docs`: Installs documentation audit configuration (projects only).
 - `--no-dedupe-skills`: Disables automatic skill deduplication.
 - `--prune`: With `--global`, runs `prune-old-versions.cjs --apply` after installing.

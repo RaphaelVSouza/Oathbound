@@ -1,6 +1,6 @@
 {
   "statusLine": {
     "type": "command",
-    "command": "__HOME__/.gemini/antigravity-cli/oathbound-hook statusline"
+    "command": "\"__HOME__/.gemini/antigravity-cli/oathbound-hook\" statusline"
   }
 }

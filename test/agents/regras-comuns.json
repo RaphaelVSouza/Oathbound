@@ -4,17 +4,11 @@
     "GIT_CONFIG_SYSTEM"
   ],
   "nomes": {
-    "codex": {
-      "scribe": "docs"
-    },
     "gemini": {
       "scribe": "scribe"
     }
   },
   "mapa": {
-    "codex": {
-      "scribe": "docs"
-    },
     "gemini": {
       "scribe": "scribe"
     }
@@ -33,20 +27,20 @@
       "Secrets: never read, print, or cite `.env`, credentials, tokens, or key values, or send them in external queries."
     ],
     "breaker": [
-      "Secrets: never type, print, or record credentials, tokens, or key values; if the flow requires login, stop and return `STATUS: BLOCKED`. Mask secrets appearing in console, network, or screenshots."
+      "Secrets: never type, print, or record credentials, tokens, or key values; if the flow requires login, stop and return `STATUS: BLOCKED` with `RESULT: none`. Redact tokens, cookies, and PII in screenshots, console, and network."
     ],
     "smith": [
       "Secrets: never read, print, log, or pass `.env`, credentials, tokens, or key values through the terminal; humans edit secrets.",
       {
-        "claude": "Gate: the `destructive-guard.js` hook denies `git commit/push/reset/clean/checkout/restore/stash`, `rm`/`del`/`Remove-Item`, write operations with `gh`, `npm publish`, and wrappers (`bash -c`, `iex`), even with authorization. Record in NOTE what the main thread must execute. Changing permissions, global configuration, CI/CD, or infrastructure requires explicit authorization in the request.",
-        "default": "Gate: irreversible actions require explicit authorization in the request: deleting a file or folder, `git commit/push/reset/clean`, changing permissions, global configuration, CI/CD or infrastructure, or remote writes. Without authorization, stop and record in NOTE."
+        "claude": "Gate: `oathbound-hook` (`plugin-agent-guard` / `destructive-guard`) denies `git commit/push/reset/clean/checkout/restore/stash`, `rm`/`del`/`Remove-Item`, write operations with `gh`, `npm publish`, and wrappers (`bash -c`, `iex`), even with authorization. Record in GAPS what the main thread must execute. Changing permissions, global configuration, CI/CD, or infrastructure requires explicit authorization in the request.",
+        "default": "Gate: irreversible actions require explicit authorization in the request: deleting a file or folder, `git commit/push/reset/clean`, changing permissions, global configuration, CI/CD or infrastructure, or remote writes. Without authorization, stop and record in GAPS."
       }
     ],
     "scribe": [
       "Secrets: never read, print, or write `.env`, credentials, tokens, or key values into a document.",
       {
-        "claude": "Gate: the `destructive-guard.js` hook denies `git commit/push/reset/checkout/restore/stash`, `rm`, write operations with `gh` (publishing a PR), and wrappers (`bash -c`), even with authorization. Record in PENDING what the main thread must execute. Overwriting an existing document without reading it first requires explicit authorization in the request.",
-        "default": "Gate: irreversible actions require explicit authorization in the request: deleting or overwriting an existing document without reading it first, `git commit/push/reset/checkout/restore/stash`, `rm`, write operations with `gh` (publishing a PR), or remote writes. Without authorization, stop and record in PENDING what the main thread must execute."
+        "claude": "Gate: `oathbound-hook` (`plugin-agent-guard` / `destructive-guard`) denies `git commit/push/reset/checkout/restore/stash`, `rm`, write operations with `gh` (publishing a PR), and wrappers (`bash -c`), even with authorization. Record in GAPS what the main thread must execute. Overwriting an existing document without reading it first requires explicit authorization in the request.",
+        "default": "Gate: irreversible actions require explicit authorization in the request: deleting or overwriting an existing document without reading it first, `git commit/push/reset/checkout/restore/stash`, `rm`, write operations with `gh` (publishing a PR), or remote writes. Without authorization, stop and record in GAPS what the main thread must execute."
       }
     ]
   }

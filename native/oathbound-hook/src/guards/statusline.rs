@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 const RESET: &str = "\x1b[0m";
 const DIM: &str = "\x1b[2m";
@@ -19,38 +20,9 @@ fn re_gitdir() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"(?i)^gitdir:\s*(.+)$").unwrap())
 }
 
-fn re_gemini_prefix() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"(?i)^Gemini\s+").unwrap())
-}
-
 fn re_effort_suffix() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"(?i)\s*\((Low|Medium|High|Max)\)\s*$").unwrap())
-}
-
-fn fmt_tokens(n: Option<f64>) -> String {
-    let n = match n {
-        Some(v) if v.is_finite() && v >= 0.0 => v,
-        _ => return "0".to_string(),
-    };
-    if n >= 1e6 {
-        let s = if n >= 10e6 {
-            format!("{:.0}", n / 1e6)
-        } else {
-            format!("{:.1}", n / 1e6)
-        };
-        format!("{}M", s.strip_suffix(".0").unwrap_or(&s))
-    } else if n >= 1e3 {
-        let s = if n >= 100e3 {
-            format!("{:.0}", n / 1e3)
-        } else {
-            format!("{:.1}", n / 1e3)
-        };
-        format!("{}k", s.strip_suffix(".0").unwrap_or(&s))
-    } else {
-        format!("{}", n.round() as i64)
-    }
+    RE.get_or_init(|| Regex::new(r"(?i)\s*\((Low|Medium|High|XHigh|Max)\)\s*$").unwrap())
 }
 
 fn fmt_duration(sec: Option<f64>) -> String {
@@ -79,11 +51,10 @@ fn fmt_duration(sec: Option<f64>) -> String {
     }
 }
 
-fn color_by_pct(pct: i64, invert: bool) -> &'static str {
-    let val = if invert { 100 - pct } else { pct };
-    if val <= 15 {
+fn color_by_pct(pct: i64) -> &'static str {
+    if pct <= 15 {
         RED
-    } else if val <= 40 {
+    } else if pct <= 40 {
         YELLOW
     } else {
         GREEN
@@ -134,184 +105,308 @@ fn get_str<'a>(v: &'a Value, key: &str) -> Option<&'a str> {
     v.get(key).and_then(|x| x.as_str())
 }
 
+fn label(value: &str) -> String {
+    value.chars().filter(|c| !c.is_control()).collect()
+}
+
+fn percent(value: f64) -> i64 {
+    value.clamp(0.0, 100.0).round() as i64
+}
+
+fn color_percent(prefix: &str, remaining: i64) -> String {
+    let color = color_by_pct(remaining);
+    format!("{prefix} {color}{remaining}% left{RESET}")
+}
+
+fn quota<const N: usize>(
+    agy: &Value,
+    keys: [&str; N],
+    claude: Option<&Value>,
+    now: f64,
+) -> Option<(i64, Option<f64>)> {
+    let agy_quota = keys
+        .into_iter()
+        .filter_map(|key| agy.get(key))
+        .find_map(|bucket| {
+            if bucket.get("disabled").and_then(Value::as_bool) == Some(true) {
+                return None;
+            }
+            let remaining = get_f64(bucket, "remaining_fraction")?;
+            Some((
+                percent(remaining * 100.0),
+                get_f64(bucket, "reset_in_seconds"),
+            ))
+        });
+    if agy_quota.is_some() {
+        return agy_quota;
+    }
+
+    let bucket = claude?;
+    let reset = get_f64(bucket, "resets_at").map(|at| at - now);
+    if reset.is_some_and(|seconds| seconds <= 0.0) {
+        return None;
+    }
+    Some((percent(100.0 - get_f64(bucket, "used_percentage")?), reset))
+}
+
+fn agent_glyph(role: &str) -> &'static str {
+    match role.rsplit(':').next().unwrap_or(role) {
+        "smith" => "⚒",
+        "scholar" => "◇",
+        "scribe" => "✎",
+        "breaker" => "⚡",
+        "assayer" => "✓",
+        "sentinel" => "⬟",
+        "scout" => "⌖",
+        _ => "•",
+    }
+}
+
+fn status_width(parts: &[String]) -> usize {
+    static ANSI: OnceLock<Regex> = OnceLock::new();
+    let ansi = ANSI.get_or_init(|| Regex::new(r"\x1b\[[0-9;]*m").unwrap());
+    let mut visible = parts.iter().filter(|part| !part.is_empty()).peekable();
+    let mut width = 0;
+    while let Some(part) = visible.next() {
+        // Budget two cells for non-ASCII characters to leave room for wide glyphs.
+        width += ansi
+            .replace_all(part, "")
+            .chars()
+            .map(|c| if c.is_ascii() { 1 } else { 2 })
+            .sum::<usize>();
+        if visible.peek().is_some() {
+            width += 3;
+        }
+    }
+    width
+}
+
 pub fn run(raw: &str, oversized: bool) -> String {
-    let p: Value = if oversized {
-        Value::Object(serde_json::Map::new())
-    } else {
-        serde_json::from_str(raw).unwrap_or_else(|_| Value::Object(serde_json::Map::new()))
+    if oversized {
+        return String::new();
+    }
+    let Ok(p) = serde_json::from_str::<Value>(raw) else {
+        return String::new();
     };
+    if !p.is_object() {
+        return String::new();
+    }
 
-    let mut parts: Vec<String> = Vec::new();
-
-    // 1. Project + Git Branch
-    let cwd = p
-        .get("workspace")
-        .and_then(|w| get_str(w, "current_dir").or_else(|| get_str(w, "project_dir")))
+    let workspace = p.get("workspace").unwrap_or(&Value::Null);
+    let cwd = get_str(workspace, "current_dir")
+        .or_else(|| get_str(workspace, "project_dir"))
         .or_else(|| get_str(&p, "cwd"))
         .unwrap_or("");
-    let project = if cwd.is_empty() {
-        String::new()
-    } else {
-        Path::new(cwd)
-            .file_name()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default()
+    let project = get_str(workspace, "project_dir").unwrap_or(cwd);
+    let project = Path::new(project)
+        .file_name()
+        .map(|name| label(&name.to_string_lossy()))
+        .unwrap_or_default();
+    let vcs = p.get("vcs").unwrap_or(&Value::Null);
+    let branch = get_str(vcs, "branch")
+        .map(str::to_owned)
+        .or_else(|| read_git_branch(cwd))
+        .map(|name| label(&name));
+    let dirty = vcs.get("dirty").and_then(Value::as_bool) == Some(true);
+    let repo = match branch {
+        Some(branch) if project.is_empty() => branch,
+        Some(branch) => format!("{project} · {branch}"),
+        None => project,
     };
-    let branch = p
-        .get("vcs")
-        .and_then(|v| get_str(v, "branch"))
-        .map(|s| s.to_string())
-        .or_else(|| read_git_branch(cwd));
+    let repo = if repo.is_empty() {
+        repo
+    } else {
+        let marker = if dirty { "*" } else { "" };
+        format!("{CYAN}{repo}{marker}{RESET}")
+    };
 
-    if !project.is_empty() || branch.is_some() {
-        let dirty = if p
-            .get("vcs")
-            .and_then(|v| v.get("dirty"))
-            .and_then(|b| b.as_bool())
-            .unwrap_or(false)
-        {
-            "*"
+    let model = p.get("model").unwrap_or(&Value::Null);
+    let effort = p
+        .get("effort")
+        .and_then(|effort| get_str(effort, "level"))
+        .or_else(|| get_str(model, "effort"))
+        .map(label)
+        .filter(|effort| !effort.is_empty());
+    let model = get_str(model, "display_name")
+        .or_else(|| get_str(model, "id"))
+        .map(label)
+        .filter(|name| !name.is_empty())
+        .map(|name| match effort {
+            Some(effort) => {
+                let name = re_effort_suffix().replace(&name, "");
+                format!("{MAGENTA}{name}{RESET}{DIM} ({effort}){RESET}")
+            }
+            None => format!("{MAGENTA}{name}{RESET}"),
+        })
+        .unwrap_or_default();
+
+    let context = p.get("context_window").unwrap_or(&Value::Null);
+    let remaining = get_f64(context, "remaining_percentage")
+        .or_else(|| get_f64(context, "used_percentage").map(|used| 100.0 - used))
+        .map(percent);
+    let context = remaining
+        .map(|remaining| color_percent("ctx", remaining))
+        .unwrap_or_default();
+    let compact = if remaining.is_some_and(|remaining| remaining <= 15) {
+        format!("{YELLOW}/compact{RESET}")
+    } else {
+        String::new()
+    };
+
+    let agy = p.get("quota").unwrap_or(&Value::Null);
+    let claude = p.get("rate_limits").unwrap_or(&Value::Null);
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0.0, |duration| duration.as_secs_f64());
+    let primary = quota(agy, ["gemini-5h", "3p-5h"], claude.get("five_hour"), now);
+    let weekly = quota(
+        agy,
+        ["gemini-argon-wtu-weekly", "gemini-weekly", "3p-weekly"],
+        claude.get("seven_day"),
+        now,
+    );
+    let primary_label = primary
+        .map(|(remaining, _)| color_percent("5h", remaining))
+        .unwrap_or_default();
+    let reset = fmt_duration(primary.and_then(|(_, reset)| reset));
+    let primary = if reset.is_empty() {
+        primary_label.clone()
+    } else {
+        format!("{primary_label}{DIM} ({reset}){RESET}")
+    };
+    let weekly = weekly
+        .map(|(remaining, _)| color_percent("wk", remaining))
+        .unwrap_or_default();
+
+    let running: Vec<String> = p
+        .get("subagents")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|agent| get_str(agent, "status") == Some("running"))
+        .map(|agent| {
+            let role = get_str(agent, "role").filter(|role| !role.is_empty());
+            let name = get_str(agent, "name").filter(|name| !name.is_empty());
+            let display = label(role.or(name).unwrap_or("subagent"));
+            format!("{} {display}", agent_glyph(role.or(name).unwrap_or("")))
+        })
+        .collect();
+    let agent_label = |count: usize| {
+        let mut names = running[..count].join(" · ");
+        let hidden = running.len() - count;
+        if hidden > 0 {
+            if !names.is_empty() {
+                names.push(' ');
+            }
+            names.push_str(&format!("+{hidden}"));
+        }
+        if names.is_empty() {
+            names
         } else {
-            ""
-        };
-        let repo_label = match (&project.is_empty(), &branch) {
-            (false, Some(b)) => format!(
-                "{}{}{}{} {}({}{}){}",
-                BOLD, CYAN, project, RESET, CYAN, b, dirty, RESET
-            ),
-            (_, Some(b)) => format!("{}{}{}{}", CYAN, b, dirty, RESET),
-            (false, None) => format!("{}{}{}{}", CYAN, project, dirty, RESET),
-            (true, None) => String::new(),
-        };
-        if !repo_label.is_empty() {
-            parts.push(repo_label);
+            format!("{BLUE}{names}{RESET}")
+        }
+    };
+
+    const BRAND: usize = 0;
+    const REPO: usize = 1;
+    const MODEL: usize = 2;
+    const CONTEXT: usize = 3;
+    const PRIMARY: usize = 4;
+    const WEEKLY: usize = 5;
+    const COMPACT: usize = 6;
+    const AGENTS: usize = 7;
+    let mut parts = [
+        format!("{BOLD}◆ Oathbound{RESET}"),
+        repo,
+        model,
+        context,
+        primary,
+        weekly,
+        compact,
+        agent_label(running.len()),
+    ];
+    if let Some(width) = p
+        .get("terminal_width")
+        .and_then(Value::as_u64)
+        .filter(|w| *w > 0)
+    {
+        let width = width as usize;
+        if status_width(&parts) > width && !parts[PRIMARY].is_empty() {
+            parts[PRIMARY] = primary_label;
+        }
+        if status_width(&parts) > width && !parts[PRIMARY].is_empty() {
+            parts[WEEKLY].clear();
+        }
+        if !running.is_empty() && status_width(&parts) > width {
+            parts[AGENTS] = agent_label(0);
+            for count in 1..running.len() {
+                let previous = std::mem::replace(&mut parts[AGENTS], agent_label(count));
+                if status_width(&parts) > width {
+                    parts[AGENTS] = previous;
+                    break;
+                }
+            }
+        }
+        for index in [
+            COMPACT, AGENTS, BRAND, REPO, MODEL, WEEKLY, PRIMARY, CONTEXT,
+        ] {
+            if status_width(&parts) <= width {
+                break;
+            }
+            parts[index].clear();
         }
     }
 
-    // 2. Model + Effort
-    if let Some(model) = p.get("model") {
-        let raw_name = get_str(model, "display_name").or_else(|| get_str(model, "id"));
-        if let Some(name) = raw_name {
-            if !name.is_empty() {
-                let s1 = re_gemini_prefix().replace(name, "");
-                let model_name = re_effort_suffix().replace(&s1, "");
-                let effort = match get_str(model, "effort") {
-                    Some(e) if !e.is_empty() => format!("{}/{}{}", DIM, e, RESET),
-                    _ => String::new(),
-                };
-                parts.push(format!("{}{}{}{}", MAGENTA, model_name, RESET, effort));
-            }
-        }
+    parts
+        .iter()
+        .filter(|part| !part.is_empty())
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .join(&format!(" {DIM}|{RESET} "))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn narrow_terminals_keep_metrics_and_count_hidden_agents() {
+        let payload = json!({
+            "terminal_width": 56,
+            "model": { "display_name": "Gemini" },
+            "context_window": { "remaining_percentage": 70 },
+            "quota": {
+                "gemini-5h": { "disabled": true, "remaining_fraction": 0.5 },
+                "3p-5h": { "remaining_fraction": 0.8, "reset_in_seconds": 3600 },
+                "gemini-weekly": { "remaining_fraction": 0.6 }
+            },
+            "subagents": [
+                { "name": "Long generated name", "role": "smith", "status": "running" },
+                { "name": "Second agent", "role": "scholar", "status": "running" }
+            ]
+        });
+        let output = run(&payload.to_string(), false);
+        assert!(output.contains("70% left"));
+        assert!(output.contains("80% left"));
+        assert!(output.contains("+2"));
+        assert!(!output.contains("wk"));
+        assert!(status_width(&[output]) <= 56);
     }
 
-    // 3. Context Window
-    if let Some(cw) = p.get("context_window").filter(|v| v.is_object()) {
-        let used_pct = get_f64(cw, "used_percentage").map(|v| v.round() as i64);
-        let u = cw.get("current_usage");
-        let input_tokens = u.and_then(|x| get_f64(x, "input_tokens")).unwrap_or(0.0);
-        let cache_tokens = u
-            .and_then(|x| get_f64(x, "cache_read_input_tokens"))
-            .unwrap_or(0.0);
-        let output_tokens = u.and_then(|x| get_f64(x, "output_tokens")).unwrap_or(0.0);
-        let cur_tokens = input_tokens + cache_tokens + output_tokens;
-        let max_tokens = get_f64(cw, "context_window_size").unwrap_or(0.0);
-        let ctx_color = match used_pct {
-            Some(pct) => color_by_pct(pct, true),
-            None => YELLOW,
-        };
-
-        let mut ctx_text = if cur_tokens > 0.0 && max_tokens > 0.0 {
-            let mut s = format!("ctx {}", fmt_tokens(Some(cur_tokens)));
-            if let Some(pct) = used_pct {
-                s.push_str(&format!(" ({}%)", pct));
-            }
-            s
-        } else if let Some(pct) = used_pct {
-            format!("ctx {}%", pct)
-        } else {
-            format!(
-                "{} in / {} out",
-                fmt_tokens(get_f64(cw, "total_input_tokens")),
-                fmt_tokens(get_f64(cw, "total_output_tokens"))
-            )
-        };
-
-        let total_prompt = input_tokens + cache_tokens;
-        if total_prompt > 1000.0 {
-            let cache_pct = ((cache_tokens / total_prompt) * 100.0).round() as i64;
-            let cache_col = if cache_pct >= 75 {
-                GREEN
-            } else if cache_pct >= 40 {
-                YELLOW
-            } else {
-                DIM
-            };
-            ctx_text.push_str(&format!(
-                " {}[{}{}cache {}%{}{}{}]{}",
-                DIM, RESET, cache_col, cache_pct, RESET, DIM, "", RESET
-            ));
-        }
-
-        if let Some(pct) = used_pct {
-            if pct >= 50 {
-                ctx_text.push_str(&format!(" {}{}⚠ /compact{}", BOLD, RED, RESET));
-            }
-        }
-
-        parts.push(format!("{}{}{}", ctx_color, ctx_text, RESET));
+    #[test]
+    fn missing_data_and_controls_do_not_produce_fake_metrics() {
+        let payload = json!({
+            "model": { "display_name": "Opus\n" },
+            "context_window": { "remaining_percentage": null },
+            "rate_limits": { "five_hour": { "used_percentage": 16, "resets_at": 1 } }
+        });
+        let output = run(&payload.to_string(), false);
+        assert!(output.contains("Opus"));
+        assert!(!output.contains('\n'));
+        assert!(!output.contains("ctx"));
+        assert!(!output.contains("5h"));
+        assert!(run("invalid", false).is_empty());
+        assert!(run("{}", true).is_empty());
     }
-
-    // 4. Quota (5h + weekly windows)
-    if let Some(quota) = p.get("quota").filter(|v| v.is_object()) {
-        let q5h = quota.get("gemini-5h").or_else(|| quota.get("3p-5h"));
-        let qwk = quota
-            .get("gemini-argon-wtu-weekly")
-            .or_else(|| quota.get("gemini-weekly"))
-            .or_else(|| quota.get("3p-weekly"));
-        let mut q_parts: Vec<String> = Vec::new();
-
-        if let Some(q) = q5h {
-            if let Some(rem) = get_f64(q, "remaining_fraction") {
-                let pct = (rem * 100.0).round() as i64;
-                let col = color_by_pct(pct, false);
-                let rst = fmt_duration(get_f64(q, "reset_in_seconds"));
-                let rst_fmt = if rst.is_empty() {
-                    String::new()
-                } else {
-                    format!("{}({}){}", DIM, rst, RESET)
-                };
-                q_parts.push(format!("5h:{}{}%{}{}", col, pct, RESET, rst_fmt));
-            }
-        }
-        if let Some(q) = qwk {
-            if let Some(rem) = get_f64(q, "remaining_fraction") {
-                let pct = (rem * 100.0).round() as i64;
-                let col = color_by_pct(pct, false);
-                q_parts.push(format!("wk:{}{}%{}", col, pct, RESET));
-            }
-        }
-        if !q_parts.is_empty() {
-            parts.push(q_parts.join(" "));
-        }
-    }
-
-    // 5. Active subagents
-    if let Some(subs) = p.get("subagents").and_then(|v| v.as_array()) {
-        let running: Vec<&str> = subs
-            .iter()
-            .filter(|s| get_str(s, "status") == Some("running"))
-            .map(|s| get_str(s, "name").unwrap_or("subagent"))
-            .collect();
-        if !running.is_empty() {
-            parts.push(format!(
-                "{}⚡ {} sub ({}){}",
-                BLUE,
-                running.len(),
-                running.join(","),
-                RESET
-            ));
-        }
-    }
-
-    parts.join(&format!(" {}|{} ", DIM, RESET))
 }

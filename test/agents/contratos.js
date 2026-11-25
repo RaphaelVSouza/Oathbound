@@ -1,5 +1,5 @@
 'use strict';
-// Output contract checkers for each agent and a stream-json reader for `claude -p`.
+// Output contract checkers for each agent (ADR-0010) and a stream-json reader for `claude -p`.
 // Pure functions: tested offline in contratos.test.js, at no cost.
 
 const nl = (t) => String(t || '').split(/\r?\n/).filter((l) => l.trim() !== '');
@@ -7,16 +7,94 @@ const nl = (t) => String(t || '').split(/\r?\n/).filter((l) => l.trim() !== '');
 const tem = (re) => (t) => re.test(t);
 const lacunas = tem(/^GAPS:[ \t]+\S/m);
 
-function revisarCobertura(texto) {
+function extrairCampo(linhas, prefixo) {
+  const linha = linhas.find((l) => l.startsWith(prefixo));
+  return linha ? linha.slice(prefixo.length).trim() : null;
+}
+
+function verificarEnvelope(agente, texto) {
+  const falhas = [];
   const linhas = nl(texto);
-  const pendencias = linhas.pop();
-  const cobertura = linhas.pop();
-  if (!/^COVERAGE: (complete|partial)$/.test(cobertura) || !lacunas(pendencias)) return false;
-  if (cobertura === 'COVERAGE: partial' && /^GAPS:\s+none\.?\s*$/i.test(pendencias)) return false;
-  if (linhas.length === 1 && /^No issues\.?$/.test(linhas[0])) return true;
-  const total = linhas.pop();
-  const achado = /^\S.*:\d+: (🔴 bug|🟡 risk|🔵 nit|❓ question): /;
-  return /^totals: /.test(total) && linhas.length > 0 && linhas.every((linha) => achado.test(linha));
+  const statusMatch = texto.match(/^STATUS:[ \t]+(DONE|PARTIAL|BLOCKED)[ \t]*$/m);
+  const confMatch = texto.match(/^CONFIDENCE:[ \t]+(HIGH|MEDIUM|LOW)[ \t]*$/m);
+  const gapsVal = extrairCampo(linhas, 'GAPS:');
+
+  if (!new RegExp(`^AGENT:[ \\t]+${agente}[ \\t]*$`, 'm').test(texto)) falhas.push('AGENT');
+  if (!/^SCOPE:[ \t]+\S/m.test(texto)) falhas.push('SCOPE');
+  if (!statusMatch) falhas.push('STATUS');
+  if (!confMatch) falhas.push('CONFIDENCE');
+  if (!gapsVal) falhas.push('GAPS');
+  if (statusMatch && statusMatch[1] !== 'DONE' && gapsVal && /^none\.?$/i.test(gapsVal)) {
+    falhas.push('GAPS must name a concrete gap when STATUS is PARTIAL or BLOCKED');
+  }
+  if (/^(?:NOTE|PENDING):/m.test(texto)) falhas.push('legacy NOTE/PENDING is prohibited');
+  return falhas;
+}
+
+function removerCabecalhoEnvelope(linhas) {
+  const esperado = ['AGENT:', 'SCOPE:', 'STATUS:', 'CONFIDENCE:'];
+  if (linhas.length < esperado.length) return null;
+  for (let i = 0; i < esperado.length; i++) {
+    if (!linhas[i].startsWith(esperado[i])) return null;
+  }
+  return linhas.slice(esperado.length);
+}
+
+function verificarCoberturaERodape(corpo, status) {
+  if (!corpo || corpo.length < 2) return null;
+  const pendencias = corpo.pop();
+  const cobertura = corpo.pop();
+  if (!/^COVERAGE: (complete|partial)$/.test(cobertura) || !lacunas(pendencias)) return null;
+  if (cobertura === 'COVERAGE: partial' && /^GAPS:\s+none\.?\s*$/i.test(pendencias)) return null;
+  if (status === 'PARTIAL' && cobertura !== 'COVERAGE: partial') return null;
+  return corpo;
+}
+
+function revisarCobertura(texto) {
+  const linhas = removerCabecalhoEnvelope(nl(texto));
+  const status = extrairCampo(nl(texto), 'STATUS:');
+  const corpo = verificarCoberturaERodape(linhas, status);
+  if (!corpo || corpo.length === 0) return false;
+  if (corpo.length === 1 && /^No issues\.?$/.test(corpo[0])) return true;
+  const total = corpo.pop();
+  const achado = /^\S.*:\d+: (?:(?:BUG|RISK) \[(?:CRITICAL|HIGH|MEDIUM|LOW)\]|(?:NIT|QUESTION)): \S/;
+  return /^totals: \d+ BUG, \d+ RISK, \d+ NIT, \d+ QUESTION$/.test(total) &&
+    corpo.length > 0 && corpo.every((linha) => achado.test(linha));
+}
+
+function revisarSentinel(texto) {
+  if (/\[CWE-285\]/.test(texto)) return false;
+  if (/^No security vulnerabilities found in scope\.?$/m.test(texto)) return false;
+  const linhas = removerCabecalhoEnvelope(nl(texto));
+  const status = extrairCampo(nl(texto), 'STATUS:');
+  const corpo = verificarCoberturaERodape(linhas, status);
+  if (!corpo || corpo.length === 0) return false;
+  if (corpo.length === 1 && /^No findings in scope\.?$/.test(corpo[0])) return true;
+
+  const total = corpo.pop();
+  if (!/^totals: \d+ CRITICAL, \d+ HIGH, \d+ MEDIUM, \d+ LOW$/.test(total) || corpo.length === 0) return false;
+
+  const headerRe = /^\S.*:\d+: (CRITICAL|HIGH|MEDIUM|LOW) \[CWE-(\d+)\] \[(CONFIRMED|LIKELY|POSSIBLE)\][ \t]*$/;
+  let i = 0;
+  let count = 0;
+  while (i < corpo.length) {
+    const hdr = corpo[i].match(headerRe);
+    if (!hdr || hdr[2] === '285') return false;
+    count++;
+    i++;
+    const req = ['CONDITION:', 'IMPACT:', 'FIX:', 'EVIDENCE:'];
+    for (const prefix of req) {
+      if (i >= corpo.length || !corpo[i].startsWith(prefix) || !corpo[i].slice(prefix.length).trim()) return false;
+      i++;
+      if (prefix === 'EVIDENCE:' && i < corpo.length && !corpo[i].startsWith('SCORE:')) {
+        // Optional second evidence line before SCORE:.
+        i++;
+      }
+    }
+    if (i >= corpo.length || !/^SCORE:[ \t]+(?:not scored|CVSS-(?:B|BT|BE|BTE)\s+4\.0\s+\S+)/.test(corpo[i])) return false;
+    i++;
+  }
+  return count > 0;
 }
 
 function conferirContagem(texto, totalAfirmacoes) {
@@ -38,36 +116,32 @@ const CHECKS = {
   scout: [
     ['ANSWER', tem(/^ANSWER:/m)],
     ['EVIDENCE or "not found"', tem(/^EVIDENCE:|^ANSWER:\s*not found/m)],
-    ['GAPS', tem(/^GAPS:/m)],
   ],
   scholar: [
     ['ANSWER', tem(/^ANSWER:/m)],
     ['SOURCES with URL', (t) => /^SOURCES:/m.test(t) && /https?:\/\//.test(t)],
-    ['GAPS', tem(/^GAPS:/m)],
   ],
   assayer: [
-    ['findings and totals or "No issues.", followed by COVERAGE and GAPS', revisarCobertura],
+    ['ranked BUG/RISK or unranked NIT/QUESTION with totals or "No issues.", followed by COVERAGE and GAPS', revisarCobertura],
   ],
   sentinel: [
-    ['findings with CWE and totals, or a "no findings" sentence', (t) => {
-      if (/^No security vulnerabilities found in scope\.?$/m.test(t)) return true;
-      const achado = /^\S.*:\d+: (🔴 CRITICAL|🟠 HIGH|🟡 MEDIUM|🔵 LOW) \[CWE-\d+\]: /m;
-      return achado.test(t) && /^totals: /m.test(t);
-    }],
-    ['GAPS', lacunas],
+    ['structured CWE/CVSS findings with totals or "No findings in scope.", followed by COVERAGE and GAPS', revisarSentinel],
   ],
   scribe: [
     ['MODE', tem(/^MODE:\s*(spec|release)/m)],
     ['FILES', tem(/^FILES:/m)],
-    ['PENDING', tem(/^PENDING:/m)],
   ],
   smith: [
     ['FILES', tem(/^FILES:/m)],
     ['ACCEPTANCE', tem(/^ACCEPTANCE:/m)],
-    ['NOTE', tem(/^NOTE:/m)],
   ],
   breaker: [
-    ['STATUS', tem(/^STATUS:\s*(PASS|FAIL|BLOCKED)/m)],
+    ['RESULT', (t) => {
+      const m = t.match(/^RESULT:[ \t]+(PASS|FAIL|none)[ \t]*$/m);
+      if (!m) return false;
+      const blocked = /^STATUS:[ \t]+BLOCKED[ \t]*$/m.test(t);
+      return blocked ? m[1] === 'none' : m[1] !== 'none';
+    }],
     ['ENVIRONMENT', tem(/^ENVIRONMENT:/m)],
     ['FLOW', tem(/^FLOW:/m)],
     ['CONSOLE', tem(/^CONSOLE:/m)],
@@ -81,7 +155,8 @@ function verificarContrato(agente, texto, contexto = {}) {
   const checks = CHECKS[agente];
   if (!checks) return [`agent without a defined contract: ${agente}`];
   const saida = String(texto || '');
-  const falhas = checks.filter(([, fn]) => !fn(saida)).map(([nome]) => nome);
+  const falhas = verificarEnvelope(agente, saida)
+    .concat(checks.filter(([, fn]) => !fn(saida)).map(([nome]) => nome));
   if (agente === 'scout' && contexto.totalAfirmacoes !== undefined &&
       !conferirContagem(saida, contexto.totalAfirmacoes)) {
     falhas.push('verdicts and TOTALS matching the received batch');

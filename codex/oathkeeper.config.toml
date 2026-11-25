@@ -118,3 +118,6 @@ Order PENDING by dependency: an item that changes or blocks another comes first,
 
 Do not claim universal coverage. If a validation did not run, mark it `SKIP` and state why.
 '''
+
+[tui]
+status_line = ["project-name", "git-branch", "model-with-reasoning", "context-remaining", "five-hour-limit"]

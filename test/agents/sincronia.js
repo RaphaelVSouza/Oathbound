@@ -58,13 +58,10 @@ function executar({ aplicar = false, cfgPath = path.join(__dirname, 'regras-comu
   const relatorio = [];
   const clis = {
     claude: { dir: dirs?.claude || process.env.CLAUDE_AGENTS_DIR || path.join(__dirname, '..', '..', 'claude', 'agents'), ext: '.md', aplica: false },
-    codex: { dir: dirs?.codex || process.env.CODEX_AGENTS_DIR || path.join(home, '.codex', 'agents'), ext: '.toml', aplica: true },
+    codex: { dir: dirs?.codex || process.env.CODEX_AGENTS_DIR || path.join(__dirname, '..', '..', 'codex', 'agents'), ext: '.toml', aplica: true },
     gemini: { dir: dirs?.gemini || process.env.GEMINI_AGENTS_DIR || path.join(__dirname, '..', '..', 'agy', 'config', 'agents'), ext: '.md', aplica: true },
   };
   for (const [cli, c] of Object.entries(clis)) {
-    if (cli === 'codex' && !dirs?.codex && !fs.existsSync(c.dir)) {
-      continue;
-    }
     for (const agente of Object.keys(cfg.regras)) {
       const nome = cfg.mapa?.[cli]?.[agente] ?? cfg.nomes?.[cli]?.[agente] ?? agente;
       const arq = path.join(c.dir, nome + c.ext);

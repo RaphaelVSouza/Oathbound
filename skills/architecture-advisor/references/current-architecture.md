@@ -5,7 +5,7 @@ Read when a system already exists. Goal: say, with evidence, whether the current
 ## 1. Rebuild the architecture as it is
 - Describe what the code and infrastructure do, not only what the docs say. Flag divergences.
 - Record: architectural style, real boundaries (modules, services, databases), integration points, where state lives, how it is deployed and operated.
-- Delegate the facts to the explorer as closed questions (one question per call). To compare docs with code, send the claims from the README, ADRs and architecture docs in claim-verification mode (up to 15 per call) and read the `✅ ⚠️ ❌ —` verdicts and GAPS.
+- Delegate the facts to the explorer as closed questions (one question per call). To compare docs with code, send the claims from the README, ADRs and architecture docs in claim-verification mode (up to 15 per call) and read the `CONFIRMED | REFUTED | INCONCLUSIVE` verdicts, `TOTALS`, and `GAPS`.
 - Draw the `current` candidate's diagram from this (see `html-view.md`).
 
 ## 2. Find what prompted the question
