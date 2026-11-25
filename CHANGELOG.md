@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.50.0-alpha.52] - 2026-11-24
+
+- Fixes the release workflow: the `Generate checksums` step ran `sed 's# \./# #'` in a plain YAML scalar, where ` #` starts a comment, so the command was truncated and failed with exit 2. It now uses a block scalar with `sha256sum -- *.tar.gz > SHA256SUMS` followed by `sha256sum -c SHA256SUMS`.
+- `v0.50.0-alpha.51` was tagged but its release run failed at that step and published nothing; use `0.50.0-alpha.52`.
+- Validated locally: every `run:` step in `release.yml` passes `bash -n`, and the checksum commands verify on sample files. Not validated: the `Publish GitHub Release` step had not run before this release.
+
 ## [0.50.0-alpha.51] - 2026-11-24
 
 - `.github/workflows/release.yml` now builds the hook per OS (linux-x64, win32-x64, darwin-arm64) in a matrix and publishes one Claude tarball per target (`oathbound-claude-<ver>-<platform>-<arch>.tar.gz`) plus `SHA256SUMS`; agy and codex tarballs are unchanged (no binary). Implements ADR-0009 Option A.

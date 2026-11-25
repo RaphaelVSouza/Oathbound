@@ -126,7 +126,9 @@ jobs:
       - name: Generate checksums
         shell: bash
         working-directory: dist
-        run: sha256sum ./*.tar.gz | sed 's# \./# #' > SHA256SUMS
+        run: |
+          sha256sum -- *.tar.gz > SHA256SUMS
+          sha256sum -c SHA256SUMS
 
       - name: Publish GitHub Release
         shell: bash
