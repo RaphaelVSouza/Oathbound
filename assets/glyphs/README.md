@@ -19,6 +19,8 @@
 
 Install the font, then add it to your terminal font list. Print a glyph with `printf '\xee\xbc\x80'` (`U+EF00`) or tint it with ANSI color. Without the font a terminal shows an empty box, so keep a fallback such as `◆`.
 
+The status line uses these glyphs when `OATHBOUND_STATUSLINE_ICONS=oathbound` is set (see ADR-0019); the default is plain Unicode.
+
 The font is opt-in and per machine: a plugin cannot install fonts. Whether Claude Code measures these code points as one column in its status line is unverified.
 
 ## Rebuild

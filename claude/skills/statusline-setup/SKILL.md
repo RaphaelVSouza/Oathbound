@@ -28,7 +28,8 @@ A Claude plugin cannot set `statusLine` itself. This skill writes it into the us
 
    Use forward slashes in the path. Keep the file valid JSON.
 5. **Validate.** Run `echo '{}' | "<path>" statusline` and expect exit 0. Report the result.
-6. **Tell the user** to restart Claude Code. To undo, delete the `statusLine` field from `settings.json` or run `/statusline` and ask to clear it.
+6. **Offer icons (optional).** Ask which icon set to use: `unicode` (default, no font needed), `nerd`, `oathbound` (needs `OathboundIcons.ttf` installed) or `ascii`. For a non-default choice, add `"env": {"OATHBOUND_STATUSLINE_ICONS": "<set>"}` to `settings.json` only with consent. Whether Claude Code passes `settings.json` `env` to the status line command is unverified: check the result after restart.
+7. **Tell the user** to restart Claude Code. To undo, delete the `statusLine` field from `settings.json` or run `/statusline` and ask to clear it.
 
 ## Rules
 

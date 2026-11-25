@@ -149,17 +149,65 @@ fn quota<const N: usize>(
     Some((percent(100.0 - get_f64(bucket, "used_percentage")?), reset))
 }
 
-fn agent_glyph(role: &str) -> &'static str {
-    match role.rsplit(':').next().unwrap_or(role) {
-        "smith" => "⚒",
-        "scholar" => "◇",
-        "scribe" => "✎",
-        "breaker" => "⚡",
-        "assayer" => "✓",
-        "sentinel" => "⬟",
-        "scout" => "⌖",
-        _ => "•",
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum IconSet {
+    Unicode,
+    Nerd,
+    Oathbound,
+    Ascii,
+}
+
+impl IconSet {
+    fn parse(value: Option<&str>) -> Self {
+        match value.map(|v| v.trim().to_ascii_lowercase()).as_deref() {
+            Some("nerd") => Self::Nerd,
+            Some("oathbound") => Self::Oathbound,
+            Some("ascii") => Self::Ascii,
+            _ => Self::Unicode,
+        }
     }
+
+    fn from_env() -> Self {
+        Self::parse(std::env::var("OATHBOUND_STATUSLINE_ICONS").ok().as_deref())
+    }
+
+    fn brand(self) -> &'static str {
+        match self {
+            Self::Unicode => "◆",
+            Self::Nerd => "\u{f219}",
+            Self::Oathbound => "\u{ef00}",
+            Self::Ascii => "*",
+        }
+    }
+}
+
+fn agent_glyph(set: IconSet, role: &str) -> &'static str {
+    let role = role.rsplit(':').next().unwrap_or(role);
+    // Unicode: BMP symbols any fallback font covers. Nerd: Font Awesome codepoints, stable across
+    // Nerd Fonts v2/v3. Oathbound: PUA slots of assets/glyphs/OathboundIcons.ttf.
+    let table: [&'static str; 8] = match set {
+        IconSet::Unicode => ["⚒", "◇", "✎", "⚡", "✓", "⬟", "⌖", "•"],
+        IconSet::Nerd => [
+            "\u{f0e3}", "\u{f02d}", "\u{f040}", "\u{f0e7}", "\u{f24e}", "\u{f132}", "\u{f14e}",
+            "\u{f219}",
+        ],
+        IconSet::Oathbound => [
+            "\u{ef04}", "\u{ef02}", "\u{ef03}", "\u{ef07}", "\u{ef05}", "\u{ef06}", "\u{ef01}",
+            "\u{ef00}",
+        ],
+        IconSet::Ascii => [">"; 8],
+    };
+    let index = match role {
+        "smith" => 0,
+        "scholar" => 1,
+        "scribe" => 2,
+        "breaker" => 3,
+        "assayer" => 4,
+        "sentinel" => 5,
+        "scout" => 6,
+        _ => 7,
+    };
+    table[index]
 }
 
 fn status_width(parts: &[String]) -> usize {
@@ -278,6 +326,7 @@ pub fn run(raw: &str, oversized: bool) -> String {
         .map(|(remaining, _)| color_percent("wk", remaining))
         .unwrap_or_default();
 
+    let icons = IconSet::from_env();
     let running: Vec<String> = p
         .get("subagents")
         .and_then(Value::as_array)
@@ -288,7 +337,7 @@ pub fn run(raw: &str, oversized: bool) -> String {
             let role = get_str(agent, "role").filter(|role| !role.is_empty());
             let name = get_str(agent, "name").filter(|name| !name.is_empty());
             let display = label(role.or(name).unwrap_or("subagent"));
-            format!("{} {display}", agent_glyph(role.or(name).unwrap_or("")))
+            format!("{} {display}", agent_glyph(icons, role.or(name).unwrap_or("")))
         })
         .collect();
     let agent_label = |count: usize| {
@@ -316,7 +365,7 @@ pub fn run(raw: &str, oversized: bool) -> String {
     const COMPACT: usize = 6;
     const AGENTS: usize = 7;
     let mut parts = [
-        format!("{BOLD}◆ Oathbound{RESET}"),
+        format!("{BOLD}{} Oathbound{RESET}", icons.brand()),
         repo,
         model,
         context,
@@ -408,5 +457,18 @@ mod tests {
         assert!(!output.contains("5h"));
         assert!(run("invalid", false).is_empty());
         assert!(run("{}", true).is_empty());
+    }
+
+    #[test]
+    fn icon_sets_select_glyphs_and_default_to_unicode() {
+        assert_eq!(IconSet::parse(None), IconSet::Unicode);
+        assert_eq!(IconSet::parse(Some("bogus")), IconSet::Unicode);
+        assert_eq!(IconSet::parse(Some(" Nerd ")), IconSet::Nerd);
+        assert_eq!(agent_glyph(IconSet::Unicode, "oathbound:smith"), "⚒");
+        assert_eq!(agent_glyph(IconSet::Nerd, "smith"), "\u{f0e3}");
+        assert_eq!(agent_glyph(IconSet::Oathbound, "scout"), "\u{ef01}");
+        assert_eq!(agent_glyph(IconSet::Oathbound, "other"), "\u{ef00}");
+        assert_eq!(agent_glyph(IconSet::Ascii, "scribe"), ">");
+        assert_eq!(IconSet::Oathbound.brand(), "\u{ef00}");
     }
 }

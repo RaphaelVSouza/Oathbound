@@ -32,7 +32,8 @@ This skill configures `statusLine` in `~/.gemini/antigravity-cli/settings.json`,
 
    Use forward slashes in the path. Keep the file valid JSON.
 5. **Validate.** Run `echo '{}' | "<path>" statusline` and expect exit 0. Report the result.
-6. **Tell the user** to restart `agy` (or run `/statusline` to toggle). To undo, delete `statusLine` from `~/.gemini/antigravity-cli/settings.json` or run `/statusline delete`.
+6. **Offer icons (optional).** Ask which icon set to use: `unicode` (default, no font needed), `nerd`, `oathbound` (needs `OathboundIcons.ttf` installed) or `ascii`. For a non-default choice, tell the user to set `OATHBOUND_STATUSLINE_ICONS=<set>` in the environment that launches `agy`; do not edit other files. Whether agy `settings.json` supports `env` for the status line command is unverified.
+7. **Tell the user** to restart `agy` (or run `/statusline` to toggle). To undo, delete `statusLine` from `~/.gemini/antigravity-cli/settings.json` or run `/statusline delete`.
 
 ## Rules
 

@@ -102,3 +102,26 @@ test('Codex discovers the Oathbound footer and polls live subagent roles', { tim
   child.stdin.end();
   assert.deepEqual(await exit, [0, null]);
 });
+
+test('Codex footer honors OATHBOUND_STATUSLINE_ICONS', { timeout: 10_000 }, async t => {
+  for (const [set, brand] of [['ascii', '*'], ['oathbound', ''], ['nerd', ''], ['bogus', '◆']]) {
+    const child = spawn(process.execPath, [path.resolve(__dirname, '../codex/statusline.cjs')], {
+      env: { ...process.env, OATHBOUND_STATUSLINE_ICONS: set },
+      stdio: ['pipe', 'pipe', 'inherit'],
+    });
+    t.after(() => child.kill());
+    const output = readline.createInterface({ input: child.stdout })[Symbol.asyncIterator]();
+    const call = async (id, method, params) => {
+      child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
+      return JSON.parse((await output.next()).value).result;
+    };
+    await call(1, 'initialize', { protocolVersion: '2025-06-18' });
+    child.stdin.write('{"jsonrpc":"2.0","method":"notifications/initialized"}\n');
+    const { contents: [resource] } = await call(2, 'resources/read', {
+      uri: URI,
+      _meta: { [STATE]: { thread: { id: 'icons', model: { display_name: 'M' } } } },
+    });
+    assert.equal(JSON.parse(resource.text).children[0].children[0], `${brand} Oathbound`, set);
+    child.stdin.end();
+  }
+});

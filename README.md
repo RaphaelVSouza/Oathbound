@@ -133,6 +133,8 @@ Both clients can run `oathbound-hook statusline` for the branded text footer. Th
 ◆ Oathbound | project · main | Gemini (high) | ctx 72% left | 5h 84% left | ⚒ smith · ◇ scholar
 ```
 
+Set `OATHBOUND_STATUSLINE_ICONS` to pick the glyphs (also read by the Codex provider; for standalone Codex registration pass `--env OATHBOUND_STATUSLINE_ICONS=<set>` to `codex mcp add`): `unicode` (default), `nerd` (Nerd Font), `oathbound` (`assets/glyphs/OathboundIcons.ttf`) or `ascii`. Without the matching font, `nerd` and `oathbound` show empty boxes. See [ADR-0019](docs/adr/0019-statusline-icon-sets.md).
+
 For Claude Code, run `node tools/install.ts --project . --runner claude --statusline`. The installer preserves any existing `statusLine` entry. To switch an existing entry yourself, set its `command` to the quoted absolute path of the installed `.claude/hooks/oathbound-hook` followed by `statusline`. Use `oathbound-hook.exe` on Windows.
 
 For agy, place the rebuilt native binary at the path configured in your status-line command. The [agy settings template](agy/antigravity-cli/settings.json) uses `~/.gemini/antigravity-cli/oathbound-hook`. Merge its `statusLine` entry into your agy settings if needed, replacing `__HOME__` with your home directory and using the `.exe` suffix on Windows.

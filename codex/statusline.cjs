@@ -22,10 +22,22 @@ const TOOL = {
   _meta: { 'openai/ui': { entrypoints: [{ type: 'statusline', resourceUri: URI }] } },
 };
 const RESOURCE = { name: 'footer', uri: URI, mimeType: 'application/json' };
-const GLYPHS = new Map([
-  ['smith', '⚒'], ['scholar', '◇'], ['scribe', '✎'], ['breaker', '⚡'],
-  ['assayer', '✓'], ['sentinel', '⬟'], ['scout', '⌖'],
-]);
+const ROLES = ['smith', 'scholar', 'scribe', 'breaker', 'assayer', 'sentinel', 'scout'];
+// Icon sets mirror the native hook (ADR-0019). Each row: seven roles, then the fallback and brand.
+const ICON_SETS = {
+  unicode: { roles: ['⚒', '◇', '✎', '⚡', '✓', '⬟', '⌖'], other: '•', brand: '◆' },
+  nerd: {
+    roles: ['\uf0e3', '\uf02d', '\uf040', '\uf0e7', '\uf24e', '\uf132', '\uf14e'],
+    other: '\uf219', brand: '\uf219',
+  },
+  oathbound: {
+    roles: ['\uef04', '\uef02', '\uef03', '\uef07', '\uef05', '\uef06', '\uef01'],
+    other: '\uef00', brand: '\uef00',
+  },
+  ascii: { roles: ROLES.map(() => '>'), other: '>', brand: '*' },
+};
+const ICONS = ICON_SETS[String(process.env.OATHBOUND_STATUSLINE_ICONS || '').trim().toLowerCase()] || ICON_SETS.unicode;
+const GLYPHS = new Map(ROLES.map((role, index) => [role, ICONS.roles[index]]));
 
 function readAuditTail(filename) {
   let fd;
@@ -110,12 +122,12 @@ async function render(state) {
   const agents = Array.from(active.values()).slice(0, MAX_AGENTS)
     .map(({ role, startedAt }) => {
       const duration = startedAt === undefined ? '' : ` ${Math.max(0, Math.floor((now - startedAt) / 1000))}s`;
-      return `${GLYPHS.get(role) || '•'} ${role}${duration}`;
+      return `${GLYPHS.get(role) || ICONS.other} ${role}${duration}`;
     });
   if (active.size > MAX_AGENTS) agents.push(`+${active.size - MAX_AGENTS}`);
 
   const color = (text, name) => ({ type: 'text', props: { color: name }, children: [text] });
-  const items = [{ type: 'bold', children: ['◆ Oathbound'] }];
+  const items = [{ type: 'bold', children: [`${ICONS.brand} Oathbound`] }];
   const workspace = await workspaceLabel(thread?.workspace?.cwd);
   if (workspace) items.push(color(workspace, 'status-path'));
   const model = label(thread?.model?.display_name);
