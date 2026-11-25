@@ -12,10 +12,12 @@ node tools/extract-audit.ts --inicio 2026-11-14 --fim 2026-11-19 --saida ./audit
 
 For Antigravity invocations, `correlacao_filha` indicates whether the link was
 confirmed, ambiguous or lacks evidence. The extractor fills `sessao_filha`
-when the immediately following creation response identifies a previously unseen
-child for an isolated call. It preserves all calls in batches.
+when a matching creation response identifies a previously unseen child for an
+isolated `invoke_subagent` call (either immediately adjacent via
+`criacao_adjacente` or within a single-subagent mixed-tool batch via
+`criacao_no_turno`). Parallel multi-subagent batches remain `ambigua`.
 Status queries do not create new links.
-Confirmed adjacent links include `evidencia_filha` with the creation record's source and line.
+Confirmed links include `evidencia_filha` with the creation record's method, source and line.
 By default, the extractor reads `AGENT_AUDIT_DIR` or `~/.claude/state`,
 `$CODEX_HOME/state` or `~/.codex/state`, and `~/.gemini`.
 `--fuso` changes the date boundaries, which default to `America/Sao_Paulo`.
@@ -23,7 +25,9 @@ By default, the extractor reads `AGENT_AUDIT_DIR` or `~/.claude/state`,
 `eventos.jsonl` contains events and file and line references.
 `metricas.json` contains a file inventory and counts by CLI. Claude's block
 rate requires keys for all calls and blocks in the window, with a match for
-each block. `decisoes_plugin` reports the separate cohort observed by the
+each block. `correlacao_por_coorte` splits `com_produtor` (non-plugin records
+with `produtor`) from `legado` so historical unkeyed rows do not mask keyed
+rates. `decisoes_plugin` reports the separate cohort observed by the
 Claude plugin guard. Each decision is one attempt, including denials. Its
 rate is null when decision keys are missing or conflicting. Native records
 can carry the producing release and, for plugin decisions, the installation mode.
@@ -63,15 +67,15 @@ node tools/install.ts [options]
 Supported options:
 - `--global`: Installs Claude and agy agents and stores the manifest and Claude agent guards in `~/.oathbound/`.
 - `--project <dir>`: Installs into a specific project directory.
-- `--runner all|claude|agy|codex`: Selects the target runner. Select `codex` to install its agents. With `--global`, also installs the profile for `codex -p oathkeeper`. `all` includes Claude and agy.
+- `--runner all|claude|agy|codex`: Selects the target runner. Select `codex` to install its agents. With `--global`, also installs the profile for `codex -p oathkeeper`, `oathbound-hook` under `~/.codex/hooks/` and merges `~/.codex/hooks.json`. `all` includes Claude and agy.
 - `--upgrade`: Updates an existing installation, displaying the diff.
 - `--statusline`: Configures the status bar.
 - `--audit-docs`: Installs documentation audit configuration.
 - `--no-dedupe-skills`: Disables automatic skill deduplication.
 
 The installer validates SHA-256 manifests and disables duplicate skills without symlinks.
-The global installer preserves existing instructions, configuration, shared hooks and skills. Use `--statusline` for local Claude installation.
-When installing hooks, the installer requires the native `oathbound-hook` binary (resolved through `OATHBOUND_NATIVE_BIN`, `native/bin/oathbound-hook-<platform>-<arch>[.exe]` or a local build in `native/oathbound-hook/target/release/`), copies it to the destination and points hooks directly to it. Codex hook configuration is manual.
+The global installer preserves existing instructions, configuration, non-Oathbound hooks and skills; on `--upgrade` it migrates legacy Oathbound `.js` hook commands in `~/.claude/settings.json` and `~/.codex/hooks.json` to the native `oathbound-hook` binary. Use `--statusline` for local Claude installation.
+When installing hooks, the installer requires the native `oathbound-hook` binary (resolved through `OATHBOUND_NATIVE_BIN`, `native/bin/oathbound-hook-<platform>-<arch>[.exe]` or a local build in `native/oathbound-hook/target/release/`), copies it to the destination and points hooks directly to it. Project/manual Codex hook configuration remains manual.
 
 ## Hook Benchmark (`bench-hooks.cjs`)
 

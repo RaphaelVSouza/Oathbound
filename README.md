@@ -100,7 +100,7 @@ node tools/install.ts [options]
 **Supported options:**
 - `--global`: Installs agents and skills in `~/.claude/` and `~/.gemini/config/`. The manifest and scripts used by Claude agent guards live in `~/.oathbound/`.
 - `--project <dir>`: Installs into a specific directory, generating `.claude/`, `.agents/`, `.oathbound/manifest.json`, `.agents/skills.json` and `_disabled/`.
-- `--runner all|claude|agy|codex`: Selects the runner. `all` includes Claude Code and Antigravity CLI. With `--global`, the `codex` runner installs agents and the profile.
+- `--runner all|claude|agy|codex`: Selects the runner. `all` includes Claude Code and Antigravity CLI. With `--global`, the `codex` runner installs agents, the profile, `oathbound-hook` under `~/.codex/hooks/` and merges `~/.codex/hooks.json`.
 - `--upgrade`: Updates an existing installation, displaying the change diff.
 - `--statusline`: Configures Claude's status bar in project installations.
 - `--audit-docs`: Installs documentation audit configuration (projects only).
@@ -108,7 +108,7 @@ node tools/install.ts [options]
 
 The installer validates SHA-256 manifests (`.oathbound/manifest.json`), preserves local changes and disables duplicate skills without symlinks (through markers and mapping in `_disabled` / `skills.json`).
 
-The global installer preserves existing instructions, configuration, shared hooks and skills. If a previous version registered global Oathbound rules or hooks, review those records before removing them manually.
+The global installer preserves existing instructions, configuration, non-Oathbound hooks and skills; on `--upgrade`, it migrates legacy Oathbound `.js` hook entries in `~/.claude/settings.json` and `~/.codex/hooks.json` to the native `oathbound-hook` binary. If a previous version registered global Oathbound rules, review those records before removing them manually.
 
 Use official `rtk hook claude`, `rtk hook codex` and `rtk hook antigravity` hooks in `PreToolUse`. Antigravity project upgrades migrate the legacy Oathbound entry. In PowerShell without an `ls` executable on PATH, preserve the alias by adding `ls` to `[hooks].exclude_commands` in RTK configuration.
 

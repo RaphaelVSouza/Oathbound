@@ -1,6 +1,6 @@
 {
   "name": "oathbound",
-  "version": "0.50.0-alpha.54",
+  "version": "0.50.0-alpha.55",
   "description": "Lean agent governance, preventive hook guardrails, audit trails, and engineering skills for Claude Code and Antigravity CLI.",
   "author": {
     "name": "Raphael Vieira"

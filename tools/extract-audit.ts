@@ -15,7 +15,7 @@ type Event = {
   ferramenta: string | null; atribuicao: 'confirmada' | 'compativel-por-nome' | 'desconhecida';
   sessao_filha?: string;
   correlacao_filha?: 'confirmada' | 'ambigua' | 'sem_evidencia';
-  evidencia_filha?: { metodo: 'criacao_adjacente'; fonte: number; linha: number };
+  evidencia_filha?: { metodo: 'criacao_adjacente' | 'criacao_no_turno'; fonte: number; linha: number };
   produtor?: { nome: 'oathbound'; versao: string; modo: 'plugin' | null };
   sessao_id?: string;
   tentativa?: true;
@@ -138,7 +138,10 @@ function readAudit(cli: 'claude' | 'codex', row: Row, time: string, origem: Even
 function readInvocations(source: Source, row: Row, time: string, origem: Event['origem'],
                          known: ReadonlySet<string>): Event[] {
   if (!Array.isArray(row.tool_calls)) return [];
-  const singleCall = row.tool_calls.length === 1;
+  const subagentCount = row.tool_calls.filter(
+    (call: unknown) => record(call) && call.name === 'invoke_subagent'
+  ).length;
+  const singleSubagent = subagentCount === 1;
   return row.tool_calls.flatMap((call: unknown, indice): Event[] => {
     if (!record(call) || call.name !== 'invoke_subagent') return [];
     const name = record(call.args) ? call.args.TypeName : null;
@@ -146,7 +149,7 @@ function readInvocations(source: Source, row: Row, time: string, origem: Event['
     return [{
       cli: source.cli, tipo: 'invocacao', timestamp: time, agente, sessao: source.session ?? null,
       agente_id: null, chamada_id: token(call.id), ferramenta: 'invoke_subagent',
-      correlacao_filha: singleCall ? 'sem_evidencia' : 'ambigua',
+      correlacao_filha: singleSubagent ? 'sem_evidencia' : 'ambigua',
       atribuicao: agente && known.has(agente) ? 'compativel-por-nome' : 'desconhecida',
       origem: { ...origem, indice },
     }];
@@ -168,25 +171,33 @@ async function extract(source: Source, id: number, groups: Map<Cli, Event[]>,
   const lines = createInterface({ input: stream, crlfDelay: Infinity });
   const isAudit = source.cli === 'claude' || source.cli === 'codex';
   const seenChildren = new Set<string>();
-  let pending: { event: Event; step: number } | undefined;
+  let pending: {
+    event: Event; minStep: number; maxStep: number;
+    method: 'criacao_adjacente' | 'criacao_no_turno';
+  } | undefined;
   try {
     for await (const raw of lines) {
-      const previous = pending;
-      pending = undefined;
       counts.lidas++;
       const line = raw.trim();
       if (!line) { counts.vazias++; continue; }
       let row: unknown;
       try { row = JSON.parse(line); } catch { counts.invalidas++; continue; }
       if (!record(row)) { counts.invalidas++; continue; }
+      if (pending && (Array.isArray(row.tool_calls) ||
+          (typeof row.step_index === 'number' && row.step_index > pending.maxStep))) {
+        pending = undefined;
+      }
       if (!isAudit) {
         const child = createdChild(row);
         if (child && !seenChildren.has(child)) {
           seenChildren.add(child);
-          if (previous && row.step_index === previous.step + 1 && child !== source.session) {
-            previous.event.sessao_filha = child;
-            previous.event.correlacao_filha = 'confirmada';
-            previous.event.evidencia_filha = { metodo: 'criacao_adjacente', fonte: id, linha: counts.lidas };
+          if (pending && typeof row.step_index === 'number' &&
+              row.step_index >= pending.minStep && row.step_index <= pending.maxStep &&
+              child !== source.session) {
+            pending.event.sessao_filha = child;
+            pending.event.correlacao_filha = 'confirmada';
+            pending.event.evidencia_filha = { metodo: pending.method, fonte: id, linha: counts.lidas };
+            pending = undefined;
           }
         }
       }
@@ -199,8 +210,14 @@ async function extract(source: Source, id: number, groups: Map<Cli, Event[]>,
         ? [readAudit(source.cli, row, time, origem, known)]
         : readInvocations(source, row, time, origem, known);
       if (events.length === 1 && events[0].correlacao_filha === 'sem_evidencia' &&
+          Array.isArray(row.tool_calls) &&
           typeof row.step_index === 'number' && Number.isSafeInteger(row.step_index)) {
-        pending = { event: events[0], step: row.step_index };
+        pending = {
+          event: events[0],
+          minStep: row.step_index + 1,
+          maxStep: row.step_index + row.tool_calls.length,
+          method: row.tool_calls.length === 1 ? 'criacao_adjacente' : 'criacao_no_turno',
+        };
       }
       if (!events.length) { counts.sem_evento++; continue; }
       counts.com_evento++;
@@ -223,7 +240,7 @@ function countBy(values: (string | null)[]) {
   return Object.fromEntries(counts);
 }
 
-function summarize(cli: Cli, events: Event[]) {
+function summarizeBlockCorrelation(cli: Cli, events: Event[]) {
   const calls = events.filter(event => event.tipo === 'chamada');
   const blocks = events.filter(event => event.tipo === 'bloqueio');
   const key = (event: Event) => event.sessao && event.agente_id && event.chamada_id
@@ -235,6 +252,18 @@ function summarize(cli: Cli, events: Event[]) {
   const withoutBlockId = blocks.filter(event => !key(event)).length;
   const canComputeRate = cli === 'claude' && callIds.size > 0 &&
     !withoutCallId && !withoutBlockId && !orphans;
+  return {
+    chamadas_distintas_identificadas: callIds.size,
+    bloqueios_distintos_identificados: blockIds.size,
+    bloqueios_identificados_sem_chamada_na_janela: orphans,
+    chamadas_sem_chave: withoutCallId,
+    bloqueios_sem_chave: withoutBlockId,
+    denominador_taxa: canComputeRate ? callIds.size : null,
+    taxa: canComputeRate ? blockIds.size / callIds.size : null,
+  };
+}
+
+function summarize(cli: Cli, events: Event[]) {
   return {
     eventos: events.length,
     por_tipo: countBy(events.map(event => event.tipo)),
@@ -251,14 +280,12 @@ function summarize(cli: Cli, events: Event[]) {
       correlacao_sessoes_filhas: countBy(events.map(event => event.correlacao_filha ?? null)),
     } : {}),
     ...(cli === 'claude' ? { decisoes_plugin: summarizePluginDecisions(events) } : {}),
-    correlacao_bloqueios: cli === 'claude' || cli === 'codex' ? {
-      chamadas_distintas_identificadas: callIds.size,
-      bloqueios_distintos_identificados: blockIds.size,
-      bloqueios_identificados_sem_chamada_na_janela: orphans,
-      chamadas_sem_chave: withoutCallId,
-      bloqueios_sem_chave: withoutBlockId,
-      denominador_taxa: canComputeRate ? callIds.size : null,
-      taxa: canComputeRate ? blockIds.size / callIds.size : null,
+    correlacao_bloqueios: cli === 'claude' || cli === 'codex'
+      ? summarizeBlockCorrelation(cli, events)
+      : null,
+    correlacao_por_coorte: cli === 'claude' || cli === 'codex' ? {
+      com_produtor: summarizeBlockCorrelation(cli, events.filter(event => event.produtor && !event.tentativa)),
+      legado: summarizeBlockCorrelation(cli, events.filter(event => !event.produtor)),
     } : null,
   };
 }

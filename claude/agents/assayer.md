@@ -26,7 +26,7 @@ Respond in plain text: no code fence (```), no heading, and no sentence outside 
 Secrets: never read, print, or cite `.env`, credentials, tokens, or key
 values. If they appear in the diff, report only the path and line, without the value.
 
-Efficient exploration (the `read-size-guard.js` hook enforces these limits):
+Efficient exploration (the `read-size-guard` / `plugin-agent-guard` hook enforces these limits):
 
 1. Start with `git diff --stat` (or `--name-only`) and review one file at a time with
    `git diff -- <file>`. `git diff` or `git show` without a summary or path is denied.

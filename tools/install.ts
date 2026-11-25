@@ -168,23 +168,11 @@ function parseArgs(args: string[]): InstallOptions {
   return options;
 }
 
-function mergeClaudeSettings(existing: any, incoming: any, enableStatusline: boolean, homePosix: string): any {
-  const result = { ...(existing || {}) };
-
-  // Permissions merge
-  result.permissions = { ...(result.permissions || {}) };
-  const incomingPerms = incoming?.permissions || {};
-  for (const type of ['allow', 'deny', 'ask']) {
-    const existingList = Array.isArray(result.permissions[type]) ? result.permissions[type] : [];
-    const incomingList = Array.isArray(incomingPerms[type]) ? incomingPerms[type] : [];
-    result.permissions[type] = Array.from(new Set([...existingList, ...incomingList]));
-  }
-
-  // Hooks merge
-  result.hooks = { ...(result.hooks || {}) };
-  const incomingHooks = incoming?.hooks || {};
+function mergeHookEvents(existingHooksInput: any, incomingHooksInput: any): Record<string, any[]> {
+  const merged: Record<string, any[]> = { ...(existingHooksInput || {}) };
+  const incomingHooks = incomingHooksInput || {};
   for (const event of Object.keys(incomingHooks)) {
-    const existingEventHooks = Array.isArray(result.hooks[event]) ? [...result.hooks[event]] : [];
+    const existingEventHooks = Array.isArray(merged[event]) ? [...merged[event]] : [];
     const incomingEventHooks = Array.isArray(incomingHooks[event]) ? incomingHooks[event] : [];
 
     for (const inHookItem of incomingEventHooks) {
@@ -207,8 +195,76 @@ function mergeClaudeSettings(existing: any, incoming: any, enableStatusline: boo
         };
       }
     }
-    result.hooks[event] = existingEventHooks;
+    merged[event] = existingEventHooks;
   }
+  return merged;
+}
+
+const LEGACY_OATHBOUND_JS_HOOK_RE = /(?:^|\s|["'])[^\s"']*[\\/](agent-audit|readonly-guard|read-size-guard|destructive-guard)\.js(?:["']|\s|$)/i;
+
+function migrateLegacyOathboundHooks(
+  config: any,
+  replacements: Record<string, string | null>
+): { changed: boolean; config: any } {
+  if (!config || typeof config !== 'object' || !config.hooks || typeof config.hooks !== 'object') {
+    return { changed: false, config };
+  }
+  let changed = false;
+  const nextHooks: Record<string, any> = { ...config.hooks };
+  for (const [event, groups] of Object.entries(nextHooks)) {
+    if (!Array.isArray(groups)) continue;
+    const updatedGroups: any[] = [];
+    for (const entry of groups) {
+      if (!entry || !Array.isArray(entry.hooks)) {
+        updatedGroups.push(entry);
+        continue;
+      }
+      const nextSubHooks: any[] = [];
+      const seenCommands = new Set<string>();
+      for (const hook of entry.hooks) {
+        const cmd = hook?.command;
+        const match = typeof cmd === 'string' ? LEGACY_OATHBOUND_JS_HOOK_RE.exec(cmd) : null;
+        if (!match) {
+          if (typeof cmd !== 'string' || !seenCommands.has(cmd)) {
+            if (typeof cmd === 'string') seenCommands.add(cmd);
+            nextSubHooks.push(hook);
+          } else {
+            changed = true;
+          }
+          continue;
+        }
+        changed = true;
+        const legacyName = match[1].toLowerCase();
+        const replacement = Object.hasOwn(replacements, legacyName) ? replacements[legacyName] : null;
+        if (replacement && !seenCommands.has(replacement)) {
+          seenCommands.add(replacement);
+          nextSubHooks.push({ ...hook, command: replacement });
+        }
+      }
+      if (nextSubHooks.length > 0 || entry.hooks.length === 0) {
+        updatedGroups.push({ ...entry, hooks: nextSubHooks });
+      }
+    }
+    nextHooks[event] = updatedGroups;
+  }
+  if (!changed) return { changed: false, config };
+  return { changed: true, config: { ...config, hooks: nextHooks } };
+}
+
+function mergeClaudeSettings(existing: any, incoming: any, enableStatusline: boolean, homePosix: string): any {
+  const result = { ...(existing || {}) };
+
+  // Permissions merge
+  result.permissions = { ...(result.permissions || {}) };
+  const incomingPerms = incoming?.permissions || {};
+  for (const type of ['allow', 'deny', 'ask']) {
+    const existingList = Array.isArray(result.permissions[type]) ? result.permissions[type] : [];
+    const incomingList = Array.isArray(incomingPerms[type]) ? incomingPerms[type] : [];
+    result.permissions[type] = Array.from(new Set([...existingList, ...incomingList]));
+  }
+
+  // Hooks merge
+  result.hooks = mergeHookEvents(result.hooks, incoming?.hooks);
 
   // skillOverrides merge
   result.skillOverrides = {
@@ -517,6 +573,42 @@ function install(options: InstallOptions) {
       plannedFiles.set('.codex/oathkeeper.config.toml', {
         content: fs.readFileSync(path.join(sourceRoot, 'codex', 'oathkeeper.config.toml'))
       });
+      const nativeHookSrc = findNativeHookBinary(sourceRoot);
+      const nativeBinName = nativeHookBinName();
+      plannedFiles.set(`.codex/hooks/${nativeBinName}`, { content: fs.readFileSync(nativeHookSrc) });
+
+      const codexHooksTemplatePath = path.join(sourceRoot, 'codex', 'hooks.json');
+      if (fs.existsSync(codexHooksTemplatePath)) {
+        const codexHookBin = `"${claudeHookPath}/.codex/hooks/${nativeBinName}"`;
+        const templateHooks = JSON.parse(fs.readFileSync(codexHooksTemplatePath, 'utf8'));
+        for (const groups of Object.values(templateHooks.hooks || {}) as any[]) {
+          if (!Array.isArray(groups)) continue;
+          for (const entry of groups) {
+            if (!Array.isArray(entry?.hooks)) continue;
+            for (const hook of entry.hooks) {
+              if (typeof hook?.command === 'string' && hook.command.startsWith('oathbound-hook ')) {
+                hook.command = `${codexHookBin} ${hook.command.slice('oathbound-hook '.length)}`;
+              }
+            }
+          }
+        }
+        const destCodexHooksPath = path.join(targetRoot, '.codex', 'hooks.json');
+        const existingCodexHooks = readExistingJson(destCodexHooksPath, {});
+        const migrated = migrateLegacyOathboundHooks(existingCodexHooks, {
+          'agent-audit': null,
+          'readonly-guard': null,
+          'read-size-guard': null,
+          'destructive-guard': `${codexHookBin} destructive-guard`
+        });
+        const mergedCodexHooks = {
+          ...migrated.config,
+          hooks: mergeHookEvents(migrated.config?.hooks, templateHooks.hooks)
+        };
+        plannedFiles.set('.codex/hooks.json', {
+          content: JSON.stringify(mergedCodexHooks, null, 2) + '\n',
+          isMerge: true
+        });
+      }
     }
     const agentsDir = path.join(sourceRoot, 'codex', 'agents');
     for (const file of fs.readdirSync(agentsDir).filter(file => file.endsWith('.toml'))) {
@@ -560,6 +652,31 @@ function install(options: InstallOptions) {
           const skillDir = path.join(baseDir, skill);
           for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'claude')) {
             plannedFiles.set(`.claude/skills/${skill}/${rel}`, { content: fs.readFileSync(full) });
+          }
+        }
+      }
+    }
+    if (isGlobal && options.upgrade) {
+      const destSettingsPath = path.join(targetRoot, '.claude', 'settings.json');
+      if (fs.existsSync(destSettingsPath)) {
+        const raw = fs.readFileSync(destSettingsPath, 'utf8').trim();
+        let existingSettings: any = null;
+        if (raw.startsWith('{')) {
+          try { existingSettings = JSON.parse(raw); } catch (_) { existingSettings = null; }
+        }
+        if (existingSettings) {
+          const hookCmd = `"${claudeHookPath}/${hookDir}/${nativeBinName}"`;
+          const migrated = migrateLegacyOathboundHooks(existingSettings, {
+            'agent-audit': `${hookCmd} agent-audit`,
+            'readonly-guard': `${hookCmd} readonly-guard`,
+            'read-size-guard': `${hookCmd} read-size-guard`,
+            'destructive-guard': `${hookCmd} destructive-guard`
+          });
+          if (migrated.changed) {
+            plannedFiles.set('.claude/settings.json', {
+              content: JSON.stringify(migrated.config, null, 2) + '\n',
+              isMerge: true
+            });
           }
         }
       }
@@ -723,6 +840,9 @@ if (require.main === module) {
     const result = install(options);
     console.log(`Oathbound successfully installed in: ${result.targetRoot}`);
     console.log(`Manifest generated at: ${result.manifestPath}`);
+    if (options.global && options.runner === 'codex') {
+      console.log('Codex hooks updated in .codex/hooks.json. Run /hooks in Codex CLI to trust them.');
+    }
   } catch (err: any) {
     console.error(`Installation error: ${err.message}`);
     process.exit(1);

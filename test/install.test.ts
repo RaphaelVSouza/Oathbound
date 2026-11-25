@@ -449,3 +449,59 @@ test('--global skips loose agents and skills when plugin exists or --hooks-only 
   assert.equal(fs.existsSync(path.join(root2, '.claude', 'skills')), false);
   assert.equal(res2.manifest.files.length, 1);
 });
+
+test('--global --upgrade migrates legacy Oathbound JS hooks in Claude and Codex while preserving other hooks', t => {
+  const root = fixtureDir('oathbound-migrate-hooks-');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const binName = process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook';
+  const rootPosix = root.split(path.sep).join('/');
+
+  // Claude legacy settings.json
+  const claudeSettingsPath = path.join(root, '.claude', 'settings.json');
+  fs.mkdirSync(path.dirname(claudeSettingsPath), { recursive: true });
+  fs.writeFileSync(claudeSettingsPath, JSON.stringify({
+    hooks: {
+      PreToolUse: [
+        { matcher: 'Bash|PowerShell', hooks: [{ type: 'command', command: 'rtk hook claude' }] },
+        { matcher: '*', hooks: [
+          { type: 'command', command: `node ${rootPosix}/.claude/hooks/agent-audit.js`, timeout: 5 },
+          { type: 'command', command: 'custom-user-hook' }
+        ] }
+      ]
+    }
+  }, null, 2));
+
+  install({ root, global: true, runner: 'claude', upgrade: true, hooksOnly: true });
+  const migratedClaude = JSON.parse(fs.readFileSync(claudeSettingsPath, 'utf8'));
+  assert.deepEqual(
+    migratedClaude.hooks.PreToolUse.flatMap((g: any) => g.hooks.map((h: any) => h.command)),
+    ['rtk hook claude', `"${rootPosix}/.oathbound/claude-hooks/${binName}" agent-audit`, 'custom-user-hook']
+  );
+
+  // Codex legacy hooks.json
+  const codexHooksPath = path.join(root, '.codex', 'hooks.json');
+  fs.mkdirSync(path.dirname(codexHooksPath), { recursive: true });
+  fs.writeFileSync(codexHooksPath, JSON.stringify({
+    hooks: {
+      PreToolUse: [
+        { matcher: '*', hooks: [
+          { type: 'command', command: `node ${rootPosix}/.codex/hooks/agent-audit.js`, timeout: 5 },
+          { type: 'command', command: `node ${rootPosix}/.codex/hooks/readonly-guard.js`, timeout: 5 },
+          { type: 'command', command: 'custom-codex-hook' }
+        ] },
+        { matcher: 'Bash', hooks: [{ type: 'command', command: 'rtk hook codex' }] }
+      ]
+    }
+  }, null, 2));
+
+  install({ root, global: true, runner: 'codex', upgrade: true });
+  assert.equal(fs.existsSync(path.join(root, '.codex', 'hooks', binName)), true);
+  const migratedCodex = JSON.parse(fs.readFileSync(codexHooksPath, 'utf8'));
+  const codexBin = `"${rootPosix}/.codex/hooks/${binName}"`;
+  assert.equal(migratedCodex.hooks.SubagentStart[0].hooks[0].command, `${codexBin} codex-agent-audit`);
+  assert.equal(migratedCodex.hooks.SubagentStop[0].hooks[0].command, `${codexBin} codex-agent-audit`);
+  assert.deepEqual(
+    migratedCodex.hooks.PreToolUse.flatMap((g: any) => g.hooks.map((h: any) => h.command)),
+    ['custom-codex-hook', 'rtk hook codex', `${codexBin} destructive-guard`]
+  );
+});

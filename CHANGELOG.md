@@ -4,6 +4,12 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.55] - 2026-11-24
+
+- `tools/install.ts`: `--global --upgrade` now migrates legacy Oathbound `.js` hook entries (`agent-audit.js`, `readonly-guard.js`, `read-size-guard.js`, `destructive-guard.js`) in `~/.claude/settings.json` and `~/.codex/hooks.json` to the native `oathbound-hook` binary while preserving `rtk hook` and custom hooks. `--global --runner codex` now copies `oathbound-hook` to `~/.codex/hooks/` and merges `~/.codex/hooks.json` (`SubagentStart`/`SubagentStop` + `destructive-guard`). Covered by `test/install.test.ts`.
+- `tools/extract-audit.ts`: links single-`invoke_subagent` mixed tool batches (`criacao_no_turno`) in Antigravity transcripts and adds `correlacao_por_coorte` (`com_produtor` vs `legado`) for Claude and Codex so historical unkeyed rows do not mask keyed block rates. Covered by `test/extract-audit.test.ts`.
+- Clarifies `Read` (`offset` and `limit <= 150`) and `git diff`/`git show` (`--stat`/`--name-only` or `-- <file>`) guardrails in `claude/agents/scout.md` and `claude/agents/sentinel.md`, and updates the stale `read-size-guard.js` hook name in `claude/agents/assayer.md`.
+
 ## [0.50.0-alpha.54] - 2026-11-24
 
 - The `oathkeeper` profiles (Claude, agy, Codex) no longer ask again for an action the user already named. A request that names the action, or states a goal that needs it ("release", "tag it", "push"), is the confirmation; the profile asks once, in one batch, only for unrequested actions, and still confirms irreversible actions beyond the goal. `AGENTS.md` carries the same exception.
