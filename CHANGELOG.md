@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
+
 ## [0.50.0-alpha.54] - 2026-11-24
 
 - The `oathkeeper` profiles (Claude, agy, Codex) no longer ask again for an action the user already named. A request that names the action, or states a goal that needs it ("release", "tag it", "push"), is the confirmation; the profile asks once, in one batch, only for unrequested actions, and still confirms irreversible actions beyond the goal. `AGENTS.md` carries the same exception.
