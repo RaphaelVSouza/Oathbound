@@ -90,6 +90,7 @@ interface InstallOptions {
   auditDocs?: boolean;
   dedupeSkills?: boolean;
   hooksOnly?: boolean;
+  prune?: boolean;
   root?: string;
   homeDir?: string;
   sourceRoot?: string;
@@ -103,6 +104,7 @@ function parseArgs(args: string[]): InstallOptions {
     auditDocs: false,
     dedupeSkills: true,
     hooksOnly: false,
+    prune: false,
     global: false
   };
 
@@ -142,8 +144,10 @@ function parseArgs(args: string[]): InstallOptions {
       options.dedupeSkills = false;
     } else if (arg === '--hooks-only') {
       options.hooksOnly = true;
+    } else if (arg === '--prune') {
+      options.prune = true;
     } else if (arg === '--help' || arg === '-h') {
-      console.log('Usage: node tools/install.ts [--project <dir> | --global] [--runner <all|claude|agy|codex>] [--upgrade] [--statusline] [--audit-docs] [--no-dedupe-skills] [--hooks-only]');
+      console.log('Usage: node tools/install.ts [--project <dir> | --global] [--runner <all|claude|agy|codex>] [--upgrade] [--statusline] [--audit-docs] [--no-dedupe-skills] [--hooks-only] [--prune]');
       process.exit(0);
     } else {
       throw new Error(`Unknown or incomplete option: ${arg}`);
@@ -159,6 +163,9 @@ function parseArgs(args: string[]): InstallOptions {
   }
   if (options.global && options.statusline) {
     throw new Error('--statusline is only available for project installations.');
+  }
+  if (!options.global && options.prune) {
+    throw new Error('--prune is only available for global installations.');
   }
 
   if (!projectSpecified && !options.global) {
@@ -826,11 +833,25 @@ function install(options: InstallOptions) {
   fs.mkdirSync(path.dirname(manifestFullPath), { recursive: true });
   fs.writeFileSync(manifestFullPath, JSON.stringify(manifestData, null, 2) + '\n');
 
+  let pruneResult: { removed: string[]; kept: string[]; skipped: string[] } | undefined;
+  if (isGlobal) {
+    const { pruneOldVersions } = require('./prune-old-versions.cjs');
+    if (options.prune) {
+      pruneResult = pruneOldVersions({ keep: manifestData.version, home: targetRoot, apply: true });
+    } else if (options.upgrade) {
+      const pendingPrune = pruneOldVersions({ keep: manifestData.version, home: targetRoot, apply: false });
+      if (pendingPrune.removed.length > 0) {
+        console.log(`Old versions eligible for pruning (${pendingPrune.removed.length}): run \`node tools/prune-old-versions.cjs --apply\` or pass \`--prune\`.`);
+      }
+    }
+  }
+
   return {
     targetRoot,
     manifestPath: manifestFullPath,
     manifest: manifestData,
-    installedFiles
+    installedFiles,
+    ...(pruneResult ? { prune: pruneResult } : {})
   };
 }
 
@@ -842,6 +863,10 @@ if (require.main === module) {
     console.log(`Manifest generated at: ${result.manifestPath}`);
     if (options.global && options.runner === 'codex') {
       console.log('Codex hooks updated in .codex/hooks.json. Run /hooks in Codex CLI to trust them.');
+    }
+    if (result.prune) {
+      console.log(`Pruned ${result.prune.removed.length} old version(s).`);
+      for (const item of result.prune.removed) console.log(`  ${item}`);
     }
   } catch (err: any) {
     console.error(`Installation error: ${err.message}`);

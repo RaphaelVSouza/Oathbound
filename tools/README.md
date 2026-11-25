@@ -72,10 +72,22 @@ Supported options:
 - `--statusline`: Configures the status bar.
 - `--audit-docs`: Installs documentation audit configuration.
 - `--no-dedupe-skills`: Disables automatic skill deduplication.
+- `--prune`: With `--global`, removes older version directories under `~/.oathbound/` and CLI plugin caches via `prune-old-versions.cjs --apply`. Without `--prune`, `--global --upgrade` prints a hint when removable versions exist.
 
 The installer validates SHA-256 manifests and disables duplicate skills without symlinks.
 The global installer preserves existing instructions, configuration, non-Oathbound hooks and skills; on `--upgrade` it migrates legacy Oathbound `.js` hook commands in `~/.claude/settings.json` and `~/.codex/hooks.json` to the native `oathbound-hook` binary. Use `--statusline` for local Claude installation.
 When installing hooks, the installer requires the native `oathbound-hook` binary (resolved through `OATHBOUND_NATIVE_BIN`, `native/bin/oathbound-hook-<platform>-<arch>[.exe]` or a local build in `native/oathbound-hook/target/release/`), copies it to the destination and points hooks directly to it. Project/manual Codex hook configuration remains manual.
+
+## Global Upgrade (`upgrade-global.ts`)
+
+Builds plugin packages into `~/.oathbound/marketplaces/oathbound-<version>/`, reinstalls plugins for installed CLIs (`claude`, `agy`, `codex`), runs `install.ts --global --upgrade` for those runners, and prunes older versions at the end:
+
+```sh
+node tools/upgrade-global.ts
+node tools/upgrade-global.ts --runner codex --build-hook
+```
+
+Options: `--runner <all|claude|agy|codex>` (`all` includes all three CLIs; missing CLIs are skipped), `--build-hook` (runs `cargo build --locked --release` first), `--no-prune`, and `--home <dir>`. Run `/hooks` in Codex CLI afterwards to trust updated `~/.codex/hooks.json`.
 
 ## Hook Benchmark (`bench-hooks.cjs`)
 

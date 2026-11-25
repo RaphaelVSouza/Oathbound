@@ -106,6 +106,7 @@ node tools/install.ts [options]
 - `--statusline`: Configures Claude's status bar in project installations.
 - `--audit-docs`: Installs documentation audit configuration (projects only).
 - `--no-dedupe-skills`: Disables automatic skill deduplication.
+- `--prune`: With `--global`, runs `prune-old-versions.cjs --apply` after installing.
 
 The installer validates SHA-256 manifests (`.oathbound/manifest.json`), preserves local changes and disables duplicate skills without symlinks (through markers and mapping in `_disabled` / `skills.json`).
 
@@ -128,13 +129,19 @@ Antigravity named models require invocation support; `agy models` only confirms
 session availability. Unsupported settings retain permitted defaults or become
 pending work. This policy does not guarantee model compliance or cost savings.
 
-### 4. Updating Global Installations to 0.50.0-alpha.54
+### 4. Updating Global Installations
 
-From the updated repository root, run:
+From the updated repository root, run the all-in-one updater (builds plugins, reinstalls CLI plugins, upgrades global configs/hooks, and prunes old versions):
+
+```sh
+node tools/upgrade-global.ts --build-hook
+```
+
+Or upgrade configs/hooks directly with `install.ts`:
 
 ```sh
 node tools/install.ts --global --runner all --upgrade
-node tools/install.ts --global --runner codex --upgrade
+node tools/install.ts --global --runner codex --upgrade --prune
 ```
 
 Open a new session to load the new names:

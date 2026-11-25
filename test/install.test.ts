@@ -505,3 +505,41 @@ test('--global --upgrade migrates legacy Oathbound JS hooks in Claude and Codex 
     ['custom-codex-hook', 'rtk hook codex', `${codexBin} destructive-guard`]
   );
 });
+
+test('--prune requires --global and removes old versions only when --prune is passed', t => {
+  assert.throws(
+    () => parseArgs(['--project', '.', '--prune']),
+    /--prune is only available for global installations/
+  );
+
+  const root = fixtureDir('oathbound-install-prune-');
+  const sourceRoot = fixtureDir('oathbound-install-prune-src-');
+  t.after(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(sourceRoot, { recursive: true, force: true });
+  });
+
+  fs.writeFileSync(path.join(sourceRoot, 'VERSION'), '0.50.0-alpha.56\n');
+  const ext = process.platform === 'win32' ? '.exe' : '';
+  const binName = `oathbound-hook-${process.platform}-${process.arch}${ext}`;
+  const hookBin = path.join(sourceRoot, 'native', 'bin', binName);
+  fs.mkdirSync(path.dirname(hookBin), { recursive: true });
+  fs.writeFileSync(hookBin, 'stub');
+
+  const cacheDir = path.join(root, '.claude', 'plugins', 'cache', 'oathbound', 'oathbound');
+  const oldCache = path.join(cacheDir, '0.50.0-alpha.55');
+  const newCache = path.join(cacheDir, '0.50.0-alpha.56');
+  fs.mkdirSync(oldCache, { recursive: true });
+  fs.mkdirSync(newCache, { recursive: true });
+
+  // Without --prune, old version remains untouched.
+  const withoutPrune = install({ root, global: true, runner: 'claude', upgrade: true, hooksOnly: true, sourceRoot });
+  assert.equal((withoutPrune as any).prune, undefined);
+  assert.equal(fs.existsSync(oldCache), true);
+
+  // With --prune, old version is removed while kept version stays.
+  const withPrune = install({ root, global: true, runner: 'claude', upgrade: true, hooksOnly: true, prune: true, sourceRoot });
+  assert.equal((withPrune as any).prune.removed.length, 1);
+  assert.equal(fs.existsSync(oldCache), false);
+  assert.equal(fs.existsSync(newCache), true);
+});

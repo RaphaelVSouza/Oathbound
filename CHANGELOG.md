@@ -4,6 +4,12 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.56] - 2026-11-24
+
+- `tools/install.ts`: adds `--prune` (with `--global`) to invoke `prune-old-versions.cjs --apply` right after writing the global manifest; without `--prune`, `--global --upgrade` logs a dry-run hint when removable older versions exist. Covered by `test/install.test.ts`.
+- Adds `tools/upgrade-global.ts` to automate building plugin packages into `~/.oathbound/marketplaces/oathbound-<version>/`, reinstalling plugins across installed CLIs (`claude`, `agy`, `codex`), running `install.ts --global --upgrade`, and pruning older versions (`--no-prune` to skip, `--build-hook` to compile the Rust hook binary first). Covered by `test/upgrade-global.test.ts`.
+- `docs/adr/0005-plugin-codex.md` and `README.md`: adds Codex CLI `>= 0.134.0` minimum version note for standalone profiles and clarifies why custom agents, profiles, and the native hook binary live outside the Codex plugin package.
+
 ## [0.50.0-alpha.55] - 2026-11-24
 
 - `tools/install.ts`: `--global --upgrade` now migrates legacy Oathbound `.js` hook entries (`agent-audit.js`, `readonly-guard.js`, `read-size-guard.js`, `destructive-guard.js`) in `~/.claude/settings.json` and `~/.codex/hooks.json` to the native `oathbound-hook` binary while preserving `rtk hook` and custom hooks. `--global --runner codex` now copies `oathbound-hook` to `~/.codex/hooks/` and merges `~/.codex/hooks.json` (`SubagentStart`/`SubagentStop` + `destructive-guard`). Covered by `test/install.test.ts`.
