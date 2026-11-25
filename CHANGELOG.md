@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- ADR-0019: the `nerd` icon set code points are now checked against Font Awesome 4.7 and Nerd Fonts `glyphnames.json`; the brand glyph was seen rendering in a Meslo Nerd Font. No code change.
+
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
 ## [0.50.0-alpha.68] - 2026-11-25

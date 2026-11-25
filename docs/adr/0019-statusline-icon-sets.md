@@ -32,8 +32,8 @@ The hook cannot detect installed fonts, so the choice is explicit user configura
 - Default output is unchanged.
 - `nerd` and `oathbound` show empty boxes without the matching font; the fix is `unicode` or `ascii`.
 - Width accounting already budgets two cells per non-ASCII character, so PUA glyphs are covered conservatively.
-- Nerd Font code points were taken from memory of Font Awesome 4 mappings and were not checked against an installed font.
+- The Nerd Font code points match Font Awesome 4.7 names (`U+F0E3` gavel, `U+F02D` book, `U+F040` pencil, `U+F0E7` bolt, `U+F24E` balance-scale, `U+F132` shield, `U+F14E` compass, `U+F219` diamond), checked against the Font Awesome 4.7.0 `_variables.scss` and the Nerd Fonts `glyphnames.json`. The brand glyph `U+F219` was seen rendering as a diamond in a Meslo Nerd Font; the role glyphs were not visually checked.
 
 ### Confirmation
 
-Unit test `icon_sets_select_glyphs_and_default_to_unicode`. Visual check in a terminal with each font is pending.
+Unit test `icon_sets_select_glyphs_and_default_to_unicode`. Visual check: `nerd` brand glyph confirmed in a Meslo Nerd Font; the role glyphs and the `oathbound` set are pending.
