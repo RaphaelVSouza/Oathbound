@@ -13,6 +13,7 @@ Governance package for coding agents: subagents, hooks and skills, shipped as Cl
 ## Conventions
 - Keep this repository independent of consumer project rules, hosts, paths, and secrets.
 - Put shared workflows in skills, agents, and hooks; configure exceptions in the installing project's `AGENTS.md`.
+- Project skills live canonically in `.agents/skills/` and are mirrored in `.claude/skills/` for Claude Code; never edit the mirror by hand.
 - Zero npm dependencies: native Node APIs only.
 - Conventional Commits (`feat(hooks): ...`).
 - When changing behavior, update `VERSION`, `CHANGELOG.md`, and the corresponding reference in the same delivery. `VERSION` and the three plugin manifests must match; use `bump-version.cjs`.

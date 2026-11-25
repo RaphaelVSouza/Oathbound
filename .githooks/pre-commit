@@ -4,3 +4,4 @@ set -e
 node --test test/build-plugin.test.cjs
 node tools/audit-docs.ts --staged
 node --test test/repo-eol.test.cjs
+diff -r .agents/skills/appsec-reference .claude/skills/appsec-reference
