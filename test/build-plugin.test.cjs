@@ -59,6 +59,71 @@ test('names the packaged native binary from the source binary extension, not the
   }
 });
 
+function withNativeBin(t, value) {
+  const saved = process.env.OATHBOUND_NATIVE_BIN;
+  t.after(() => { if (saved === undefined) delete process.env.OATHBOUND_NATIVE_BIN; else process.env.OATHBOUND_NATIVE_BIN = saved; });
+  process.env.OATHBOUND_NATIVE_BIN = value;
+}
+
+test('rejects unsupported runners, including prototype keys, with the usage error and creates nothing', t => {
+  const tmp = fixtureDir('plugin-runner-');
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  for (const runner of ['constructor', 'toString', '__proto__', 'hasOwnProperty', 'unknown']) {
+    const dest = path.join(tmp, runner.replace(/\W/g, '_'));
+    assert.throws(() => buildPlugin(runner, dest), /Usage:/, runner);
+    assert.equal(fs.existsSync(dest), false, runner);
+  }
+  assert.deepEqual(fs.readdirSync(tmp), []);
+});
+
+test('claude resolves the native binary before creating the destination', t => {
+  const tmp = fixtureDir('plugin-preflight-');
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  // Isolated copy of the builder: its source root has no native/ fallback, so the lookup is deterministic.
+  const fakeRoot = path.join(tmp, 'root');
+  fs.mkdirSync(path.join(fakeRoot, 'tools'), { recursive: true });
+  for (const file of ['build-plugin.cjs', 'skill-selection.cjs']) {
+    fs.copyFileSync(path.join(ROOT, 'tools', file), path.join(fakeRoot, 'tools', file));
+  }
+  withNativeBin(t, path.join(tmp, 'missing-bin'));
+  const isolated = require(path.join(fakeRoot, 'tools', 'build-plugin.cjs'));
+
+  const fresh = path.join(fakeRoot, 'fresh');
+  assert.throws(() => isolated.buildPlugin('claude', fresh), /Native hook binary not found/);
+  assert.equal(fs.existsSync(fresh), false);
+
+  const existing = path.join(fakeRoot, 'existing');
+  fs.mkdirSync(existing);
+  fs.writeFileSync(path.join(existing, 'keep.txt'), 'keep');
+  assert.throws(() => isolated.buildPlugin('claude', existing), /Native hook binary not found/);
+  assert.deepEqual(fs.readdirSync(existing), ['keep.txt']);
+  assert.equal(fs.readFileSync(path.join(existing, 'keep.txt'), 'utf8'), 'keep');
+});
+
+test('claude build with a valid binary refuses an existing destination and preserves its contents', t => {
+  const tmp = fixtureDir('plugin-exists-');
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const fake = path.join(tmp, 'fake-hook');
+  fs.writeFileSync(fake, 'fake');
+  withNativeBin(t, fake);
+  const existing = path.join(tmp, 'existing');
+  fs.mkdirSync(existing);
+  fs.writeFileSync(path.join(existing, 'keep.txt'), 'keep');
+  assert.throws(() => buildPlugin('claude', existing), /EEXIST/);
+  assert.deepEqual(fs.readdirSync(existing), ['keep.txt']);
+  assert.equal(fs.readFileSync(path.join(existing, 'keep.txt'), 'utf8'), 'keep');
+});
+
+test('packages the claude native binary with mode 0o755', { skip: process.platform === 'win32' && 'POSIX file modes are not observable on Windows' }, t => {
+  const tmp = fixtureDir('plugin-mode-');
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const fake = path.join(tmp, 'fake-hook');
+  fs.writeFileSync(fake, 'fake', { mode: 0o600 });
+  withNativeBin(t, fake);
+  const out = buildPlugin('claude', path.join(tmp, 'out'));
+  assert.equal(fs.statSync(path.join(out, 'native', 'bin', 'oathbound-hook')).mode & 0o777, 0o755);
+});
+
 test('agy and codex builds succeed without a native binary and omit native/bin', t => {
   const tmp = fixtureDir('plugin-agy-codex-');
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));

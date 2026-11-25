@@ -64,8 +64,77 @@ function findNativeHookBinary(sourceRoot = source) {
   );
 }
 
+function createPackageContext(out) {
+  const version = fs.readFileSync(path.join(source, 'VERSION'), 'utf8').trim();
+  const readJson = (relPath) => JSON.parse(fs.readFileSync(path.join(source, relPath), 'utf8'));
+  return {
+    out,
+    copy: (from, to) => fs.cpSync(path.join(source, from), path.join(out, to), { recursive: true, errorOnExist: true, force: false }),
+    write: (file, value) => {
+      const full = path.join(out, file);
+      fs.mkdirSync(path.dirname(full), { recursive: true });
+      fs.writeFileSync(full, JSON.stringify(value, null, 2) + '\n', { flag: 'wx' });
+    },
+    readJson,
+    loadManifest: (relPath) => {
+      const manifest = readJson(relPath);
+      manifest.version = version;
+      delete manifest.agents;
+      delete manifest.skills;
+      return manifest;
+    },
+  };
+}
+
+function writeClaudePackage(ctx, nativeBin) {
+  const { out, copy, write, readJson, loadManifest } = ctx;
+  copySkillsForRunner('claude', path.join(out, 'skills'));
+  write('.claude-plugin/plugin.json', loadManifest('.claude-plugin/plugin.json'));
+  write('.claude-plugin/marketplace.json', readJson('.claude-plugin/marketplace.json'));
+  copy('claude/agents', 'agents');
+  copy('assets/logo.svg', 'assets/logo.svg');
+  copy('workflows', 'workflows');
+  copy('claude/hooks', 'claude/hooks');
+  copy('hooks', 'hooks');
+  // Name from the source binary, not the build host, so cross-built targets keep the right suffix.
+  const nativeDest = path.join(out, 'native', 'bin', path.extname(nativeBin).toLowerCase() === '.exe' ? 'oathbound-hook.exe' : 'oathbound-hook');
+  fs.mkdirSync(path.dirname(nativeDest), { recursive: true });
+  fs.copyFileSync(nativeBin, nativeDest);
+  fs.chmodSync(nativeDest, 0o755);
+}
+
+function writeAgyPackage(ctx) {
+  const { out, copy, write, loadManifest } = ctx;
+  copySkillsForRunner('agy', path.join(out, 'skills'));
+  write('.antigravity-plugin/plugin.json', loadManifest('.antigravity-plugin/plugin.json'));
+  copy('agy/config/agents', 'agents');
+  copy('assets', 'assets');
+}
+
+function writeCodexPackage(ctx) {
+  const { out, copy, write, readJson, loadManifest } = ctx;
+  write('plugins/oathbound/plugin.json', loadManifest('codex/plugin.json'));
+  copy('codex/mcp.json', 'plugins/oathbound/mcp.json');
+  copy('codex/mcp-env.json', 'plugins/oathbound/.codex-plugin/plugin.json');
+  copy('codex/statusline.cjs', 'plugins/oathbound/statusline.cjs');
+  copySkillsForRunner('codex', path.join(out, 'plugins/oathbound/skills'));
+  copy('codex/oathkeeper.config.toml', 'setup/oathkeeper.config.toml');
+  copy('codex/agents', 'setup/agents');
+  copy('codex/hooks.json', 'setup/hooks.json');
+  copy('codex/statusline.cjs', 'setup/statusline.cjs');
+  write('.agents/plugins/marketplace.json', readJson('codex/marketplace.json'));
+}
+
+// Each host pairs its writer with an optional preflight. The preflight runs before the
+// destination exists; its result is the writer's second argument.
+const HOST_PACKAGES = new Map([
+  ['claude', { preflight: () => findNativeHookBinary(), write: writeClaudePackage }],
+  ['agy', { write: writeAgyPackage }],
+  ['codex', { write: writeCodexPackage }],
+]);
+
 function buildPlugin(runner, destination) {
-  if (!['claude', 'agy', 'codex'].includes(runner) || !destination) {
+  if (!HOST_PACKAGES.has(runner) || !destination) {
     throw new Error('Usage: node tools/build-plugin.cjs <claude|agy|codex> <new-directory>');
   }
   const out = path.resolve(destination);
@@ -74,56 +143,10 @@ function buildPlugin(runner, destination) {
   if (relative.startsWith('..' + path.sep) || relative === '..' || path.isAbsolute(relative)) {
     throw new Error('The destination must be a new directory inside the repository.');
   }
-  const nativeBin = runner === 'claude' ? findNativeHookBinary() : null;
+  const host = HOST_PACKAGES.get(runner);
+  const input = host.preflight ? host.preflight() : undefined;
   fs.mkdirSync(out, { recursive: false });
-  const copy = (from, to) => fs.cpSync(path.join(source, from), path.join(out, to), { recursive: true, errorOnExist: true, force: false });
-  const write = (file, value) => {
-    const full = path.join(out, file);
-    fs.mkdirSync(path.dirname(full), { recursive: true });
-    fs.writeFileSync(full, JSON.stringify(value, null, 2) + '\n', { flag: 'wx' });
-  };
-  const version = fs.readFileSync(path.join(source, 'VERSION'), 'utf8').trim();
-  const loadManifest = (relPath) => {
-    const manifest = JSON.parse(fs.readFileSync(path.join(source, relPath), 'utf8'));
-    manifest.version = version;
-    delete manifest.agents;
-    delete manifest.skills;
-    return manifest;
-  };
-  if (runner === 'codex') {
-    write('plugins/oathbound/plugin.json', loadManifest('codex/plugin.json'));
-    copy('codex/mcp.json', 'plugins/oathbound/mcp.json');
-    copy('codex/mcp-env.json', 'plugins/oathbound/.codex-plugin/plugin.json');
-    copy('codex/statusline.cjs', 'plugins/oathbound/statusline.cjs');
-    copySkillsForRunner('codex', path.join(out, 'plugins/oathbound/skills'));
-    copy('codex/oathkeeper.config.toml', 'setup/oathkeeper.config.toml');
-    copy('codex/agents', 'setup/agents');
-    copy('codex/hooks.json', 'setup/hooks.json');
-    copy('codex/statusline.cjs', 'setup/statusline.cjs');
-    write('.agents/plugins/marketplace.json', JSON.parse(fs.readFileSync(path.join(source, 'codex/marketplace.json'), 'utf8')));
-    return out;
-  }
-  copySkillsForRunner(runner, path.join(out, 'skills'));
-  if (runner === 'claude') {
-    const manifest = loadManifest('.claude-plugin/plugin.json');
-    write('.claude-plugin/plugin.json', manifest);
-    write('.claude-plugin/marketplace.json', JSON.parse(fs.readFileSync(path.join(source, '.claude-plugin/marketplace.json'), 'utf8')));
-    copy('claude/agents', 'agents');
-    copy('assets/logo.svg', 'assets/logo.svg');
-    copy('workflows', 'workflows');
-    copy('claude/hooks', 'claude/hooks');
-    copy('hooks', 'hooks');
-    // Name from the source binary, not the build host, so cross-built targets keep the right suffix.
-    const nativeDest = path.join(out, 'native', 'bin', path.extname(nativeBin).toLowerCase() === '.exe' ? 'oathbound-hook.exe' : 'oathbound-hook');
-    fs.mkdirSync(path.dirname(nativeDest), { recursive: true });
-    fs.copyFileSync(nativeBin, nativeDest);
-    fs.chmodSync(nativeDest, 0o755);
-  } else {
-    const manifest = loadManifest('.antigravity-plugin/plugin.json');
-    write('.antigravity-plugin/plugin.json', manifest);
-    copy('agy/config/agents', 'agents');
-    copy('assets', 'assets');
-  }
+  host.write(createPackageContext(out), input);
   return out;
 }
 

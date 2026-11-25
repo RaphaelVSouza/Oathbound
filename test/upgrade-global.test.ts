@@ -78,3 +78,48 @@ test('upgradeGlobal builds marketplaces, updates installed CLIs, runs install, a
   assert.equal(fs.existsSync(result.marketplaceRoot), true);
   assert.equal(result.prune?.removed.length, 1);
 });
+
+test('upgradeGlobal stages real packages from the real builder into a temporary marketplace', t => {
+  const repoRoot = path.resolve(__dirname, '..');
+  const { buildPlugin, findNativeHookBinary } = require('../tools/build-plugin.cjs');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'oathbound-ug-real-'));
+  const home = path.join(tmp, 'home');
+  fs.mkdirSync(home);
+  const fakeBin = path.join(tmp, 'fake-hook');
+  fs.writeFileSync(fakeBin, 'fake');
+  const savedBin = process.env.OATHBOUND_NATIVE_BIN;
+  process.env.OATHBOUND_NATIVE_BIN = fakeBin;
+  t.after(() => {
+    if (savedBin === undefined) delete process.env.OATHBOUND_NATIVE_BIN; else process.env.OATHBOUND_NATIVE_BIN = savedBin;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  const executedCommands: string[] = [];
+  const result = upgradeGlobal(
+    { runner: 'all', home, sourceRoot: repoRoot, noPrune: true },
+    {
+      buildPlugin,
+      findNativeHookBinary,
+      resolveCli: (runner: string) => `${runner}-cli`,
+      runCommand: (bin: string, args: string[]) => {
+        executedCommands.push(`${bin} ${args.join(' ')}`);
+        return { ok: true, stdout: '', stderr: '', status: 0 };
+      },
+      install: (opts: any) => ({ targetRoot: opts.homeDir, manifest: { files: [] } })
+    }
+  );
+
+  assert.equal(result.marketplaceRoot.startsWith(home + path.sep), true);
+  for (const manifest of [
+    'claude/.claude-plugin/plugin.json',
+    'agy/.antigravity-plugin/plugin.json',
+    'codex/plugins/oathbound/plugin.json'
+  ]) {
+    assert.equal(fs.existsSync(path.join(result.marketplaceRoot, manifest)), true, manifest);
+  }
+  assert.equal(fs.existsSync(path.join(result.marketplaceRoot, 'claude', 'native', 'bin', 'oathbound-hook')) ||
+    fs.existsSync(path.join(result.marketplaceRoot, 'claude', 'native', 'bin', 'oathbound-hook.exe')), true);
+  assert.equal(executedCommands.length > 0, true);
+  const leftovers = fs.readdirSync(path.join(repoRoot, '.scratch')).filter((name: string) => name.startsWith(`upgrade-global-${process.pid}-`));
+  assert.deepEqual(leftovers, []);
+});
