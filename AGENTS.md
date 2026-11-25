@@ -30,7 +30,8 @@ Governance package for coding agents: subagents, hooks and skills, shipped as Cl
 - The native hook embeds `VERSION` at compile time. After a bump, rebuild it, or `test/hooks/native-parity.test.js` fails on a stale `native/oathbound-hook/target/release/` binary.
 - The `claude` build needs the hook binary (`OATHBOUND_NATIVE_BIN`, `native/bin/oathbound-hook-<platform>-<arch>[.exe]`, then the cargo `target/release` build) and fails with `Native hook binary not found`. A binary only runs on the OS that built it.
 - `build-plugin.cjs` rejects destinations that exist or lie outside the repo; use `.scratch/` (gitignored).
-- Git blobs mix CRLF and LF (`.gitattributes` forces LF only for `*.sh *.md *.ps1 *.js`). In tests, normalize `\r\n` and sort `readdirSync` results.
+- Git index is LF, but Windows checkouts (`core.autocrlf=true`, CI `windows-latest`) turn files not forced by `.gitattributes` (only `*.sh *.md *.ps1 *.js`) into CRLF. In tests, normalize `
+` and sort `readdirSync` results.
 - In workflow YAML, a plain scalar treats ` #` as a comment and truncates the command. Use `run: |` and check each step with `bash -n`.
 - `hooks/hooks.json` calls `native/bin/oathbound-hook` without `.exe`; Windows resolves it. Keep it that way.
 
