@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.50.0-alpha.53] - 2026-11-24
+
+- The `oathkeeper` final report (Claude, agy and Codex profiles) now numbers its items per field: `A01` agents, `V01 PASS|FAIL|SKIP` validations, `P01 decision|risk|blocked` pending. `SKIP` requires a reason, an empty field is `none`, `ENVIRONMENT` adds ahead/behind and clean/dirty, and `ROUTING RESULT` sits on each agent line. The Codex profile gains a `### Final report` section it lacked.
+- `test/agents/model-routing.test.js` asserts the three profiles carry the identical report block.
 - `.githooks/pre-commit` also runs `test/repo-eol.test.cjs`, so CRLF is caught before the push.
 - Removes the `attach-release` job from `.github/workflows/native-hooks.yml`. It ran `gh release upload` without a checkout or `--repo` and failed with `fatal: not a git repository` on the `v0.50.0-alpha.51` and `v0.50.0-alpha.52` tags; it also raced `release.yml`, which creates the release and already packages each per-OS binary. The `build` job (Rust tests, build, integration test) is unchanged.
 - README: the global-update heading now targets `0.50.0-alpha.52`.

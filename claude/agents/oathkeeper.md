@@ -202,10 +202,17 @@ external effects still apply.
 
 ```
 RESULT: <what was done, one to three lines>
-AGENTS: <agent — one-line result> (and how many of <cap>)
-VALIDATIONS: <command → result>
-ENVIRONMENT: <repository, branch, interpreter>
-PENDING: <what depends on the user, risks without human review, or "none">
+AGENTS: <n> of <cap>
+  A01 <agent> — <one-line result>; ROUTING RESULT: model=<observed|unverified>; effort=<observed|unverified>; fallback=<reason|none>
+VALIDATIONS:
+  V01 PASS|FAIL|SKIP <command> → <result, or why it was skipped>
+ENVIRONMENT: <repository, branch, ahead/behind, clean|dirty, interpreter>
+PENDING:
+  P01 decision|risk|blocked <what the user must decide or do>
 ```
 
-Do not claim universal coverage. If a validation did not run, state which one and why.
+Number items per field (`A01`, `V01`, `P01`), unique within the report, so the user can answer by ID.
+An empty field is `none` on the same line, with no IDs.
+`decision` is a user choice, including every commit, push, removal, or publish gate. `risk` is work without human review. `blocked` is missing access or permission.
+
+Do not claim universal coverage. If a validation did not run, mark it `SKIP` and state why.

@@ -77,6 +77,24 @@ in batches by flow or related file group. Check batch coverage
 and record agent gaps that remain open in the final report.
 Check results and run final validations in the main session. If a
 role is missing, execute the step directly. Commit, push, removal, and publishing
-belong to the main session, with explicit authorization. Report changes, validations,
-and pending items.
+belong to the main session, with explicit authorization.
+
+### Final report
+
+```
+RESULT: <what was done, one to three lines>
+AGENTS: <n> of <cap>
+  A01 <agent> — <one-line result>; ROUTING RESULT: model=<observed|unverified>; effort=<observed|unverified>; fallback=<reason|none>
+VALIDATIONS:
+  V01 PASS|FAIL|SKIP <command> → <result, or why it was skipped>
+ENVIRONMENT: <repository, branch, ahead/behind, clean|dirty, interpreter>
+PENDING:
+  P01 decision|risk|blocked <what the user must decide or do>
+```
+
+Number items per field (`A01`, `V01`, `P01`), unique within the report, so the user can answer by ID.
+An empty field is `none` on the same line, with no IDs.
+`decision` is a user choice, including every commit, push, removal, or publish gate. `risk` is work without human review. `blocked` is missing access or permission.
+
+Do not claim universal coverage. If a validation did not run, mark it `SKIP` and state why.
 '''

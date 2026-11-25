@@ -42,6 +42,31 @@ test('all orchestrators preserve the same adaptive safety and reporting contract
   assert.match(shared, /ROUTING RESULT: model=<observed\|unverified>; effort=<observed\|unverified>/);
 });
 
+test('all orchestrators share the same numbered final report', () => {
+  const block = (profile, heading) => {
+    const body = section(profile, heading);
+    const match = body.match(/```\n([\s\S]*?)\n```/);
+    assert.ok(match, `Missing report block under ${heading}`);
+    return match[1];
+  };
+  const shared = block(profiles.codex, '### Final report');
+  for (const [runner, profile] of Object.entries(profiles)) {
+    const heading = runner === 'codex' ? '### Final report' : '## 7. Final report';
+    assert.equal(block(profile, heading), shared, runner);
+  }
+  for (const line of ['RESULT:', 'AGENTS:', 'VALIDATIONS:', 'ENVIRONMENT:', 'PENDING:']) {
+    assert.match(shared, new RegExp(`^${line}`, 'm'));
+  }
+  assert.match(shared, /^ {2}A01 /m);
+  assert.match(shared, /^ {2}V01 PASS\|FAIL\|SKIP /m);
+  assert.match(shared, /^ {2}P01 decision\|risk\|blocked /m);
+  for (const [runner, profile] of Object.entries(profiles)) {
+    const body = section(profile, runner === 'codex' ? '### Final report' : '## 7. Final report');
+    assert.match(body, /An empty field is `none`/, runner);
+    assert.match(body, /mark it `SKIP`/, runner);
+  }
+});
+
 test('one role can use different complexity tiers without duplicating role definitions', () => {
   for (const [runner, profile] of Object.entries(profiles)) {
     const provider = section(profile, '### Provider selection');
