@@ -18,7 +18,7 @@ test('Codex discovers the Oathbound footer and polls live subagent roles', { tim
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   const log = path.join(dir, 'agent-audit.jsonl');
   const child = spawn(process.execPath, [path.resolve(__dirname, '../codex/statusline.cjs')], {
-    env: { ...process.env, AGENT_AUDIT_DIR: dir },
+    env: (({ OATHBOUND_STATUSLINE_ICONS, ...rest }) => ({ ...rest, AGENT_AUDIT_DIR: dir }))(process.env),
     stdio: ['pipe', 'pipe', 'inherit'],
   });
   const exit = once(child, 'exit');
