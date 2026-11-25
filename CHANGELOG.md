@@ -4,6 +4,10 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.63] - 2026-11-25
+
+- Consolidates the `smith` agent contract across Claude Code, Antigravity, and Codex: adds the before-editing and done checklists, per-criterion `PASS`/`FAIL`/`SKIP` validation verdicts, multi-line `ACCEPTANCE:` receipt format, and updates `oathkeeper` to number acceptance criteria (`C1`, `C2`, ...) in every delegation.
+
 ## [0.50.0-alpha.62] - 2026-11-25
 
 - Fixes Windows Codex hook launches by invoking the native guard and audit hooks with PowerShell's call operator. Reinstalling migrates the existing commands in `~/.codex/hooks.json`.

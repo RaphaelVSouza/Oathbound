@@ -169,6 +169,7 @@ test('all subagents have emoji-free standardized contracts, batching rules, and 
 test('all runners preserve E1-E6 subagent alignment and orchestrator receipt gates', () => {
   const confLine = 'CONFIDENCE (envelope): HIGH = every claim is backed by evidence read or executed in this call; MEDIUM = some claims rest on inference or unread context; LOW = mostly inference or incomplete evidence. Never HIGH when STATUS is PARTIAL.';
   const gapsLine = 'GAPS is never "none" when STATUS is PARTIAL or BLOCKED.';
+  const smithGapsLine = '`GAPS` is never "none" when `STATUS` is `PARTIAL` or `BLOCKED`.';
   const plainLine = 'Respond in plain text: no code fence, no heading, no preamble, and no emojis. The receipt block shown here is only an example.';
   const count = (text, needle) => text.split(needle).length - 1;
 
@@ -183,7 +184,8 @@ test('all runners preserve E1-E6 subagent alignment and orchestrator receipt gat
       const content = read(file);
       assert.equal(count(content, confLine), 1, `${file} CONFIDENCE rubric count`);
       if (['smith', 'scribe', 'breaker'].includes(role)) {
-        assert.equal(count(content, gapsLine), 1, `${file} GAPS never-none count`);
+        const expectedGapsLine = role === 'smith' ? smithGapsLine : gapsLine;
+        assert.equal(count(content, expectedGapsLine), 1, `${file} GAPS never-none count`);
         assert.doesNotMatch(content, /Return only the receipt block/, `${file} legacy receipt phrasing`);
       } else {
         assert.equal(count(content, gapsLine), 0, `${file} should not duplicate GAPS never-none line`);

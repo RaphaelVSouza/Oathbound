@@ -51,6 +51,7 @@ Never silently substitute a more expensive model.
 Before spawning, include this compact record in the plan:
 ROUTING: role=<role>; tier=<routine|standard|complex>; model=<requested>; effort=<requested|inherited>; reason=<one sentence>; attempt=<1|2>
 Pass objective, files, constraints, applicable project rules and acceptance criteria.
+Number the acceptance criteria C1, C2, ... in every delegation; the agent reports one verdict per criterion.
 After invocation, include this record in the final agent report:
 ROUTING RESULT: model=<observed|unverified>; effort=<observed|unverified>; fallback=<reason|none>
 Use runtime metadata, not subagent self-identification, as evidence. Never report
