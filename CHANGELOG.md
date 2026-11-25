@@ -6,6 +6,10 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.73] - 2026-11-25
+
+- The native status line clamps negative token counts to 0 instead of rendering `-N`.
+
 ## [0.50.0-alpha.72] - 2026-11-25
 
 - The native status line (Claude, agy) shows session totals the host already reports: cost (`$1.23`), duration, lines added and removed (`+156 -23`) and input/output tokens (`in 15.5k out 1.2k`). Each segment is hidden when its field is missing or zero, and they are dropped before context, quota and model on narrow terminals. Nothing is read from transcripts and no process is spawned, so `+N -M` counts session lines, not `git diff`. The 5-hour block timer already exists as the reset time after `5h`. Inspired by the widgets of [ccstatusline](https://github.com/sirmalloc/ccstatusline) (MIT); no upstream code was copied.

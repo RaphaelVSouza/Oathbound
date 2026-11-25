@@ -366,8 +366,8 @@ pub fn run(raw: &str, oversized: bool) -> String {
     ) {
         (Some(input), Some(output)) if input > 0.0 || output > 0.0 => format!(
             "{DIM}in{RESET} {} {DIM}out{RESET} {}",
-            fmt_tokens(input),
-            fmt_tokens(output)
+            fmt_tokens(input.max(0.0)),
+            fmt_tokens(output.max(0.0))
         ),
         _ => String::new(),
     };
