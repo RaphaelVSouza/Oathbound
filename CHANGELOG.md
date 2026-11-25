@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- `.githooks/pre-commit` also runs `test/repo-eol.test.cjs`, so CRLF is caught before the push.
 - Removes the `attach-release` job from `.github/workflows/native-hooks.yml`. It ran `gh release upload` without a checkout or `--repo` and failed with `fatal: not a git repository` on the `v0.50.0-alpha.51` and `v0.50.0-alpha.52` tags; it also raced `release.yml`, which creates the release and already packages each per-OS binary. The `build` job (Rust tests, build, integration test) is unchanged.
 - README: the global-update heading now targets `0.50.0-alpha.52`.
 - Rewrites `AGENTS.md` with commands, limits and pitfalls.
