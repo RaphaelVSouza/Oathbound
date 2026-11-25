@@ -61,7 +61,8 @@ Releases publish one Claude package per target, `oathbound-claude-<version>-<pla
 ### 2. Local Plugin for Codex CLI
 
 Create `dist/` and use a new destination. Install manually through the local marketplace.
-Reference validation used Codex CLI `0.170.0`.
+Requires Codex CLI `0.134.0` or later for standalone profile files (`oathkeeper.config.toml`); reference validation used Codex CLI `0.170.0`.
+The plugin packages `skills/` only because the plugin specification omits custom agents and profiles, and the Codex tarball omits the native hook binary ([ADR-0009](docs/adr/0009-per-platform-native-hook-packaging.md)).
 
 ```sh
 node tools/build-plugin.cjs codex dist/codex
