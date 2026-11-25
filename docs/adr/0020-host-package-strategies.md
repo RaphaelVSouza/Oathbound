@@ -48,13 +48,13 @@ Invariants:
 
 ### Confirmation
 
-Characterization tests must land before the extraction and remain as the ongoing guard for every later host change. `test/build-plugin.test.cjs` currently has no test for:
+Characterization tests must land before the extraction and remain as the ongoing guard for every later host change. Before the extraction, `test/build-plugin.test.cjs` had no test for:
 
 - an unsupported runner (such as `constructor`) through `buildPlugin`, expecting the usage error;
 - the preflight running before the destination is created, with a missing binary and both a new and an existing destination;
 - the `0o755` mode of the packaged binary (POSIX only).
 
-`test/upgrade-global.test.ts` stubs `buildPlugin`, so the global upgrade path also needs a smoke check against the real builder.
+The existing `test/upgrade-global.test.ts` test stubs `buildPlugin`, so the global upgrade path also needs a smoke check against the real builder.
 
 The test named "names the packaged native binary from the source binary extension, not the host" already covers the packaged filename and stays in place.
 
