@@ -20,6 +20,7 @@ Package policies and architecture:
 - [ADR-0017 — Agent, skill and output-style surfaces (Proposed)](adr/0017-agent-skill-and-output-style-surfaces.md)
 - [ADR-0018 — Experimental surfaces and team governance (Proposed)](adr/0018-experimental-surfaces-and-team-governance.md)
 - [ADR-0019 — Selectable status line icon sets (Accepted)](adr/0019-statusline-icon-sets.md)
+- [ADR-0020 — Use host-specific strategies to build plugin packages (Proposed)](adr/0020-host-package-strategies.md)
 
 ## Reusable Prompts
 
