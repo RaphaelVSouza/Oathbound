@@ -131,6 +131,18 @@ run in Claude. A future agy run needs its own executor.
 
 Run `node tools/bump-version.cjs <semver>` to update `VERSION` and the Antigravity, Claude and Codex manifests. Use `--commit` to create the release commit and `--tag` to also create the annotated `v<semver>` tag.
 
+## Prune Old Versions (`prune-old-versions.cjs`)
+
+Run it after reinstalling the plugin in each CLI. It removes versions older than the kept one (default: `VERSION`) from the directories reinstalls leave behind: `~/.oathbound/marketplaces/oathbound-<version>`, `~/.oathbound/downloads/<version>`, `~/.claude/plugins/cache/oathbound/oathbound/<version>` and `~/.codex/plugins/cache/oathbound-local/oathbound/<version>`.
+
+```sh
+node tools/prune-old-versions.cjs                 # dry run: lists what would be removed
+node tools/prune-old-versions.cjs --apply         # removes
+node tools/prune-old-versions.cjs --keep <semver> # keep another version
+```
+
+Safety rules: it is a dry run unless `--apply` is passed. A location is skipped when the kept version is not there, so the last copy is never removed. It never touches newer versions, names that are not `<prefix><semver>`, files or symlinks. It does not read CLI configuration, so reinstall first: a marketplace that still points at an old directory breaks once that directory is gone.
+
 To enable automatic local validation before each commit, configure the versioned hooks:
 ```sh
 git config core.hooksPath .githooks
