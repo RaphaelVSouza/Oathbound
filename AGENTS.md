@@ -20,7 +20,7 @@ Governance package for coding agents: subagents, hooks and skills, shipped as Cl
 - Describe only validations actually performed.
 
 ## Limits
-- Ask before: changing CI/CD, secrets, dependencies or infrastructure; commit, push, tag, delete.
+- Ask before: changing CI/CD, secrets, dependencies or infrastructure; commit, push, tag, delete. A request that names the action or its goal ("release", "tag it") counts as the answer.
 - ADR for architecture, contract, data, auth, infra, cost or dependency decisions: use `docs/adr/adr-template.md`, consult `docs/adr/como-escrever-adr.md`.
 - Never overwrite existing installations; preserve local changes and present the upgrade diff.
 - Never move or delete a pushed tag; ship a new pre-release version (`0.50.0-alpha.N`).

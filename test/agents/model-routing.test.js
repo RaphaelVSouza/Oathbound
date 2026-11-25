@@ -64,6 +64,14 @@ test('all orchestrators share the same numbered final report', () => {
     const body = section(profile, runner === 'codex' ? '### Final report' : '## 7. Final report');
     assert.match(body, /An empty field is `none`/, runner);
     assert.match(body, /mark it `SKIP`/, runner);
+    assert.match(body, /Never list an action the user already requested/, runner);
+    assert.match(body, /Order PENDING by dependency/, runner);
+    assert.match(body, /after P01/, runner);
+  }
+  // A named action or its goal is the confirmation; the gate must not force a second ask.
+  for (const [runner, profile] of Object.entries(profiles)) {
+    assert.match(profile, /is the confirmation: do\s+not ask again/, runner);
+    assert.match(profile, /only for actions the user did not request/, runner);
   }
 });
 

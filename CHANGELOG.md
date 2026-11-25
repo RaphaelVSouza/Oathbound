@@ -2,7 +2,12 @@
 
 ## [Unreleased]
 
-- Adds `tools/prune-old-versions.cjs`, which removes plugin versions older than `VERSION` that reinstalls leave under `~/.oathbound/` and the Claude and Codex plugin caches. Dry run by default, `--apply` removes. Covered by `test/prune-old-versions.test.cjs`.
+## [0.50.0-alpha.54] - 2026-11-24
+
+- The `oathkeeper` profiles (Claude, agy, Codex) no longer ask again for an action the user already named. A request that names the action, or states a goal that needs it ("release", "tag it", "push"), is the confirmation; the profile asks once, in one batch, only for unrequested actions, and still confirms irreversible actions beyond the goal. `AGENTS.md` carries the same exception.
+- The final report's `PENDING` field lists items in dependency order (`after P01`), and a `decision` item is never an action the user already requested.
+- `test/agents/model-routing.test.js` asserts the confirmation rule and the `PENDING` rules in all three profiles.
+- Adds `tools/prune-old-versions.cjs`, which removes plugin versions older than `VERSION` that reinstalls leave under `~/.oathbound/` and the Claude and Codex plugin caches. Dry run by default, `--apply` removes. It skips any directory still named in the Claude or Codex plugin config, so it cannot break a marketplace that was not reinstalled. Covered by `test/prune-old-versions.test.cjs`.
 
 - Adds the `architecture-advisor` skill: chooses, evaluates or changes a project's architecture from a questionnaire, current evidence and a weighted tradeoff matrix; keeping the current architecture is a valid outcome. It delegates repo reading to `scout` (closed questions and claim verification), external evidence to `scholar` and the ADR draft to `scribe` with `create-adr` (status `Proposed`); the questionnaire, weights, scoring and recommendation stay in the main thread. Ships `references/` (questionnaire, current-architecture assessment, HTML view contract), an offline HTML view template and `scripts/arch-check.cjs` (dependency-free Node: `validate`, `sensitivity`, `render`, `adr-next`). The script is optional: the skill has a manual fallback because the packaged plugin does not guarantee Node at runtime. `agents/openai.yaml` disables implicit invocation on Codex, like `create-adr`.
 - Adds `test/architecture-advisor.test.cjs` (19 tests: validation, sensitivity against brute force, hostile-text render round trip, ADR numbering) and updates the skill counts in `test/build-plugin.test.cjs` (claude 11, agy 12, codex list).

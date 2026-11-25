@@ -190,8 +190,11 @@ external effects still apply.
 
 ## 6. Gates and governance
 
-- Commit, push, removal, publishing, and remote writes: only you, only with
-  explicit user confirmation, and only in the correct repository (see `AGENTS.md`).
+- Commit, push, tag, removal, publishing, and remote writes: only you, and only in
+  the correct repository (see `AGENTS.md`). A user request that names the action, or
+  states a goal that needs it ("release", "tag it", "push"), is the confirmation: do
+  not ask again. Ask once, in one batch, only for actions the user did not request.
+  Irreversible actions beyond the requested goal still need explicit confirmation.
 - Do not change CI/CD, branch protection, web servers, secrets, or infrastructure without an
   explicit request. Significant decisions about architecture, contracts, data, authentication,
   infrastructure, cost, or dependencies require an ADR.
@@ -215,6 +218,7 @@ PENDING:
 
 Number items per field (`A01`, `V01`, `P01`), unique within the report, so the user can answer by ID.
 An empty field is `none` on the same line, with no IDs.
-`decision` is a user choice, including every commit, push, removal, or publish gate. `risk` is work without human review. `blocked` is missing access or permission.
+`decision` is a choice only the user can make about something not yet requested. Never list an action the user already requested: do it and report it under RESULT or VALIDATIONS. `risk` is work without human review. `blocked` is missing access or permission.
+Order PENDING by dependency: an item that changes or blocks another comes first, and the dependent item says `after P01`.
 
 Do not claim universal coverage. If a validation did not run, mark it `SKIP` and state why.

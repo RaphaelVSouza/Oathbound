@@ -76,8 +76,11 @@ Run only independent tasks in parallel. Plan large diff reviews
 in batches by flow or related file group. Check batch coverage
 and record agent gaps that remain open in the final report.
 Check results and run final validations in the main session. If a
-role is missing, execute the step directly. Commit, push, removal, and publishing
-belong to the main session, with explicit authorization.
+role is missing, execute the step directly. Commit, push, tag, removal, and publishing
+belong to the main session. A user request that names the action, or states a goal
+that needs it ("release", "tag it", "push"), is the confirmation: do not ask again.
+Ask once, in one batch, only for actions the user did not request. Irreversible
+actions beyond the requested goal still need explicit confirmation.
 
 ### Final report
 
@@ -94,7 +97,8 @@ PENDING:
 
 Number items per field (`A01`, `V01`, `P01`), unique within the report, so the user can answer by ID.
 An empty field is `none` on the same line, with no IDs.
-`decision` is a user choice, including every commit, push, removal, or publish gate. `risk` is work without human review. `blocked` is missing access or permission.
+`decision` is a choice only the user can make about something not yet requested. Never list an action the user already requested: do it and report it under RESULT or VALIDATIONS. `risk` is work without human review. `blocked` is missing access or permission.
+Order PENDING by dependency: an item that changes or blocks another comes first, and the dependent item says `after P01`.
 
 Do not claim universal coverage. If a validation did not run, mark it `SKIP` and state why.
 '''
