@@ -2,42 +2,32 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { selectSkillFiles } = require('./skill-selection.cjs');
 
 const source = path.resolve(__dirname, '..');
-const SKILL_RUNNER_OVERRIDE_RE = /^SKILL\.(claude|agy|codex)\.md$/;
+
+function* walkSkillFiles(dir) {
+  for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, item.name);
+    if (item.isDirectory()) {
+      yield* walkSkillFiles(full);
+    } else {
+      yield full;
+    }
+  }
+}
 
 function copySkillsFromDir(skillsSrc, runner, destDir) {
   if (!fs.existsSync(skillsSrc)) return;
-  const overrideName = `SKILL.${runner}.md`;
   for (const entry of fs.readdirSync(skillsSrc, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const skillSrc = path.join(skillsSrc, entry.name);
     const skillDest = path.join(destDir, entry.name);
-    const hasOverride = fs.existsSync(path.join(skillSrc, overrideName));
-    const walk = (dir) => {
-      for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, item.name);
-        if (item.isDirectory()) {
-          walk(full);
-          continue;
-        }
-        const rel = path.relative(skillSrc, full).split(path.sep).join('/');
-        let targetRel = rel;
-        if (rel === overrideName) {
-          targetRel = 'SKILL.md';
-        } else if (SKILL_RUNNER_OVERRIDE_RE.test(rel)) {
-          continue;
-        } else if (runner !== 'codex' && rel === 'agents/openai.yaml') {
-          continue;
-        } else if (hasOverride && rel === 'SKILL.md') {
-          continue;
-        }
-        const targetFull = path.join(skillDest, ...targetRel.split('/'));
-        fs.mkdirSync(path.dirname(targetFull), { recursive: true });
-        fs.copyFileSync(full, targetFull, fs.constants.COPYFILE_EXCL);
-      }
-    };
-    walk(skillSrc);
+    for (const { full, rel } of selectSkillFiles(skillSrc, runner, walkSkillFiles(skillSrc))) {
+      const target = path.join(skillDest, ...rel.split('/'));
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.copyFileSync(full, target, fs.constants.COPYFILE_EXCL);
+    }
   }
 }
 
@@ -119,6 +109,7 @@ function buildPlugin(runner, destination) {
     write('.claude-plugin/plugin.json', manifest);
     write('.claude-plugin/marketplace.json', JSON.parse(fs.readFileSync(path.join(source, '.claude-plugin/marketplace.json'), 'utf8')));
     copy('claude/agents', 'agents');
+    copy('assets/logo.svg', 'assets/logo.svg');
     copy('workflows', 'workflows');
     copy('claude/hooks', 'claude/hooks');
     copy('hooks', 'hooks');

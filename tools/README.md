@@ -81,6 +81,14 @@ When installing hooks, the installer requires the native `oathbound-hook` binary
 
 ## Global Upgrade (`upgrade-global.ts`)
 
+With Codex CLI 0.172.0 and the rebuilt native hook, apply the scoped mode to an existing global installation:
+
+```sh
+node tools/install.ts --global --runner codex --upgrade --codex-subagent-guard
+```
+
+The installer reports the hook configuration diff during the upgrade. Repeat `--codex-subagent-guard` on later upgrades to retain subagent-only enforcement. For older or unverified Codex versions, omit the flag to select the session-wide guard.
+
 Builds plugin packages into `~/.oathbound/marketplaces/oathbound-<version>/`, reinstalls plugins for installed CLIs (`claude`, `agy`, `codex`), runs `install.ts --global --upgrade` for those runners, and prunes older versions at the end:
 
 ```sh
@@ -115,6 +123,12 @@ Build it with `cargo build --locked --release --manifest-path native/oathbound-h
 For Codex CLI, run `node tools/build-plugin.cjs codex dist/codex`.
 The generated destination is the local marketplace root and contains the plugin
 in `plugins/oathbound/`. Follow the [manual installation](../README.md#2-local-plugin-for-codex-cli).
+
+## Oathkeeper Receipt Contract
+
+Edit [receipt-contract.json](receipt-contract.json) for shared receipt examples, the confidence rubric, and Oathkeeper's receipt gate and handoff. Run `node tools/render-receipt-contracts.cjs --write` to update the checked-in Markdown and TOML instructions, then review the diff. Run `node tools/render-receipt-contracts.cjs --check` to detect drift.
+
+The renderer preserves CLI formatting and replaces the full receipt example and each managed rule line. Keep the leading phrases used to locate managed rule lines, or update their selectors in the renderer as part of the same change.
 
 ## Paid Claude oathkeeper Smoke Tests
 

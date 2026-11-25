@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const { spawn } = require('node:child_process');
+const { execFileSync, spawn } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
 const { once } = require('node:events');
 const fs = require('node:fs');
@@ -35,12 +35,13 @@ test('Codex discovers the Oathbound footer and polls live subagent roles', { tim
     return response.result;
   }
 
-  async function footer(threadId) {
+  async function footer(threadId, { cwd, used = 28, color } = {}) {
     const state = {
       thread: {
         id: threadId,
         model: { display_name: 'Test Model', reasoning_level: 'high' },
-        usage: { context: { used_percentage: 28 } },
+        workspace: { cwd },
+        usage: { context: { used_percentage: used } },
       },
     };
     const { contents: [resource] } = await request('resources/read', { uri: URI, _meta: { [STATE]: state } });
@@ -48,6 +49,10 @@ test('Codex discovers the Oathbound footer and polls live subagent roles', { tim
     assert.equal(resource.mimeType, 'application/json');
     const tree = JSON.parse(resource.text);
     assert.deepEqual(tree.props, { gap: 1, wrap: 'nowrap' });
+    if (color) {
+      const context = tree.children.find(item => item.children?.[0]?.startsWith('ctx '));
+      assert.equal(context.props.color, color);
+    }
     return tree.children.map(item => typeof item === 'string' ? item : item.children.join('')).join(' ');
   }
 
@@ -81,6 +86,18 @@ test('Codex discovers the Oathbound footer and polls live subagent roles', { tim
     fs.appendFileSync(log, event('SubagentStart', role, role));
   }
   assert.match(await footer('thread-123-a'), /⌖ scout · ✓ assayer · ⬟ sentinel · ✎ scribe · \+1/);
+
+  const project = path.join(dir, 'project');
+  fs.mkdirSync(path.join(project, 'nested'), { recursive: true });
+  execFileSync('git', ['init', '--quiet', '--initial-branch=footer-test', project]);
+  const ts = new Date(Date.now() - 12_000).toISOString();
+  fs.appendFileSync(log,
+    JSON.stringify({ ferramenta: 'SubagentStart', agent_id: 'timed', agente: 'smith', sessao_id: 'thread-c', ts }) + '\n' +
+    JSON.stringify({ bloqueado: true, sessao_id: 'thread-c', ts }) + '\n' +
+    JSON.stringify({ bloqueado: true, sessao_id: 'thread-d', ts: new Date(Date.now() - 120_000).toISOString() }) + '\n');
+  const withWorkspace = await footer('thread-c', { cwd: path.join(project, 'nested'), used: 82, color: 'yellow' });
+  assert.match(withWorkspace, /project · footer-test .*ctx 18% left \| hook blocked \| ⚒ smith \d+s/);
+  assert.doesNotMatch(await footer('thread-d', { cwd: dir, color: 'status-usage' }), /hook blocked|smith/);
 
   child.stdin.end();
   assert.deepEqual(await exit, [0, null]);

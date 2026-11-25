@@ -58,7 +58,7 @@ fn emit_deny(reason: &str) {
     let _ = io::stdout().write_all(out.to_string().as_bytes());
 }
 
-fn run_guard(motivo_audit: &'static str, eval: fn(&Value) -> Option<String>, plugin: bool) {
+fn run_guard(motivo_audit: &'static str, eval: fn(&Value) -> Option<String>, source: AuditSource) {
     let (raw, _) = read_stdin_limited(MAX_STDIN_AUDIT);
     let mut payload = Value::Null;
     let motivo = match serde_json::from_str::<Value>(&raw) {
@@ -68,7 +68,7 @@ fn run_guard(motivo_audit: &'static str, eval: fn(&Value) -> Option<String>, plu
         }
         _ => Some("invalid hook input".to_string()),
     };
-    let plugin_decision = plugin
+    let plugin_decision = matches!(source, AuditSource::ClaudePlugin)
         && payload
             .get("agent_type")
             .and_then(Value::as_str)
@@ -83,8 +83,10 @@ fn run_guard(motivo_audit: &'static str, eval: fn(&Value) -> Option<String>, plu
             }),
             if plugin_decision {
                 AuditSource::ClaudePlugin
-            } else {
+            } else if matches!(source, AuditSource::ClaudePlugin) {
                 AuditSource::Unspecified
+            } else {
+                source
             },
         );
     }
@@ -102,19 +104,45 @@ fn avaliar_readonly_payload(payload: &Value) -> Option<String> {
 }
 
 fn run_plugin_agent_guard() {
-    run_guard("politica_do_agente", avaliar_plugin_agent_guard, true);
+    run_guard(
+        "politica_do_agente",
+        avaliar_plugin_agent_guard,
+        AuditSource::ClaudePlugin,
+    );
 }
 
 fn run_readonly_guard() {
-    run_guard("somente_leitura", avaliar_readonly_payload, false);
+    run_guard(
+        "somente_leitura",
+        avaliar_readonly_payload,
+        AuditSource::Unspecified,
+    );
 }
 
 fn run_read_size_guard() {
-    run_guard("limite_de_leitura", read_size::avaliar, false);
+    run_guard(
+        "limite_de_leitura",
+        read_size::avaliar,
+        AuditSource::Unspecified,
+    );
 }
 
 fn run_destructive_guard() {
-    run_guard("acao_destrutiva", destructive::avaliar, false);
+    run_guard(
+        "acao_destrutiva",
+        destructive::avaliar,
+        AuditSource::Unspecified,
+    );
+}
+
+fn evaluate_codex_subagent_guard(payload: &Value) -> Option<String> {
+    if payload.get("hook_event_name").and_then(Value::as_str) == Some("PreToolUse")
+        && payload.get("agent_id").is_none()
+        && payload.get("agent_type").is_none()
+    {
+        return None;
+    }
+    destructive::avaliar(payload)
 }
 
 fn run_agent_audit() {
@@ -162,6 +190,11 @@ fn main() {
         "readonly-guard" => run_readonly_guard(),
         "read-size-guard" => run_read_size_guard(),
         "destructive-guard" => run_destructive_guard(),
+        "codex-subagent-guard" => run_guard(
+            "acao_destrutiva",
+            evaluate_codex_subagent_guard,
+            AuditSource::Codex,
+        ),
         "agent-audit" => run_agent_audit(),
         "codex-agent-audit" => run_codex_agent_audit(),
         "statusline" => run_statusline(),
@@ -169,7 +202,7 @@ fn main() {
             println!("oathbound-hook {}", env!("CARGO_PKG_VERSION"));
         }
         _ => {
-            eprintln!("Usage: oathbound-hook <plugin-agent-guard|readonly-guard|read-size-guard|destructive-guard|agent-audit|codex-agent-audit|statusline>");
+            eprintln!("Usage: oathbound-hook <plugin-agent-guard|readonly-guard|read-size-guard|destructive-guard|codex-subagent-guard|agent-audit|codex-agent-audit|statusline>");
             std::process::exit(2);
         }
     }
@@ -179,6 +212,24 @@ fn main() {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn codex_subagent_guard_scopes_destructive_commands_to_spawned_agents() {
+        for command in ["git commit -m x", "git push"] {
+            let mut payload = json!({
+                "hook_event_name": "PreToolUse",
+                "tool_name": "Bash",
+                "tool_input": { "command": command }
+            });
+            assert!(evaluate_codex_subagent_guard(&payload).is_none());
+            assert!(destructive::avaliar(&payload).is_some());
+            payload["agent_id"] = json!("agent-1");
+            payload["agent_type"] = json!("smith");
+            assert!(evaluate_codex_subagent_guard(&payload).is_some());
+            payload["tool_input"]["command"] = json!("git status");
+            assert!(evaluate_codex_subagent_guard(&payload).is_none());
+        }
+    }
 
     #[test]
     fn plugin_agent_guard_blocks_read_over_limit_for_readers() {

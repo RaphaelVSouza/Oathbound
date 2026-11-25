@@ -198,9 +198,18 @@ test('all runners preserve E1-E6 subagent alignment and orchestrator receipt gat
 
   for (const file of ['claude/agents/sentinel.md', 'agy/config/agents/sentinel.md', 'codex/agents/sentinel.toml']) {
     const content = read(file);
-    assert.ok(content.includes('LOW 0.1-3.9, MEDIUM 4.0-6.9, HIGH 7.0-8.9, CRITICAL 9.0-10.0'), `${file} CVSS bands`);
     assert.ok(content.includes('Envelope CONFIDENCE is the agent\'s certainty about the whole output; the finding tag [CONFIRMED|LIKELY|POSSIBLE] is the proof level of one finding. Do not mix them.'), `${file} confidence vs tag`);
-    assert.ok(content.includes('CWE IDs 22, 798, 862 and 863 are "allowed with review" at MITRE'), `${file} MITRE mapping note`);
+    const bands = 'LOW 0.1-3.9, MEDIUM 4.0-6.9, HIGH 7.0-8.9, CRITICAL 9.0-10.0';
+    if (file === 'claude/agents/sentinel.md') {
+      assert.match(content, /Reference data .* comes from the appsec-reference skill\./);
+      assert.match(content, /If it is not in your context, .*set STATUS: PARTIAL and record it in GAPS\./);
+      const reference = read('.agents/skills/appsec-reference/SKILL.md');
+      assert.ok(reference.includes(bands), 'appsec-reference CVSS bands');
+      assert.match(reference, /22, 798, 862 and 863 .*allowed with review; treat them as REVIEW/);
+    } else {
+      assert.ok(content.includes(bands), `${file} CVSS bands`);
+      assert.ok(content.includes('CWE IDs 22, 798, 862 and 863 are "allowed with review" at MITRE'), `${file} MITRE mapping note`);
+    }
   }
 
   for (const file of ['claude/agents/breaker.md', 'agy/config/agents/breaker.md', 'codex/agents/breaker.toml']) {
@@ -219,4 +228,35 @@ test('all runners preserve E1-E6 subagent alignment and orchestrator receipt gat
     assert.ok(profile.includes('Before relying on any receipt, read STATUS, CONFIDENCE, COVERAGE (when present) and GAPS.'), `${runner} receipt gate`);
     assert.ok(profile.includes('A finding tagged [handoff:sentinel] in an assayer receipt triggers sentinel'), `${runner} handoff trigger`);
   }
+});
+
+test('receipt renderer replaces stale rules across runners and is idempotent', t => {
+  const { randomUUID } = require('node:crypto');
+  const { renderReceiptContracts } = require('../../tools/render-receipt-contracts.cjs');
+  const contract = require('../../tools/receipt-contract.json');
+  assert.deepEqual(renderReceiptContracts(root), [], 'checked-in instructions must match the contract');
+
+  const rules = {
+    ...contract,
+    status: 'STATUS: UPDATED',
+    receiptGate: contract.receiptGate + ' Verify the revision.',
+  };
+  const changes = renderReceiptContracts(root, rules);
+  assert.equal(changes.length, 24);
+
+  const fixture = path.join(root, '.scratch', 'receipt-contract-' + randomUUID());
+  fs.mkdirSync(fixture, { recursive: true });
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
+  for (const { file, output } of changes) {
+    const original = fs.readFileSync(path.join(root, file), 'utf8');
+    const expected = roles.some(role => file.endsWith('/' + role + '.md') || file.endsWith('/' + role + '.toml'))
+      ? original.replace(contract.status, rules.status)
+      : original.replace(contract.receiptGate, rules.receiptGate);
+    assert.notEqual(output, original, file);
+    assert.equal(output, expected, file);
+    const destination = path.join(fixture, file);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.writeFileSync(destination, output);
+  }
+  assert.deepEqual(renderReceiptContracts(fixture, rules), []);
 });

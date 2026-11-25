@@ -4,6 +4,22 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.66] - 2026-11-25
+
+- The Claude plugin now declares `displayName` and `icon` (`assets/logo.svg`) in `plugin.json`, and the Claude build ships the logo. Claude Code ignores `icon` at load time; Anthropic's directory reads it at submission.
+- Adds the Claude-only skill `statusline-setup` (`/oathbound:statusline-setup`). Claude plugins cannot ship `statusLine`, so the skill writes it into `~/.claude/settings.json` with consent, pointing at the bundled `oathbound-hook statusline`. It never replaces an existing entry without asking.
+- Adds `EnterPlanMode`, `ExitPlanMode`, `Skill`, `TaskStop`, `TodoWrite` and `Monitor` to the Claude `oathkeeper` tools.
+- Records ADR-0014 to ADR-0018 (Proposed): Claude Code plugin configuration, hooks, agent and skill surfaces, and experimental and team-governance features. Docs only; no behavior change.
+- Test allowlist for the agy manifest now accepts `license`.
+
+## [0.50.0-alpha.65] - 2026-11-25
+
+- Shows the project, Git branch, active subagent elapsed time, low-context highlighting, and recent thread-scoped hook blocks in the Codex footer. [Statusline specification](docs/codex/statusline-spec.md)
+
+## [0.50.0-alpha.64] - 2026-11-25
+
+- Adds an opt-in subagent-only destructive guard for Codex CLI 0.172.0. The main thread uses Codex's normal approval flow. [ADR-0013](docs/adr/0013-scope-codex-destructive-guard.md)
+
 ## [0.50.0-alpha.63] - 2026-11-25
 
 - Consolidates the `smith` agent contract across Claude Code, Antigravity, and Codex: adds the before-editing and done checklists, per-criterion `PASS`/`FAIL`/`SKIP` validation verdicts, multi-line `ACCEPTANCE:` receipt format, and updates `oathkeeper` to number acceptance criteria (`C1`, `C2`, ...) in every delegation.

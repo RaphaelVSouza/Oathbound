@@ -1,0 +1,88 @@
+{
+  "status": "STATUS: DONE | PARTIAL | BLOCKED",
+  "confidence": "CONFIDENCE: HIGH | MEDIUM | LOW",
+  "confidenceRubric": "CONFIDENCE (envelope): HIGH = every claim is backed by evidence read or executed in this call; MEDIUM = some claims rest on inference or unread context; LOW = mostly inference or incomplete evidence. Never HIGH when STATUS is PARTIAL.",
+  "receiptGate": "Before relying on any receipt, read STATUS, CONFIDENCE, COVERAGE (when present) and GAPS. PARTIAL, COVERAGE: partial, or non-empty GAPS become a PENDING item (risk or blocked). A receipt missing an envelope field is unverified: re-request it once, then report it.",
+  "handoff": "A finding tagged [handoff:sentinel] in an assayer receipt triggers sentinel for that scope, even when no other {trigger} trigger fired.",
+  "examples": {
+    "assayer": [
+      "AGENT: assayer",
+      "SCOPE: <diff, branch/commit, or file paths>",
+      "{status}",
+      "{confidence}",
+      "path/to/file.ts:42: BUG [HIGH]: triggering condition and impact. objective correction.",
+      "path/to/file.ts:118: RISK [MEDIUM]: risk and impact. objective protection.",
+      "src/utils.ts:7: QUESTION: intent required before judgment.",
+      "totals: 1 BUG, 1 RISK, 0 NIT, 1 QUESTION",
+      "COVERAGE: complete",
+      "GAPS: none"
+    ],
+    "breaker": [
+      "AGENT: breaker",
+      "SCOPE: <journey and repo commit/build under test>",
+      "{status}",
+      "{confidence}",
+      "RESULT: PASS | FAIL | none",
+      "ENVIRONMENT: <URL — browser/headless — viewport>",
+      "FLOW: <executed steps and expected vs actual result; numbered reproduction steps on FAIL>",
+      "CONSOLE: <redacted errors/warnings, \"clean\", or \"not captured\">",
+      "NETWORK: <redacted requests >= 400 / failures, \"clean\", or \"not captured\">",
+      "EVIDENCE: <persistent path under .scratch/breaker/ for a screen free of sensitive data, or \"none\">",
+      "GAPS: <missing steps/blockers, or \"none\">"
+    ],
+    "scholar": [
+      "AGENT: scholar",
+      "SCOPE: <topic/docs scope and YYYY-MM-DD access date>",
+      "{status}",
+      "{confidence}",
+      "ANSWER: <direct, up to 5 lines>",
+      "SOURCES:",
+      "  - <URL> — <section/passage; date/version or \"not provided\"; accessed YYYY-MM-DD>",
+      "GAPS: <not found/unverified, or \"none\">"
+    ],
+    "scout": [
+      "AGENT: scout",
+      "SCOPE: <repo paths and commit/revision or worktree>",
+      "{status}",
+      "{confidence}",
+      "ANSWER: <direct, up to 5 lines, or \"not found\">",
+      "EVIDENCE:",
+      "  - <path:line> — <excerpt of up to 2 lines>",
+      "GAPS: <what remains undetermined, or \"none\">"
+    ],
+    "scribe": [
+      "AGENT: scribe",
+      "SCOPE: <doc paths and commit/revision or diff>",
+      "{status}",
+      "{confidence}",
+      "MODE: spec | release",
+      "FILES: <path — change> (or \"none\")",
+      "GAPS: <missing decisions/items or \"none\">"
+    ],
+    "sentinel": [
+      "AGENT: sentinel",
+      "SCOPE: <diff, commit/revision, or target paths>",
+      "{status}",
+      "{confidence}",
+      "path/to/file.ts:42: CRITICAL [CWE-89] [CONFIRMED]",
+      "CONDITION: <source -> sink; exploitation precondition>",
+      "IMPACT: <consequence on Confidentiality/Integrity/Availability>",
+      "FIX: <objective mitigation>",
+      "EVIDENCE: <code excerpt up to 2 lines>",
+      "SCORE: <CVSS-B|BT|BE|BTE 4.0 vector and score, or \"not scored\">",
+      "totals: 1 CRITICAL, 0 HIGH, 0 MEDIUM, 0 LOW",
+      "COVERAGE: complete",
+      "GAPS: none"
+    ],
+    "smith": [
+      "AGENT: smith",
+      "SCOPE: <target files and commit/revision or worktree>",
+      "{status}",
+      "{confidence}",
+      "FILES: <path — change> (or \"none\")",
+      "ACCEPTANCE:",
+      "  C1 PASS|FAIL|SKIP [derived] <command> -> <actual vs expected, or why skipped>",
+      "GAPS: <blocker/pending item or \"none\">"
+    ]
+  }
+}

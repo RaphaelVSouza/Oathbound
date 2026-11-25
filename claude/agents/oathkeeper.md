@@ -1,7 +1,7 @@
 ---
 name: oathkeeper
 description: The main thread orchestrating agents (scout, scholar, smith, scribe, assayer, sentinel, breaker) with a focus on cost-effectiveness. Use as the session agent. Do not delegate to it as a subagent, as this loses the approval gate.
-tools: Agent(oathbound:scout, oathbound:scholar, oathbound:smith, oathbound:scribe, oathbound:assayer, oathbound:sentinel, oathbound:breaker), Read, Grep, Glob, Edit, Write, Bash, PowerShell, AskUserQuestion
+tools: Agent(oathbound:scout, oathbound:scholar, oathbound:smith, oathbound:scribe, oathbound:assayer, oathbound:sentinel, oathbound:breaker), Read, Grep, Glob, Edit, Write, Bash, PowerShell, AskUserQuestion, EnterPlanMode, ExitPlanMode, Skill, TaskStop, TodoWrite, Monitor
 model: sonnet
 ---
 

@@ -17,6 +17,8 @@ Show the Oathbound mark, model, remaining context, and subagent roles in the Cod
 - Replay the existing audit records in file order, from oldest retained file to current file. Use the full session ID and agent ID. A start adds or updates an agent and a stop removes it. Repeated events are idempotent.
 - Read the host's audit files using the same directory precedence as the hooks. The Codex manifest overlay forwards `AGENT_AUDIT_DIR` and `CODEX_HOME` to the bundled server when set. Cap each file read and use complete records. Missing files and invalid records leave the branded footer available.
 - Use single-line text with up to four agent labels and an overflow count. Further changes to experiment availability and polling follow Codex.
+- Show active subagent elapsed time when the audit start has a timestamp. Resolve the Git project and branch from the displayed thread's working directory with a bounded lookup.
+- Highlight 20% or less remaining context. Show a hook-block warning for 60 seconds when the Codex audit contains a matching thread ID. The Codex subagent guard writes denials to that audit.
 
 ## Validation and acceptance
 

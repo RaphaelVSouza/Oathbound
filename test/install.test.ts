@@ -9,6 +9,7 @@ function fixtureDir(label: string): string {
   return dir;
 }
 const { install, parseArgs, sha256, LEGACY_IDS } = require('../tools/install.ts');
+const { buildPlugin } = require('../tools/build-plugin.cjs');
 
 function walkAllFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
@@ -23,6 +24,35 @@ function walkAllFiles(dir: string): string[] {
     }
   }
   return files;
+}
+
+for (const [runner, skillPath] of [
+  ['claude', '.claude/skills'],
+  ['agy', '.gemini/config/skills']
+] as const) {
+  test(`${runner} plugin and clean direct install contain identical skill files`, t => {
+    const root = fixtureDir(`${runner}-skill-parity-`);
+    t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+    const packageRoot = buildPlugin(runner, path.join(root, 'package'));
+    const installedRoot = path.join(root, 'installed');
+    fs.mkdirSync(installedRoot);
+    install({ root: installedRoot, runner, global: true });
+
+    const packagedSkills = path.join(packageRoot, 'skills');
+    const installedSkills = path.join(installedRoot, skillPath);
+    const relativeFiles = (dir: string) => walkAllFiles(dir).map(file => path.relative(dir, file)).sort();
+    const packagedFiles = relativeFiles(packagedSkills);
+    assert.ok(packagedFiles.length > 0);
+    assert.deepEqual(relativeFiles(installedSkills), packagedFiles);
+    for (const file of packagedFiles) {
+      assert.deepEqual(
+        fs.readFileSync(path.join(installedSkills, file)),
+        fs.readFileSync(path.join(packagedSkills, file)),
+        file
+      );
+    }
+  });
 }
 
 test('parseArgs validates allowed runners and rejects invalid or conflicting options', () => {
@@ -108,7 +138,8 @@ test('global installation includes agents, skills, guards, and manifest without 
   const skillFileCount = walkAllFiles(path.join(__dirname, '..', 'skills'))
     .filter(f => !/^SKILL\.(claude|agy|codex)\.md$/.test(path.basename(f)) && !f.endsWith(`${path.sep}agents${path.sep}openai.yaml`)).length;
   const agyExclusiveSkillFileCount = walkAllFiles(path.join(__dirname, '..', 'agy', 'config', 'skills')).length;
-  assert.equal(walkAllFiles(root).length, settings.length + 16 + 1 + skillFileCount * 2 + agyExclusiveSkillFileCount + 1);
+  const claudeExclusiveSkillFileCount = walkAllFiles(path.join(__dirname, '..', 'claude', 'skills')).length;
+  assert.equal(walkAllFiles(root).length, settings.length + 16 + 1 + skillFileCount * 2 + agyExclusiveSkillFileCount + claudeExclusiveSkillFileCount + 1);
   assert.equal(fs.existsSync(path.join(root, '.gemini/config/skills/agents-md-builder/SKILL.md')), true);
   assert.equal(fs.existsSync(path.join(root, '.claude/skills/agents-md-builder')), false);
   assert.deepEqual(
@@ -146,6 +177,27 @@ test('Claude project status line uses the installed native hook and preserves cu
   fs.writeFileSync(settingsPath, JSON.stringify({ ...readSettings(), statusLine: custom }));
   install({ ...options, upgrade: true });
   assert.deepEqual(readSettings().statusLine, custom);
+});
+
+test('Agy global status line installs native hook and preserves custom settings', t => {
+  const root = fixtureDir('agy status line-');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const options = { root, global: true, runner: 'agy' as const, statusline: true };
+  const settingsPath = path.join(root, '.gemini', 'antigravity-cli', 'settings.json');
+  const bin = path.join(root, '.gemini', 'antigravity-cli', process.platform === 'win32' ? 'oathbound-hook.exe' : 'oathbound-hook');
+  const readSettings = () => JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+
+  install(options);
+  assert.ok(fs.existsSync(bin));
+  assert.deepEqual(readSettings().statusLine, {
+    type: 'command', command: `"${bin.split(path.sep).join('/')}" statusline`, padding: 0
+  });
+
+  const custom = { type: 'command', command: 'my-agy-statusline', padding: 1 };
+  fs.writeFileSync(settingsPath, JSON.stringify({ ...readSettings(), statusLine: custom, theme: 'dark' }));
+  install({ ...options, upgrade: true });
+  assert.deepEqual(readSettings().statusLine, custom);
+  assert.equal(readSettings().theme, 'dark');
 });
 
 test('--project installation creates project structure and audit-docs without symlinks', t => {
@@ -556,6 +608,16 @@ test('Windows Codex reinstall replaces old native hooks and preserves custom set
     SubagentStart: [{ hooks: [{ ...start, command: correctedCommand('codex-agent-audit') }] }],
     SubagentStop: [{ hooks: [{ ...stop, command: correctedCommand('codex-agent-audit') }] }]
   });
+  install(options);
+  assert.equal(fs.readFileSync(hooksPath, 'utf8'), installed);
+  const scopedOptions = { ...options, codexSubagentGuard: true };
+  install(scopedOptions);
+  const scoped = fs.readFileSync(hooksPath, 'utf8');
+  const expected = JSON.parse(installed);
+  expected.hooks.PreToolUse[0].hooks[2].command = correctedCommand('codex-subagent-guard');
+  assert.deepEqual(JSON.parse(scoped), expected);
+  install(scopedOptions);
+  assert.equal(fs.readFileSync(hooksPath, 'utf8'), scoped);
   install(options);
   assert.equal(fs.readFileSync(hooksPath, 'utf8'), installed);
 });

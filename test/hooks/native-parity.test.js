@@ -136,6 +136,17 @@ test('Codex hooks record lifecycle and block only the evaluated command', { skip
   assert.equal(allowed.stdout, '');
   const denied = runHook('destructive-guard', bash('git commit -m x'), env);
   assert.equal(JSON.parse(denied.stdout).hookSpecificOutput.permissionDecision, 'deny');
+
+  const codexEnv = { ...process.env, CODEX_HOME: dir };
+  delete codexEnv.AGENT_AUDIT_DIR;
+  const subagent = runHook('codex-subagent-guard', {
+    ...bash('git commit -m x'), agent_id: 'sub-42', agent_type: 'scout', session_id: 'parent',
+  }, codexEnv);
+  assert.equal(subagent.status, 0);
+  assert.equal(JSON.parse(subagent.stdout).hookSpecificOutput.permissionDecision, 'deny');
+  const block = JSON.parse(fs.readFileSync(path.join(dir, 'state', 'agent-audit.jsonl'), 'utf8'));
+  assert.equal(block.sessao_id, 'parent');
+  assert.equal(block.bloqueado, true);
 });
 
 test('native hook: statusline formats workspace, vcs, model, context, quota, and subagents', { skip: !fs.existsSync(BIN) }, () => {

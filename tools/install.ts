@@ -17,25 +17,7 @@ const LEGACY_IDS = [
 ];
 
 const ALLOWED_RUNNERS = ['all', 'claude', 'agy', 'codex'];
-const SKILL_RUNNER_OVERRIDE_RE = /^SKILL\.(claude|agy|codex)\.md$/;
-
-function collectSkillFilesForRunner(skillDir: string, runner: 'claude' | 'agy' | 'codex'): Array<{ rel: string; full: string }> {
-  const overrideName = `SKILL.${runner}.md`;
-  const hasOverride = fs.existsSync(path.join(skillDir, overrideName));
-  const result: Array<{ rel: string; full: string }> = [];
-  for (const full of walkFiles(skillDir)) {
-    const relInside = path.relative(skillDir, full).split(path.sep).join('/');
-    if (relInside === overrideName) {
-      result.push({ rel: 'SKILL.md', full });
-      continue;
-    }
-    if (SKILL_RUNNER_OVERRIDE_RE.test(relInside)) continue;
-    if (runner !== 'codex' && relInside === 'agents/openai.yaml') continue;
-    if (hasOverride && relInside === 'SKILL.md') continue;
-    result.push({ rel: relInside, full });
-  }
-  return result;
-}
+const { selectSkillFiles } = require('./skill-selection.cjs');
 
 function sha256(content: Buffer | string): string {
   return crypto.createHash('sha256').update(content).digest('hex');
@@ -90,6 +72,7 @@ interface InstallOptions {
   auditDocs?: boolean;
   dedupeSkills?: boolean;
   hooksOnly?: boolean;
+  codexSubagentGuard?: boolean;
   prune?: boolean;
   root?: string;
   homeDir?: string;
@@ -144,10 +127,12 @@ function parseArgs(args: string[]): InstallOptions {
       options.dedupeSkills = false;
     } else if (arg === '--hooks-only') {
       options.hooksOnly = true;
+    } else if (arg === '--codex-subagent-guard') {
+      options.codexSubagentGuard = true;
     } else if (arg === '--prune') {
       options.prune = true;
     } else if (arg === '--help' || arg === '-h') {
-      console.log('Usage: node tools/install.ts [--project <dir> | --global] [--runner <all|claude|agy|codex>] [--upgrade] [--statusline] [--audit-docs] [--no-dedupe-skills] [--hooks-only] [--prune]');
+      console.log('Usage: node tools/install.ts [--project <dir> | --global] [--runner <all|claude|agy|codex>] [--upgrade] [--statusline] [--audit-docs] [--no-dedupe-skills] [--hooks-only] [--prune] [--codex-subagent-guard]');
       process.exit(0);
     } else {
       throw new Error(`Unknown or incomplete option: ${arg}`);
@@ -158,11 +143,15 @@ function parseArgs(args: string[]): InstallOptions {
     throw new Error('--global and --project cannot be combined.');
   }
 
+  if (options.codexSubagentGuard && (!options.global || options.runner !== 'codex')) {
+    throw new Error('--codex-subagent-guard requires --global --runner codex.');
+  }
+
   if (options.global && options.auditDocs) {
     throw new Error('--audit-docs is only available for project installations.');
   }
-  if (options.global && options.statusline) {
-    throw new Error('--statusline is only available for project installations.');
+  if (options.global && options.statusline && options.runner !== 'agy') {
+    throw new Error('--statusline is only available for project installations (or --global --runner agy).');
   }
   if (!options.global && options.prune) {
     throw new Error('--prune is only available for global installations.');
@@ -439,8 +428,8 @@ function install(options: InstallOptions) {
   if (isGlobal && options.auditDocs) {
     throw new Error('--audit-docs is only available for project installations.');
   }
-  if (isGlobal && options.statusline) {
-    throw new Error('--statusline is only available for project installations.');
+  if (isGlobal && options.statusline && runner !== 'agy') {
+    throw new Error('--statusline is only available for project installations (or --global --runner agy).');
   }
 
   const sourceRoot = path.resolve(options.sourceRoot || path.join(__dirname, '..'));
@@ -598,6 +587,7 @@ function install(options: InstallOptions) {
           ? `& '${codexHookPath.replace(/['\u2018\u2019]/g, '$&$&')}'`
           : oldCodexHookBin;
         const nativeCommands = new Map<string, string>();
+        const guard = options.codexSubagentGuard ? 'codex-subagent-guard' : 'destructive-guard';
         const templateHooks = JSON.parse(fs.readFileSync(codexHooksTemplatePath, 'utf8'));
         for (const groups of Object.values(templateHooks.hooks || {}) as any[]) {
           if (!Array.isArray(groups)) continue;
@@ -606,7 +596,14 @@ function install(options: InstallOptions) {
             for (const hook of entry.hooks) {
               if (typeof hook?.command === 'string' && hook.command.startsWith('oathbound-hook ')) {
                 const subcommand = hook.command.slice('oathbound-hook '.length);
-                hook.command = `${codexHookBin} ${subcommand}`;
+                hook.command = `${codexHookBin} ${subcommand === 'destructive-guard' ? guard : subcommand}`;
+                if (subcommand === 'destructive-guard') {
+                  for (const previous of ['destructive-guard', 'codex-subagent-guard']) {
+                    for (const bin of ['oathbound-hook', oldCodexHookBin, codexHookBin, `& "${codexHookPath}"`]) {
+                      nativeCommands.set(`${bin} ${previous}`, hook.command);
+                    }
+                  }
+                }
                 if (isWindows) {
                   nativeCommands.set(`${oldCodexHookBin} ${subcommand}`, hook.command);
                   nativeCommands.set(`& "${codexHookPath}" ${subcommand}`, hook.command);
@@ -621,7 +618,7 @@ function install(options: InstallOptions) {
           'agent-audit': null,
           'readonly-guard': null,
           'read-size-guard': null,
-          'destructive-guard': `${codexHookBin} destructive-guard`
+          'destructive-guard': `${codexHookBin} ${guard}`
         }, nativeCommands);
         const mergedCodexHooks = {
           ...migrated.config,
@@ -673,7 +670,7 @@ function install(options: InstallOptions) {
         for (const skill of skillList) {
           if (!isGlobal && skipProjectClaudeSkills.has(skill)) continue;
           const skillDir = path.join(baseDir, skill);
-          for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'claude')) {
+          for (const { rel, full } of selectSkillFiles(skillDir, 'claude', walkFiles(skillDir))) {
             plannedFiles.set(`.claude/skills/${skill}/${rel}`, { content: fs.readFileSync(full) });
           }
         }
@@ -752,7 +749,7 @@ function install(options: InstallOptions) {
         for (const skill of skillList) {
           if (!isGlobal && skipProjectAgySkills.has(skill)) continue;
           const skillDir = path.join(baseDir, skill);
-          for (const { rel, full } of collectSkillFilesForRunner(skillDir, 'agy')) {
+          for (const { rel, full } of selectSkillFiles(skillDir, 'agy', walkFiles(skillDir))) {
             plannedFiles.set(`${agySkillDir}/${skill}/${rel}`, { content: fs.readFileSync(full) });
           }
         }
@@ -780,6 +777,24 @@ function install(options: InstallOptions) {
       ]));
       plannedFiles.set('.agents/skills.json', {
         content: JSON.stringify(existingAgentsSkills, null, 2) + '\n',
+        isMerge: true
+      });
+    }
+    if (isGlobal && options.statusline) {
+      const nativeHookSrc = findNativeHookBinary(sourceRoot);
+      const nativeBinName = nativeHookBinName();
+      plannedFiles.set(`.gemini/antigravity-cli/${nativeBinName}`, { content: fs.readFileSync(nativeHookSrc) });
+      const destAgySettingsPath = path.join(targetRoot, '.gemini', 'antigravity-cli', 'settings.json');
+      const existingAgySettings: any = readExistingJson(destAgySettingsPath, {});
+      if (!Object.hasOwn(existingAgySettings, 'statusLine')) {
+        existingAgySettings.statusLine = {
+          type: 'command',
+          command: `"${targetPosix}/.gemini/antigravity-cli/${nativeBinName}" statusline`,
+          padding: 0
+        };
+      }
+      plannedFiles.set('.gemini/antigravity-cli/settings.json', {
+        content: JSON.stringify(existingAgySettings, null, 2) + '\n',
         isMerge: true
       });
     }
