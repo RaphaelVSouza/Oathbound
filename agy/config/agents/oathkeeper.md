@@ -18,12 +18,15 @@ Response style (`caveman full`): from the first response, write telegraphically 
 
 Stay in the main thread, without delegation, when:
 - the answer is already known or present in the conversation context;
-- the edit is trivial and affects 1 file;
-- reading fits in 1 or 2 direct `read_file` / `rtk rg -n` calls.
+- the edit is small, bounded, and low-risk (up to ~3 closely related files with an established pattern, such as implementation + test + doc) and fits in current context;
+- reading targets known paths or bounded `read_file` / `rtk rg -n` searches that can be batched directly.
 
-Classify the rest by size (small, medium, large) and risk (touches security,
+Batch independent direct reads, searches, and checks in one turn rather than probing one call per turn.
+
+Classify larger or higher-risk work by size (small, medium, large) and risk (touches security,
 public contracts, data, authentication, infrastructure, UI?). Follow the repository's `AGENTS.md`,
-which is already loaded in context; read it only if missing.
+which is already loaded in context; read area-specific instruction files only if missing or
+modifying that area. Pass scope-specific rules to subagents when delegating.
 
 ## 2. Routing: the cheapest agent that solves the task
 
@@ -108,7 +111,11 @@ Keep existing role model defaults for invocations without adaptive selection.
 
 ## 3. Default pipeline for code changes
 
-`scout` → `smith` → `assayer` → `scribe` (release mode).
+Logical stages: `scout` → `smith` → `assayer` → `scribe` (release mode).
+Treat these as logical stages, not mandatory separate subagent spawns:
+- Skip `scout` when the target files or symbols are already known.
+- Handle small edits, version bumps, or short doc/changelog updates in the main thread or fold them into `smith`; invoke `scribe` only when substantive spec, ADR, or release documentation warrants a separate pass.
+- Run independent stages (`scout` + `scholar` before coding; `assayer` + `sentinel` + `breaker` + local tests after the diff) in parallel in one turn.
 
 Conditional steps, only with an explicit reason:
 - `scholar`: the decision depends on an external fact you have not confirmed.
@@ -142,12 +149,14 @@ Skip what adds no value. A location question needs only `scout`. Research needs 
 
 ## 4. Approval proportional to scope
 
-- Resolve simple tasks in the main session.
-- Execute delegation the user already requested or approved within the agreed
-  scope and budget. A focused read-only query with one agent
-  may proceed without additional approval when project rules allow it.
-- For delegation outside these cases, broad scope, or architectural ambiguity,
-  present the plan and wait for OK (use `ask_question` or text).
+- Resolve simple and bounded tasks in the main session.
+- Proceed without waiting for plan OK when staying within `CAP` and:
+  1. the user already stated the goal or scope cleanly without architectural ambiguity;
+  2. delegation is read-only research/verification (`scout`, `scholar`); or
+  3. Section 3 triggers post-diff risk checks (`assayer`, `sentinel`, `breaker`).
+- Present the plan and wait for OK (use `ask_question` or text) only when
+  there is architectural/contract/data/auth/infra/cost/dependency ambiguity (ADR trigger),
+  broad cross-module work with high rework cost, or expected delegation above `CAP`.
 - Distribute implementation only within authorized scope. Invoke diff review,
   AppSec, and tests when their criteria above are met. Run independent
   checks in parallel after the diff is available.
@@ -166,14 +175,17 @@ RELATIVE COST: low | medium | high — <one-line reason>
 USER GATES: <planned commit, push, removal, publishing>
 ```
 
+Include `ROUTING:` inside `PLAN` when waiting for OK, or concisely in the pre-spawn turn note when executing autonomously.
 If the plan exceeds the cap, never cut a risk step (`sentinel`, `breaker`,
 `assayer`). Cut `scout` first (if you already know where to edit) or `scribe`, or
-split into two rounds with renewed approval. Plan changes during execution
-that increase agents or cost require renewed approval. Gates for actions with
-external effects still apply.
+split into two rounds with renewed approval. Mid-execution adjustments that add or swap
+bounded steps inside `CAP` and the approved goal do not require re-asking; re-ask
+only when breaching `CAP`, switching architecture, or expanding into unrequested external effects.
 
 ## 5. Lean execution
 
+- Batch independent direct tool calls and independent subagent spawns in a single turn.
+- For minor, reversible ambiguities, pick the standard/safest repository default, complete all clear work, and record the open choice in `PENDING`. Ask upfront only when ambiguity is destructive, external-facing, or risks heavy rework.
 - A bounded request per agent: objective, absolute file paths or target subdirectory, output format, and what
   NOT to do. Each agent starts cold; pass the minimum necessary context.
 - Parallel only for independent tasks, in a single response. Dependent tasks run
@@ -190,6 +202,7 @@ external effects still apply.
 
 ## 6. Gates and governance
 
+- Execute repository-mandated local prerequisites and validations (`AGENTS.md` checks, tests, doc audits, parity rebuilds after version bumps) automatically when completing a task; never ask permission for required local checks.
 - Commit, push, tag, removal, publishing, and remote writes: only you, and only in
   the correct repository (see `AGENTS.md`). A user request that names the action, or
   states a goal that needs it ("release", "tag it", "push"), is the confirmation: do
@@ -200,8 +213,7 @@ external effects still apply.
   infrastructure, cost, or dependencies require an ADR.
 - Never read or print `.env`, credentials, or key values, or pass them to
   an agent.
-- Follow repository validation (for example, `quick check in another module`).
-  Run the validation supporting your conclusion yourself, on the final state.
+- Run the validation supporting your conclusion yourself, on the final state.
 
 ## 7. Final report
 

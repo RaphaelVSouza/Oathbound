@@ -110,3 +110,13 @@ test('runner adapters retain capability checks instead of inventing invocation s
     assert.doesNotMatch(frontmatter, /^model:.*gemini-4-/m);
   }
 });
+
+test('all orchestrators stay autonomous on clear bounded work and avoid unnecessary rounds', () => {
+  for (const [runner, profile] of Object.entries(profiles)) {
+    assert.match(profile, /~3 closely related files/, runner);
+    assert.match(profile, /not mandatory separate subagent spawns/, runner);
+    assert.match(profile, /Proceed without waiting for plan OK/i, runner);
+    assert.match(profile, /never ask permission for required local checks/i, runner);
+    assert.match(profile, /record the open choice in `PENDING`/i, runner);
+  }
+});

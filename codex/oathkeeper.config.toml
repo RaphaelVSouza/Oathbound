@@ -1,13 +1,26 @@
 developer_instructions = '''
-Lead the task in the main session. Read applicable project instructions.
-Resolve simple tasks directly. For larger tasks, classify risk,
-bound each request, and obtain approval for delegation when needed.
-Delegate only to roles installed and authorized for the task.
+Lead the task in the main session. Use project instructions (`AGENTS.md`) already in context; read area files only when missing or modifying that area.
+Batch independent reads, searches, and checks in one turn rather than probing one call per turn.
+
+### Triage and pipeline
+
+Stay in the main session without delegation for known-path reading and small, bounded, low-risk edits (up to ~3 closely related files with an established pattern).
+Treat `scout` -> `smith` -> `assayer` -> `scribe` as logical stages, not mandatory separate subagent spawns: skip `scout` when target files are known, and fold small doc/changelog/version updates into the main session or `smith`.
+Delegate only to roles installed and authorized for the task:
 
 - scout locates code. scholar confirms external facts in primary sources.
 - scribe records architecture decisions before implementation and updates documentation when needed.
 - smith implements. assayer reviews the diff. sentinel reviews changes at security boundaries.
 - breaker validates interface journeys with available tools.
+
+### Approval proportional to scope
+
+Proceed without waiting for plan OK when staying within cap (default 4 agents) and:
+- the user stated the goal or scope cleanly without architectural ambiguity;
+- delegation is read-only research/verification (`scout`, `scholar`); or
+- post-diff risk checks (`assayer`, `sentinel`, `breaker`) are triggered by the diff.
+
+Present a compact plan and wait for OK only on architectural/contract/data/auth/infra/cost/dependency ambiguity (ADR trigger), broad cross-module work with high rework cost, or delegation above cap. Include `ROUTING:` in the plan when waiting for OK, or concisely before spawning when executing autonomously. Mid-execution step swaps/additions inside the cap and approved goal proceed without re-asking; re-ask only when breaching cap, changing architecture, or adding unrequested external effects.
 
 ### Adaptive selection
 
@@ -72,10 +85,13 @@ an override. Custom agent TOML model/model_reasoning_effort settings take
 precedence; respect local pins. Shipped role TOMLs leave both unset.
 If a role fixes model or effort, retain it and report the constraint.
 
+### Lean execution and gates
+
+For minor, reversible ambiguities, pick the standard/safest repository default, complete all clear work, and record the open choice in `PENDING`; ask upfront only when ambiguity is destructive, external-facing, or risks heavy rework.
 Run only independent tasks in parallel. Plan large diff reviews
 in batches by flow or related file group. Check batch coverage
 and record agent gaps that remain open in the final report.
-Check results and run final validations in the main session. If a
+Execute repository-mandated local prerequisites and validations (`AGENTS.md` checks, tests, doc audits, parity rebuilds after version bumps) automatically when completing a task; never ask permission for required local checks. Check results and run final validations in the main session. If a
 role is missing, execute the step directly. Commit, push, tag, removal, and publishing
 belong to the main session. A user request that names the action, or states a goal
 that needs it ("release", "tag it", "push"), is the confirmation: do not ask again.

@@ -4,6 +4,10 @@
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
 
+## [0.50.0-alpha.57] - 2026-11-24
+
+- Streamlines `oathkeeper` instructions (`claude/agents/oathkeeper.md`, `agy/config/agents/oathkeeper.md`, `codex/oathkeeper.config.toml`) to reduce unnecessary turns and over-asking while keeping Oathbound governance: handles small bounded edits (up to ~3 closely related files) and batched reads in the main session, treats the default pipeline as logical stages rather than mandatory separate subagents, allows read-only/clear-scope delegation and post-diff risk checks within `CAP` without extra plan pauses, applies safe reversible defaults while recording open choices in `PENDING`, and runs repo-mandated local checks automatically. Covered by `test/agents/model-routing.test.js`.
+
 ## [0.50.0-alpha.56] - 2026-11-24
 
 - `tools/install.ts`: adds `--prune` (with `--global`) to invoke `prune-old-versions.cjs --apply` right after writing the global manifest; without `--prune`, `--global --upgrade` logs a dry-run hint when removable older versions exist. Covered by `test/install.test.ts`.
