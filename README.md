@@ -19,7 +19,7 @@ Documentation, prompts and diagnostics use English. Existing file paths, command
 
    ![Icons of the seven Oathbound subagents](assets/readme-agents.svg)
 
-3. **Engineering Skills:** [`api-contract-design`](skills/api-contract-design/SKILL.md), [`create-adr`](skills/create-adr/SKILL.md), [`create-spec`](skills/create-spec/SKILL.md), `diagnosing-bugs`, `grill-me`, [`incident-postmortem`](skills/incident-postmortem/SKILL.md), `migration`, [`refactor-safely`](skills/refactor-safely/SKILL.md), `surgical-patch` and [`test-strategy`](skills/test-strategy/SKILL.md). Skills with CLI-specific tools support an optional `SKILL.<runner>.md` override (ADR 0006). `scribe` loads `create-adr` and `create-spec` on demand.
+3. **Engineering Skills:** [`api-contract-design`](skills/api-contract-design/SKILL.md), [`architecture-advisor`](skills/architecture-advisor/SKILL.md), [`create-adr`](skills/create-adr/SKILL.md), [`create-spec`](skills/create-spec/SKILL.md), `diagnosing-bugs`, `grill-me`, [`incident-postmortem`](skills/incident-postmortem/SKILL.md), `migration`, [`refactor-safely`](skills/refactor-safely/SKILL.md), `surgical-patch` and [`test-strategy`](skills/test-strategy/SKILL.md). Skills with CLI-specific tools support an optional `SKILL.<runner>.md` override (ADR 0006). `scribe` loads `create-adr` and `create-spec` on demand.
 4. **Deterministic Hooks:** Runtime auditing and protection through `agent-audit`, `readonly-guard`, `read-size-guard` and `destructive-guard` in the native Rust binary (`native/oathbound-hook`), which also provides `statusline`. Command rewriting uses official RTK hooks.
 
    ![PreToolUse evaluates the tool and allows or blocks execution. Auditing records subagent events.](assets/readme-hooks.svg)

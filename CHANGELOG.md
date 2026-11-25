@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Adds the `architecture-advisor` skill: chooses, evaluates or changes a project's architecture from a questionnaire, current evidence and a weighted tradeoff matrix; keeping the current architecture is a valid outcome. It delegates repo reading to `scout` (closed questions and claim verification), external evidence to `scholar` and the ADR draft to `scribe` with `create-adr` (status `Proposed`); the questionnaire, weights, scoring and recommendation stay in the main thread. Ships `references/` (questionnaire, current-architecture assessment, HTML view contract), an offline HTML view template and `scripts/arch-check.cjs` (dependency-free Node: `validate`, `sensitivity`, `render`, `adr-next`). The script is optional: the skill has a manual fallback because the packaged plugin does not guarantee Node at runtime. `agents/openai.yaml` disables implicit invocation on Codex, like `create-adr`.
+- Adds `test/architecture-advisor.test.cjs` (19 tests: validation, sensitivity against brute force, hostile-text render round trip, ADR numbering) and updates the skill counts in `test/build-plugin.test.cjs` (claude 11, agy 12, codex list).
+- Validated locally: the new tests, `tools/audit-docs.ts`, `test/repo-eol.test.cjs`, and `test/build-plugin.test.cjs` with an empty placeholder file as `OATHBOUND_NATIVE_BIN`; the skill is packaged for claude, agy and codex; the HTML template renders in Chromium without console errors or label overlaps. Not validated: the native hook was not built, so the install and native-parity tests did not run; the skill was not exercised end to end in a live Oathbound session.
+
 ## [0.50.0-alpha.53] - 2026-11-24
 
 - The `oathkeeper` final report (Claude, agy and Codex profiles) now numbers its items per field: `A01` agents, `V01 PASS|FAIL|SKIP` validations, `P01 decision|risk|blocked` pending. `SKIP` requires a reason, an empty field is `none`, `ENVIRONMENT` adds ahead/behind and clean/dirty, and `ROUTING RESULT` sits on each agent line. The Codex profile gains a `### Final report` section it lacked.

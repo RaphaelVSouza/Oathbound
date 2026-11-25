@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<title>Architecture view</title>
+<style>
+  :root {
+    --bg:#f7f7f5; --panel:#fff; --text:#1d1d1b; --muted:#6a6a64; --line:#d9d9d3;
+    --accent:#2f5bea; --accent-soft:#e6ecff; --good:#1f8a4c; --warn:#b7791f; --bad:#c0392b;
+    --k-client:#e8f0ff; --k-service:#eaf7ee; --k-db:#fff3dc; --k-queue:#f3e9ff; --k-external:#eeeeea;
+    --s1:#f8d7d3; --s2:#fbe6cc; --s3:#f6f0c8; --s4:#d9efd5; --s5:#bfe5c3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#161616; --panel:#202020; --text:#ececea; --muted:#9b9b94; --line:#3a3a36;
+      --accent:#7b9bff; --accent-soft:#25304f; --good:#5fcf8a; --warn:#e0b050; --bad:#ef7b6d;
+      --k-client:#22304d; --k-service:#1f3a2a; --k-db:#4a3b1c; --k-queue:#3a2a52; --k-external:#34342f;
+      --s1:#5a2a25; --s2:#5a4125; --s3:#55512a; --s4:#2c4a2c; --s5:#255a33;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:20px 28px 0; max-width:1200px; margin:0 auto; }
+  h1 { margin:0 0 4px; font-size:22px; }
+  h2 { font-size:17px; margin:0 0 10px; }
+  h3 { font-size:15px; margin:0 0 6px; }
+  .meta { color:var(--muted); font-size:13px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .badge { padding:2px 9px; border-radius:99px; font-size:12px; border:1px solid var(--line); background:var(--panel); }
+  .badge.example { background:var(--warn); color:#fff; border-color:var(--warn); }
+  .badge.rec { background:var(--good); color:#fff; border-color:var(--good); }
+  nav { display:flex; gap:4px; margin-top:16px; border-bottom:1px solid var(--line); }
+  nav button { border:0; background:none; color:var(--muted); padding:10px 14px; font:inherit; cursor:pointer; border-bottom:2px solid transparent; }
+  nav button[aria-selected="true"] { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+  nav button:focus-visible, .pill:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  main { max-width:1200px; margin:0 auto; padding:20px 28px 48px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:16px; }
+  .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+  ul { margin:6px 0 0; padding-left:20px; }
+  li { margin:2px 0; }
+  .muted { color:var(--muted); }
+  .bar-row { display:grid; grid-template-columns:200px 1fr 48px; gap:10px; align-items:center; margin:6px 0; }
+  .bar { height:12px; background:var(--line); border-radius:6px; overflow:hidden; }
+  .bar > i { display:block; height:100%; background:var(--accent); }
+  .bar-row.top .bar > i { background:var(--good); }
+  .pills { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .pill { border:1px solid var(--line); background:var(--panel); color:var(--text); border-radius:99px; padding:5px 14px; font:inherit; cursor:pointer; }
+  .pill[aria-pressed="true"] { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:600; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:8px; }
+  .legend span::before { content:""; display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:5px; vertical-align:-2px; border:1px solid var(--line); background:var(--c); }
+  svg { width:100%; height:auto; display:block; background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+  svg text { fill:var(--text); font:12px system-ui,sans-serif; }
+  svg .kind { fill:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.04em; }
+  svg .grp { fill:none; stroke:var(--muted); stroke-dasharray:5 4; stroke-width:1; }
+  svg .grp-label { fill:var(--muted); font-size:11px; paint-order:stroke; stroke:var(--panel); stroke-width:4px; }
+  svg .edge { stroke:var(--muted); stroke-width:1.4; fill:none; }
+  svg .edge.async { stroke-dasharray:6 4; }
+  svg .elabel { paint-order:stroke; stroke:var(--panel); stroke-width:4px; font-size:11px; fill:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:middle; }
+  th { font-weight:600; font-size:13px; }
+  td.num, th.num { text-align:center; }
+  .score { display:inline-block; min-width:34px; padding:3px 0; border-radius:6px; text-align:center; font-weight:600; border:1px solid transparent; cursor:pointer; background:var(--c); color:var(--text); font:inherit; font-weight:600; }
+  .score[aria-pressed="true"] { border-color:var(--accent); }
+  input[type=range] { width:120px; vertical-align:middle; }
+  tfoot td { font-weight:700; border-top:2px solid var(--line); }
+  .detail { margin-top:12px; padding:12px 14px; border-left:3px solid var(--accent); background:var(--accent-soft); border-radius:0 8px 8px 0; display:none; }
+  .detail.show { display:block; }
+  .notice { padding:10px 14px; border-radius:8px; background:var(--accent-soft); margin:12px 0; }
+  .err { color:var(--bad); font-weight:600; }
+  button.link { background:none; border:0; color:var(--accent); cursor:pointer; font:inherit; padding:0; text-decoration:underline; }
+  @media print { nav, .pills button:not([aria-pressed="true"]), input[type=range], button.link { display:none; } body { background:#fff; } .card { break-inside:avoid; } }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Architecture view</h1>
+  <div class="meta" id="meta"></div>
+  <nav role="tablist" id="tabs"></nav>
+</header>
+<main id="view"></main>
+
+<!--
+  HOW TO USE (for the agent): replace ONLY the content of the <script id="arch-data"> block below
+  with valid JSON, following the schema in references/html-view.md. Do not change the rest of the file.
+  Remove "example": true. All text is inserted via textContent (safe against injected HTML).
+  Summary schema:
+  { project, date, confidence, decision,
+    drivers:[{id,name,scenario,weight}],
+    candidates:[{id,name,recommended,summary,reversal,mustBeTrue[],risks[],
+      scores:{<driverId>:{score(1-5),why,source}},
+      diagram:{nodes:[{id,label,kind,group,col,row}],edges:[{from,to,label,async}]}}],
+    triggers[], assumptions[] }
+  kind: client | service | db | queue | external
+-->
+<script type="application/json" id="arch-data">
+{
+  "example": true,
+  "project": "Order platform (EXAMPLE)",
+  "date": "2026-11-24",
+  "confidence": "medium",
+  "decision": "Which architectural style should the new orders core use?",
+  "drivers": [
+    {
+      "id": "q1",
+      "name": "Small team, fast delivery",
+      "scenario": "MVP in 3 months with 4 people",
+      "weight": 30
+    },
+    {
+      "id": "q2",
+      "name": "Availability",
+      "scenario": "99.9% monthly on checkout",
+      "weight": 20
+    },
+    {
+      "id": "q3",
+      "name": "Scale",
+      "scenario": "500 req/s at peak, p95 < 300 ms",
+      "weight": 15
+    },
+    {
+      "id": "q4",
+      "name": "Evolvability",
+      "scenario": "Split payments out within 12 months",
+      "weight": 20
+    },
+    {
+      "id": "q5",
+      "name": "Operating cost",
+      "scenario": "No dedicated platform team; at most 1 on-call rotation",
+      "weight": 15
+    }
+  ],
+  "candidates": [
+    {
+      "id": "mod",
+      "name": "Modular monolith",
+      "recommended": true,
+      "summary": "One deployable, modules with explicit boundaries and a single database with a schema per module.",
+      "reversal": "low",
+      "mustBeTrue": [
+        "The team respects module boundaries (checked by architecture tests)",
+        "Peak load fits vertical scaling plus replicas of the monolith"
+      ],
+      "risks": [
+        "Coupling creeps back without fitness functions",
+        "A single deployable widens the blast radius of a failure"
+      ],
+      "scores": {
+        "q1": {
+          "score": 5,
+          "why": "Fewer moving parts; one pipeline.",
+          "source": "assumption"
+        },
+        "q2": {
+          "score": 3,
+          "why": "Replicas meet 99.9%, but a fault affects everything.",
+          "source": "assumption"
+        },
+        "q3": {
+          "score": 3,
+          "why": "Scales the whole app horizontally; inefficient per module.",
+          "source": "assumption"
+        },
+        "q4": {
+          "score": 4,
+          "why": "Module boundaries allow extracting payments later.",
+          "source": "assumption"
+        },
+        "q5": {
+          "score": 5,
+          "why": "One runtime and one database to operate.",
+          "source": "assumption"
+        }
+      },
+      "diagram": {
+        "nodes": [
+          {
+            "id": "web",
+            "label": "Web / App",
+            "kind": "client",
+            "group": "Clients",
+            "col": 0,
+            "row": 1
+          },
+          {
+            "id": "api",
+            "label": "API (monolith)",
+            "kind": "service",
+            "group": "Application",
+            "col": 1,
+            "row": 1
+          },
+          {
+            "id": "ord",
+            "label": "Orders module",
+            "kind": "service",
+            "group": "Application",
+            "col": 2,
+            "row": 0
+          },
+          {
+            "id": "pay",
+            "label": "Payments module",
+            "kind": "service",
+            "group": "Application",
+            "col": 2,
+            "row": 2
+          },
+          {
+            "id": "db",
+            "label": "PostgreSQL",
+            "kind": "db",
+            "group": "Data",
+            "col": 3,
+            "row": 1
+          },
+          {
+            "id": "psp",
+            "label": "Payment gateway",
+            "kind": "external",
+            "group": "External",
+            "col": 3,
+            "row": 3
+          }
+        ],
+        "edges": [
+          {
+            "from": "web",
+            "to": "api",
+            "label": "HTTPS"
+          },
+          {
+            "from": "api",
+            "to": "ord",
+            "label": "local call"
+          },
+          {
+            "from": "api",
+            "to": "pay",
+            "label": "local call"
+          },
+          {
+            "from": "ord",
+            "to": "db",
+            "label": "SQL"
+          },
+          {
+            "from": "pay",
+            "to": "db",
+            "label": "SQL"
+          },
+          {
+            "from": "pay",
+            "to": "psp",
+            "label": "HTTPS"
+          }
+        ]
+      }
+    },
+    {
+      "id": "msv",
+      "name": "Microservices",
+      "recommended": false,
+      "summary": "Independent services per context, with synchronous and event-based communication.",
+      "reversal": "high",
+      "mustBeTrue": [
+        "There is capacity to run observability, CI/CD and on-call per service",
+        "Domain boundaries are already stable"
+      ],
+      "risks": [
+        "High operating cost for 4 people",
+        "Distributed consistency between orders and payments"
+      ],
+      "scores": {
+        "q1": {
+          "score": 2,
+          "why": "Lots of infrastructure before delivering value.",
+          "source": "assumption"
+        },
+        "q2": {
+          "score": 4,
+          "why": "Fault isolation, if well designed.",
+          "source": "assumption"
+        },
+        "q3": {
+          "score": 5,
+          "why": "Scales per service.",
+          "source": "assumption"
+        },
+        "q4": {
+          "score": 5,
+          "why": "Independent evolution and deploys.",
+          "source": "assumption"
+        },
+        "q5": {
+          "score": 1,
+          "why": "Needs dedicated platform and observability.",
+          "source": "assumption"
+        }
+      },
+      "diagram": {
+        "nodes": [
+          {
+            "id": "web",
+            "label": "Web / App",
+            "kind": "client",
+            "group": "Clients",
+            "col": 0,
+            "row": 1
+          },
+          {
+            "id": "gw",
+            "label": "API Gateway",
+            "kind": "service",
+            "group": "Edge",
+            "col": 1,
+            "row": 1
+          },
+          {
+            "id": "ord",
+            "label": "Orders service",
+            "kind": "service",
+            "group": "Services",
+            "col": 2,
+            "row": 0
+          },
+          {
+            "id": "pay",
+            "label": "Payments service",
+            "kind": "service",
+            "group": "Services",
+            "col": 2,
+            "row": 2
+          },
+          {
+            "id": "bus",
+            "label": "Event broker",
+            "kind": "queue",
+            "group": "Messaging",
+            "col": 3,
+            "row": 1
+          },
+          {
+            "id": "odb",
+            "label": "Orders DB",
+            "kind": "db",
+            "group": "Data",
+            "col": 4,
+            "row": 0
+          },
+          {
+            "id": "pdb",
+            "label": "Payments DB",
+            "kind": "db",
+            "group": "Data",
+            "col": 4,
+            "row": 2
+          }
+        ],
+        "edges": [
+          {
+            "from": "web",
+            "to": "gw",
+            "label": "HTTPS"
+          },
+          {
+            "from": "gw",
+            "to": "ord",
+            "label": "REST"
+          },
+          {
+            "from": "gw",
+            "to": "pay",
+            "label": "REST"
+          },
+          {
+            "from": "ord",
+            "to": "bus",
+            "label": "OrderCreated",
+            "async": true
+          },
+          {
+            "from": "bus",
+            "to": "pay",
+            "label": "event",
+            "async": true
+          },
+          {
+            "from": "ord",
+            "to": "odb",
+            "label": "SQL"
+          },
+          {
+            "from": "pay",
+            "to": "pdb",
+            "label": "SQL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "srv",
+      "name": "Serverless / FaaS",
+      "recommended": false,
+      "summary": "Managed functions per route, managed queues and a managed database.",
+      "reversal": "medium",
+      "mustBeTrue": [
+        "Cold-start latency is acceptable at checkout",
+        "A dependency on one cloud provider is acceptable"
+      ],
+      "risks": [
+        "Lock-in and hard local testing",
+        "Unpredictable cost under steady load"
+      ],
+      "scores": {
+        "q1": {
+          "score": 4,
+          "why": "Little infrastructure to manage.",
+          "source": "assumption"
+        },
+        "q2": {
+          "score": 4,
+          "why": "Provider availability.",
+          "source": "assumption"
+        },
+        "q3": {
+          "score": 4,
+          "why": "Automatic scaling, with concurrency limits.",
+          "source": "assumption"
+        },
+        "q4": {
+          "score": 3,
+          "why": "Loose functions make clear boundaries harder.",
+          "source": "assumption"
+        },
+        "q5": {
+          "score": 4,
+          "why": "No servers, variable cost.",
+          "source": "assumption"
+        }
+      },
+      "diagram": {
+        "nodes": [
+          {
+            "id": "web",
+            "label": "Web / App",
+            "kind": "client",
+            "group": "Clients",
+            "col": 0,
+            "row": 0
+          },
+          {
+            "id": "apigw",
+            "label": "Managed API",
+            "kind": "service",
+            "group": "Cloud",
+            "col": 1,
+            "row": 0
+          },
+          {
+            "id": "fn",
+            "label": "Functions",
+            "kind": "service",
+            "group": "Cloud",
+            "col": 2,
+            "row": 0
+          },
+          {
+            "id": "q",
+            "label": "Managed queue",
+            "kind": "queue",
+            "group": "Cloud",
+            "col": 2,
+            "row": 1
+          },
+          {
+            "id": "db",
+            "label": "Managed database",
+            "kind": "db",
+            "group": "Cloud",
+            "col": 3,
+            "row": 0
+          }
+        ],
+        "edges": [
+          {
+            "from": "web",
+            "to": "apigw",
+            "label": "HTTPS"
+          },
+          {
+            "from": "apigw",
+            "to": "fn",
+            "label": "invokes"
+          },
+          {
+            "from": "fn",
+            "to": "q",
+            "label": "publishes",
+            "async": true
+          },
+          {
+            "from": "fn",
+            "to": "db",
+            "label": "SQL/NoSQL"
+          }
+        ]
+      }
+    }
+  ],
+  "triggers": [
+    "Sustained peak above 1,500 req/s for 2 weeks",
+    "More than 3 teams changing the same module with deploy conflicts",
+    "Payments needing a different SLO from the rest"
+  ],
+  "assumptions": [
+    "Scores in the example are illustrative, without external research",
+    "Cloud budget is not a dominant constraint"
+  ]
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  var KIND = { client:"client", service:"service", db:"data", queue:"queue", external:"external" };
+  var data, weights = {}, state = { tab: "summary", cand: null, cell: null };
+
+  function h(tag, attrs, kids) {
+    var el = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (k === "class") el.className = attrs[k];
+      else if (k === "text") el.textContent = attrs[k];
+      else if (k.slice(0, 2) === "on") el.addEventListener(k.slice(2), attrs[k]);
+      else el.setAttribute(k, attrs[k]);
+    });
+    [].concat(kids || []).forEach(function (c) { if (c != null) el.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return el;
+  }
+  function s(tag, attrs, text) {
+    var el = document.createElementNS(NS, tag);
+    Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+    if (text != null) el.textContent = text;
+    return el;
+  }
+  function list(items) { return h("ul", {}, (items || []).map(function (t) { return h("li", { text: String(t) }); })); }
+  function isUrl(u) { return /^https?:\/\//i.test(String(u || "")); }
+
+  function total(c) {
+    var sw = 0, sum = 0;
+    data.drivers.forEach(function (d) {
+      var sc = c.scores && c.scores[d.id] ? Number(c.scores[d.id].score) || 0 : 0;
+      sw += weights[d.id]; sum += weights[d.id] * sc;
+    });
+    return sw ? sum / sw : 0;
+  }
+  function ranking() {
+    return data.candidates.map(function (c) { return { c: c, t: total(c) }; }).sort(function (a, b) { return b.t - a.t; });
+  }
+
+  /* ---------- views ---------- */
+  function viewSummary() {
+    var rec = data.candidates.filter(function (c) { return c.recommended; })[0];
+    var box = h("div", {});
+    if (data.decision) box.appendChild(h("div", { class: "card" }, [h("h2", { text: "Decision at stake" }), h("p", { text: data.decision })]));
+    var grid = h("div", { class: "grid" });
+    if (rec) grid.appendChild(h("div", { class: "card" }, [
+      h("span", { class: "badge rec", text: "Recommended" }), h("h2", { text: rec.name, style: "margin-top:8px" }),
+      h("p", { text: rec.summary || "" }),
+      h("p", { class: "muted", text: "Cost to reverse: " + (rec.reversal || "n/a") })
+    ]));
+    var rk = h("div", { class: "card" }, [h("h2", { text: "Weighted ranking (current weights)" })]);
+    ranking().forEach(function (r, i) {
+      rk.appendChild(h("div", { class: "bar-row" + (i === 0 ? " top" : "") }, [
+        h("span", { text: r.c.name }),
+        h("div", { class: "bar" }, [h("i", { style: "width:" + (r.t / 5 * 100).toFixed(0) + "%" })]),
+        h("span", { text: r.t.toFixed(2) })
+      ]));
+    });
+    rk.appendChild(h("p", { class: "muted", text: "Scale 0–5. Adjust the weights in the Tradeoffs tab." }));
+    grid.appendChild(rk);
+    box.appendChild(grid);
+    var dr = h("div", { class: "card" }, [h("h2", { text: "Drivers and quality scenarios" })]);
+    var t = h("table", {}, [h("thead", {}, h("tr", {}, [h("th", { text: "Attribute" }), h("th", { text: "Measurable scenario" }), h("th", { class: "num", text: "Weight" })]))]);
+    var tb = h("tbody", {});
+    data.drivers.forEach(function (d) { tb.appendChild(h("tr", {}, [h("td", { text: d.name }), h("td", { text: d.scenario || "" }), h("td", { class: "num", text: String(d.weight) })])); });
+    t.appendChild(tb); dr.appendChild(t); box.appendChild(dr);
+    return box;
+  }
+
+  var measureEl = null;
+  function textWidth(str, cls) { /* measures the real text in the browser; estimates when that is not possible */
+    try {
+      if (!measureEl) {
+        var ms = s("svg", { "aria-hidden": "true", style: "position:absolute;left:-9999px;top:0;width:10px;height:10px;visibility:hidden" });
+        measureEl = s("text", {}); ms.appendChild(measureEl); document.body.appendChild(ms);
+      }
+      measureEl.setAttribute("class", cls); measureEl.textContent = str;
+      var w = measureEl.getComputedTextLength();
+      if (w > 0) return w;
+    } catch (e) { /* use the estimate */ }
+    return str.length * 6.2;
+  }
+  function wrapLabel(str, maxW) { /* up to 2 lines, breaking at the space closest to the middle */
+    if (textWidth(str, "elabel") <= maxW) return [str];
+    var words = str.split(/\s+/), best = null;
+    for (var i = 1; i < words.length; i++) {
+      var a = words.slice(0, i).join(" "), b = words.slice(i).join(" "), w = Math.max(textWidth(a, "elabel"), textWidth(b, "elabel"));
+      if (!best || w < best.w) best = { w: w, lines: [a, b] };
+    }
+    return best ? best.lines : [str];
+  }
+  function overlap(a, b, m) { return a.x < b.x + b.w + m && a.x + a.w + m > b.x && a.y < b.y + b.h + m && a.y + a.h + m > b.y; }
+  function segHitsRect(p, q, r) { /* Liang–Barsky: does segment p→q cross rectangle r? */
+    var t0 = 0, t1 = 1, dx = q.x - p.x, dy = q.y - p.y, P = [-dx, dx, -dy, dy], Q = [p.x - r.x, r.x + r.w - p.x, p.y - r.y, r.y + r.h - p.y];
+    for (var i = 0; i < 4; i++) {
+      if (P[i] === 0) { if (Q[i] < 0) return false; }
+      else { var t = Q[i] / P[i]; if (P[i] < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } }
+    }
+    return true;
+  }
+
+  function layoutDiagram(cand) {
+    var d = cand.diagram || { nodes: [], edges: [] };
+    var W = 176, H = 58, GY = 56, PAD = 44, LH = 13, byId = {};
+    /* horizontal gap between columns grows with the longest label of links between adjacent columns (74–120) */
+    var GX = 74;
+    d.nodes.forEach(function (n) { byId[n.id] = n; });
+    d.edges.forEach(function (e) {
+      var a = byId[e.from], b = byId[e.to];
+      if (e.label && a && b && Math.abs((a.col || 0) - (b.col || 0)) === 1) GX = Math.max(GX, Math.min(120, Math.ceil(textWidth(e.label, "elabel")) + 22));
+    });
+    d.nodes.forEach(function (n) { n._x = PAD + (n.col || 0) * (W + GX); n._y = PAD + 14 + (n.row || 0) * (H + GY); });
+    var maxX = 0, maxY = 0; d.nodes.forEach(function (n) { maxX = Math.max(maxX, n._x + W); maxY = Math.max(maxY, n._y + H); });
+    var VW = maxX + PAD, VH = maxY + PAD;
+    var svg = s("svg", { viewBox: "0 0 " + VW + " " + VH, role: "img", "aria-label": "Architecture diagram " + cand.name });
+    var defs = s("defs"); var mk = s("marker", { id: "arr", viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "8", markerHeight: "8", orient: "auto-start-reverse" });
+    mk.appendChild(s("path", { d: "M0 0 L10 5 L0 10 z", fill: "currentColor", style: "color:var(--muted)" })); defs.appendChild(mk); svg.appendChild(defs);
+
+    /* obstacles for link labels: nodes and group titles */
+    var obstacles = [], titles = [];
+    d.nodes.forEach(function (n) { obstacles.push({ x: n._x, y: n._y, w: W, h: H }); });
+    var groups = {};
+    d.nodes.forEach(function (n) { if (n.group) (groups[n.group] = groups[n.group] || []).push(n); });
+    Object.keys(groups).forEach(function (g) {
+      var ns = groups[g], x1 = Math.min.apply(null, ns.map(function (n) { return n._x; })) - 16, y1 = Math.min.apply(null, ns.map(function (n) { return n._y; })) - 26,
+          x2 = Math.max.apply(null, ns.map(function (n) { return n._x + W; })) + 16, y2 = Math.max.apply(null, ns.map(function (n) { return n._y + H; })) + 14;
+      svg.appendChild(s("rect", { class: "grp", x: x1, y: y1, width: x2 - x1, height: y2 - y1, rx: 10 }));
+      var tr = { x: x1 + 10, y: y1 + 3, w: textWidth(g, "grp-label"), h: 15 };
+      titles.push({ name: g, x: x1 + 10, y: y1 + 15, r: tr }); obstacles.push(tr);
+    });
+
+    function edgePoint(a, b) { /* point on the border of rectangle a, towards b */
+      var cx = a._x + W / 2, cy = a._y + H / 2, dx = (b._x + W / 2) - cx, dy = (b._y + H / 2) - cy;
+      if (!dx && !dy) return { x: cx, y: cy };
+      var k = Math.min((W / 2) / Math.abs(dx || 1e-9), (H / 2) / Math.abs(dy || 1e-9));
+      return { x: cx + dx * k, y: cy + dy * k };
+    }
+    var segs = [];
+    d.edges.forEach(function (e) {
+      var a = byId[e.from], b = byId[e.to]; if (!a || !b) return;
+      var p = edgePoint(a, b), q = edgePoint(b, a);
+      segs.push({ e: e, p: p, q: q });
+      svg.appendChild(s("line", { class: "edge" + (e.async ? " async" : ""), x1: p.x, y1: p.y, x2: q.x, y2: q.y, "marker-end": "url(#arr)" }));
+    });
+
+    /* nodes */
+    d.nodes.forEach(function (n) {
+      var k = KIND[n.kind] ? n.kind : "service";
+      svg.appendChild(s("rect", { x: n._x, y: n._y, width: W, height: H, rx: k === "db" ? 18 : 8, fill: "var(--k-" + k + ")", stroke: "var(--line)" }));
+      svg.appendChild(s("text", { class: "kind", x: n._x + 10, y: n._y + 16 }, KIND[k]));
+      svg.appendChild(s("text", { x: n._x + W / 2, y: n._y + H / 2 + 8, "text-anchor": "middle", style: "font-weight:600" }, n.label));
+    });
+    titles.forEach(function (t) { svg.appendChild(s("text", { class: "grp-label", x: t.x, y: t.y }, t.name)); });
+
+    /* link labels: try positions along the line and pick one that touches no node, group title or other label */
+    var placed = [];
+    segs.forEach(function (sg) {
+      if (!sg.e.label) return;
+      var lines = wrapLabel(sg.e.label, 124), w = 0;
+      lines.forEach(function (l) { w = Math.max(w, textWidth(l, "elabel")); });
+      var h = lines.length * LH, best = null;
+      [0.5, 0.38, 0.62, 0.28, 0.72, 0.18, 0.82].forEach(function (t) {
+        var ax = sg.p.x + (sg.q.x - sg.p.x) * t, ay = sg.p.y + (sg.q.y - sg.p.y) * t;
+        [["above", { x: ax - w / 2, y: ay - h - 3 }, 0], ["below", { x: ax - w / 2, y: ay + 3 }, 4],
+         ["right", { x: ax + 6, y: ay - h / 2 }, 10], ["left", { x: ax - 6 - w, y: ay - h / 2 }, 10]].forEach(function (c) {
+          var r = { x: c[1].x, y: c[1].y, w: w, h: h }, cost = Math.abs(t - 0.5) * 30 + c[2];
+          if (r.x < 2 || r.y < 2 || r.x + r.w > VW - 2 || r.y + r.h > VH - 2) cost += 10000;
+          obstacles.forEach(function (o) { if (overlap(r, o, 3)) cost += 10000; });
+          placed.forEach(function (o) { if (overlap(r, o, 3)) cost += 10000; });
+          segs.forEach(function (o) { if (segHitsRect(o.p, o.q, r)) cost += o === sg ? 60 : 40; });
+          if (!best || cost < best.cost) best = { cost: cost, r: r, side: c[0] };
+        });
+      });
+      placed.push(best.r);
+      var anchor = best.side === "right" ? "start" : best.side === "left" ? "end" : "middle";
+      var tx = best.side === "right" ? best.r.x : best.side === "left" ? best.r.x + best.r.w : best.r.x + best.r.w / 2;
+      var tx_ = s("text", { class: "elabel", x: tx, y: best.r.y + 10, "text-anchor": anchor });
+      lines.forEach(function (l, i) { var ts = s("tspan", { x: tx, dy: i ? LH : 0 }, l); tx_.appendChild(ts); });
+      svg.appendChild(tx_);
+    });
+    return svg;
+  }
+
+  function viewDiagram() {
+    var box = h("div", {});
+    var pills = h("div", { class: "pills", role: "group", "aria-label": "Alternative" });
+    data.candidates.forEach(function (c) {
+      pills.appendChild(h("button", { class: "pill", "aria-pressed": String(c.id === state.cand), text: c.name + (c.recommended ? " ★" : ""), onclick: function () { state.cand = c.id; render(); } }));
+    });
+    box.appendChild(pills);
+    var cand = data.candidates.filter(function (c) { return c.id === state.cand; })[0] || data.candidates[0];
+    box.appendChild(h("p", { class: "muted", text: cand.summary || "" }));
+    box.appendChild(layoutDiagram(cand));
+    var lg = h("div", { class: "legend" });
+    Object.keys(KIND).forEach(function (k) { var sp = h("span", { text: KIND[k] }); sp.style.setProperty("--c", "var(--k-" + k + ")"); lg.appendChild(sp); });
+    lg.appendChild(h("span", { text: "dashed line = asynchronous", style: "--c:transparent" }));
+    box.appendChild(lg);
+    return box;
+  }
+
+  function viewTradeoffs() {
+    var box = h("div", {});
+    var card = h("div", { class: "card" }, [h("h2", { text: "Weighted matrix" }), h("p", { class: "muted", text: "Drag the weights to test how sensitive the decision is. Click a score to see its justification and source." })]);
+    var winner = ranking()[0].c, rec = data.candidates.filter(function (c) { return c.recommended; })[0];
+    if (rec && winner.id !== rec.id) card.appendChild(h("div", { class: "notice", text: "With these weights the leader is “" + winner.name + "”, not the recommended alternative (“" + rec.name + "”). The decision is sensitive to these weights." }));
+    var t = h("table", {});
+    var hr = h("tr", {}, [h("th", { text: "Criterion" }), h("th", { text: "Weight" })]);
+    data.candidates.forEach(function (c) { hr.appendChild(h("th", { class: "num", text: c.name })); });
+    t.appendChild(h("thead", {}, hr));
+    var tb = h("tbody", {});
+    data.drivers.forEach(function (d) {
+      var wv = h("span", { text: String(weights[d.id]), style: "display:inline-block;width:28px;text-align:right" });
+      var rg = h("input", { type: "range", min: "0", max: "100", value: String(weights[d.id]), "aria-label": "Weight of " + d.name, oninput: function (e) { weights[d.id] = Number(e.target.value); wv.textContent = e.target.value; refreshTotals(); } });
+      var tr = h("tr", {}, [h("td", {}, [h("div", { text: d.name }), h("div", { class: "muted", style: "font-size:12px", text: d.scenario || "" })]), h("td", {}, [rg, wv])]);
+      data.candidates.forEach(function (c) {
+        var sc = c.scores && c.scores[d.id], n = sc ? Math.max(1, Math.min(5, Math.round(Number(sc.score) || 1))) : 0;
+        var key = c.id + "|" + d.id;
+        var b = h("button", { class: "score", "aria-pressed": String(state.cell === key), text: sc ? String(sc.score) : "–", "aria-label": c.name + ", " + d.name + ": score " + (sc ? sc.score : "no score"), onclick: function () { state.cell = state.cell === key ? null : key; render(); } });
+        b.style.setProperty("--c", n ? "var(--s" + n + ")" : "transparent");
+        tr.appendChild(h("td", { class: "num" }, b));
+      });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    var tf = h("tr", { id: "totals" }, [h("td", { text: "Weighted total (0–5)" }), h("td", {})]);
+    data.candidates.forEach(function (c) { tf.appendChild(h("td", { class: "num", "data-c": c.id, text: total(c).toFixed(2) })); });
+    t.appendChild(h("tfoot", {}, tf));
+    card.appendChild(t);
+    var det = h("div", { class: "detail" + (state.cell ? " show" : ""), "aria-live": "polite" });
+    if (state.cell) {
+      var p = state.cell.split("|"), c = data.candidates.filter(function (x) { return x.id === p[0]; })[0], d = data.drivers.filter(function (x) { return x.id === p[1]; })[0], sc = c.scores[d.id];
+      det.appendChild(h("h3", { text: c.name + " × " + d.name + ": score " + sc.score }));
+      det.appendChild(h("p", { text: sc.why || "(no justification — disregard this score)" }));
+      if (sc.source) det.appendChild(isUrl(sc.source) ? h("p", {}, [document.createTextNode("Source: "), h("a", { href: sc.source, rel: "noopener noreferrer", target: "_blank", text: sc.source })]) : h("p", { class: "muted", text: "Source: " + sc.source }));
+    }
+    card.appendChild(det);
+    card.appendChild(h("p", {}, h("button", { class: "link", text: "Restore original weights", onclick: function () { initWeights(); render(); } })));
+    box.appendChild(card);
+    return box;
+  }
+  function refreshTotals() {
+    data.candidates.forEach(function (c) { var el = document.querySelector('#totals td[data-c="' + c.id + '"]'); if (el) el.textContent = total(c).toFixed(2); });
+  }
+
+  function viewRisks() {
+    var box = h("div", { class: "grid" });
+    data.candidates.forEach(function (c) {
+      box.appendChild(h("div", { class: "card" }, [
+        h("h2", { text: c.name + (c.recommended ? " ★" : "") }),
+        h("p", { class: "muted", text: "Cost to reverse: " + (c.reversal || "n/a") }),
+        h("h3", { text: "What must be true" }), list(c.mustBeTrue),
+        h("h3", { text: "Risks", style: "margin-top:12px" }), list(c.risks)
+      ]));
+    });
+    var wrap = h("div", {});
+    wrap.appendChild(box);
+    var g2 = h("div", { class: "grid" }, [
+      h("div", { class: "card" }, [h("h2", { text: "Re-evaluation triggers" }), list(data.triggers)]),
+      h("div", { class: "card" }, [h("h2", { text: "Open assumptions" }), list(data.assumptions)])
+    ]);
+    wrap.appendChild(g2);
+    return wrap;
+  }
+
+  /* ---------- shell ---------- */
+  var TABS = [["summary", "Summary", viewSummary], ["diagram", "Diagram", viewDiagram], ["tradeoffs", "Tradeoffs", viewTradeoffs], ["risks", "Risks and triggers", viewRisks]];
+  function render() {
+    var nav = document.getElementById("tabs"); nav.textContent = "";
+    TABS.forEach(function (t) {
+      nav.appendChild(h("button", { role: "tab", "aria-selected": String(state.tab === t[0]), text: t[1], onclick: function () { state.tab = t[0]; render(); } }));
+    });
+    var v = document.getElementById("view"); v.textContent = "";
+    v.appendChild(TABS.filter(function (t) { return t[0] === state.tab; })[0][2]());
+  }
+  function initWeights() { weights = {}; data.drivers.forEach(function (d) { weights[d.id] = Number(d.weight) || 0; }); }
+
+  try {
+    data = JSON.parse(document.getElementById("arch-data").textContent);
+    if (!data.drivers || !data.candidates || !data.candidates.length) throw new Error("Missing 'drivers' or 'candidates' in the JSON.");
+    initWeights();
+    state.cand = (data.candidates.filter(function (c) { return c.recommended; })[0] || data.candidates[0]).id;
+    document.title = (data.project || "Arquitetura") + " — architecture view";
+    document.getElementById("title").textContent = data.project || "Architecture view";
+    var meta = document.getElementById("meta");
+    if (data.example) meta.appendChild(h("span", { class: "badge example", text: "EXAMPLE — fictional data" }));
+    if (data.date) meta.appendChild(h("span", { text: data.date }));
+    if (data.confidence) meta.appendChild(h("span", { class: "badge", text: "confidence: " + data.confidence }));
+    render();
+  } catch (e) {
+    document.getElementById("view").appendChild(h("p", { class: "err", text: "Could not read the data: " + e.message }));
+  }
+})();
+</script>
+</body>
+</html>
