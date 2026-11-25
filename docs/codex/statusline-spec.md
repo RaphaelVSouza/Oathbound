@@ -18,6 +18,7 @@ Show the Oathbound mark, model, remaining context, and subagent roles in the Cod
 - Read the host's audit files using the same directory precedence as the hooks. The Codex manifest overlay forwards `AGENT_AUDIT_DIR` and `CODEX_HOME` to the bundled server when set. Cap each file read and use complete records. Missing files and invalid records leave the branded footer available.
 - Use single-line text with up to four agent labels and an overflow count. Further changes to experiment availability and polling follow Codex.
 - Show active subagent elapsed time when the audit start has a timestamp. Resolve the Git project and branch from the displayed thread's working directory with a bounded lookup.
+- Show total input/output tokens, 5h (300 min) and weekly (10080 min) remaining quota from `account.rate_limits` (hide windows already reset), `usage.cost.total_cost_usd`, and a `/compact` hint at 15% or less context remaining. Omit any value the snapshot lacks. Duration and line counts are not available and are not shown.
 - Highlight 20% or less remaining context. Show a hook-block warning for 60 seconds when the Codex audit contains a matching thread ID. The Codex subagent guard writes denials to that audit.
 
 ## Validation and acceptance

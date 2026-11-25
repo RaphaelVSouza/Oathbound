@@ -13,6 +13,7 @@ const STATE = 'com.openai/codex-statusline-state';
 const MAX_AUDIT_BYTES = 1024 * 1024;
 const MAX_AGENTS = 4;
 const LOW_CONTEXT_PERCENT = 20;
+const COMPACT_PERCENT = 15;
 const BLOCK_WARNING_MS = 60_000;
 const TOOL = {
   name: 'statusline',
@@ -100,6 +101,25 @@ function label(value) {
     : '';
 }
 
+function tokens(count) {
+  if (count >= 1e6) return `${(count / 1e6).toFixed(1)}M`;
+  if (count >= 1e3) return `${(count / 1e3).toFixed(1)}k`;
+  return String(Math.trunc(count));
+}
+
+// Remaining percent of the rate-limit window lasting `minutes`; expired or absent windows are omitted.
+function quotaLeft(snapshots, minutes, now) {
+  if (!Array.isArray(snapshots)) return undefined;
+  for (const snapshot of snapshots) {
+    for (const window of [snapshot?.primary_limit, snapshot?.secondary_limit]) {
+      if (window?.window_minutes !== minutes || !Number.isFinite(window.used_percent)) continue;
+      if (Number.isFinite(window.resets_at) && window.resets_at * 1000 <= now) continue;
+      return Math.round(100 - Math.min(100, Math.max(0, window.used_percent)));
+    }
+  }
+  return undefined;
+}
+
 async function workspaceLabel(cwd) {
   if (typeof cwd !== 'string' || !path.isAbsolute(cwd)) return '';
   const directory = label(path.basename(cwd));
@@ -137,6 +157,19 @@ async function render(state) {
   if (Number.isFinite(used)) {
     const remaining = Math.round(100 - Math.min(100, Math.max(0, used)));
     items.push(color(`ctx ${remaining}% left`, remaining <= LOW_CONTEXT_PERCENT ? 'yellow' : 'status-usage'));
+  }
+  const total = thread?.usage?.total;
+  const input = Number.isFinite(total?.total_input_tokens) ? Math.max(0, total.total_input_tokens) : 0;
+  const output = Number.isFinite(total?.output_tokens) ? Math.max(0, total.output_tokens) : 0;
+  if (input > 0 || output > 0) items.push(color(`in ${tokens(input)} out ${tokens(output)}`, 'status-usage'));
+  for (const [name, minutes] of [['5h', 300], ['wk', 10080]]) {
+    const left = quotaLeft(state?.account?.rate_limits, minutes, now);
+    if (left !== undefined) items.push(color(`${name} ${left}% left`, left <= LOW_CONTEXT_PERCENT ? 'yellow' : 'status-limit'));
+  }
+  const cost = thread?.usage?.cost?.total_cost_usd;
+  if (Number.isFinite(cost) && cost >= 0) items.push(color(`$${cost.toFixed(2)}`, 'status-usage'));
+  if (Number.isFinite(used) && 100 - Math.min(100, Math.max(0, used)) <= COMPACT_PERCENT) {
+    items.push(color('/compact', 'yellow'));
   }
   if (recentBlock) items.push(color('hook blocked', 'yellow'));
   if (agents.length) items.push(color(agents.join(' · '), 'status-state'));

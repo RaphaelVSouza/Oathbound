@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- The Codex footer (`codex/statusline.cjs`) shows input/output tokens, 5h and weekly quota remaining (expired windows hidden), cost in USD and a `/compact` hint at 15% context or less, each only when the Codex snapshot reports it. Duration and line counts are not in the Codex snapshot and stay out. agy needs no change: the native renderer already hides cost, duration and lines when its payload lacks them; its payload was inspected statically (binary strings), not captured live.
+
 - ADR-0019: the `nerd` icon set code points are now checked against Font Awesome 4.7 and Nerd Fonts `glyphnames.json`; the brand glyph was seen rendering in a Meslo Nerd Font. No code change.
 
 - The global alignment gate in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.gemini/config/GEMINI.md` now reads "propose a plan (max 5 lines) and wait for "ok", unless the request already states the work". A request that already names the work no longer needs a second approval. These files live outside this repository; edited by hand, not by the installer.
