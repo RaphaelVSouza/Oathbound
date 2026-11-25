@@ -20,10 +20,12 @@ const DEFAULT_BIN = path.resolve(
 const BIN = process.env.OATHBOUND_HOOK_BIN || DEFAULT_BIN;
 
 function runHook(subcmd, input, env = process.env) {
+  // Host settings may export icon mode; tests expect the default unicode icons.
+  const { OATHBOUND_STATUSLINE_ICONS, ...cleanEnv } = env;
   return spawnSync(BIN, [subcmd], {
     input: typeof input === 'string' ? input : JSON.stringify(input),
     encoding: 'utf8',
-    env,
+    env: cleanEnv,
   });
 }
 
@@ -195,6 +197,18 @@ test('native statusline accepts Claude effort and rate limits', { skip: !fs.exis
   });
   assert.equal(result.status, 0);
   for (const text of ['Oathbound', 'Opus', '(high)', '10% left', '84% left', '65% left', '/compact']) {
+    assert.ok(result.stdout.includes(text), text);
+  }
+});
+
+test('native statusline shows session cost, duration, lines and tokens', { skip: !fs.existsSync(BIN) }, () => {
+  const result = runHook('statusline', {
+    model: { display_name: 'Opus' },
+    context_window: { remaining_percentage: 60, total_input_tokens: 15500, total_output_tokens: 1200 },
+    cost: { total_cost_usd: 0.01234, total_duration_ms: 4500000, total_lines_added: 156, total_lines_removed: 23 },
+  });
+  assert.equal(result.status, 0);
+  for (const text of ['0.01', '1h15m', '+156', '-23', '15.5k', '1.2k']) {
     assert.ok(result.stdout.includes(text), text);
   }
 });

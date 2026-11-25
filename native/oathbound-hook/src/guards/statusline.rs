@@ -51,6 +51,16 @@ fn fmt_duration(sec: Option<f64>) -> String {
     }
 }
 
+fn fmt_tokens(count: f64) -> String {
+    if count >= 1_000_000.0 {
+        format!("{:.1}M", count / 1_000_000.0)
+    } else if count >= 1_000.0 {
+        format!("{:.1}k", count / 1_000.0)
+    } else {
+        format!("{}", count as i64)
+    }
+}
+
 fn color_by_pct(pct: i64) -> &'static str {
     if pct <= 15 {
         RED
@@ -326,6 +336,42 @@ pub fn run(raw: &str, oversized: bool) -> String {
         .map(|(remaining, _)| color_percent("wk", remaining))
         .unwrap_or_default();
 
+    // Session totals the host reports in `cost` and `context_window`; nothing is computed
+    // from transcripts and no process is spawned.
+    let session = p.get("cost").unwrap_or(&Value::Null);
+    let cost = get_f64(session, "total_cost_usd")
+        .filter(|usd| usd.is_finite() && *usd >= 0.0)
+        .map(|usd| format!("{DIM}${RESET}{usd:.2}"))
+        .unwrap_or_default();
+    let duration = get_f64(session, "total_duration_ms")
+        .map(|ms| fmt_duration(Some(ms / 1000.0)))
+        .filter(|text| !text.is_empty())
+        .map(|text| format!("{DIM}{text}{RESET}"))
+        .unwrap_or_default();
+    let changed = [
+        (get_f64(session, "total_lines_added"), GREEN, '+'),
+        (get_f64(session, "total_lines_removed"), RED, '-'),
+    ]
+    .into_iter()
+    .filter_map(|(count, color, sign)| {
+        count
+            .filter(|n| n.is_finite() && *n > 0.0)
+            .map(|n| format!("{color}{sign}{}{RESET}", n as i64))
+    })
+    .collect::<Vec<_>>()
+    .join(" ");
+    let tokens = match (
+        get_f64(&p["context_window"], "total_input_tokens"),
+        get_f64(&p["context_window"], "total_output_tokens"),
+    ) {
+        (Some(input), Some(output)) if input > 0.0 || output > 0.0 => format!(
+            "{DIM}in{RESET} {} {DIM}out{RESET} {}",
+            fmt_tokens(input),
+            fmt_tokens(output)
+        ),
+        _ => String::new(),
+    };
+
     let icons = IconSet::from_env();
     let running: Vec<String> = p
         .get("subagents")
@@ -337,7 +383,10 @@ pub fn run(raw: &str, oversized: bool) -> String {
             let role = get_str(agent, "role").filter(|role| !role.is_empty());
             let name = get_str(agent, "name").filter(|name| !name.is_empty());
             let display = label(role.or(name).unwrap_or("subagent"));
-            format!("{} {display}", agent_glyph(icons, role.or(name).unwrap_or("")))
+            format!(
+                "{} {display}",
+                agent_glyph(icons, role.or(name).unwrap_or(""))
+            )
         })
         .collect();
     let agent_label = |count: usize| {
@@ -360,17 +409,25 @@ pub fn run(raw: &str, oversized: bool) -> String {
     const REPO: usize = 1;
     const MODEL: usize = 2;
     const CONTEXT: usize = 3;
-    const PRIMARY: usize = 4;
-    const WEEKLY: usize = 5;
-    const COMPACT: usize = 6;
-    const AGENTS: usize = 7;
+    const TOKENS: usize = 4;
+    const PRIMARY: usize = 5;
+    const WEEKLY: usize = 6;
+    const COST: usize = 7;
+    const DURATION: usize = 8;
+    const CHANGED: usize = 9;
+    const COMPACT: usize = 10;
+    const AGENTS: usize = 11;
     let mut parts = [
         format!("{BOLD}{} Oathbound{RESET}", icons.brand()),
         repo,
         model,
         context,
+        tokens,
         primary,
         weekly,
+        cost,
+        duration,
+        changed,
         compact,
         agent_label(running.len()),
     ];
@@ -397,7 +454,8 @@ pub fn run(raw: &str, oversized: bool) -> String {
             }
         }
         for index in [
-            COMPACT, AGENTS, BRAND, REPO, MODEL, WEEKLY, PRIMARY, CONTEXT,
+            TOKENS, CHANGED, DURATION, COST, COMPACT, AGENTS, BRAND, REPO, MODEL, WEEKLY, PRIMARY,
+            CONTEXT,
         ] {
             if status_width(&parts) <= width {
                 break;
@@ -457,6 +515,55 @@ mod tests {
         assert!(!output.contains("5h"));
         assert!(run("invalid", false).is_empty());
         assert!(run("{}", true).is_empty());
+    }
+
+    #[test]
+    fn session_totals_show_cost_duration_lines_and_tokens() {
+        let payload = json!({
+            "context_window": {
+                "remaining_percentage": 60,
+                "total_input_tokens": 15500,
+                "total_output_tokens": 1200000
+            },
+            "cost": {
+                "total_cost_usd": 1.234,
+                "total_duration_ms": 4_500_000,
+                "total_lines_added": 156,
+                "total_lines_removed": 23
+            }
+        });
+        let output = run(&payload.to_string(), false);
+        assert!(output.contains("1.23"));
+        assert!(output.contains("1h15m"));
+        assert!(output.contains("+156"));
+        assert!(output.contains("-23"));
+        assert!(output.contains("15.5k"));
+        assert!(output.contains("1.2M"));
+
+        let empty = run(
+            &json!({ "cost": { "total_lines_added": 0, "total_cost_usd": null } }).to_string(),
+            false,
+        );
+        assert!(!empty.contains('$'));
+        assert!(!empty.contains('+'));
+    }
+
+    #[test]
+    fn narrow_terminals_drop_session_totals_before_context() {
+        let payload = json!({
+            "terminal_width": 40,
+            "model": { "display_name": "Opus" },
+            "context_window": {
+                "remaining_percentage": 70,
+                "total_input_tokens": 1000,
+                "total_output_tokens": 1000
+            },
+            "cost": { "total_cost_usd": 2.0, "total_duration_ms": 60000, "total_lines_added": 5 }
+        });
+        let output = run(&payload.to_string(), false);
+        assert!(output.contains("70% left"));
+        assert!(!output.contains("in "));
+        assert!(status_width(&[output]) <= 40);
     }
 
     #[test]
