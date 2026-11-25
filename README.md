@@ -109,6 +109,22 @@ status_line = ["project-name", "git-branch", "model-with-reasoning", "context-re
 
 Use `/statusline` to customize the fields, for example to add weekly quota or Fast mode. [Codex footer controls](https://learn.chatgpt.com/docs/developer-commands?surface=cli#configure-footer-items-with-statusline)
 
+The installed Oathbound Codex plugin registers the branded footer provider. Node.js 24+ must be on PATH on the machine running the Codex app server. Enable **Custom status line** in `/experimental` and restart Codex. Start a conversation, then open `/statusline` → **Choose a status line provider** → **Oathbound**.
+
+For standalone setup, register the provider using the absolute path to `codex/statusline.cjs` in a checkout or `setup/statusline.cjs` in a built Codex package.
+
+```sh
+codex mcp add oathbound-statusline -- node "/absolute/path/to/statusline.cjs"
+```
+
+For roles to appear, review and trust the Oathbound `SubagentStart` and `SubagentStop` hooks in `/hooks`. The hooks need a working absolute path to the installed binary or `oathbound-hook` on PATH. The bundled provider inherits `AGENT_AUDIT_DIR` and `CODEX_HOME` from the app server when set. For standalone registration with a custom audit location, pass the same absolute path with `--env AGENT_AUDIT_DIR=<audit-directory>` or `--env CODEX_HOME=<codex-directory>` before the `--`. [Codex provider guide](https://github.com/openai/codex/blob/rust-v0.172.0/codex-rs/skills/src/assets/samples/create-statusline/SKILL.md)
+
+```text
+◆ Oathbound | ⚒ smith · ◇ scholar | model (high) | ctx 72% left
+```
+
+The footer tracks agents from their recorded start to their recorded stop in the root Codex session. It shows up to four role labels and an overflow count. Codex polls the provider about once a second.
+
 #### Claude Code and Antigravity CLI
 
 Both clients can run `oathbound-hook statusline` for the branded text footer. The renderer displays context and quota as percentages remaining. On agy, running subagents use Unicode glyphs inspired by the artwork above, and the footer shortens optional details as the terminal narrows.

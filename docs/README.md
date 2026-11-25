@@ -11,6 +11,7 @@ Package policies and architecture:
 - [ADR-0008: Layered portability and harness-exclusive skills](adr/0008-portable-and-harness-exclusive-skills.md)
 - [ADR-0009: Per-platform packaging of the native hook binary (Proposed)](adr/0009-per-platform-native-hook-packaging.md)
 - [ADR-0010: Standardize subagent output contracts](adr/0010-standardize-subagent-output-contracts.md)
+- [ADR-0011 — Use an opt-in MCP provider for the Codex footer](adr/0011-use-mcp-for-the-codex-footer.md)
 
 ## Reusable Prompts
 

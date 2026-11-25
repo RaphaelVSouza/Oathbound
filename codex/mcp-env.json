@@ -1,0 +1,9 @@
+{
+  "name": "oathbound",
+  "mcpServers": {
+    "oathbound-statusline": {
+      "command": "node",
+      "env_vars": ["AGENT_AUDIT_DIR", "CODEX_HOME"]
+    }
+  }
+}

@@ -102,10 +102,14 @@ function buildPlugin(runner, destination) {
   };
   if (runner === 'codex') {
     write('plugins/oathbound/plugin.json', loadManifest('codex/plugin.json'));
+    copy('codex/mcp.json', 'plugins/oathbound/mcp.json');
+    copy('codex/mcp-env.json', 'plugins/oathbound/.codex-plugin/plugin.json');
+    copy('codex/statusline.cjs', 'plugins/oathbound/statusline.cjs');
     copySkillsForRunner('codex', path.join(out, 'plugins/oathbound/skills'));
     copy('codex/oathkeeper.config.toml', 'setup/oathkeeper.config.toml');
     copy('codex/agents', 'setup/agents');
     copy('codex/hooks.json', 'setup/hooks.json');
+    copy('codex/statusline.cjs', 'setup/statusline.cjs');
     write('.agents/plugins/marketplace.json', JSON.parse(fs.readFileSync(path.join(source, 'codex/marketplace.json'), 'utf8')));
     return out;
   }

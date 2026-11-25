@@ -141,6 +141,16 @@ test('generates a Codex marketplace with a portable plugin and complete skills',
   const manifest = JSON.parse(fs.readFileSync(path.join(plugin, 'plugin.json'), 'utf8'));
   assert.equal(manifest.name, entry.name);
   assert.equal(manifest.version, fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim());
+  const mcp = JSON.parse(fs.readFileSync(path.join(plugin, 'mcp.json'), 'utf8'));
+  const footer = mcp.mcpServers['oathbound-statusline'];
+  assert.deepEqual(footer, {
+    type: 'stdio', command: 'node', args: ['${PLUGIN_ROOT}/statusline.cjs'],
+  });
+  const footerScript = footer.args[0].replace('${PLUGIN_ROOT}', plugin);
+  assert.deepEqual(fs.readFileSync(footerScript), fs.readFileSync(path.join(ROOT, 'codex/statusline.cjs')));
+  const overlay = JSON.parse(fs.readFileSync(path.join(plugin, '.codex-plugin/plugin.json'), 'utf8'));
+  assert.equal(overlay.name, manifest.name);
+  assert.deepEqual(overlay.mcpServers['oathbound-statusline'].env_vars, ['AGENT_AUDIT_DIR', 'CODEX_HOME']);
   const skills = path.join(plugin, 'skills');
   assert.deepEqual(fs.readdirSync(skills).sort(), [
     'api-contract-design',
@@ -157,6 +167,8 @@ test('generates a Codex marketplace with a portable plugin and complete skills',
   ]);
   assert.deepEqual(fs.readFileSync(path.join(out, 'setup/oathkeeper.config.toml')),
     fs.readFileSync(path.join(ROOT, 'codex/oathkeeper.config.toml')));
+  assert.deepEqual(fs.readFileSync(path.join(out, 'setup/statusline.cjs')),
+    fs.readFileSync(path.join(ROOT, 'codex/statusline.cjs')));
   assert.deepEqual(fs.readdirSync(path.join(out, 'setup/agents')).sort(),
     ['assayer', 'breaker', 'scholar', 'scout', 'scribe', 'sentinel', 'smith'].map(name => name + '.toml'));
   const { verificar } = require('./agents/sincronia.js');
@@ -179,7 +191,7 @@ test('generates a Codex marketplace with a portable plugin and complete skills',
     const expected = file.name === 'SKILL.md' && fs.existsSync(override) ? override : original;
     assert.deepEqual(fs.readFileSync(path.join(skills, rel)), fs.readFileSync(expected));
   }
-  assert.deepEqual(fs.readdirSync(plugin).sort(), ['plugin.json', 'skills']);
+  assert.deepEqual(fs.readdirSync(plugin).sort(), ['.codex-plugin', 'mcp.json', 'plugin.json', 'skills', 'statusline.cjs']);
   assert.throws(() => buildPlugin('codex', out), /EEXIST/);
 });
 
