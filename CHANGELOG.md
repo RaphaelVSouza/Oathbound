@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.50.0-alpha.79] - 2026-11-27
+
+- Adds the `git-commiter` skill, which activates on commit requests across Claude Code, Antigravity CLI, and Codex CLI. It checks the active worktree and branch, resolves the destination for requested pushes, and validates selected changes before committing. It uses a short imperative subject when neither the user nor the repository specifies a commit message style.
+
 ## [0.50.0-alpha.78] - 2026-11-27
 
 - Adds a user-invoked `setup-alias` skill that configures the current runner's Oathkeeper shortcut in the user's interactive shell.

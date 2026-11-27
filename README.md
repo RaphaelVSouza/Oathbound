@@ -42,6 +42,8 @@ To start an Oathbound session in Claude, use `claude --agent oathbound:oathkeepe
 
 Explicitly invoke the `setup-alias` skill to add the current CLI's Oathkeeper shortcut to your interactive shell. It configures `claude:oathkeeper`, `agy:oathkeeper`, or `codex:oathkeeper` according to the runner. Shells that reject colons use a hyphen.
 
+Ask to commit your changes, for example “commit this”, to trigger [`git-commiter`](skills/git-commiter/SKILL.md). It checks the active worktree and branch before staging, then reviews, validates, and commits the requested changes. If you also request a push, it resolves the destination first.
+
 Start the CLI normally to keep the default agent. During the session, request the desired subagent, for example, `oathbound:scout` in the Claude plugin or `scout` in agy.
 
 In the Claude plugin, the hook applies guards by the `oathbound:<agent>` identifier and records blocks. New logs use mode `0600` on Unix and inherit directory permissions on Windows. Older logs may contain details recorded by previous versions.

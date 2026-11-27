@@ -143,7 +143,10 @@ test('generates isolated plugins with agents and portable hooks without overwrit
   for (const runner of ['claude', 'agy']) {
     const out = buildPlugin(runner, path.join(tmp, runner));
     assert.equal(fs.readdirSync(path.join(out, 'agents')).length, 8);
-    assert.equal(fs.readdirSync(path.join(out, 'skills')).length, runner === 'agy' ? 14 : 13);
+    assert.equal(fs.readdirSync(path.join(out, 'skills')).length, runner === 'agy' ? 15 : 14);
+    const commitSkill = fs.readFileSync(path.join(out, 'skills/git-commiter/SKILL.md'), 'utf8');
+    assert.match(commitSkill, /^description: .*when the user asks to commit changes/m);
+    assert.doesNotMatch(commitSkill, /^disable-model-invocation:\s*true\s*$/m);
     const aliasSkill = fs.readFileSync(path.join(out, 'skills/setup-alias/SKILL.md'), 'utf8');
     assert.match(aliasSkill, /^disable-model-invocation: true\r?$/m);
     assert.ok(aliasSkill.includes(runner === 'agy' ? 'agy --agent oathkeeper' : 'claude --agent oathbound:oathkeeper'));
@@ -227,6 +230,7 @@ test('generates a Codex marketplace with a portable plugin and complete skills',
     'create-adr',
     'create-spec',
     'diagnosing-bugs',
+    'git-commiter',
     'grill-me',
     'incident-postmortem',
     'migration',
@@ -237,6 +241,7 @@ test('generates a Codex marketplace with a portable plugin and complete skills',
   ]);
   assert.match(fs.readFileSync(path.join(skills, 'setup-alias/SKILL.md'), 'utf8'), /codex --profile oathkeeper/);
   assert.match(fs.readFileSync(path.join(skills, 'setup-alias/agents/openai.yaml'), 'utf8'), /allow_implicit_invocation: false/);
+  assert.match(fs.readFileSync(path.join(skills, 'git-commiter/agents/openai.yaml'), 'utf8'), /allow_implicit_invocation: true/);
   assert.deepEqual(fs.readFileSync(path.join(out, 'setup/oathkeeper.config.toml')),
     fs.readFileSync(path.join(ROOT, 'codex/oathkeeper.config.toml')));
   assert.deepEqual(fs.readFileSync(path.join(out, 'setup/statusline.cjs')),

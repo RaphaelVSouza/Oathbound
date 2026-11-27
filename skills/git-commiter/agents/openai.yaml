@@ -1,0 +1,5 @@
+interface:
+  display_name: Commit Git changes
+  short_description: Review, validate, and commit selected changes
+policy:
+  allow_implicit_invocation: true
