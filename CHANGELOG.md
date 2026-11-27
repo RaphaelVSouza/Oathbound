@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.50.0-alpha.78] - 2026-11-27
+
+- Adds a user-invoked `setup-alias` skill that configures the current runner's Oathkeeper shortcut in the user's interactive shell.
+
 ## [0.50.0-alpha.76] - 2026-11-27
 
 - The Codex footer reads audit logs asynchronously and retries audit and Git enrichment once, with up to 300 ms per attempt. A persistent lookup failure returns the available snapshot fields so polling can continue. Documented how to switch to Codex's built-in status fields if the MCP transport fails.

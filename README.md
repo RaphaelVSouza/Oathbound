@@ -40,6 +40,8 @@ If you already use the marketplace, update it and reload the plugin through the 
 
 To start an Oathbound session in Claude, use `claude --agent oathbound:oathkeeper`. In agy, use `agy agents` to check available agents and select `oathkeeper` with `agy --agent oathkeeper`.
 
+Explicitly invoke the `setup-alias` skill to add the current CLI's Oathkeeper shortcut to your interactive shell. It configures `claude:oathkeeper`, `agy:oathkeeper`, or `codex:oathkeeper` according to the runner. Shells that reject colons use a hyphen.
+
 Start the CLI normally to keep the default agent. During the session, request the desired subagent, for example, `oathbound:scout` in the Claude plugin or `scout` in agy.
 
 In the Claude plugin, the hook applies guards by the `oathbound:<agent>` identifier and records blocks. New logs use mode `0600` on Unix and inherit directory permissions on Windows. Older logs may contain details recorded by previous versions.

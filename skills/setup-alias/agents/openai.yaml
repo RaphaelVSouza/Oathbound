@@ -1,0 +1,5 @@
+interface:
+  display_name: Set up Oathkeeper shortcut
+  short_description: Add the Codex Oathkeeper shortcut to your shell
+policy:
+  allow_implicit_invocation: false
