@@ -18,6 +18,8 @@ Show the Oathbound mark, model, remaining context, and subagent roles in the Cod
 - Read the host's audit files using the same directory precedence as the hooks. The Codex manifest overlay forwards `AGENT_AUDIT_DIR` and `CODEX_HOME` to the bundled server when set. Cap each file read and use complete records. Missing files and invalid records leave the branded footer available.
 - Use single-line text with up to four agent labels and an overflow count. Further changes to experiment availability and polling follow Codex.
 - Show active subagent elapsed time when the audit start has a timestamp. Resolve the Git project and branch from the displayed thread's working directory with a bounded lookup.
+- Read the audit files asynchronously. Run the audit and Git lookups in parallel and give each 300 ms per attempt, with one retry. Omit unavailable audit details and use the working directory name if Git is unavailable. Return the available snapshot fields within the client's one-second read budget. Each poll can recover the enriched footer independently.
+- Codex 0.172.0 stops polling on an MCP read failure. Its built-in footer can be selected in `/statusline` and uses `[tui].status_line` for its fields. Reselect Oathbound to restart polling.
 - Show total input/output tokens, 5h (300 min) and weekly (10080 min) remaining quota from `account.rate_limits` (hide windows already reset), `usage.cost.total_cost_usd`, and a `/compact` hint at 15% or less context remaining. Omit any value the snapshot lacks. Duration and line counts are not available and are not shown.
 - Highlight 20% or less remaining context. Show a hook-block warning for 60 seconds when the Codex audit contains a matching thread ID. The Codex subagent guard writes denials to that audit.
 
@@ -25,6 +27,7 @@ Show the Oathbound mark, model, remaining context, and subagent roles in the Cod
 
 - Exercise discovery and rendering through the provider's stdio interface.
 - Verify start, stop, thread isolation, rotated logs, malformed records, and overflow.
+- Inject slow audit reads and verify the response deadline, retry limit, snapshot fallback, and recovery through stdio.
 - Verify that Codex discovers the provider from the installed plugin with an isolated configuration.
 
 ## References

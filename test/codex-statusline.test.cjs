@@ -12,17 +12,78 @@ const test = require('node:test');
 const URI = 'ui://oathbound-statusline/footer';
 const STATE = 'com.openai/codex-statusline-state';
 
+test('slow audit reads retry once, serve snapshot fields, and recover on the next poll', { timeout: 10_000 }, async t => {
+  const dir = path.resolve(__dirname, '..', '.scratch', `codex-statusline-${randomUUID()}`);
+  fs.mkdirSync(dir, { recursive: true });
+  const log = path.join(dir, 'agent-audit.jsonl');
+  fs.writeFileSync(log, JSON.stringify({
+    ferramenta: 'SubagentStart', agent_id: 'smith-1', agente: 'smith', sessao_id: 'thread',
+  }) + '\n');
+  const preload = path.join(dir, 'slow-audit.cjs');
+  fs.writeFileSync(preload, `
+    const fs = require('node:fs');
+    const { setTimeout: delay } = require('node:timers/promises');
+    const log = ${JSON.stringify(log)};
+    const open = fs.promises.open;
+    const openSync = fs.openSync;
+    let calls = 0;
+    fs.promises.open = async (file, ...args) => {
+      if (file === log && ++calls <= 3) await delay(1200);
+      return open(file, ...args);
+    };
+    fs.openSync = (file, ...args) => {
+      if (file === log && ++calls <= 3) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1200);
+      return openSync(file, ...args);
+    };
+  `);
+  const child = spawn(process.execPath, ['--require', preload, path.resolve(__dirname, '../codex/statusline.cjs')], {
+    env: { ...process.env, AGENT_AUDIT_DIR: dir },
+    stdio: ['pipe', 'pipe', 'inherit'],
+  });
+  const closed = once(child, 'close');
+  t.after(async () => {
+    child.kill();
+    await closed;
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 });
+  });
+  const output = readline.createInterface({ input: child.stdout })[Symbol.asyncIterator]();
+  const state = { thread: {
+    id: 'thread', model: { display_name: 'Model' }, usage: { context: { used_percentage: 28 } },
+  } };
+  child.stdin.write('{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}\n');
+  assert.equal(JSON.parse((await output.next()).value).id, 0);
+  async function poll(id) {
+    const started = performance.now();
+    child.stdin.write(JSON.stringify({
+      jsonrpc: '2.0', id, method: 'resources/read', params: { uri: URI, _meta: { [STATE]: state } },
+    }) + '\n');
+    const reply = JSON.parse((await output.next()).value);
+    assert.equal(reply.id, id);
+    assert.ok(performance.now() - started < 1000, 'reply missed the Codex poll deadline');
+    return reply.result.contents[0].text;
+  }
+  const fallback = await poll(1);
+  assert.match(fallback, /Model.*ctx 72% left/);
+  assert.doesNotMatch(fallback, /smith/);
+  assert.match(await poll(2), /smith/);
+  assert.match(await poll(3), /Model.*ctx 72% left.*smith/);
+  child.stdin.end();
+});
+
 test('Codex discovers the Oathbound footer and polls live subagent roles', { timeout: 10_000 }, async t => {
   const dir = path.resolve(__dirname, '..', '.scratch', `codex-statusline-${randomUUID()}`);
   fs.mkdirSync(dir, { recursive: true });
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   const log = path.join(dir, 'agent-audit.jsonl');
   const child = spawn(process.execPath, [path.resolve(__dirname, '../codex/statusline.cjs')], {
     env: (({ OATHBOUND_STATUSLINE_ICONS, ...rest }) => ({ ...rest, AGENT_AUDIT_DIR: dir }))(process.env),
     stdio: ['pipe', 'pipe', 'inherit'],
   });
   const exit = once(child, 'exit');
-  t.after(() => child.kill());
+  t.after(async () => {
+    child.kill();
+    await exit;
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 });
+  });
   const output = readline.createInterface({ input: child.stdout })[Symbol.asyncIterator]();
 
   let id = 0;

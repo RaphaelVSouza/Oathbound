@@ -1,6 +1,6 @@
 'use strict';
 
-const fs = require('node:fs');
+const fs = require('node:fs/promises');
 const { execFile } = require('node:child_process');
 const os = require('node:os');
 const path = require('node:path');
@@ -15,6 +15,8 @@ const MAX_AGENTS = 4;
 const LOW_CONTEXT_PERCENT = 20;
 const COMPACT_PERCENT = 15;
 const BLOCK_WARNING_MS = 60_000;
+const LOOKUP_TIMEOUT_MS = 300;
+const LOOKUP_ATTEMPTS = 2;
 const TOOL = {
   name: 'statusline',
   title: 'Oathbound',
@@ -40,28 +42,33 @@ const ICON_SETS = {
 const ICONS = ICON_SETS[String(process.env.OATHBOUND_STATUSLINE_ICONS || '').trim().toLowerCase()] || ICON_SETS.unicode;
 const GLYPHS = new Map(ROLES.map((role, index) => [role, ICONS.roles[index]]));
 
-function readAuditTail(filename) {
-  let fd;
+async function readAuditTail(filename, signal) {
+  let file;
   try {
-    fd = fs.openSync(filename, 'r');
-    const stats = fs.fstatSync(fd);
+    signal.throwIfAborted();
+    file = await fs.open(filename, 'r');
+    signal.throwIfAborted();
+    const stats = await file.stat();
     if (!stats.isFile()) return '';
     // Read one extra byte to check whether the retained tail begins at a record boundary.
     const offset = Math.max(0, stats.size - MAX_AUDIT_BYTES - 1);
     const buffer = Buffer.allocUnsafe(stats.size - offset);
-    const count = fs.readSync(fd, buffer, 0, buffer.length, offset);
-    const bytes = buffer.subarray(0, count);
+    signal.throwIfAborted();
+    const { bytesRead } = await file.read(buffer, 0, buffer.length, offset);
+    signal.throwIfAborted();
+    const bytes = buffer.subarray(0, bytesRead);
     const start = offset > 0 ? bytes.indexOf(10) + 1 : 0;
     const end = bytes.lastIndexOf(10);
     return end >= start ? bytes.toString('utf8', start, end) : '';
-  } catch {
-    return '';
+  } catch (error) {
+    if (error.code === 'ENOENT') return '';
+    throw error;
   } finally {
-    if (fd !== undefined) fs.closeSync(fd);
+    if (file) await file.close();
   }
 }
 
-function readThreadAudit(threadId, now) {
+async function readThreadAudit(threadId, now, signal) {
   const active = new Map();
   let recentBlock = false;
   if (typeof threadId !== 'string' || !threadId) return { active, recentBlock };
@@ -70,7 +77,8 @@ function readThreadAudit(threadId, now) {
   const filename = path.join(directory, 'agent-audit.jsonl');
   const sessionKey = JSON.stringify(threadId);
   for (const suffix of ['.2', '.1', '']) {
-    for (const line of readAuditTail(filename + suffix).split('\n')) {
+    const tail = await readAuditTail(filename + suffix, signal);
+    for (const line of tail.split('\n')) {
       if (!line.includes(sessionKey)) continue;
       let event;
       try {
@@ -120,10 +128,9 @@ function quotaLeft(snapshots, minutes, now) {
   return undefined;
 }
 
-async function workspaceLabel(cwd) {
-  if (typeof cwd !== 'string' || !path.isAbsolute(cwd)) return '';
-  const directory = label(path.basename(cwd));
-  const options = { cwd, timeout: 600, maxBuffer: 4096, windowsHide: true };
+async function workspaceLabel(cwd, directory, signal) {
+  if (!cwd) return '';
+  const options = { cwd, signal, maxBuffer: 4096, windowsHide: true };
   const [root, ref] = await Promise.allSettled([
     git('git', ['rev-parse', '--show-toplevel'], options),
     git('git', ['symbolic-ref', '--quiet', '--short', 'HEAD'], options),
@@ -135,10 +142,35 @@ async function workspaceLabel(cwd) {
   return [project, branch].filter(Boolean).join(' · ');
 }
 
+async function lookupWithRetry(lookup, fallback) {
+  for (let attempt = 0; attempt < LOOKUP_ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    let timer;
+    try {
+      const deadline = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Footer lookup timed out')), LOOKUP_TIMEOUT_MS);
+      });
+      return await Promise.race([lookup(controller.signal), deadline]);
+    } catch {
+      // Give transient audit or Git stalls one more chance within the host's read deadline.
+    } finally {
+      clearTimeout(timer);
+      controller.abort();
+    }
+  }
+  return fallback;
+}
+
 async function render(state) {
   const thread = state?.thread;
   const now = Date.now();
-  const { active, recentBlock } = readThreadAudit(thread?.id, now);
+  const candidate = thread?.workspace?.cwd;
+  const cwd = typeof candidate === 'string' && path.isAbsolute(candidate) ? candidate : undefined;
+  const directory = cwd ? label(path.basename(cwd)) : '';
+  const [{ active, recentBlock }, workspace] = await Promise.all([
+    lookupWithRetry(signal => readThreadAudit(thread?.id, now, signal), { active: new Map(), recentBlock: false }),
+    lookupWithRetry(signal => workspaceLabel(cwd, directory, signal), directory),
+  ]);
   const agents = Array.from(active.values()).slice(0, MAX_AGENTS)
     .map(({ role, startedAt }) => {
       const duration = startedAt === undefined ? '' : ` ${Math.max(0, Math.floor((now - startedAt) / 1000))}s`;
@@ -148,7 +180,6 @@ async function render(state) {
 
   const color = (text, name) => ({ type: 'text', props: { color: name }, children: [text] });
   const items = [{ type: 'bold', children: [`${ICONS.brand} Oathbound`] }];
-  const workspace = await workspaceLabel(thread?.workspace?.cwd);
   if (workspace) items.push(color(workspace, 'status-path'));
   const model = label(thread?.model?.display_name);
   const effort = label(thread?.model?.reasoning_level);

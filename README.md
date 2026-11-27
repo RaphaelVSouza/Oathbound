@@ -125,6 +125,8 @@ For roles to appear, review and trust the Oathbound `SubagentStart` and `Subagen
 
 The footer tracks agents from their recorded start to their recorded stop in the root Codex session. It shows up to four role labels and an overflow count. Codex polls the provider about once a second.
 
+If audit or Git enrichment stalls, Oathbound retries once and then shows the available Codex fields, including model, context and quota. If Codex reports that the provider stopped, use `/statusline` to reselect Oathbound or switch to the built-in footer. The built-in footer uses the `status_line` fields configured above. [Codex 0.172.0 polling behavior](https://github.com/openai/codex/blob/rust-v0.172.0/codex-rs/tui/src/chatwidget/statusline_reader.rs)
+
 #### Claude Code and Antigravity CLI
 
 Both clients can run `oathbound-hook statusline` for the branded text footer. The renderer displays context and quota as percentages remaining. On agy, running subagents use Unicode glyphs inspired by the artwork above, and the footer shortens optional details as the terminal narrows.

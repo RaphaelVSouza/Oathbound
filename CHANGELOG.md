@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.50.0-alpha.76] - 2026-11-27
+
+- The Codex footer reads audit logs asynchronously and retries audit and Git enrichment once, with up to 300 ms per attempt. A persistent lookup failure returns the available snapshot fields so polling can continue. Documented how to switch to Codex's built-in status fields if the MCP transport fails.
+
 ## [0.50.0-alpha.75] - 2026-11-25
 
 - Oathkeeper (Claude, agy, Codex) gains two shared subsections, "Reading requests" and "Limits and handoffs", calibrated from session feedback:
