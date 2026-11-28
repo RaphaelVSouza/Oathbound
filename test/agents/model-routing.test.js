@@ -259,8 +259,18 @@ test('all runners preserve E1-E6 subagent alignment and orchestrator receipt gat
     assert.ok(read(file).includes('[handoff:sentinel]'), `${file} must document [handoff:sentinel]`);
   }
 
+  const finalReplyLine = 'Always end with a visible plain-text assistant message containing the filled receipt; never stop right after a tool call or with an empty response.';
+  for (const role of roles) {
+    for (const file of [`claude/agents/${role}.md`, `agy/config/agents/${role}.md`, `codex/agents/${role}.toml`]) {
+      const content = read(file);
+      assert.equal(count(content, finalReplyLine), 1, `${file} final visible receipt count`);
+      assert.doesNotMatch(content, /do not output it/i, `${file} must not suppress output with "do not output it"`);
+    }
+  }
+
   for (const [runner, profile] of Object.entries(profiles)) {
     assert.ok(profile.includes('Before relying on any receipt, read STATUS, CONFIDENCE, COVERAGE (when present) and GAPS.'), `${runner} receipt gate`);
+    assert.ok(profile.includes('An empty reply or a receipt missing an envelope field is unverified: re-request it once, then report it.'), `${runner} empty reply gate`);
     assert.ok(profile.includes('A finding tagged [handoff:sentinel] in an assayer receipt triggers sentinel'), `${runner} handoff trigger`);
   }
 });

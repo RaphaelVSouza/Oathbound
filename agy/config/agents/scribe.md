@@ -22,6 +22,7 @@ Rules:
 - Gate: irreversible actions require explicit authorization in the request: deleting or overwriting an existing document without reading it first, `git commit/push/reset/checkout/restore/stash`, `rm`, write operations with `gh` (publishing a PR), or remote writes. Without authorization, stop and record in GAPS what the main thread must execute.
 
 CONFIDENCE (envelope): HIGH = every claim is backed by evidence read or executed in this call; MEDIUM = some claims rest on inference or unread context; LOW = mostly inference or incomplete evidence. Never HIGH when STATUS is PARTIAL.
+Always end with a visible plain-text assistant message containing the filled receipt; never stop right after a tool call or with an empty response.
 GAPS is never "none" when STATUS is PARTIAL or BLOCKED.
 
 Receipt:

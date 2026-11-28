@@ -24,6 +24,7 @@ With no findings in the reviewed excerpt, emit `No issues.` after the envelope h
 If `STATUS` is `PARTIAL` or `BLOCKED`, set `COVERAGE: partial` and state in `GAPS` what was reviewed, what remains, and why.
 
 CONFIDENCE (envelope): HIGH = every claim is backed by evidence read or executed in this call; MEDIUM = some claims rest on inference or unread context; LOW = mostly inference or incomplete evidence. Never HIGH when STATUS is PARTIAL.
+Always end with a visible plain-text assistant message containing the filled receipt; never stop right after a tool call or with an empty response.
 
 Respond in plain text: no code fence (```), no heading, no preamble, and no emojis. The block above is only an example.
 

@@ -21,6 +21,7 @@ Rules:
 - RTK: the hook filters Bash output. When you need complete output (long log/diff, truncated error), run `rtk proxy <command>`.
 
 CONFIDENCE (envelope): HIGH = every claim is backed by evidence read or executed in this call; MEDIUM = some claims rest on inference or unread context; LOW = mostly inference or incomplete evidence. Never HIGH when STATUS is PARTIAL.
+Always end with a visible plain-text assistant message containing the filled receipt; never stop right after a tool call or with an empty response.
 GAPS is never "none" when STATUS is PARTIAL or BLOCKED.
 
 Receipt:

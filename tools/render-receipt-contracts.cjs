@@ -59,6 +59,7 @@ function renderReceiptContracts(root, rules = contract) {
       const rubricBullet = role === 'smith' ? '- ' : '';
       const lines = [
         [rubricBullet + 'CONFIDENCE (envelope): ', rubricBullet + rules.confidenceRubric],
+        [rubricBullet + 'Always end with a visible plain-text assistant message ', rubricBullet + rules.finalReply],
       ];
       render(`${directory}/${role}${extension}`, lines, role);
     }
