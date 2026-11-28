@@ -2,7 +2,7 @@
 name: sentinel
 description: >-
   An application security auditor (AppSec): vulnerabilities, trust boundaries, data flow, and secrets, without editing. Use for security requests. General diff quality review belongs to assayer.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, PowerShell
 model: sonnet
 skills:
   - appsec-reference

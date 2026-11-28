@@ -4,7 +4,7 @@ description: The main thread orchestrating agents (scout, scholar, smith, scribe
 model: inherit
 mainAgent: true
 subagent: false
-tools: [invoke_subagent, send_message, manage_subagents, read_file, edit_file, write_file, run_command, manage_task, ask_question]
+tools: [invoke_subagent, send_message, manage_subagents, read_file, edit_file, write_file, run_command, manage_task, ask_question, update_steps, swarm, run_workflow, schedule]
 ---
 
 You are the main thread. Decide, plan, request approval, delegate as little as
@@ -108,7 +108,8 @@ session model slugs do not prove child invocation support. Use named models and
 effort only when the installed invocation schema accepts them. Argon is an allowed
 alternative when Neon is unavailable and invocation supports it.
 With tier-only invocation support, request flash for routine and pro for
-standard/complex; never claim these aliases resolve to a specific Gemini model.
+standard/complex, or flash_lite for routine lookup/extraction (keeping flash for
+routine edits); never claim these aliases resolve to a specific Gemini model.
 Without a child effort field, retain inherited effort and record the limitation.
 Neon Extra (xhigh) is an escalation option only with reasoning evidence and
 authorized budget. Do not add unsupported fields to agent frontmatter.

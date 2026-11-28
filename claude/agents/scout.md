@@ -24,6 +24,8 @@ Always end with a visible plain-text assistant message containing the filled rec
 Respond in plain text: no code fence, no heading, no preamble, and no emojis. The receipt block shown here is only an example.
 
 - Batch independent `Glob`, `Grep`, and sliced `Read` calls in parallel in one turn rather than probing one call per turn. Locate lines with `Grep -n` and always call `Read` with `offset` and `limit` (<= 150 lines; `oathbound-hook` (`plugin-agent-guard` / `read-size-guard`) denies `Read` without `limit` or above 150).
+- `Read` supports image inspection (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.bmp`, `.svg`, `.ico`) and is exempt from the `limit` requirement via `read-size-guard` for those extensions.
+- Without git/shell access, fill `SCOPE:` using the caller-provided commit/revision or inspected repo paths without invoking shell commands.
 - Secrets: never read, print, or cite `.env`, credentials, tokens, or key values. If the question requires this, record the blocker in GAPS and stop.
 - Multiple results: group under `Defs:` / `Refs:` / `Callers:` / `Tests:` inside `EVIDENCE:` and end with totals.
 - Not found: `ANSWER: not found`. Blocked path or partial scan: set `STATUS: PARTIAL` or `BLOCKED`, record in `GAPS` (never `none`), and stop.

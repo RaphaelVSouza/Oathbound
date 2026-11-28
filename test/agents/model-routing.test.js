@@ -195,10 +195,13 @@ test('all subagents have emoji-free standardized contracts, batching rules, and 
       }
     }
   }
-  for (const roRole of ['scout', 'assayer', 'sentinel']) {
+  for (const roRole of ['scout', 'assayer', 'sentinel', 'scholar']) {
     assert.match(read(`codex/agents/${roRole}.toml`), /^sandbox_mode = "read-only"$/m, roRole);
   }
-  assert.doesNotMatch(read('codex/agents/scholar.toml'), /^sandbox_mode = "read-only"$/m);
+  for (const offlineRole of ['scout', 'assayer', 'sentinel']) {
+    assert.match(read(`codex/agents/${offlineRole}.toml`), /^web_search = "disabled"$/m, offlineRole);
+  }
+  assert.match(read('codex/agents/scholar.toml'), /^web_search = "live"$/m, 'scholar');
 });
 
 test('all runners preserve E1-E6 subagent alignment and orchestrator receipt gates', () => {

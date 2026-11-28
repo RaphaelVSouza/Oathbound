@@ -85,12 +85,15 @@ apply to increases in agent count or cost outside the authorized plan.
 | Complex architecture, cross-system investigation or security audit | gpt-6.2-astra | high |
 | Standard browser or desktop inspection | gpt-6.1-terra | medium |
 
-Use spawn_agent model and reasoning_effort overrides only when exposed.
+Use collaboration.spawn_agent model and reasoning_effort overrides only when exposed.
 Prefer fork_turns="none" with delimited context; full-history forks inherit
 settings and may reject overrides. Never discard relevant constraints to fit
 an override. Custom agent TOML model/model_reasoning_effort settings take
 precedence; respect local pins. Shipped role TOMLs leave both unset.
 If a role fixes model or effort, retain it and report the constraint.
+Map child follow-up/resume to collaboration.followup_task, stopping a predecessor
+to collaboration.interrupt_agent, and agent coordination to
+collaboration.send_message, collaboration.list_agents, and collaboration.wait_agent.
 
 ### Lean execution and gates
 

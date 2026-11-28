@@ -1,7 +1,7 @@
 ---
 name: assayer
 description: Review existing diffs and files. Return findings with path, line, severity, coverage, and gaps. Use to review completed changes. Does not implement, fix, or perform deep security audits (sentinel handles those).
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, PowerShell
 model: sonnet
 ---
 

@@ -2,7 +2,7 @@
 name: scribe
 description: >-
   Write and update documentation: specs/ADRs before implementation (spec mode), README/CHANGELOG/PR after delivery (release mode). Does not write product code or research external sources.
-tools: Read, Grep, Glob, Edit, Write, Bash, Skill
+tools: Read, Grep, Glob, Edit, Write, Bash, PowerShell, Skill
 model: sonnet
 ---
 

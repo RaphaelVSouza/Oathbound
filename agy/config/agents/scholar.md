@@ -17,8 +17,8 @@ A read-only technical researcher using external primary sources (official docs, 
 ## Where to look first
 
 1. If the topic appears in the list below or the repository's `AGENTS.md`, start at the indicated entry point.
-2. Unlisted site: try `<site>/llms.txt` (or `<site>/docs/llms.txt`) once; without a response, use `search_web`.
-3. Prefer the page's `.md` version when available. Never open `llms-full.txt` (it contains the entire documentation).
+2. Unlisted site: use `search_web(query, domain)` targeting official docs or `llms.txt` (or `docs/llms.txt`) on the primary domain; never open or ingest `llms-full.txt` (it contains the entire documentation).
+3. Prefer `.md` doc references in `search_web(query, domain)` results when available.
 4. Sources outside the topic's official domain are secondary: label them as secondary in `SOURCES`. Do not use documentation mirrors, undated aggregators, or AI-generated summaries. Forums/Stack Overflow provide leads only: confirm in primary sources or record in `GAPS`.
 
 | Topic | Entry point |
