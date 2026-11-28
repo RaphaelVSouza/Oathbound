@@ -18,13 +18,13 @@ Codex's built-in footer fields do not expose subagent roles. The experimental cu
 
 ## Decision Outcome
 
-Use the built-in footer and `/subagents` for native inspection. Ship the Node.js provider in the Codex package's `setup/` directory for users who want a timer in their footer. The provider reuses the audit log without introducing a second state writer.
+Bundle a Node.js provider in the Codex plugin and register it through the plugin's MCP configuration. Node is already used in Oathbound and the provider can run directly from the same package on each platform. Selecting it in the footer picker keeps the experimental footer opt-in. The provider reuses the audit log without introducing a second state writer.
 
 ### Consequences
 
 - The provider runs on the app-server host and reads the local audit files.
 - The role list reflects the retained lifecycle events. Rotation and missing events can make the list incomplete. Codex still receives the core footer when the log is absent.
-- Users who want the timer register the server manually and select the provider in the footer picker. This replaces the original automatic registration decision as of 2026-11-28.
+- Installing the plugin registers the server. Users select the provider in the footer picker. Standalone setups can register the same provider manually.
 
 ### Confirmation
 

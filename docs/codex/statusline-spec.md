@@ -12,10 +12,10 @@ Show the Oathbound mark, model, remaining context, and subagent roles in the Cod
 
 ## Contracts and data
 
-- Use the built-in footer by default and `/subagents` to inspect active threads. For an optional timer, register `setup/statusline.cjs` manually as `oathbound-statusline`. Its `statusline` tool advertises `ui://oathbound-statusline/footer` through the Codex UI entrypoint metadata.
+- Use the built-in footer by default and `/subagents` to inspect active threads. The plugin registers the optional `oathbound-statusline` provider in `mcp.json`. Standalone users can register `setup/statusline.cjs` manually. Its `statusline` tool advertises `ui://oathbound-statusline/footer` through the Codex UI entrypoint metadata.
 - Read the displayed thread ID from the snapshot on each resource request. In Codex 0.172.0 the root thread ID is also the session ID carried by the lifecycle hooks.
 - Replay the existing audit records in file order, from oldest retained file to current file. Use the full session ID and agent ID. A start adds or updates an agent and a stop removes it. Repeated events are idempotent.
-- Read the host's audit files using the same directory precedence as the hooks. For a custom audit directory, pass `AGENT_AUDIT_DIR` or `CODEX_HOME` at registration. Cap each file read and use complete records. Missing files and invalid records leave the branded footer available.
+- Read the host's audit files using the same directory precedence as the hooks. The bundled provider inherits `AGENT_AUDIT_DIR` and `CODEX_HOME` when set. For standalone setup, pass these variables at registration. Cap each file read and use complete records. Missing files and invalid records leave the branded footer available.
 - Use single-line text with up to four agent labels and an overflow count. Further changes to experiment availability and polling follow Codex.
 - Show active subagent elapsed time when the audit start has a timestamp. Resolve the Git project and branch from the displayed thread's working directory with a bounded lookup.
 - Read the audit files asynchronously. Run the audit and Git lookups in parallel and give each 300 ms per attempt, with one retry. Omit unavailable audit details and use the working directory name if Git is unavailable. Return the available snapshot fields within the client's one-second read budget. Each poll can recover the enriched footer independently.
@@ -28,7 +28,7 @@ Show the Oathbound mark, model, remaining context, and subagent roles in the Cod
 - Exercise discovery and rendering through the provider's stdio interface.
 - Verify start, stop, thread isolation, rotated logs, malformed records, and overflow.
 - Inject slow audit reads and verify the response deadline, retry limit, snapshot fallback, and recovery through stdio.
-- Verify that the package ships the standalone provider without an MCP registration. Check live discovery by registering it manually in an isolated Codex configuration.
+- Verify that the package registers the bundled provider and ships the standalone script. Check live discovery from the installed plugin in an isolated Codex configuration.
 
 ## References
 

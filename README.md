@@ -115,7 +115,7 @@ Use `/statusline` to customize the fields, for example to add weekly quota or Fa
 
 Use `/subagents` to inspect running subagent threads from the current session. [Codex subagent controls](https://learn.chatgpt.com/docs/developer-commands?surface=cli#switch-agent-threads-with-subagents)
 
-If you want elapsed time in the footer, manually register the optional Oathbound provider using the absolute path to `codex/statusline.cjs` in a checkout or `setup/statusline.cjs` in a built Codex package. Node.js 24+ must be on PATH on the Codex app-server host.
+The installed Oathbound plugin registers the optional footer provider. Node.js 24+ must be on PATH on the Codex app-server host. For standalone use, register the provider using the absolute path to `codex/statusline.cjs` in a checkout or `setup/statusline.cjs` in a built Codex package.
 
 ```sh
 codex mcp add oathbound-statusline -- node "/absolute/path/to/statusline.cjs"
@@ -123,7 +123,7 @@ codex mcp add oathbound-statusline -- node "/absolute/path/to/statusline.cjs"
 
 Enable **Custom status line** in `/experimental` and restart Codex. Start a conversation, then open `/statusline` → **Choose a status line provider** → **Oathbound**.
 
-For roles to appear, review and trust the Oathbound `SubagentStart` and `SubagentStop` hooks in `/hooks`. The hooks need a working absolute path to the installed binary or `oathbound-hook` on PATH. For a custom audit location, pass the same absolute path with `--env AGENT_AUDIT_DIR=<audit-directory>` or `--env CODEX_HOME=<codex-directory>` before the `--`. [Codex provider guide](https://github.com/openai/codex/blob/rust-v0.172.0/codex-rs/skills/src/assets/samples/create-statusline/SKILL.md)
+For roles to appear, review and trust the Oathbound `SubagentStart` and `SubagentStop` hooks in `/hooks`. The hooks need a working absolute path to the installed binary or `oathbound-hook` on PATH. The bundled provider inherits `AGENT_AUDIT_DIR` and `CODEX_HOME` from the app server when set. For standalone registration with a custom audit location, pass the same absolute path with `--env AGENT_AUDIT_DIR=<audit-directory>` or `--env CODEX_HOME=<codex-directory>` before the `--`. [Codex provider guide](https://github.com/openai/codex/blob/rust-v0.172.0/codex-rs/skills/src/assets/samples/create-statusline/SKILL.md)
 
 ```text
 [OB] [oathbound/main] [model (high)] [ctx 72% left] [> smith, > scholar]

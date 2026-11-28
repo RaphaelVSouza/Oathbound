@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.50.0-alpha.83] - 2026-11-28
+
+- Restores discovery of the optional Oathbound footer in the installed Codex plugin. The built-in footer remains the default.
+
 ## [0.50.0-alpha.82] - 2026-11-28
 
 - Reduces repeated Codex subagent waits by collecting completion notifications during independent work and checking agent status after a timeout or session resume. Keeps the receipt check for required results.
