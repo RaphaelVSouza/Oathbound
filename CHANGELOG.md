@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.50.0-alpha.80] - 2026-11-28
+
+- Requires every worker subagent across Claude Code, Antigravity CLI, and Codex CLI to end with a visible plain-text receipt (fixing silent exits in `smith`) and adds an empty-reply gate in `oathkeeper`.
+- Documents headless-verified built-in tools for all three harnesses in `docs/claude/tools.md`, `docs/antigravity/tools.md`, and `docs/codex/tools.md`.
+- Aligns subagent tool allowlists, sandboxes, and orchestration instructions across runners (`ToolSearch`/`ListAgents`/`SendMessage`/`PowerShell` in Claude, `update_steps`/`swarm`/`run_workflow`/`schedule` and `flash_lite` fallback in Antigravity, `sandbox_mode`/`web_search` and `collaboration.*` mapping in Codex, and image/listing guidance for `scout`).
+- Enforces `PowerShell` parity in `native/oathbound-hook` (`readonly`, `read_size`) and `claude/settings.json`, exempts image files from `Read` line limits, and adds `exec_command`/`tools.exec_command` (`cmd`) support to the destructive guard.
+
 ## [0.50.0-alpha.79] - 2026-11-27
 
 - Adds the `git-commiter` skill, which activates on commit requests across Claude Code, Antigravity CLI, and Codex CLI. It checks the active worktree and branch, resolves the destination for requested pushes, and validates selected changes before committing. It uses a short imperative subject when neither the user nor the repository specifies a commit message style.
@@ -9,6 +16,10 @@
 ## [0.50.0-alpha.78] - 2026-11-27
 
 - Adds a user-invoked `setup-alias` skill that configures the current runner's Oathkeeper shortcut in the user's interactive shell.
+
+## [0.50.0-alpha.77] - 2026-11-27
+
+- The Codex footer uses bracketed labels with ASCII icons by default, theme colors for metrics, and an explicit ! marker for warnings.
 
 ## [0.50.0-alpha.76] - 2026-11-27
 

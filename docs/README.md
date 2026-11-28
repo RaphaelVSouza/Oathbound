@@ -27,4 +27,4 @@ Package policies and architecture:
 - [Generic prompt: create a harness-native skill from a spec](prompts/create-skill-from-spec.md)
 - [Target spec: `agents-md-builder`](prompts/agents-md-builder-spec.md)
 
-Links reviewed: 2026-11-17.
+Links reviewed: 2026-11-28.
