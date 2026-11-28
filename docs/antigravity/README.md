@@ -2,7 +2,11 @@
 
 Links to official Antigravity IDE and CLI (`agy`) documentation. Consult official sources for current behavior and options.
 
-Links reviewed: 2026-11-17.
+Links reviewed: 2026-11-28.
+
+## Built-in Tools
+
+- [Built-in tools reference](tools.md) — verified catalog of CLI built-in tools (`agy -p`).
 
 ## IDE
 

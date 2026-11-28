@@ -2,7 +2,11 @@
 
 Links to official Claude Code documentation. Use vendor documentation as the source of truth for current behavior and options.
 
-Links reviewed: 2026-11-17.
+Links reviewed: 2026-11-28.
+
+## Built-in Tools
+
+- [Built-in tools reference](tools.md) — verified catalog of declared and deferred tools (`claude -p`).
 
 ## Getting Started and Using the CLI
 

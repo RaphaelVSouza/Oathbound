@@ -2,7 +2,11 @@
 
 Links to official OpenAI / Codex CLI skill-authoring documentation and the open Agent Skills specification. Consult vendor sources for current paths and supported fields.
 
-Links reviewed: 2026-11-24.
+Links reviewed: 2026-11-28.
+
+## Built-in Tools
+
+- [Built-in tools reference](tools.md) — verified catalog of direct and `functions.exec` nested tools (`codex exec`).
 
 ## Skills
 
