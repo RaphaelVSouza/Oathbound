@@ -37,9 +37,9 @@ const ICON_SETS = {
     roles: ['\uef04', '\uef02', '\uef03', '\uef07', '\uef05', '\uef06', '\uef01'],
     other: '\uef00', brand: '\uef00',
   },
-  ascii: { roles: ROLES.map(() => '>'), other: '>', brand: '*' },
+  ascii: { roles: ROLES.map(() => '>'), other: '>', brand: 'OB' },
 };
-const ICONS = ICON_SETS[String(process.env.OATHBOUND_STATUSLINE_ICONS || '').trim().toLowerCase()] || ICON_SETS.unicode;
+const ICONS = ICON_SETS[String(process.env.OATHBOUND_STATUSLINE_ICONS || '').trim().toLowerCase()] || ICON_SETS.ascii;
 const GLYPHS = new Map(ROLES.map((role, index) => [role, ICONS.roles[index]]));
 
 async function readAuditTail(filename, signal) {
@@ -139,7 +139,7 @@ async function workspaceLabel(cwd, directory, signal) {
   const project = label(path.basename(root.value.stdout.trim())) || directory;
   const branch = ref.status === 'fulfilled' ? label(ref.value.stdout) :
     ref.reason.code === 1 ? 'detached HEAD' : '';
-  return [project, branch].filter(Boolean).join(' · ');
+  return [project, branch].filter(Boolean).join('/');
 }
 
 async function lookupWithRetry(lookup, fallback) {
@@ -178,36 +178,36 @@ async function render(state) {
     });
   if (active.size > MAX_AGENTS) agents.push(`+${active.size - MAX_AGENTS}`);
 
-  const color = (text, name) => ({ type: 'text', props: { color: name }, children: [text] });
-  const items = [{ type: 'bold', children: [`${ICONS.brand} Oathbound`] }];
-  if (workspace) items.push(color(workspace, 'status-path'));
+  const badge = (text, color) => ({ type: 'text', props: { color }, children: [`[${text}]`] });
+  const items = [{ type: 'bold', children: [`[${ICONS.brand}]`] }];
+  if (workspace) items.push(badge(workspace, 'status-path'));
   const model = label(thread?.model?.display_name);
   const effort = label(thread?.model?.reasoning_level);
-  if (model) items.push(color(effort ? `${model} (${effort})` : model, 'status-model'));
+  if (model) items.push(badge(effort ? `${model} (${effort})` : model, 'status-model'));
   const used = thread?.usage?.context?.used_percentage;
   if (Number.isFinite(used)) {
     const remaining = Math.round(100 - Math.min(100, Math.max(0, used)));
-    items.push(color(`ctx ${remaining}% left`, remaining <= LOW_CONTEXT_PERCENT ? 'yellow' : 'status-usage'));
+    items.push(badge(`ctx ${remaining}% left`, remaining <= LOW_CONTEXT_PERCENT ? 'yellow' : 'status-usage'));
   }
   const total = thread?.usage?.total;
   const input = Number.isFinite(total?.total_input_tokens) ? Math.max(0, total.total_input_tokens) : 0;
   const output = Number.isFinite(total?.output_tokens) ? Math.max(0, total.output_tokens) : 0;
-  if (input > 0 || output > 0) items.push(color(`in ${tokens(input)} out ${tokens(output)}`, 'status-usage'));
+  if (input > 0 || output > 0) items.push(badge(`in ${tokens(input)} out ${tokens(output)}`, 'status-usage'));
   for (const [name, minutes] of [['5h', 300], ['wk', 10080]]) {
     const left = quotaLeft(state?.account?.rate_limits, minutes, now);
-    if (left !== undefined) items.push(color(`${name} ${left}% left`, left <= LOW_CONTEXT_PERCENT ? 'yellow' : 'status-limit'));
+    if (left !== undefined) items.push(badge(`${name} ${left}% left`, left <= LOW_CONTEXT_PERCENT ? 'yellow' : 'status-limit'));
   }
   const cost = thread?.usage?.cost?.total_cost_usd;
-  if (Number.isFinite(cost) && cost >= 0) items.push(color(`$${cost.toFixed(2)}`, 'status-usage'));
+  if (Number.isFinite(cost) && cost >= 0) items.push(badge(`$${cost.toFixed(2)}`, 'status-usage'));
   if (Number.isFinite(used) && 100 - Math.min(100, Math.max(0, used)) <= COMPACT_PERCENT) {
-    items.push(color('/compact', 'yellow'));
+    items.push(badge('! /compact', 'yellow'));
   }
-  if (recentBlock) items.push(color('hook blocked', 'yellow'));
-  if (agents.length) items.push(color(agents.join(' · '), 'status-state'));
+  if (recentBlock) items.push(badge('! hook blocked', 'yellow'));
+  if (agents.length) items.push(badge(agents.join(', '), 'status-state'));
   return {
     type: 'row',
     props: { gap: 1, wrap: 'nowrap' },
-    children: items.flatMap((item, index) => index ? ['|', item] : [item]),
+    children: items,
   };
 }
 

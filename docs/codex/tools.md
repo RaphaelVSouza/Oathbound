@@ -21,6 +21,8 @@ Verified headless: 2026-11-28.
 | `collaboration.list_agents` | List live agents | Optional `path_prefix` | `{"path_prefix":"/root"}` |
 | `collaboration.wait_agent` | Wait for an agent mailbox update or new user input | Optional `timeout_ms` | `{"timeout_ms":30000}` |
 
+Oathkeeper collects completion notifications while continuing independent work. Use a bounded wait when an outstanding result blocks progress. Check agent status after a timeout or session resume before waiting again.
+
 ## Nested Tools Exposed via `functions.exec` (14)
 
 | Tool | Description | Key Parameters | Usage Example |

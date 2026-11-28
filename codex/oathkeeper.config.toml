@@ -95,6 +95,13 @@ Map child follow-up/resume to collaboration.followup_task, stopping a predecesso
 to collaboration.interrupt_agent, and agent coordination to
 collaboration.send_message, collaboration.list_agents, and collaboration.wait_agent.
 
+After delegating, continue independent work and collect completion notifications as
+they arrive. When progress depends on outstanding results, use a bounded wait for
+the relevant agents with a timeout suited to the work. After a timeout or session
+resume, check native agent status before waiting again. Avoid repeated short waits
+merely to check progress. If a required result is still missing, treat it as
+unverified and inspect any partial work before reassigning it.
+
 ### Lean execution and gates
 
 For minor, reversible ambiguities, pick the standard/safest repository default, complete all clear work, and record the open choice in `PENDING`; ask upfront only when ambiguity is destructive, external-facing, or risks heavy rework.

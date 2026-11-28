@@ -111,7 +111,7 @@ test('Codex discovers the Oathbound footer and polls live subagent roles', { tim
     const tree = JSON.parse(resource.text);
     assert.deepEqual(tree.props, { gap: 1, wrap: 'nowrap' });
     if (color) {
-      const context = tree.children.find(item => item.children?.[0]?.startsWith('ctx '));
+      const context = tree.children.find(item => item.children?.[0]?.startsWith('[ctx '));
       assert.equal(context.props.color, color);
     }
     return tree.children.map(item => typeof item === 'string' ? item : item.children.join('')).join(' ');
@@ -126,7 +126,7 @@ test('Codex discovers the Oathbound footer and polls live subagent roles', { tim
   const { tools: [tool] } = await request('tools/list');
   assert.equal(tool.title, 'Oathbound');
   assert.deepEqual(tool._meta['openai/ui'].entrypoints, [{ type: 'statusline', resourceUri: URI }]);
-  assert.equal(await footer('thread-123-a'), '◆ Oathbound | Test Model (high) | ctx 72% left');
+  assert.equal(await footer('thread-123-a'), '[OB] [Test Model (high)] [ctx 72% left]');
 
   fs.writeFileSync(log + '.1', event('SubagentStart', 'smith-1', 'oathbound:smith'));
   fs.writeFileSync(log,
@@ -134,19 +134,19 @@ test('Codex discovers the Oathbound footer and polls live subagent roles', { tim
     event('SubagentStart', 'smith-1', 'oathbound:smith') +
     event('SubagentStart', 'scout-1', 'scout') +
     event('SubagentStart', 'scholar-1', 'scholar', 'thread-123-b'));
-  assert.match(await footer('thread-123-a'), /⚒ smith · ⌖ scout/);
+  assert.match(await footer('thread-123-a'), /\[> smith, > scout\]/);
   assert.doesNotMatch(await footer('thread-123-a'), /scholar|smith.*smith/);
-  assert.match(await footer('thread-123-b'), /◇ scholar/);
+  assert.match(await footer('thread-123-b'), /\[> scholar\]/);
   assert.doesNotMatch(await footer('thread-123-b'), /smith|scout/);
 
   fs.appendFileSync(log, event('SubagentStop', 'smith-1', 'smith').trimEnd());
-  assert.match(await footer('thread-123-a'), /⚒ smith/);
+  assert.match(await footer('thread-123-a'), /> smith/);
   fs.appendFileSync(log, '\n');
   assert.doesNotMatch(await footer('thread-123-a'), /smith/);
   for (const role of ['assayer', 'sentinel', 'scribe', 'breaker']) {
     fs.appendFileSync(log, event('SubagentStart', role, role));
   }
-  assert.match(await footer('thread-123-a'), /⌖ scout · ✓ assayer · ⬟ sentinel · ✎ scribe · \+1/);
+  assert.match(await footer('thread-123-a'), /\[> scout, > assayer, > sentinel, > scribe, \+1\]/);
 
   const project = path.join(dir, 'project');
   fs.mkdirSync(path.join(project, 'nested'), { recursive: true });
@@ -157,7 +157,7 @@ test('Codex discovers the Oathbound footer and polls live subagent roles', { tim
     JSON.stringify({ bloqueado: true, sessao_id: 'thread-c', ts }) + '\n' +
     JSON.stringify({ bloqueado: true, sessao_id: 'thread-d', ts: new Date(Date.now() - 120_000).toISOString() }) + '\n');
   const withWorkspace = await footer('thread-c', { cwd: path.join(project, 'nested'), used: 82, color: 'yellow' });
-  assert.match(withWorkspace, /project · footer-test .*ctx 18% left \| hook blocked \| ⚒ smith \d+s/);
+  assert.match(withWorkspace, /\[project\/footer-test\] .*\[ctx 18% left\] \[! hook blocked\] \[> smith \d+s\]/);
   assert.doesNotMatch(await footer('thread-d', { cwd: dir, color: 'status-usage' }), /hook blocked|smith/);
 
   child.stdin.end();
@@ -197,7 +197,7 @@ test('Codex footer shows tokens, quota, cost and /compact only from reported dat
       secondary_limit: { used_percent: 95, window_minutes: 10080, resets_at: future },
     }] },
   });
-  assert.match(full, /ctx 10% left \| in 15\.5k out 1\.2M \| 5h 80% left \| wk 5% left \| \$1\.23 \| \/compact/);
+  assert.equal(full, '[OB] [M] [ctx 10% left] [in 15.5k out 1.2M] [5h 80% left] [wk 5% left] [$1.23] [! /compact]');
 
   const bare = await render({
     thread: { id: 'bare', model: { display_name: 'M' }, usage: { context: { used_percentage: 10 }, total: { total_input_tokens: -5, output_tokens: 0 } } },
@@ -208,7 +208,7 @@ test('Codex footer shows tokens, quota, cost and /compact only from reported dat
 });
 
 test('Codex footer honors OATHBOUND_STATUSLINE_ICONS', { timeout: 10_000 }, async t => {
-  for (const [set, brand] of [['ascii', '*'], ['oathbound', ''], ['nerd', ''], ['bogus', '◆']]) {
+  for (const [set, brand] of [['ascii', 'OB'], ['unicode', '◆'], ['oathbound', ''], ['nerd', ''], ['bogus', 'OB']]) {
     const child = spawn(process.execPath, [path.resolve(__dirname, '../codex/statusline.cjs')], {
       env: { ...process.env, OATHBOUND_STATUSLINE_ICONS: set },
       stdio: ['pipe', 'pipe', 'inherit'],
@@ -225,7 +225,7 @@ test('Codex footer honors OATHBOUND_STATUSLINE_ICONS', { timeout: 10_000 }, asyn
       uri: URI,
       _meta: { [STATE]: { thread: { id: 'icons', model: { display_name: 'M' } } } },
     });
-    assert.equal(JSON.parse(resource.text).children[0].children[0], `${brand} Oathbound`, set);
+    assert.equal(JSON.parse(resource.text).children[0].children[0], '[' + brand + ']', set);
     child.stdin.end();
   }
 });

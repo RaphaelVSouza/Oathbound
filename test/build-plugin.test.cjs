@@ -213,16 +213,9 @@ test('generates a Codex marketplace with a portable plugin and complete skills',
   const manifest = JSON.parse(fs.readFileSync(path.join(plugin, 'plugin.json'), 'utf8'));
   assert.equal(manifest.name, entry.name);
   assert.equal(manifest.version, fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim());
-  const mcp = JSON.parse(fs.readFileSync(path.join(plugin, 'mcp.json'), 'utf8'));
-  const footer = mcp.mcpServers['oathbound-statusline'];
-  assert.deepEqual(footer, {
-    type: 'stdio', command: 'node', args: ['${PLUGIN_ROOT}/statusline.cjs'],
-  });
-  const footerScript = footer.args[0].replace('${PLUGIN_ROOT}', plugin);
-  assert.deepEqual(fs.readFileSync(footerScript), fs.readFileSync(path.join(ROOT, 'codex/statusline.cjs')));
-  const overlay = JSON.parse(fs.readFileSync(path.join(plugin, '.codex-plugin/plugin.json'), 'utf8'));
-  assert.equal(overlay.name, manifest.name);
-  assert.deepEqual(overlay.mcpServers['oathbound-statusline'].env_vars, ['AGENT_AUDIT_DIR', 'CODEX_HOME']);
+  assert.equal(fs.existsSync(path.join(plugin, 'mcp.json')), false);
+  assert.equal(fs.existsSync(path.join(plugin, '.codex-plugin')), false);
+  assert.equal(fs.existsSync(path.join(plugin, 'statusline.cjs')), false);
   const skills = path.join(plugin, 'skills');
   assert.deepEqual(fs.readdirSync(skills).sort(), [
     'api-contract-design',
@@ -268,7 +261,7 @@ test('generates a Codex marketplace with a portable plugin and complete skills',
     const expected = file.name === 'SKILL.md' && fs.existsSync(override) ? override : original;
     assert.deepEqual(fs.readFileSync(path.join(skills, rel)), fs.readFileSync(expected));
   }
-  assert.deepEqual(fs.readdirSync(plugin).sort(), ['.codex-plugin', 'mcp.json', 'plugin.json', 'skills', 'statusline.cjs']);
+  assert.deepEqual(fs.readdirSync(plugin).sort(), ['plugin.json', 'skills']);
   assert.throws(() => buildPlugin('codex', out), /EEXIST/);
 });
 

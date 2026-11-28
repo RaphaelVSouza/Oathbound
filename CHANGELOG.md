@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.50.0-alpha.82] - 2026-11-28
+
+- Reduces repeated Codex subagent waits by collecting completion notifications during independent work and checking agent status after a timeout or session resume. Keeps the receipt check for required results.
+
+## [0.50.0-alpha.81] - 2026-11-28
+
+- Uses the built-in Codex footer by default and ships the Oathbound timer for manual MCP registration. Guides users to `/subagents` in Codex, the subagent panel and `/tasks` in Claude Code, and `/agents` with the built-in footer in Antigravity CLI.
+
 ## [0.50.0-alpha.80] - 2026-11-28
 
 - Requires every worker subagent across Claude Code, Antigravity CLI, and Codex CLI to end with a visible plain-text receipt (fixing silent exits in `smith`) and adds an empty-reply gate in `oathkeeper`.

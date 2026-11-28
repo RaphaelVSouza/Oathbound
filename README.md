@@ -113,25 +113,35 @@ status_line = ["project-name", "git-branch", "model-with-reasoning", "context-re
 
 Use `/statusline` to customize the fields, for example to add weekly quota or Fast mode. [Codex footer controls](https://learn.chatgpt.com/docs/developer-commands?surface=cli#configure-footer-items-with-statusline)
 
-The installed Oathbound Codex plugin registers the branded footer provider. Node.js 24+ must be on PATH on the machine running the Codex app server. Enable **Custom status line** in `/experimental` and restart Codex. Start a conversation, then open `/statusline` → **Choose a status line provider** → **Oathbound**.
+Use `/subagents` to inspect running subagent threads from the current session. [Codex subagent controls](https://learn.chatgpt.com/docs/developer-commands?surface=cli#switch-agent-threads-with-subagents)
 
-For standalone setup, register the provider using the absolute path to `codex/statusline.cjs` in a checkout or `setup/statusline.cjs` in a built Codex package.
+If you want elapsed time in the footer, manually register the optional Oathbound provider using the absolute path to `codex/statusline.cjs` in a checkout or `setup/statusline.cjs` in a built Codex package. Node.js 24+ must be on PATH on the Codex app-server host.
 
 ```sh
 codex mcp add oathbound-statusline -- node "/absolute/path/to/statusline.cjs"
 ```
 
-For roles to appear, review and trust the Oathbound `SubagentStart` and `SubagentStop` hooks in `/hooks`. The hooks need a working absolute path to the installed binary or `oathbound-hook` on PATH. The bundled provider inherits `AGENT_AUDIT_DIR` and `CODEX_HOME` from the app server when set. For standalone registration with a custom audit location, pass the same absolute path with `--env AGENT_AUDIT_DIR=<audit-directory>` or `--env CODEX_HOME=<codex-directory>` before the `--`. [Codex provider guide](https://github.com/openai/codex/blob/rust-v0.172.0/codex-rs/skills/src/assets/samples/create-statusline/SKILL.md)
+Enable **Custom status line** in `/experimental` and restart Codex. Start a conversation, then open `/statusline` → **Choose a status line provider** → **Oathbound**.
+
+For roles to appear, review and trust the Oathbound `SubagentStart` and `SubagentStop` hooks in `/hooks`. The hooks need a working absolute path to the installed binary or `oathbound-hook` on PATH. For a custom audit location, pass the same absolute path with `--env AGENT_AUDIT_DIR=<audit-directory>` or `--env CODEX_HOME=<codex-directory>` before the `--`. [Codex provider guide](https://github.com/openai/codex/blob/rust-v0.172.0/codex-rs/skills/src/assets/samples/create-statusline/SKILL.md)
 
 ```text
-◆ Oathbound | ⚒ smith · ◇ scholar | model (high) | ctx 72% left
+[OB] [oathbound/main] [model (high)] [ctx 72% left] [> smith, > scholar]
 ```
 
-The footer tracks agents from their recorded start to their recorded stop in the root Codex session. It shows up to four role labels and an overflow count. Codex polls the provider about once a second.
+The footer tracks agents from their recorded start to their recorded stop in the root Codex session. It shows up to four role labels with elapsed seconds when available, plus an overflow count. Codex polls the provider about once a second.
+
+The Codex footer defaults to ASCII brackets and icons. Metrics use theme colors, and alerts carry a `!` marker that stays visible in monochrome.
 
 If audit or Git enrichment stalls, Oathbound retries once and then shows the available Codex fields, including model, context and quota. If Codex reports that the provider stopped, use `/statusline` to reselect Oathbound or switch to the built-in footer. The built-in footer uses the `status_line` fields configured above. [Codex 0.172.0 polling behavior](https://github.com/openai/codex/blob/rust-v0.172.0/codex-rs/tui/src/chatwidget/statusline_reader.rs)
 
 #### Claude Code and Antigravity CLI
+
+In Claude Code, the subagent panel below the prompt shows running agents and elapsed time. Use `/tasks` to open their details. [Claude Code subagents](https://code.claude.com/docs/en/sub-agents#finished-subagents-in-the-panel-and-task-list)
+
+In Antigravity CLI, use `/agents` to see running subagents and select a row with `Enter` to inspect its activity. If you previously configured the Oathbound command, `/statusline reset` restores Antigravity's built-in footer. [Antigravity agent panel](https://antigravity.google/docs/cli/commands/agents/) · [Statusline controls](https://antigravity.google/docs/cli-statusline?app=cli)
+
+##### Optional Oathbound footer
 
 Both clients can run `oathbound-hook statusline` for the branded text footer. The renderer displays context and quota as percentages remaining. On agy, running subagents use Unicode glyphs inspired by the artwork above, and the footer shortens optional details as the terminal narrows.
 
@@ -139,11 +149,11 @@ Both clients can run `oathbound-hook statusline` for the branded text footer. Th
 ◆ Oathbound | project · main | Gemini (high) | ctx 72% left | 5h 84% left | ⚒ smith · ◇ scholar
 ```
 
-Set `OATHBOUND_STATUSLINE_ICONS` to pick the glyphs (also read by the Codex provider; for standalone Codex registration pass `--env OATHBOUND_STATUSLINE_ICONS=<set>` to `codex mcp add`): `unicode` (default), `nerd` (Nerd Font), `oathbound` (`assets/glyphs/OathboundIcons.ttf`) or `ascii`. Without the matching font, `nerd` and `oathbound` show empty boxes. See [ADR-0019](docs/adr/0019-statusline-icon-sets.md).
+Set `OATHBOUND_STATUSLINE_ICONS` to pick the glyphs. Choose `unicode` (native default), `ascii` (Codex default), `nerd` (Nerd Font), or `oathbound` (`assets/glyphs/OathboundIcons.ttf`). For standalone Codex registration, pass `--env OATHBOUND_STATUSLINE_ICONS=<set>` to `codex mcp add`. Without the matching font, `nerd` and `oathbound` show empty boxes. See [ADR-0019](docs/adr/0019-statusline-icon-sets.md).
 
 For Claude Code, run `node tools/install.ts --project . --runner claude --statusline`. The installer preserves any existing `statusLine` entry. To switch an existing entry yourself, set its `command` to the quoted absolute path of the installed `.claude/hooks/oathbound-hook` followed by `statusline`. Use `oathbound-hook.exe` on Windows.
 
-For agy, place the rebuilt native binary at the path configured in your status-line command. The [agy settings template](agy/antigravity-cli/settings.json) uses `~/.gemini/antigravity-cli/oathbound-hook`. Merge its `statusLine` entry into your agy settings if needed, replacing `__HOME__` with your home directory and using the `.exe` suffix on Windows.
+For an explicit agy opt-in, use `node tools/install.ts --global --runner agy --statusline`. The installer preserves an existing `statusLine` entry.
 
 ### 3. Project and Environment Installer (`install.ts`)
 

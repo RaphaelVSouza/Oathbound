@@ -114,9 +114,6 @@ function writeAgyPackage(ctx) {
 function writeCodexPackage(ctx) {
   const { out, copy, write, readJson, loadManifest } = ctx;
   write('plugins/oathbound/plugin.json', loadManifest('codex/plugin.json'));
-  copy('codex/mcp.json', 'plugins/oathbound/mcp.json');
-  copy('codex/mcp-env.json', 'plugins/oathbound/.codex-plugin/plugin.json');
-  copy('codex/statusline.cjs', 'plugins/oathbound/statusline.cjs');
   copySkillsForRunner('codex', path.join(out, 'plugins/oathbound/skills'));
   copy('codex/oathkeeper.config.toml', 'setup/oathkeeper.config.toml');
   copy('codex/agents', 'setup/agents');
