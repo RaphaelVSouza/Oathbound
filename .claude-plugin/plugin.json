@@ -1,7 +1,7 @@
 {
   "name": "oathbound",
   "displayName": "Oathbound",
-  "version": "0.50.0-alpha.79",
+  "version": "0.50.0-alpha.80",
   "icon": "./assets/logo.svg",
   "description": "Lean agent governance, preventive hook guardrails, audit trails, and engineering skills for Claude Code.",
   "author": {
