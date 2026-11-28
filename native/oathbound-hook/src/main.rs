@@ -24,7 +24,10 @@ fn avaliar_plugin_agent_guard(payload: &Value) -> Option<String> {
     let agent_type = payload.get("agent_type").and_then(|v| v.as_str())?;
     match agent_type {
         "oathbound:assayer" | "oathbound:sentinel" => {
-            if payload.get("tool_name").and_then(|v| v.as_str()) == Some("Bash") {
+            if matches!(
+                payload.get("tool_name").and_then(|v| v.as_str()),
+                Some("Bash" | "PowerShell")
+            ) {
                 let cmd = payload
                     .get("tool_input")
                     .and_then(|v| v.get("command"))
@@ -310,5 +313,40 @@ mod tests {
         );
         assert!(out.contains("2.5 Pro"));
         assert!(out.contains("58% left"));
+    }
+
+    #[test]
+    fn plugin_agent_guard_blocks_powershell_mutations_and_unbounded_reads_for_readonly_agents() {
+        for agent in ["oathbound:assayer", "oathbound:sentinel"] {
+            let mutate = json!({
+                "agent_type": agent,
+                "tool_name": "PowerShell",
+                "tool_input": { "command": "Remove-Item README.md" }
+            });
+            assert!(
+                avaliar_plugin_agent_guard(&mutate).is_some(),
+                "expected PowerShell readonly deny for {agent}"
+            );
+
+            let unbounded = json!({
+                "agent_type": agent,
+                "tool_name": "PowerShell",
+                "tool_input": { "command": "Get-Content README.md" }
+            });
+            assert!(
+                avaliar_plugin_agent_guard(&unbounded).is_some(),
+                "expected PowerShell read_size deny for {agent}"
+            );
+
+            let safe = json!({
+                "agent_type": agent,
+                "tool_name": "PowerShell",
+                "tool_input": { "command": "git status --short" }
+            });
+            assert!(
+                avaliar_plugin_agent_guard(&safe).is_none(),
+                "expected safe PowerShell command allowed for {agent}"
+            );
+        }
     }
 }

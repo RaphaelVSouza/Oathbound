@@ -2,6 +2,7 @@ use crate::guards::readonly::{dividir, nome_comando};
 use serde_json::Value;
 
 const MAX_LINHAS: i64 = 150;
+const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "ico"];
 const RESUMOS_GIT: &[&str] = &[
     "--stat",
     "--name-only",
@@ -133,7 +134,23 @@ fn avaliar_bash(command: Option<&str>) -> Option<String> {
     None
 }
 
+fn is_image_path(input: Option<&Value>) -> bool {
+    let Some(path) = input
+        .and_then(|v| v.get("file_path").or_else(|| v.get("path")))
+        .and_then(Value::as_str)
+    else {
+        return false;
+    };
+    std::path::Path::new(path.trim())
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .is_some_and(|ext| IMAGE_EXTENSIONS.iter().any(|allowed| ext.eq_ignore_ascii_case(allowed)))
+}
+
 fn avaliar_read(input: Option<&Value>) -> Option<String> {
+    if is_image_path(input) {
+        return None;
+    }
     let limit = input.and_then(|v| v.get("limit")).and_then(|v| v.as_i64());
     match limit {
         Some(n) if n > MAX_LINHAS => {
@@ -148,12 +165,102 @@ pub fn avaliar(payload: &Value) -> Option<String> {
     let ferramenta = payload.get("tool_name").and_then(|v| v.as_str())?;
     match ferramenta {
         "Read" => avaliar_read(payload.get("tool_input")),
-        "Bash" => avaliar_bash(
+        "Bash" | "PowerShell" => avaliar_bash(
             payload
                 .get("tool_input")
                 .and_then(|v| v.get("command"))
                 .and_then(|v| v.as_str()),
         ),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn powershell_enforces_read_size_guards() {
+        let unbounded_gc = json!({
+            "tool_name": "PowerShell",
+            "tool_input": { "command": "Get-Content src/main.rs" }
+        });
+        assert!(avaliar(&unbounded_gc).is_some());
+
+        let bounded_gc = json!({
+            "tool_name": "PowerShell",
+            "tool_input": { "command": "Get-Content src/main.rs -TotalCount 50" }
+        });
+        assert!(avaliar(&bounded_gc).is_none());
+
+        let unbounded_diff = json!({
+            "tool_name": "PowerShell",
+            "tool_input": { "command": "git diff" }
+        });
+        assert!(avaliar(&unbounded_diff).is_some());
+    }
+
+    #[test]
+    fn read_exempts_image_extensions_case_insensitively() {
+        for path in [
+            "screenshot.png",
+            "assets/LOGO.PNG",
+            "photo.jpg",
+            "photo.JPEG",
+            "anim.gif",
+            "hero.webp",
+            "icon.bmp",
+            "diagram.svg",
+            "favicon.ICO",
+            r"C:\tmp\sub\Preview.WebP",
+        ] {
+            let payload = json!({
+                "tool_name": "Read",
+                "tool_input": { "file_path": path }
+            });
+            assert!(
+                avaliar(&payload).is_none(),
+                "expected image {path} to be exempt from Read limit"
+            );
+        }
+    }
+
+    #[test]
+    fn read_still_enforces_limit_on_text_and_unknown_files() {
+        for path in ["src/main.rs", "README.md", "notes.txt", "fake.png.txt", "Makefile"] {
+            let without_limit = json!({
+                "tool_name": "Read",
+                "tool_input": { "file_path": path }
+            });
+            assert!(
+                avaliar(&without_limit).is_some(),
+                "expected {path} without limit to be denied"
+            );
+
+            let over_limit = json!({
+                "tool_name": "Read",
+                "tool_input": { "file_path": path, "limit": 151 }
+            });
+            assert!(
+                avaliar(&over_limit).is_some(),
+                "expected {path} with limit > 150 to be denied"
+            );
+
+            let within_limit = json!({
+                "tool_name": "Read",
+                "tool_input": { "file_path": path, "limit": 150 }
+            });
+            assert!(
+                avaliar(&within_limit).is_none(),
+                "expected {path} with limit 150 to be allowed"
+            );
+        }
+
+        let missing_path = json!({
+            "tool_name": "Read",
+            "tool_input": {}
+        });
+        assert!(avaliar(&missing_path).is_some());
     }
 }

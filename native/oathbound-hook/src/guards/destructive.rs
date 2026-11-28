@@ -70,16 +70,27 @@ fn re_eval() -> &'static Regex {
     RE.get_or_init(|| Regex::new(&format!(r"{INICIO}(eval|invoke-expression|iex)\b")).unwrap())
 }
 
+fn extract_command<'a>(payload: &'a Value, tool_name: &str) -> Option<&'a str> {
+    let input = payload.get("tool_input")?;
+    match tool_name {
+        "Bash" | "PowerShell" => input.get("command").and_then(|v| v.as_str()),
+        "exec_command" | "tools.exec_command" => input
+            .get("cmd")
+            .or_else(|| input.get("command"))
+            .and_then(|v| v.as_str()),
+        _ => None,
+    }
+}
+
 pub fn avaliar(payload: &Value) -> Option<String> {
     let ferramenta = payload.get("tool_name").and_then(|v| v.as_str())?;
-    if ferramenta != "Bash" && ferramenta != "PowerShell" {
+    if !matches!(
+        ferramenta,
+        "Bash" | "PowerShell" | "exec_command" | "tools.exec_command"
+    ) {
         return None;
     }
-    let Some(cmd) = payload
-        .get("tool_input")
-        .and_then(|v| v.get("command"))
-        .and_then(|v| v.as_str())
-    else {
+    let Some(cmd) = extract_command(payload, ferramenta) else {
         return Some("empty or missing command".to_string());
     };
     if cmd.trim().is_empty() {
@@ -142,4 +153,50 @@ pub fn avaliar(payload: &Value) -> Option<String> {
     }
 
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn evaluates_bash_and_powershell_commands() {
+        for tool in ["Bash", "PowerShell"] {
+            let allow = json!({ "tool_name": tool, "tool_input": { "command": "git status --short" } });
+            assert!(avaliar(&allow).is_none());
+
+            let deny = json!({ "tool_name": tool, "tool_input": { "command": "git commit -m x" } });
+            assert!(avaliar(&deny).is_some());
+
+            let missing = json!({ "tool_name": tool, "tool_input": { "cmd": "git status" } });
+            assert_eq!(avaliar(&missing).as_deref(), Some("empty or missing command"));
+        }
+    }
+
+    #[test]
+    fn evaluates_codex_exec_command_with_cmd_and_command() {
+        for tool in ["exec_command", "tools.exec_command"] {
+            let allow = json!({ "tool_name": tool, "tool_input": { "cmd": "git status --short" } });
+            assert!(avaliar(&allow).is_none());
+
+            let deny = json!({ "tool_name": tool, "tool_input": { "cmd": "git commit -m x" } });
+            assert!(avaliar(&deny).is_some());
+
+            let deny_rm = json!({ "tool_name": tool, "tool_input": { "cmd": "rm -rf tmp" } });
+            assert!(avaliar(&deny_rm).is_some());
+
+            let fallback_command = json!({ "tool_name": tool, "tool_input": { "command": "git push" } });
+            assert!(avaliar(&fallback_command).is_some());
+
+            let empty = json!({ "tool_name": tool, "tool_input": { "cmd": "   " } });
+            assert_eq!(avaliar(&empty).as_deref(), Some("empty or missing command"));
+        }
+    }
+
+    #[test]
+    fn ignores_non_shell_tools() {
+        let read = json!({ "tool_name": "Read", "tool_input": { "file_path": "a.rs" } });
+        assert!(avaliar(&read).is_none());
+    }
 }
